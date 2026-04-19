@@ -3,6 +3,7 @@ import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { Toaster } from "@workspace/ui/components/sonner"
 
 import appCss from "@workspace/ui/globals.css?url"
+import { ThemeProvider } from "@/components/theme-provider"
 
 export const Route = createRootRoute({
   head: () => ({
@@ -36,7 +37,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <TooltipProvider>
-          {children}
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
         </TooltipProvider>
         <Toaster />
         <Scripts />
