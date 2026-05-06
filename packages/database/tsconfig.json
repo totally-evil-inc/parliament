@@ -1,0 +1,25 @@
+{
+  "include": ["**/*.ts", "eslint.config.js", "drizzle.config.ts"],
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["bun"],
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "paths": {
+      "@workspace/database": ["./src/index.ts"],
+      "@workspace/database/*": ["./src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "drizzle"]
+}
