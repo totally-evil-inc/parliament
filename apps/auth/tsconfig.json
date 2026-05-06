@@ -1,5 +1,5 @@
 {
-  "include": ["**/*.ts", "eslint.config.js"],
+  "include": ["**/*.ts", "eslint.config.js", "../../packages/database/src/schema/auth-schema.ts"],
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],
