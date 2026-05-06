@@ -37,9 +37,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <TooltipProvider>
-          <ThemeProvider>
-            {children}
-          </ThemeProvider>
+          <ThemeProvider>{children}</ThemeProvider>
         </TooltipProvider>
         <Toaster />
         <Scripts />
