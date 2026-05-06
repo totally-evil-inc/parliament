@@ -1,14 +1,14 @@
-import { HugeiconsIcon } from "@hugeicons/react";
-import { SunIcon, MoonIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react"
+import { SunIcon, MoonIcon } from "@hugeicons/core-free-icons"
 import { createFileRoute } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
-import { Swap, SwapOff, SwapOn } from "@workspace/ui/components/swap";
-import { useTheme } from "@/components/theme-provider";
+import { Swap, SwapOff, SwapOn } from "@workspace/ui/components/swap"
+import { useTheme } from "@/components/theme-provider"
 
 export const Route = createFileRoute("/")({ component: App })
 
 function App() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme()
 
   return (
     <div className="flex min-h-svh p-6">
