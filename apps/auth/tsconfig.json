@@ -1,31 +1,26 @@
 {
-  "include": ["**/*.ts", "**/*.tsx", "eslint.config.js", "prettier.config.js", "vite.config.js"],
+  "include": ["**/*.ts", "eslint.config.js", "../../packages/database/src/schema/auth-schema.ts"],
   "compilerOptions": {
     "target": "ES2022",
-    "jsx": "react-jsx",
+    "lib": ["ES2022"],
     "module": "ESNext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client"],
-
-    /* Bundler mode */
     "moduleResolution": "bundler",
+    "types": ["bun"],
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
-
-    /* Linting */
+    "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "allowJs": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@workspace/ui/*": ["../../packages/ui/src/*"],
       "@workspace/database": ["../../packages/database/src/index.ts"],
       "@workspace/database/*": ["../../packages/database/src/*"],
     }
-  }
+  },
+  "exclude": ["node_modules", "dist"]
 }
