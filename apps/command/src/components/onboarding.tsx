@@ -1,35 +1,72 @@
-import { type FormEvent, useState } from "react";
-import { Button } from "@workspace/ui/components/button";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
+import { useState } from "react"
+import { useForm } from "@tanstack/react-form"
+import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
+import { z } from "zod"
+import { AuthShell, useAuthTypingImpulse } from "./auth-shell"
 import {
   bumpParticleTypingImpulse,
   pulseParticleSubmitImpulse,
-} from "@/components/particle-field";
-import { AuthShell, useAuthTypingImpulse } from "./auth-shell";
+} from "@/components/particle-field"
 
-const STEPS = ["Workspace", "Invite", "Ready"] as const;
+const STEPS = ["Workspace", "Invite", "Ready"] as const
+
+const workspaceSchema = z.object({
+  workspace: z.string().trim().min(1, "Workspace name is required"),
+})
+
+const inviteSchema = z.object({
+  email: z.string().trim().email("Enter a valid email address"),
+})
+
+function zodFieldValidator<TValue>(schema: z.ZodType<TValue>) {
+  return ({ value }: { value: unknown }) => {
+    const result = schema.safeParse(value)
+
+    if (result.success) return undefined
+
+    const fields: Record<string, string> = {}
+
+    for (const issue of result.error.issues) {
+      const fieldName = issue.path[0]
+
+      if (typeof fieldName === "string") {
+        fields[fieldName] = issue.message
+      }
+    }
+
+    return Object.keys(fields).length > 0 ? { fields } : undefined
+  }
+}
+
+function fieldError(errors: Array<unknown>) {
+  const firstError = errors[0]
+
+  if (!firstError) return undefined
+
+  return typeof firstError === "string" ? firstError : String(firstError)
+}
 
 export function OnboardingShowcasePage() {
   return (
     <AuthShell variant="onboarding">
       <OnboardingFlow />
     </AuthShell>
-  );
+  )
 }
 
 function OnboardingFlow() {
-  const [step, setStep] = useState(0);
-  const [workspace, setWorkspace] = useState("");
-  const [invitees, setInvitees] = useState<string[]>([]);
-  const [pendingEmail, setPendingEmail] = useState("");
-  const typingImpulse = useAuthTypingImpulse();
+  const [step, setStep] = useState(0)
+  const [workspace, setWorkspace] = useState("")
+  const [invitees, setInvitees] = useState<Array<string>>([])
+  const typingImpulse = useAuthTypingImpulse()
 
   const next = () => {
-    pulseParticleSubmitImpulse(typingImpulse);
-    setStep((s) => Math.min(s + 1, STEPS.length - 1));
-  };
-  const back = () => setStep((s) => Math.max(s - 1, 0));
+    pulseParticleSubmitImpulse(typingImpulse)
+    setStep((s) => Math.min(s + 1, STEPS.length - 1))
+  }
+  const back = () => setStep((s) => Math.max(s - 1, 0))
 
   return (
     <div
@@ -41,11 +78,9 @@ function OnboardingFlow() {
       {step === 0 ? (
         <WorkspaceStep
           value={workspace}
-          onChange={setWorkspace}
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!workspace.trim()) return;
-            next();
+          onSubmit={(nextWorkspace) => {
+            setWorkspace(nextWorkspace)
+            next()
           }}
         />
       ) : null}
@@ -53,18 +88,14 @@ function OnboardingFlow() {
       {step === 1 ? (
         <InviteStep
           invitees={invitees}
-          pending={pendingEmail}
-          onPendingChange={setPendingEmail}
-          onAdd={(e) => {
-            e.preventDefault();
-            const trimmed = pendingEmail.trim().toLowerCase();
-            if (!trimmed) return;
+          onAdd={(email) => {
+            const trimmed = email.trim().toLowerCase()
+
             if (invitees.includes(trimmed)) {
-              setPendingEmail("");
-              return;
+              return
             }
-            setInvitees((prev) => [...prev, trimmed]);
-            setPendingEmail("");
+
+            setInvitees((prev) => [...prev, trimmed])
           }}
           onRemove={(email) =>
             setInvitees((prev) => prev.filter((e) => e !== email))
@@ -75,15 +106,18 @@ function OnboardingFlow() {
       ) : null}
 
       {step === 2 ? (
-        <ReadyStep workspace={workspace || "Untitled"} count={invitees.length} />
+        <ReadyStep
+          workspace={workspace || "Untitled"}
+          count={invitees.length}
+        />
       ) : null}
     </div>
-  );
+  )
 }
 
 function Stepper({ step }: { step: number }) {
   return (
-    <div className="flex items-center gap-2 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.3em]">
+    <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
       <span>
         Step {String(step + 1).padStart(2, "0")} / {STEPS.length}
       </span>
@@ -102,88 +136,176 @@ function Stepper({ step }: { step: number }) {
         ))}
       </div>
     </div>
-  );
+  )
 }
 
 function WorkspaceStep({
   value,
-  onChange,
   onSubmit,
 }: {
-  value: string;
-  onChange: (v: string) => void;
-  onSubmit: (e: FormEvent) => void;
+  value: string
+  onSubmit: (workspace: string) => void
 }) {
+  const form = useForm({
+    defaultValues: {
+      workspace: value,
+    },
+    validators: {
+      onChange: zodFieldValidator(workspaceSchema),
+      onSubmit: zodFieldValidator(workspaceSchema),
+    },
+    onSubmit: ({ value: formValue }) => {
+      onSubmit(formValue.workspace.trim())
+    },
+  })
+
   return (
     <>
-      <div className="mt-8 font-mono text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
+      <div className="mt-8 font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
         Name your workspace
       </div>
       <h1 className="mt-2 font-heading text-3xl leading-tight">
         What are we calling it?
       </h1>
-      <p className="mt-2 text-muted-foreground text-sm">
+      <p className="mt-2 text-sm text-muted-foreground">
         You can change this later in settings.
       </p>
 
-      <form onSubmit={onSubmit} className="mt-8 flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="onboarding-workspace">Workspace name</Label>
-          <Input
-            id="onboarding-workspace"
-            placeholder="Acme inc."
-            autoComplete="off"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            nativeInput
-          />
-        </div>
-        <Button type="submit" size="lg" disabled={!value.trim()} className="mt-2">
-          Continue
-        </Button>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          void form.handleSubmit()
+        }}
+        className="mt-8 flex flex-col gap-4"
+      >
+        <form.Field name="workspace">
+          {(field) => {
+            const error = fieldError(field.state.meta.errors)
+
+            return (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="onboarding-workspace">Workspace name</Label>
+                <Input
+                  id="onboarding-workspace"
+                  placeholder="Acme inc."
+                  autoComplete="off"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  aria-invalid={!!error}
+                  aria-describedby={
+                    error ? "onboarding-workspace-error" : undefined
+                  }
+                />
+                {error ? (
+                  <p
+                    id="onboarding-workspace-error"
+                    className="text-xs text-destructive"
+                  >
+                    {error}
+                  </p>
+                ) : null}
+              </div>
+            )
+          }}
+        </form.Field>
+        <form.Subscribe
+          selector={(state) => ({
+            canSubmit: state.canSubmit,
+            workspace: state.values.workspace,
+          })}
+        >
+          {({ canSubmit, workspace }) => (
+            <Button
+              type="submit"
+              size="lg"
+              disabled={!workspace.trim() || !canSubmit}
+              className="mt-2"
+            >
+              Continue
+            </Button>
+          )}
+        </form.Subscribe>
       </form>
     </>
-  );
+  )
 }
 
 function InviteStep({
   invitees,
-  pending,
-  onPendingChange,
   onAdd,
   onRemove,
   onContinue,
   onBack,
 }: {
-  invitees: string[];
-  pending: string;
-  onPendingChange: (v: string) => void;
-  onAdd: (e: FormEvent) => void;
-  onRemove: (email: string) => void;
-  onContinue: () => void;
-  onBack: () => void;
+  invitees: Array<string>
+  onAdd: (email: string) => void
+  onRemove: (email: string) => void
+  onContinue: () => void
+  onBack: () => void
 }) {
+  const form = useForm({
+    defaultValues: {
+      email: "",
+    },
+    validators: {
+      onSubmit: zodFieldValidator(inviteSchema),
+    },
+    onSubmit: ({ value, formApi }) => {
+      onAdd(value.email)
+      formApi.reset()
+    },
+  })
+
   return (
     <>
-      <div className="mt-8 font-mono text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
+      <div className="mt-8 font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
         Bring people with you
       </div>
       <h1 className="mt-2 font-heading text-3xl leading-tight">
         Invite teammates
       </h1>
-      <p className="mt-2 text-muted-foreground text-sm">
+      <p className="mt-2 text-sm text-muted-foreground">
         Optional — you can add anyone later.
       </p>
 
-      <form onSubmit={onAdd} className="mt-8 flex gap-2">
-        <Input
-          type="email"
-          placeholder="colleague@example.com"
-          autoComplete="off"
-          value={pending}
-          onChange={(e) => onPendingChange(e.target.value)}
-          nativeInput
-        />
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          void form.handleSubmit()
+        }}
+        className="mt-8 flex items-start gap-2"
+      >
+        <form.Field name="email">
+          {(field) => {
+            const error = fieldError(field.state.meta.errors)
+
+            return (
+              <div className="min-w-0 flex-1">
+                <Input
+                  type="email"
+                  placeholder="colleague@example.com"
+                  autoComplete="off"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  aria-invalid={!!error}
+                  aria-describedby={error ? "invite-email-error" : undefined}
+                />
+                {error ? (
+                  <p
+                    id="invite-email-error"
+                    className="mt-1.5 text-xs text-destructive"
+                  >
+                    {error}
+                  </p>
+                ) : null}
+              </div>
+            )
+          }}
+        </form.Field>
         <Button type="submit" variant="outline">
           Add
         </Button>
@@ -200,7 +322,7 @@ function InviteStep({
               <button
                 type="button"
                 onClick={() => onRemove(email)}
-                className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.2em] transition-colors hover:text-foreground"
+                className="font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-foreground"
               >
                 Remove
               </button>
@@ -208,7 +330,7 @@ function InviteStep({
           ))}
         </ul>
       ) : (
-        <div className="mt-5 rounded-md border border-dashed border-border/70 bg-background/30 px-3 py-6 text-center text-muted-foreground text-xs">
+        <div className="mt-5 rounded-md border border-dashed border-border/70 bg-background/30 px-3 py-6 text-center text-xs text-muted-foreground">
           No invites yet. Add a few or skip — totally fine.
         </div>
       )}
@@ -224,25 +346,19 @@ function InviteStep({
         </Button>
       </div>
     </>
-  );
+  )
 }
 
-function ReadyStep({
-  workspace,
-  count,
-}: {
-  workspace: string;
-  count: number;
-}) {
+function ReadyStep({ workspace, count }: { workspace: string; count: number }) {
   return (
     <>
-      <div className="mt-8 font-mono text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
+      <div className="mt-8 font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
         You're set
       </div>
       <h1 className="mt-2 font-heading text-3xl leading-tight">
         Welcome to {workspace}.
       </h1>
-      <p className="mt-3 text-muted-foreground text-sm leading-relaxed">
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
         {count === 0
           ? "Quiet for now — when you're ready, invite people from settings."
           : `We've sent ${count} invite${count === 1 ? "" : "s"}. They'll show up here once accepted.`}
@@ -258,16 +374,16 @@ function ReadyStep({
         Take me in
       </Button>
     </>
-  );
+  )
 }
 
 function FactCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-border/70 bg-background/40 px-3 py-3">
-      <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
+      <div className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
         {label}
       </div>
       <div className="mt-1 truncate font-heading text-sm">{value}</div>
     </div>
-  );
+  )
 }

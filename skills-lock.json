@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "tanstack": {
+      "source": "pedronauck/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tanstack/SKILL.md",
+      "computedHash": "073b9d0fb1c92fcbf99eb77c54e1a3265c4f6b2786568e8d9fe162661a10812e"
+    },
     "tanstack-form": {
       "source": "tanstack-skills/tanstack-skills",
       "sourceType": "github",
