@@ -1,0 +1,99 @@
+import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router"
+import { cn } from "@workspace/ui/lib/utils"
+import type { ReactNode } from "react"
+import { ThemeToggle } from "@/components/theme-toggle"
+
+export const Route = createFileRoute("/auth")({
+  component: AuthLayout,
+})
+
+function AuthLayout() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+  const copy = pathname.includes("/onboarding")
+    ? {
+        label: "Organization setup",
+        body: "Create your organization, secure your account, and bring teammates in when you're ready.",
+      }
+    : {
+        label: "Sign-in design",
+        body: "Split layout with a quiet brand panel and a single centered form.",
+      }
+
+  return (
+    <AuthSplitLayout
+      left={
+        <div className="flex h-full flex-col justify-between p-12">
+          <div className="flex items-center gap-2 font-mono text-sm">
+            <span className="inline-block h-2 w-2 rounded-full bg-foreground" />
+            <span className="tracking-[0.2em] uppercase">
+              Sean&apos;s scratch pad
+            </span>
+          </div>
+          <div className="max-w-md">
+            <div className="font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+              {copy.label}
+            </div>
+            <p className="mt-3 font-heading text-xl leading-snug md:text-2xl">
+              {copy.body}
+            </p>
+          </div>
+        </div>
+      }
+      right={<Outlet />}
+    />
+  )
+}
+
+function AuthSplitLayout({
+  left,
+  right,
+  className,
+  frameClassName,
+  leftClassName,
+  rightClassName,
+}: {
+  left: ReactNode
+  right: ReactNode
+  className?: string
+  frameClassName?: string
+  leftClassName?: string
+  rightClassName?: string
+}) {
+  return (
+    <div
+      className={cn(
+        "relative h-svh overflow-hidden bg-background text-foreground 2xl:flex 2xl:h-auto 2xl:min-h-svh 2xl:items-center 2xl:justify-center 2xl:overflow-visible 2xl:p-6",
+        className
+      )}
+    >
+      <ThemeToggle className="absolute top-6 right-6 z-30" />
+      <div
+        className={cn(
+          "relative mx-auto flex h-full w-full max-w-400",
+          "2xl:aspect-video 2xl:h-auto 2xl:min-h-0 2xl:w-[min(94vw,calc(92svh*16/9))] 2xl:max-w-none",
+          "2xl:overflow-hidden 2xl:rounded-2xl 2xl:border 2xl:border-border/70 2xl:bg-background/95 2xl:shadow-[0_25px_80px_-24px_rgba(0,0,0,0.75)]",
+          frameClassName
+        )}
+      >
+        <div
+          className={cn(
+            "relative hidden flex-1 overflow-hidden border-r border-border/60 lg:block",
+            leftClassName
+          )}
+        >
+          {left}
+        </div>
+        <div
+          className={cn(
+            "relative flex w-full flex-col items-center justify-center overflow-y-auto px-6 py-10 lg:w-155 lg:px-14",
+            rightClassName
+          )}
+        >
+          {right}
+        </div>
+      </div>
+    </div>
+  )
+}

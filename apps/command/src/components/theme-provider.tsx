@@ -1,76 +1,156 @@
-import { createContext, useContext, useEffect, useState } from "react"
+"use client";
 
-type Theme = "dark" | "light" | "system"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import type { OrbitThemePalette } from "@/lib/themes/types";
+import { isOrbitThemePalette } from "@/lib/themes/types";
+import { DEFAULT_PALETTE } from "@/lib/themes/palettes";
 
-type ThemeProviderProps = {
-  children: React.ReactNode
-  defaultTheme?: Theme
-  storageKey?: string
+/** localStorage key for mode preference. */
+export const ORBIT_THEME_STORAGE_KEY = "orbit-theme";
+/** localStorage key for palette preference. */
+export const ORBIT_THEME_PALETTE_STORAGE_KEY = "orbit-theme-palette";
+
+export type OrbitThemePreference = "light" | "dark" | "system";
+
+function readPreference(): OrbitThemePreference {
+  if (typeof window === "undefined") return "system";
+  try {
+    const raw = localStorage.getItem(ORBIT_THEME_STORAGE_KEY);
+    if (raw === "light" || raw === "dark" || raw === "system") return raw;
+  } catch {
+    /* ignore */
+  }
+  return "system";
 }
 
-type ThemeProviderState = {
-  theme: Theme
-  setTheme: (theme: Theme) => void
+function readPalette(): OrbitThemePalette {
+  if (typeof window === "undefined") return DEFAULT_PALETTE;
+  try {
+    const raw = localStorage.getItem(ORBIT_THEME_PALETTE_STORAGE_KEY);
+    if (isOrbitThemePalette(raw)) return raw;
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_PALETTE;
 }
 
-const initialState: ThemeProviderState = {
-  theme: "system",
-  setTheme: () => null,
+function readOsScheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
+type ThemeContextValue = {
+  preference: OrbitThemePreference;
+  resolved: "light" | "dark";
+  palette: OrbitThemePalette;
+  setPreference: (p: OrbitThemePreference) => void;
+  setPalette: (p: OrbitThemePalette) => void;
+  toggleLightDark: () => void;
+};
 
-export function ThemeProvider({
-  children,
-  defaultTheme = "system",
-  storageKey = "vite-ui-theme",
-  ...props
-}: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () =>
-      (typeof window !== "undefined"
-        ? (localStorage.getItem(storageKey) as Theme)
-        : null) || defaultTheme
-  )
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [preference, setPreferenceState] = useState<OrbitThemePreference>(() =>
+    typeof window === "undefined" ? "system" : readPreference(),
+  );
+
+  const [osScheme, setOsScheme] = useState<"light" | "dark">(() =>
+    typeof window === "undefined" ? "dark" : readOsScheme(),
+  );
+
+  const [palette, setPaletteState] = useState<OrbitThemePalette>(() =>
+    typeof window === "undefined" ? DEFAULT_PALETTE : readPalette(),
+  );
+
+  const resolved = useMemo(
+    () => (preference === "system" ? osScheme : preference),
+    [preference, osScheme],
+  );
 
   useEffect(() => {
-    const root = window.document.documentElement
+    document.documentElement.classList.toggle("dark", resolved === "dark");
+  }, [resolved]);
 
-    root.classList.remove("light", "dark")
+  useEffect(() => {
+    document.documentElement.setAttribute("data-palette", palette);
+  }, [palette]);
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-
-      root.classList.add(systemTheme)
-      return
+  useEffect(() => {
+    try {
+      localStorage.setItem(ORBIT_THEME_STORAGE_KEY, preference);
+    } catch {
+      /* ignore */
     }
+  }, [preference]);
 
-    root.classList.add(theme)
-  }, [theme])
+  useEffect(() => {
+    try {
+      localStorage.setItem(ORBIT_THEME_PALETTE_STORAGE_KEY, palette);
+    } catch {
+      /* ignore */
+    }
+  }, [palette]);
 
-  const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
-    },
-  }
+  useEffect(() => {
+    if (preference !== "system") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => setOsScheme(mq.matches ? "dark" : "light");
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [preference]);
+
+  const setPreference = useCallback((p: OrbitThemePreference) => {
+    setPreferenceState(p);
+  }, []);
+
+  const setPalette = useCallback((p: OrbitThemePalette) => {
+    setPaletteState(p);
+  }, []);
+
+  const toggleLightDark = useCallback(() => {
+    setPreferenceState((prev) => {
+      const r =
+        prev === "system"
+          ? window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light"
+          : prev;
+      return r === "dark" ? "light" : "dark";
+    });
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      preference,
+      resolved,
+      palette,
+      setPreference,
+      setPalette,
+      toggleLightDark,
+    }),
+    [preference, resolved, palette, setPreference, setPalette, toggleLightDark],
+  );
 
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
-      {children}
-    </ThemeProviderContext.Provider>
-  )
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 }
 
-export const useTheme = () => {
-  const context = useContext(ThemeProviderContext)
-
-  if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider")
-
-  return context
+export function useTheme(): ThemeContextValue {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) {
+    throw new Error("useTheme must be used within ThemeProvider");
+  }
+  return ctx;
 }
