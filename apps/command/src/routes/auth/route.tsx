@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute } from "@tanstack/react-router"
+import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router"
 import { cn } from "@workspace/ui/lib/utils"
 import type { ReactNode } from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -8,6 +8,19 @@ export const Route = createFileRoute("/auth")({
 })
 
 function AuthLayout() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+  const copy = pathname.includes("/onboarding")
+    ? {
+        label: "First steps",
+        body: "A guided multi-step setup, paced so each screen carries one decision at a time.",
+      }
+    : {
+        label: "Sign-in design",
+        body: "Split layout with a quiet brand panel and a single centered form.",
+      }
+
   return (
     <AuthSplitLayout
       left={
@@ -20,10 +33,10 @@ function AuthLayout() {
           </div>
           <div className="max-w-md">
             <div className="font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
-              Sign-in design
+              {copy.label}
             </div>
             <p className="mt-3 font-heading text-xl leading-snug md:text-2xl">
-              Split layout with a quiet brand panel and a single centered form.
+              {copy.body}
             </p>
           </div>
         </div>

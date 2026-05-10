@@ -1,9 +1,14 @@
 import { useState } from "react"
 import { useForm } from "@tanstack/react-form"
+import { createFileRoute } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { z } from "zod"
+
+export const Route = createFileRoute("/auth/onboarding/")({
+  component: OnboardingPage,
+})
 
 const STEPS = ["Workspace", "Invite", "Ready"] as const
 
@@ -43,7 +48,7 @@ function fieldError(errors: Array<unknown>) {
   return typeof firstError === "string" ? firstError : String(firstError)
 }
 
-export function OnboardingShowcasePage() {
+function OnboardingPage() {
   return <OnboardingFlow />
 }
 

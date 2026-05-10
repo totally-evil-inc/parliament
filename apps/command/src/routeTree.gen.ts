@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthSignInIndexRouteImport } from './routes/auth/sign-in/index'
+import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/auth',
@@ -28,29 +29,37 @@ const AuthSignInIndexRoute = AuthSignInIndexRouteImport.update({
   path: '/sign-in/',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const AuthOnboardingIndexRoute = AuthOnboardingIndexRouteImport.update({
+  id: '/onboarding/',
+  path: '/onboarding/',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
+  '/auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/auth/sign-in/': typeof AuthSignInIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
+  '/auth/onboarding': typeof AuthOnboardingIndexRoute
   '/auth/sign-in': typeof AuthSignInIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
+  '/auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/auth/sign-in/': typeof AuthSignInIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/auth/sign-in/'
+  fullPaths: '/' | '/auth' | '/auth/onboarding/' | '/auth/sign-in/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/auth/sign-in'
-  id: '__root__' | '/' | '/auth' | '/auth/sign-in/'
+  to: '/' | '/auth' | '/auth/onboarding' | '/auth/sign-in'
+  id: '__root__' | '/' | '/auth' | '/auth/onboarding/' | '/auth/sign-in/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -81,14 +90,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInIndexRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/auth/onboarding/': {
+      id: '/auth/onboarding/'
+      path: '/onboarding'
+      fullPath: '/auth/onboarding/'
+      preLoaderRoute: typeof AuthOnboardingIndexRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
   }
 }
 
 interface AuthRouteRouteChildren {
+  AuthOnboardingIndexRoute: typeof AuthOnboardingIndexRoute
   AuthSignInIndexRoute: typeof AuthSignInIndexRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
+  AuthOnboardingIndexRoute: AuthOnboardingIndexRoute,
   AuthSignInIndexRoute: AuthSignInIndexRoute,
 }
 
