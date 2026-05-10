@@ -4,11 +4,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { z } from "zod"
-import { AuthShell, useAuthTypingImpulse } from "./auth-shell"
-import {
-  bumpParticleTypingImpulse,
-  pulseParticleSubmitImpulse,
-} from "@/components/particle-field"
+import { AuthShell } from "./auth-shell"
 
 const STEPS = ["Workspace", "Invite", "Ready"] as const
 
@@ -60,19 +56,14 @@ function OnboardingFlow() {
   const [step, setStep] = useState(0)
   const [workspace, setWorkspace] = useState("")
   const [invitees, setInvitees] = useState<Array<string>>([])
-  const typingImpulse = useAuthTypingImpulse()
 
   const next = () => {
-    pulseParticleSubmitImpulse(typingImpulse)
     setStep((s) => Math.min(s + 1, STEPS.length - 1))
   }
   const back = () => setStep((s) => Math.max(s - 1, 0))
 
   return (
-    <div
-      className="w-full max-w-lg"
-      onKeyDown={(e) => bumpParticleTypingImpulse(typingImpulse, e)}
-    >
+    <div className="w-full max-w-lg">
       <Stepper step={step} />
 
       {step === 0 ? (

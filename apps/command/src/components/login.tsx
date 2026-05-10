@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { useForm } from "@tanstack/react-form"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -6,11 +6,7 @@ import { Label } from "@workspace/ui/components/label"
 import { Separator } from "@workspace/ui/components/separator"
 import { Kbd } from "@workspace/ui/components/kbd"
 import { z } from "zod"
-import { AuthShell, useAuthTypingImpulse } from "./auth-shell"
-import {
-  bumpParticleTypingImpulse,
-  pulseParticleSubmitImpulse,
-} from "@/components/particle-field"
+import { AuthShell } from "./auth-shell"
 
 const magicLinkSchema = z.object({
   email: z.string().trim().email("Enter a valid email address"),
@@ -92,8 +88,6 @@ function OrSeparator() {
 }
 
 function MagicLinkForm() {
-  const formRef = useRef<HTMLFormElement>(null)
-  const typingImpulse = useAuthTypingImpulse()
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
   const form = useForm({
@@ -107,7 +101,6 @@ function MagicLinkForm() {
     onSubmit: ({ value }) => {
       const email = value.email.trim().toLowerCase()
 
-      pulseParticleSubmitImpulse(typingImpulse)
       setPending(true)
       window.setTimeout(() => {
         setSentTo(email)
@@ -119,13 +112,11 @@ function MagicLinkForm() {
   return (
     <>
       <form
-        ref={formRef}
         onSubmit={(e) => {
           e.preventDefault()
           e.stopPropagation()
           void form.handleSubmit()
         }}
-        onKeyDown={(e) => bumpParticleTypingImpulse(typingImpulse, e)}
         className="mt-8 flex flex-col gap-4"
       >
         <form.Field name="email">
