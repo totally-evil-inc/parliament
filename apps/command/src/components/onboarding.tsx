@@ -4,7 +4,6 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { z } from "zod"
-import { AuthShell } from "./auth-shell"
 
 const STEPS = ["Workspace", "Invite", "Ready"] as const
 
@@ -45,11 +44,7 @@ function fieldError(errors: Array<unknown>) {
 }
 
 export function OnboardingShowcasePage() {
-  return (
-    <AuthShell variant="onboarding">
-      <OnboardingFlow />
-    </AuthShell>
-  )
+  return <OnboardingFlow />
 }
 
 function OnboardingFlow() {

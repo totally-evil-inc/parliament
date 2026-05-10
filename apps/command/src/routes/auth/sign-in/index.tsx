@@ -1,14 +1,18 @@
 import { useState } from "react"
 import { useForm } from "@tanstack/react-form"
+import { createFileRoute } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import { Kbd } from "@workspace/ui/components/kbd"
 import { Label } from "@workspace/ui/components/label"
 import { Separator } from "@workspace/ui/components/separator"
-import { Kbd } from "@workspace/ui/components/kbd"
 import { z } from "zod"
-import { AuthShell } from "./auth-shell"
 
-const magicLinkSchema = z.object({
+export const Route = createFileRoute("/auth/sign-in/")({
+  component: SignInPage,
+})
+
+const signInSchema = z.object({
   email: z.string().trim().email("Enter a valid email address"),
 })
 
@@ -40,20 +44,14 @@ function fieldError(errors: Array<unknown>) {
   return typeof firstError === "string" ? firstError : String(firstError)
 }
 
-export function LoginShowcasePage() {
-  return (
-    <AuthShell variant="welcome">
-      <LoginForm />
-    </AuthShell>
-  )
-}
-
-function LoginForm() {
+function SignInPage() {
   return (
     <>
       <div className="absolute top-6 left-6 flex items-center gap-2 font-mono text-sm lg:hidden">
         <span className="inline-block h-2 w-2 rounded-full bg-foreground" />
-        <span className="tracking-[0.2em] uppercase">Sean's scratch pad</span>
+        <span className="tracking-[0.2em] uppercase">
+          Sean&apos;s scratch pad
+        </span>
       </div>
 
       <div className="w-full max-w-lg">
@@ -75,18 +73,6 @@ function LoginForm() {
   )
 }
 
-function OrSeparator() {
-  return (
-    <div className="my-6 flex items-center gap-3">
-      <Separator className="flex-1" />
-      <span className="font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
-        or
-      </span>
-      <Separator className="flex-1" />
-    </div>
-  )
-}
-
 function MagicLinkForm() {
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
@@ -95,8 +81,8 @@ function MagicLinkForm() {
       email: "",
     },
     validators: {
-      onChange: zodFieldValidator(magicLinkSchema),
-      onSubmit: zodFieldValidator(magicLinkSchema),
+      onChange: zodFieldValidator(signInSchema),
+      onSubmit: zodFieldValidator(signInSchema),
     },
     onSubmit: ({ value }) => {
       const email = value.email.trim().toLowerCase()
@@ -125,9 +111,9 @@ function MagicLinkForm() {
 
             return (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="magic-link-email">Email</Label>
+                <Label htmlFor="sign-in-email">Email</Label>
                 <Input
-                  id="magic-link-email"
+                  id="sign-in-email"
                   type="email"
                   required
                   placeholder="you@example.com"
@@ -136,13 +122,11 @@ function MagicLinkForm() {
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   aria-invalid={!!error}
-                  aria-describedby={
-                    error ? "magic-link-email-error" : undefined
-                  }
+                  aria-describedby={error ? "sign-in-email-error" : undefined}
                 />
                 {error ? (
                   <p
-                    id="magic-link-email-error"
+                    id="sign-in-email-error"
                     className="text-xs text-destructive"
                   >
                     {error}
@@ -179,6 +163,18 @@ function MagicLinkForm() {
         </div>
       ) : null}
     </>
+  )
+}
+
+function OrSeparator() {
+  return (
+    <div className="my-6 flex items-center gap-3">
+      <Separator className="flex-1" />
+      <span className="font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+        or
+      </span>
+      <Separator className="flex-1" />
+    </div>
   )
 }
 
