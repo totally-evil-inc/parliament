@@ -13,8 +13,8 @@ function AuthLayout() {
   })
   const copy = pathname.includes("/onboarding")
     ? {
-        label: "First steps",
-        body: "A guided multi-step setup, paced so each screen carries one decision at a time.",
+        label: "Organization setup",
+        body: "Create your organization, secure your account, and bring teammates in when you're ready.",
       }
     : {
         label: "Sign-in design",
