@@ -6,43 +6,12 @@ import { Input } from "@workspace/ui/components/input"
 import { Kbd } from "@workspace/ui/components/kbd"
 import { Label } from "@workspace/ui/components/label"
 import { Separator } from "@workspace/ui/components/separator"
-import { z } from "zod"
+import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
+import { signInSchema } from "@/features/auth/sign-in/schema"
 
 export const Route = createFileRoute("/auth/sign-in/")({
   component: SignInPage,
 })
-
-const signInSchema = z.object({
-  email: z.string().trim().email("Enter a valid email address"),
-})
-
-function zodFieldValidator<TValue>(schema: z.ZodType<TValue>) {
-  return ({ value }: { value: unknown }) => {
-    const result = schema.safeParse(value)
-
-    if (result.success) return undefined
-
-    const fields: Record<string, string> = {}
-
-    for (const issue of result.error.issues) {
-      const fieldName = issue.path[0]
-
-      if (typeof fieldName === "string") {
-        fields[fieldName] = issue.message
-      }
-    }
-
-    return Object.keys(fields).length > 0 ? { fields } : undefined
-  }
-}
-
-function fieldError(errors: Array<unknown>) {
-  const firstError = errors[0]
-
-  if (!firstError) return undefined
-
-  return typeof firstError === "string" ? firstError : String(firstError)
-}
 
 function SignInPage() {
   return (

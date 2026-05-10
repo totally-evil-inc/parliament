@@ -4,49 +4,16 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import { z } from "zod"
+import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
+import { ONBOARDING_STEPS } from "@/features/auth/onboarding/constants"
+import {
+  inviteSchema,
+  workspaceSchema,
+} from "@/features/auth/onboarding/schema"
 
 export const Route = createFileRoute("/auth/onboarding/")({
   component: OnboardingPage,
 })
-
-const STEPS = ["Workspace", "Invite", "Ready"] as const
-
-const workspaceSchema = z.object({
-  workspace: z.string().trim().min(1, "Workspace name is required"),
-})
-
-const inviteSchema = z.object({
-  email: z.string().trim().email("Enter a valid email address"),
-})
-
-function zodFieldValidator<TValue>(schema: z.ZodType<TValue>) {
-  return ({ value }: { value: unknown }) => {
-    const result = schema.safeParse(value)
-
-    if (result.success) return undefined
-
-    const fields: Record<string, string> = {}
-
-    for (const issue of result.error.issues) {
-      const fieldName = issue.path[0]
-
-      if (typeof fieldName === "string") {
-        fields[fieldName] = issue.message
-      }
-    }
-
-    return Object.keys(fields).length > 0 ? { fields } : undefined
-  }
-}
-
-function fieldError(errors: Array<unknown>) {
-  const firstError = errors[0]
-
-  if (!firstError) return undefined
-
-  return typeof firstError === "string" ? firstError : String(firstError)
-}
 
 function OnboardingPage() {
   return <OnboardingFlow />
@@ -58,7 +25,7 @@ function OnboardingFlow() {
   const [invitees, setInvitees] = useState<Array<string>>([])
 
   const next = () => {
-    setStep((s) => Math.min(s + 1, STEPS.length - 1))
+    setStep((s) => Math.min(s + 1, ONBOARDING_STEPS.length - 1))
   }
   const back = () => setStep((s) => Math.max(s - 1, 0))
 
@@ -110,10 +77,10 @@ function Stepper({ step }: { step: number }) {
   return (
     <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
       <span>
-        Step {String(step + 1).padStart(2, "0")} / {STEPS.length}
+        Step {String(step + 1).padStart(2, "0")} / {ONBOARDING_STEPS.length}
       </span>
       <div className="ml-2 flex items-center gap-1.5">
-        {STEPS.map((_, i) => (
+        {ONBOARDING_STEPS.map((_, i) => (
           <span
             key={i}
             className={`h-1.5 rounded-full transition-all ${
