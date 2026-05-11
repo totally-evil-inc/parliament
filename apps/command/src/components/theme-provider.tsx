@@ -8,21 +8,25 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { OrbitThemePalette } from "@/lib/themes/types";
-import { isOrbitThemePalette } from "@/lib/themes/types";
+import type { ThemePalette } from "@/lib/themes/types";
+import { isThemePalette } from "@/lib/themes/types";
 import { DEFAULT_PALETTE } from "@/lib/themes/palettes";
 
 /** localStorage key for mode preference. */
-export const ORBIT_THEME_STORAGE_KEY = "orbit-theme";
+export const APP_THEME_STORAGE_KEY = "command-theme";
 /** localStorage key for palette preference. */
-export const ORBIT_THEME_PALETTE_STORAGE_KEY = "orbit-theme-palette";
+export const APP_PALETTE_STORAGE_KEY = "command-palette";
 
-export type OrbitThemePreference = "light" | "dark" | "system";
+/** @deprecated legacy orbit keys */
+const LEGACY_THEME_KEY = "orbit-theme";
+const LEGACY_PALETTE_KEY = "orbit-theme-palette";
 
-function readPreference(): OrbitThemePreference {
+export type ThemePreference = "light" | "dark" | "system";
+
+function readPreference(): ThemePreference {
   if (typeof window === "undefined") return "system";
   try {
-    const raw = localStorage.getItem(ORBIT_THEME_STORAGE_KEY);
+    const raw = localStorage.getItem(APP_THEME_STORAGE_KEY) ?? localStorage.getItem(LEGACY_THEME_KEY);
     if (raw === "light" || raw === "dark" || raw === "system") return raw;
   } catch {
     /* ignore */
@@ -30,11 +34,11 @@ function readPreference(): OrbitThemePreference {
   return "system";
 }
 
-function readPalette(): OrbitThemePalette {
+function readPalette(): ThemePalette {
   if (typeof window === "undefined") return DEFAULT_PALETTE;
   try {
-    const raw = localStorage.getItem(ORBIT_THEME_PALETTE_STORAGE_KEY);
-    if (isOrbitThemePalette(raw)) return raw;
+    const raw = localStorage.getItem(APP_PALETTE_STORAGE_KEY) ?? localStorage.getItem(LEGACY_PALETTE_KEY);
+    if (isThemePalette(raw)) return raw;
   } catch {
     /* ignore */
   }
@@ -49,18 +53,18 @@ function readOsScheme(): "light" | "dark" {
 }
 
 type ThemeContextValue = {
-  preference: OrbitThemePreference;
+  preference: ThemePreference;
   resolved: "light" | "dark";
-  palette: OrbitThemePalette;
-  setPreference: (p: OrbitThemePreference) => void;
-  setPalette: (p: OrbitThemePalette) => void;
+  palette: ThemePalette;
+  setPreference: (p: ThemePreference) => void;
+  setPalette: (p: ThemePalette) => void;
   toggleLightDark: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [preference, setPreferenceState] = useState<OrbitThemePreference>(() =>
+  const [preference, setPreferenceState] = useState<ThemePreference>(() =>
     typeof window === "undefined" ? "system" : readPreference(),
   );
 
@@ -68,7 +72,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     typeof window === "undefined" ? "dark" : readOsScheme(),
   );
 
-  const [palette, setPaletteState] = useState<OrbitThemePalette>(() =>
+  const [palette, setPaletteState] = useState<ThemePalette>(() =>
     typeof window === "undefined" ? DEFAULT_PALETTE : readPalette(),
   );
 
@@ -87,7 +91,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(ORBIT_THEME_STORAGE_KEY, preference);
+      localStorage.setItem(APP_THEME_STORAGE_KEY, preference);
     } catch {
       /* ignore */
     }
@@ -95,7 +99,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(ORBIT_THEME_PALETTE_STORAGE_KEY, palette);
+      localStorage.setItem(APP_PALETTE_STORAGE_KEY, palette);
     } catch {
       /* ignore */
     }
@@ -110,11 +114,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mq.removeEventListener("change", onChange);
   }, [preference]);
 
-  const setPreference = useCallback((p: OrbitThemePreference) => {
+  const setPreference = useCallback((p: ThemePreference) => {
     setPreferenceState(p);
   }, []);
 
-  const setPalette = useCallback((p: OrbitThemePalette) => {
+  const setPalette = useCallback((p: ThemePalette) => {
     setPaletteState(p);
   }, []);
 

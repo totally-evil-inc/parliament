@@ -1,5 +1,5 @@
 import { Outlet, createFileRoute } from "@tanstack/react-router"
-import { WorkspaceLayout } from "@/features/workspace/components/workspace-layout"
+import { AppShell } from "@/layouts/app-shell"
 
 export const Route = createFileRoute("/_workspace")({
   component: WorkspaceRoute,
@@ -7,8 +7,8 @@ export const Route = createFileRoute("/_workspace")({
 
 function WorkspaceRoute() {
   return (
-    <WorkspaceLayout>
+    <AppShell>
       <Outlet />
-    </WorkspaceLayout>
+    </AppShell>
   )
 }

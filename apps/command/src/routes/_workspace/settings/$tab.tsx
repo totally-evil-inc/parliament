@@ -1,5 +1,5 @@
 import { Navigate, createFileRoute } from "@tanstack/react-router"
-import { WorkspaceSettingsPlaceholder } from "@/features/workspace/components/workspace-settings-placeholder"
+import { SettingsPlaceholder } from "@/features/workspace/settings/settings-placeholder"
 import {
   getWorkspaceSettingsTab,
   isWorkspaceSettingsParamTab,
@@ -16,5 +16,5 @@ function SettingsTabPage() {
     return <Navigate to="/settings" replace />
   }
 
-  return <WorkspaceSettingsPlaceholder tab={getWorkspaceSettingsTab(tab)} />
+  return <SettingsPlaceholder tab={getWorkspaceSettingsTab(tab)} />
 }

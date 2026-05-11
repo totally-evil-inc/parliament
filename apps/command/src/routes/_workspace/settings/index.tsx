@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { WorkspaceSettingsGeneral } from "@/features/workspace/components/workspace-settings-general"
+import { GeneralSettings } from "@/features/workspace/settings/general-settings"
 
 export const Route = createFileRoute("/_workspace/settings/")({
-  component: WorkspaceSettingsGeneral,
+  component: GeneralSettings,
 })

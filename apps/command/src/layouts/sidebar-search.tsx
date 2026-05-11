@@ -6,7 +6,7 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 
-export function WorkspaceSearch() {
+export function SidebarSearch() {
   return (
     <Tooltip>
       <TooltipTrigger

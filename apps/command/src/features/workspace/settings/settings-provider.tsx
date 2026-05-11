@@ -1,9 +1,9 @@
 import { createContext, useContext, useState } from "react"
 import type { ReactNode } from "react"
-import type { WorkspaceSettingsValues } from "@/features/workspace/components/workspace-settings-form"
+import type { WorkspaceSettingsValues } from "./settings-form"
 import { workspaceConfig } from "@/features/workspace/config"
 
-type WorkspaceSettingsContextValue = {
+type SettingsContextValue = {
   draftSettings: WorkspaceSettingsValues
   dirty: boolean
   updateSetting: <TKey extends keyof WorkspaceSettingsValues>(
@@ -14,7 +14,7 @@ type WorkspaceSettingsContextValue = {
   saveChanges: () => void
 }
 
-type WorkspaceSettingsProviderProps = {
+type SettingsProviderProps = {
   children: ReactNode
 }
 
@@ -28,12 +28,12 @@ const initialSettings = {
   showProjectIds: false,
 } satisfies WorkspaceSettingsValues
 
-const WorkspaceSettingsContext =
-  createContext<WorkspaceSettingsContextValue | null>(null)
+const SettingsContext =
+  createContext<SettingsContextValue | null>(null)
 
-export function WorkspaceSettingsProvider({
+export function SettingsProvider({
   children,
-}: WorkspaceSettingsProviderProps) {
+}: SettingsProviderProps) {
   const [savedSettings, setSavedSettings] =
     useState<WorkspaceSettingsValues>(initialSettings)
   const [draftSettings, setDraftSettings] =
@@ -60,7 +60,7 @@ export function WorkspaceSettingsProvider({
   }
 
   return (
-    <WorkspaceSettingsContext
+    <SettingsContext
       value={{
         draftSettings,
         dirty,
@@ -70,16 +70,16 @@ export function WorkspaceSettingsProvider({
       }}
     >
       {children}
-    </WorkspaceSettingsContext>
+    </SettingsContext>
   )
 }
 
-export function useWorkspaceSettings() {
-  const context = useContext(WorkspaceSettingsContext)
+export function useSettings() {
+  const context = useContext(SettingsContext)
 
   if (!context) {
     throw new Error(
-      "useWorkspaceSettings must be used inside WorkspaceSettingsProvider"
+      "useSettings must be used inside SettingsProvider"
     )
   }
 
