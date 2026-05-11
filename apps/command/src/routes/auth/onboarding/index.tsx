@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { z } from "zod"
 import { ONBOARDING_STEP_IDS } from "@/features/auth/onboarding/constants"
-import { useOnboardingFlow } from "@/features/auth/onboarding/use-onboarding-flow"
+import { useOnboardingFlow } from "@/hooks/use-onboarding-flow"
 import { Stepper } from "@/features/auth/onboarding/components/stepper"
 import { OrganizationStep } from "@/features/auth/onboarding/components/organization-step"
 import { AccountStep } from "@/features/auth/onboarding/components/account-step"

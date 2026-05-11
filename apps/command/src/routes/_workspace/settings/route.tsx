@@ -20,17 +20,14 @@ export const Route = createFileRoute("/_workspace/settings")({
 function SettingsLayout() {
   return (
     <SettingsProvider>
-      <div className="min-h-svh bg-background text-foreground">
-        <PageHeader
-          eyebrow="Settings"
-          title="Workspace settings"
-          description="Manage workspace identity, account access, billing, and developer keys."
-        />
-        <div className="grid min-h-[calc(100svh-7rem)] md:grid-cols-[180px_minmax(0,1fr)]">
-          <SettingsTabs />
-          <div className="min-w-0">
-            <Outlet />
-          </div>
+      <PageHeader
+        title="Workspace settings"
+        description="Manage workspace identity, account access, billing, and developer keys."
+      />
+      <div className="grid min-h-[calc(100svh-7rem)] md:grid-cols-[180px_minmax(0,1fr)]">
+        <SettingsTabs />
+        <div className="min-w-0">
+          <Outlet />
         </div>
       </div>
     </SettingsProvider>

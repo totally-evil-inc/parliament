@@ -5,7 +5,7 @@ import { Input } from "@workspace/ui/components/input"
 import { Kbd } from "@workspace/ui/components/kbd"
 import { Label } from "@workspace/ui/components/label"
 import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
-import { signInSchema } from "@/features/auth/sign-in/schema"
+import { signInSchema } from "@/utils/auth-schemas"
 
 export function MagicLinkForm() {
   const [sentTo, setSentTo] = useState<string | null>(null)

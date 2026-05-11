@@ -3,7 +3,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
-import { organizationSchema } from "../schema"
+import { organizationSchema } from "@/utils/auth-schemas"
 import { type OrganizationDraft, slugify } from "../onboarding-draft"
 
 export function OrganizationStep({

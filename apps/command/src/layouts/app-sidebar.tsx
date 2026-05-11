@@ -22,6 +22,7 @@ type AppSidebarProps = {
   workspaces: Array<WorkspaceIdentity>
   primaryNav: Array<WorkspaceNavItem>
   user: WorkspaceUserProfile
+  variant?: "sidebar" | "floating" | "inset"
 }
 
 export function AppSidebar({
@@ -29,9 +30,11 @@ export function AppSidebar({
   workspaces,
   primaryNav,
   user,
+  variant = "sidebar",
 }: AppSidebarProps) {
   return (
     <Sidebar
+      variant={variant}
       collapsible="icon"
       className="border-r border-sidebar-border/80 bg-sidebar"
     >

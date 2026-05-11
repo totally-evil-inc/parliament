@@ -10,9 +10,8 @@ export const Route = createFileRoute("/_workspace/")({
 
 function HomePage() {
   return (
-    <div className="min-h-svh bg-background text-foreground">
+    <>
       <PageHeader
-        eyebrow="Home"
         title="Command center"
         description="A typed workspace shell with route-aware navigation, static seed data, and room for live organization data when the product needs it."
         action={<Button type="button">Create project</Button>}
@@ -23,6 +22,6 @@ function HomePage() {
           <MetricCard key={stat.label} {...stat} />
         ))}
       </div>
-    </div>
+    </>
   )
 }

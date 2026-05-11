@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import { ONBOARDING_STEP_IDS } from "./constants"
-import { type OrganizationDraft, readDraft, writeDraft } from "./onboarding-draft"
+import { ONBOARDING_STEP_IDS } from "@/features/auth/onboarding/constants"
+import { type OrganizationDraft, readDraft, writeDraft } from "@/features/auth/onboarding/onboarding-draft"
 import { authClient } from "@/lib/auth-client"
 
 export type OnboardingStep = (typeof ONBOARDING_STEP_IDS)[number]
