@@ -39,7 +39,7 @@ export function isWorkspaceSettingsTab(
 }
 
 export function getWorkspaceSettingsTab(
-  value: WorkspaceSettingsTab
+  value: string | undefined
 ): WorkspaceSettingsTabItem {
   return (
     workspaceSettingsTabs.find((tab) => tab.value === value) ??

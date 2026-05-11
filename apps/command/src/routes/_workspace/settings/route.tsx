@@ -4,7 +4,7 @@ import {
   createFileRoute,
   useParams,
 } from "@tanstack/react-router"
-import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
+import { cn } from "@workspace/ui/lib/utils"
 import { WorkspaceSettingsProvider } from "@/features/workspace/components/workspace-settings-context"
 import { WorkspacePageHeader } from "@/features/workspace/components/workspace-page-header"
 import {
@@ -44,28 +44,27 @@ function WorkspaceSettingsTabs() {
     : defaultWorkspaceSettingsTab
 
   return (
-    <Tabs
-      value={activeTab}
-      orientation="vertical"
+    <nav
+      aria-label="Settings sections"
       className="border-b border-border/60 px-6 py-4 md:border-r md:border-b-0 md:px-4"
     >
-      <TabsList variant="line" className="w-full">
+      <div className="flex gap-1 overflow-x-auto md:flex-col md:overflow-visible">
         {workspaceSettingsTabs.map((tab) => (
-          <TabsTrigger
+          <Link
             key={tab.value}
-            value={tab.value}
-            render={
-              <Link
-                to="/settings/$tab"
-                params={{ tab: tab.value }}
-                preload="intent"
-              />
-            }
+            to="/settings/$tab"
+            params={{ tab: tab.value }}
+            preload="intent"
+            className={cn(
+              "relative inline-flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium whitespace-nowrap text-foreground/60 transition-colors hover:text-foreground md:w-full",
+              activeTab === tab.value &&
+                "bg-background text-foreground after:absolute after:inset-y-1 after:-right-4 after:hidden after:w-0.5 after:bg-foreground md:after:block"
+            )}
           >
             {tab.label}
-          </TabsTrigger>
+          </Link>
         ))}
-      </TabsList>
-    </Tabs>
+      </div>
+    </nav>
   )
 }

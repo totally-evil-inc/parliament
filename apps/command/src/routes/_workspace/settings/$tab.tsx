@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import { WorkspaceSettingsGeneral } from "@/features/workspace/components/workspace-settings-general"
 import { WorkspaceSettingsPlaceholder } from "@/features/workspace/components/workspace-settings-placeholder"
 import {
@@ -14,9 +14,7 @@ export const Route = createFileRoute("/_workspace/settings/$tab")({
         return { tab: params.tab }
       }
 
-      throw redirect({
-        href: `/settings/${defaultWorkspaceSettingsTab}`,
-      })
+      return { tab: defaultWorkspaceSettingsTab }
     },
   },
   component: SettingsTabPage,
