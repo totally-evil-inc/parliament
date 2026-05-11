@@ -52,8 +52,12 @@ function WorkspaceSettingsTabs() {
         {workspaceSettingsTabs.map((tab) => (
           <Link
             key={tab.value}
-            to="/settings/$tab"
-            params={{ tab: tab.value }}
+            to={tab.to}
+            params={
+              tab.value === defaultWorkspaceSettingsTab
+                ? undefined
+                : { tab: tab.value }
+            }
             preload="intent"
             className={cn(
               "relative inline-flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium whitespace-nowrap text-foreground/60 transition-colors hover:text-foreground md:w-full",

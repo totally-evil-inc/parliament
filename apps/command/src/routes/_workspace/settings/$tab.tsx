@@ -1,30 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router"
-import { WorkspaceSettingsGeneral } from "@/features/workspace/components/workspace-settings-general"
+import { Navigate, createFileRoute } from "@tanstack/react-router"
 import { WorkspaceSettingsPlaceholder } from "@/features/workspace/components/workspace-settings-placeholder"
 import {
-  defaultWorkspaceSettingsTab,
   getWorkspaceSettingsTab,
-  isWorkspaceSettingsTab,
+  isWorkspaceSettingsParamTab,
 } from "@/features/workspace/settings"
 
 export const Route = createFileRoute("/_workspace/settings/$tab")({
-  params: {
-    parse: (params) => {
-      if (isWorkspaceSettingsTab(params.tab)) {
-        return { tab: params.tab }
-      }
-
-      return { tab: defaultWorkspaceSettingsTab }
-    },
-  },
   component: SettingsTabPage,
 })
 
 function SettingsTabPage() {
   const { tab } = Route.useParams()
 
-  if (tab === "general") {
-    return <WorkspaceSettingsGeneral />
+  if (!isWorkspaceSettingsParamTab(tab)) {
+    return <Navigate to="/settings" replace />
   }
 
   return <WorkspaceSettingsPlaceholder tab={getWorkspaceSettingsTab(tab)} />
