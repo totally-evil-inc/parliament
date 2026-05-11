@@ -16,6 +16,7 @@ export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     <SidebarProvider defaultOpen={false}>
       <WorkspaceSidebar
         workspace={workspaceConfig.workspace}
+        workspaces={workspaceConfig.workspaces}
         primaryNav={workspaceConfig.primaryNav}
         user={workspaceConfig.user}
       />

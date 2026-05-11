@@ -6,7 +6,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarRail,
-  SidebarSeparator,
 } from "@workspace/ui/components/sidebar"
 import type {
   WorkspaceIdentity,
@@ -20,12 +19,14 @@ import { WorkspaceUser } from "@/features/workspace/components/workspace-user"
 
 type WorkspaceSidebarProps = {
   workspace: WorkspaceIdentity
+  workspaces: Array<WorkspaceIdentity>
   primaryNav: Array<WorkspaceNavItem>
   user: WorkspaceUserProfile
 }
 
 export function WorkspaceSidebar({
   workspace,
+  workspaces,
   primaryNav,
   user,
 }: WorkspaceSidebarProps) {
@@ -35,7 +36,7 @@ export function WorkspaceSidebar({
       className="border-r border-sidebar-border/80 bg-sidebar"
     >
       <SidebarHeader className="gap-2 border-b border-sidebar-border/80 p-2">
-        <WorkspaceSwitcher workspace={workspace} />
+        <WorkspaceSwitcher workspace={workspace} workspaces={workspaces} />
         <WorkspaceSearch />
       </SidebarHeader>
 
@@ -43,8 +44,7 @@ export function WorkspaceSidebar({
         <PrimaryNav items={primaryNav} />
       </SidebarContent>
 
-      <SidebarSeparator />
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-sidebar-border/80 p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <WorkspaceUser user={user} />

@@ -35,9 +35,10 @@ export type WorkspaceConfig = {
   }
   user: {
     name: string
-    status: string
+    email: string
     initials: string
   }
+  workspaces: Array<WorkspaceIdentity>
   primaryNav: Array<WorkspaceNavItem>
 }
 
@@ -52,9 +53,26 @@ export const workspaceConfig = {
   },
   user: {
     name: "Muchiri",
-    status: "Online",
+    email: "muchiri@example.com",
     initials: "M",
   },
+  workspaces: [
+    {
+      name: "Command",
+      plan: "Pro",
+      members: 24,
+    },
+    {
+      name: "Parliament",
+      plan: "Team",
+      members: 8,
+    },
+    {
+      name: "Scratch pad",
+      plan: "Free",
+      members: 1,
+    },
+  ],
   primaryNav: [
     { icon: Home01Icon, label: "Home", to: "/" },
     { icon: InboxIcon, label: "Inbox", badge: 4 },
