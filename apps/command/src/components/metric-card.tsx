@@ -1,19 +1,19 @@
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { IconSvgElement } from "@hugeicons/react"
 
-type WorkspaceStatProps = {
+type MetricCardProps = {
   label: string
   value: string
   detail: string
   icon: IconSvgElement
 }
 
-export function WorkspaceStat({
+export function MetricCard({
   label,
   value,
   detail,
   icon,
-}: WorkspaceStatProps) {
+}: MetricCardProps) {
   return (
     <div className="rounded-lg border border-border/70 bg-card p-4 text-card-foreground">
       <div className="flex items-center justify-between gap-3">

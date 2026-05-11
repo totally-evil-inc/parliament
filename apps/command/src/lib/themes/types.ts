@@ -1,7 +1,7 @@
-export const ORBIT_THEME_MODES = ["light", "dark", "system"] as const;
-export type OrbitThemeMode = (typeof ORBIT_THEME_MODES)[number];
+export const THEME_MODES = ["light", "dark", "system"] as const;
+export type ThemeMode = (typeof THEME_MODES)[number];
 
-export const ORBIT_THEME_PALETTES = [
+export const THEME_PALETTES = [
   "graphite",
   "indigo",
   "crimson",
@@ -9,11 +9,11 @@ export const ORBIT_THEME_PALETTES = [
   "amber",
   "violet",
 ] as const;
-export type OrbitThemePalette = (typeof ORBIT_THEME_PALETTES)[number];
+export type ThemePalette = (typeof THEME_PALETTES)[number];
 
-export function isOrbitThemePalette(value: unknown): value is OrbitThemePalette {
+export function isThemePalette(value: unknown): value is ThemePalette {
   return (
     typeof value === "string" &&
-    (ORBIT_THEME_PALETTES as ReadonlyArray<string>).includes(value)
+    (THEME_PALETTES as ReadonlyArray<string>).includes(value)
   );
 }

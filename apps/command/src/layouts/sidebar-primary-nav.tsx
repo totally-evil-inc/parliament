@@ -11,7 +11,7 @@ import {
 import type { IconSvgElement } from "@hugeicons/react"
 import type { WorkspaceNavItem } from "@/features/workspace/config"
 
-export function PrimaryNav({ items }: { items: Array<WorkspaceNavItem> }) {
+export function SidebarPrimaryNav({ items }: { items: Array<WorkspaceNavItem> }) {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })

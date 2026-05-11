@@ -21,11 +21,11 @@ import {
   UserIcon,
 } from "@hugeicons/core-free-icons"
 import type { WorkspaceUserProfile } from "@/features/workspace/config"
-import type { OrbitThemePreference } from "@/components/theme-provider"
+import type { ThemePreference } from "@/components/theme-provider"
 import { authClient } from "@/lib/auth-client"
 import { useTheme } from "@/components/theme-provider"
 
-function ThemeIcon({ preference }: { preference: OrbitThemePreference }) {
+function ThemeIcon({ preference }: { preference: ThemePreference }) {
   switch (preference) {
     case "light":
       return <HugeiconsIcon icon={Sun02Icon} />
@@ -36,7 +36,7 @@ function ThemeIcon({ preference }: { preference: OrbitThemePreference }) {
   }
 }
 
-export function WorkspaceUser({ user }: { user: WorkspaceUserProfile }) {
+export function AccountMenu({ user }: { user: WorkspaceUserProfile }) {
   const { setPreference } = useTheme()
 
   const handleSignOut = async () => {

@@ -14,7 +14,7 @@ import {
   NativeSelectOption,
 } from "@workspace/ui/components/native-select"
 import { Switch } from "@workspace/ui/components/switch"
-import { WorkspaceSettingsSection } from "@/features/workspace/components/workspace-settings-section"
+import { SettingsSection } from "./settings-section"
 
 export type WorkspaceSettingsValues = {
   name: string
@@ -26,7 +26,7 @@ export type WorkspaceSettingsValues = {
   showProjectIds: boolean
 }
 
-type WorkspaceSettingsFormProps = {
+type SettingsFormProps = {
   values: WorkspaceSettingsValues
   onChange: <TKey extends keyof WorkspaceSettingsValues>(
     key: TKey,
@@ -49,13 +49,13 @@ const dateFormatOptions = [
   { value: "mdy", label: "MM/DD/YYYY" },
 ]
 
-export function WorkspaceSettingsForm({
+export function SettingsForm({
   values,
   onChange,
-}: WorkspaceSettingsFormProps) {
+}: SettingsFormProps) {
   return (
     <div className="mx-auto max-w-4xl px-6 md:px-8">
-      <WorkspaceSettingsSection
+      <SettingsSection
         title="Identity"
         hint="Visible to anyone with access."
       >
@@ -84,7 +84,7 @@ export function WorkspaceSettingsForm({
         <Field>
           <FieldLabel htmlFor="workspace-slug">Slug</FieldLabel>
           <div className="flex h-7 items-center gap-1 rounded-md border border-input bg-input/20 px-2 font-mono text-xs/relaxed transition-colors focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30 dark:bg-input/30">
-            <span className="shrink-0 text-muted-foreground">orbit.so/</span>
+            <span className="shrink-0 text-muted-foreground">command.so/</span>
             <input
               id="workspace-slug"
               value={values.slug}
@@ -94,9 +94,9 @@ export function WorkspaceSettingsForm({
           </div>
           <FieldDescription>Used in URLs.</FieldDescription>
         </Field>
-      </WorkspaceSettingsSection>
+      </SettingsSection>
 
-      <WorkspaceSettingsSection
+      <SettingsSection
         title="Region"
         hint="Defaults applied to new members and exports."
       >
@@ -131,45 +131,45 @@ export function WorkspaceSettingsForm({
             ))}
           </NativeSelect>
         </Field>
-      </WorkspaceSettingsSection>
+      </SettingsSection>
 
-      <WorkspaceSettingsSection title="Defaults">
-        <WorkspaceSettingsSwitch
+      <SettingsSection title="Defaults">
+        <SettingsSwitch
           title="Public sign-up"
           description="Anyone with a workspace email can request access."
           checked={values.publicSignup}
           onCheckedChange={(checked) => onChange("publicSignup", checked)}
         />
-        <WorkspaceSettingsSwitch
+        <SettingsSwitch
           title="Two-factor for admins"
           description="Require a second factor for owner and admin roles."
           checked={values.adminTwoFactor}
           onCheckedChange={(checked) => onChange("adminTwoFactor", checked)}
         />
-        <WorkspaceSettingsSwitch
+        <SettingsSwitch
           title="Show project IDs"
           description="Display the short ID next to project names everywhere."
           checked={values.showProjectIds}
           onCheckedChange={(checked) => onChange("showProjectIds", checked)}
         />
-      </WorkspaceSettingsSection>
+      </SettingsSection>
     </div>
   )
 }
 
-type WorkspaceSettingsSwitchProps = {
+type SettingsSwitchProps = {
   title: string
   description: string
   checked: boolean
   onCheckedChange: (checked: boolean) => void
 }
 
-function WorkspaceSettingsSwitch({
+function SettingsSwitch({
   title,
   description,
   checked,
   onCheckedChange,
-}: WorkspaceSettingsSwitchProps) {
+}: SettingsSwitchProps) {
   return (
     <Field
       orientation="horizontal"

@@ -5,16 +5,16 @@ import {
 } from "@workspace/ui/components/sidebar"
 import type { ReactNode } from "react"
 import { workspaceConfig } from "@/features/workspace/config"
-import { WorkspaceSidebar } from "@/features/workspace/components/workspace-sidebar"
+import { AppSidebar } from "./app-sidebar"
 
-type WorkspaceLayoutProps = {
+type AppShellProps = {
   children: ReactNode
 }
 
-export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
+export function AppShell({ children }: AppShellProps) {
   return (
     <SidebarProvider defaultOpen={false}>
-      <WorkspaceSidebar
+      <AppSidebar
         workspace={workspaceConfig.workspace}
         workspaces={workspaceConfig.workspaces}
         primaryNav={workspaceConfig.primaryNav}

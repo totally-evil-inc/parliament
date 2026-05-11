@@ -1,4 +1,4 @@
-import type { OrbitThemePalette } from "@/lib/themes/types";
+import type { ThemePalette } from "@/lib/themes/types";
 
 /**
  * Per-palette CSS variable overrides. Each palette declares its
@@ -22,7 +22,7 @@ export interface PaletteVars {
 }
 
 export interface PaletteDefinition {
-  readonly id: OrbitThemePalette;
+  readonly id: ThemePalette;
   readonly name: string;
   /** Short one-word accent description for aria-labels. */
   readonly accent: string;
@@ -32,7 +32,7 @@ export interface PaletteDefinition {
   readonly swatch: readonly [string, string];
 }
 
-export const PALETTES: Record<OrbitThemePalette, PaletteDefinition> = {
+export const PALETTES: Record<ThemePalette, PaletteDefinition> = {
   graphite: {
     id: "graphite",
     name: "Graphite",
@@ -167,4 +167,4 @@ export const PALETTES: Record<OrbitThemePalette, PaletteDefinition> = {
   },
 };
 
-export const DEFAULT_PALETTE: OrbitThemePalette = "graphite";
+export const DEFAULT_PALETTE: ThemePalette = "graphite";

@@ -12,24 +12,24 @@ import type {
   WorkspaceNavItem,
   WorkspaceUserProfile,
 } from "@/features/workspace/config"
-import { PrimaryNav } from "@/features/workspace/components/primary-nav"
-import { WorkspaceSearch } from "@/features/workspace/components/workspace-search"
-import { WorkspaceSwitcher } from "@/features/workspace/components/workspace-switcher"
-import { WorkspaceUser } from "@/features/workspace/components/workspace-user"
+import { SidebarPrimaryNav } from "./sidebar-primary-nav"
+import { SidebarSearch } from "./sidebar-search"
+import { WorkspaceSwitcher } from "./workspace-switcher"
+import { AccountMenu } from "./account-menu"
 
-type WorkspaceSidebarProps = {
+type AppSidebarProps = {
   workspace: WorkspaceIdentity
   workspaces: Array<WorkspaceIdentity>
   primaryNav: Array<WorkspaceNavItem>
   user: WorkspaceUserProfile
 }
 
-export function WorkspaceSidebar({
+export function AppSidebar({
   workspace,
   workspaces,
   primaryNav,
   user,
-}: WorkspaceSidebarProps) {
+}: AppSidebarProps) {
   return (
     <Sidebar
       collapsible="icon"
@@ -37,17 +37,17 @@ export function WorkspaceSidebar({
     >
       <SidebarHeader className="gap-2 border-b border-sidebar-border/80 p-2">
         <WorkspaceSwitcher workspace={workspace} workspaces={workspaces} />
-        <WorkspaceSearch />
+        <SidebarSearch />
       </SidebarHeader>
 
       <SidebarContent className="gap-1">
-        <PrimaryNav items={primaryNav} />
+        <SidebarPrimaryNav items={primaryNav} />
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border/80 p-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <WorkspaceUser user={user} />
+            <AccountMenu user={user} />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

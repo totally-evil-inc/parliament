@@ -1,16 +1,16 @@
 import type { ReactNode } from "react"
 
-type WorkspaceSettingsSectionProps = {
+type SettingsSectionProps = {
   title: string
   hint?: string
   children: ReactNode
 }
 
-export function WorkspaceSettingsSection({
+export function SettingsSection({
   title,
   hint,
   children,
-}: WorkspaceSettingsSectionProps) {
+}: SettingsSectionProps) {
   return (
     <section className="grid gap-4 border-b border-border/60 py-8 last:border-b-0 md:grid-cols-[180px_minmax(0,1fr)] md:gap-x-10">
       <div>

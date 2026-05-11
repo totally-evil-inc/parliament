@@ -1,18 +1,18 @@
 import type { ReactNode } from "react"
 
-type WorkspacePageHeaderProps = {
+type PageHeaderProps = {
   eyebrow: string
   title: string
   description: string
   action?: ReactNode
 }
 
-export function WorkspacePageHeader({
+export function PageHeader({
   eyebrow,
   title,
   description,
   action,
-}: WorkspacePageHeaderProps) {
+}: PageHeaderProps) {
   return (
     <div className="flex flex-col gap-4 border-b border-border/60 px-6 py-6 md:flex-row md:items-end md:justify-between md:px-8">
       <div className="min-w-0">

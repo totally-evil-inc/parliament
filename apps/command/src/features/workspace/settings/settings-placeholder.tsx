@@ -6,13 +6,13 @@ import {
 } from "@workspace/ui/components/empty"
 import type { WorkspaceSettingsTabItem } from "@/features/workspace/settings"
 
-type WorkspaceSettingsPlaceholderProps = {
+type SettingsPlaceholderProps = {
   tab: WorkspaceSettingsTabItem
 }
 
-export function WorkspaceSettingsPlaceholder({
+export function SettingsPlaceholder({
   tab,
-}: WorkspaceSettingsPlaceholderProps) {
+}: SettingsPlaceholderProps) {
   return (
     <div className="mx-auto max-w-4xl px-6 py-8 md:px-8">
       <Empty className="min-h-64 border border-dashed border-border/70">
