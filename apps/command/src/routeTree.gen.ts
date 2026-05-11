@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
-import { Route as WorkspaceSettingsRouteImport } from './routes/_workspace/settings'
+import { Route as WorkspaceSettingsRouteRouteImport } from './routes/_workspace/settings/route'
 import { Route as AuthSignInIndexRouteImport } from './routes/auth/sign-in/index'
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
+import { Route as WorkspaceSettingsIndexRouteImport } from './routes/_workspace/settings/index'
+import { Route as WorkspaceSettingsTabRouteImport } from './routes/_workspace/settings/$tab'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/auth',
@@ -30,7 +32,7 @@ const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
   path: '/',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
-const WorkspaceSettingsRoute = WorkspaceSettingsRouteImport.update({
+const WorkspaceSettingsRouteRoute = WorkspaceSettingsRouteRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => WorkspaceRouteRoute,
@@ -45,18 +47,31 @@ const AuthOnboardingIndexRoute = AuthOnboardingIndexRouteImport.update({
   path: '/onboarding/',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const WorkspaceSettingsIndexRoute = WorkspaceSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => WorkspaceSettingsRouteRoute,
+} as any)
+const WorkspaceSettingsTabRoute = WorkspaceSettingsTabRouteImport.update({
+  id: '/$tab',
+  path: '/$tab',
+  getParentRoute: () => WorkspaceSettingsRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof WorkspaceIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
-  '/settings': typeof WorkspaceSettingsRoute
+  '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
+  '/settings/$tab': typeof WorkspaceSettingsTabRoute
+  '/settings/': typeof WorkspaceSettingsIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/auth/sign-in/': typeof AuthSignInIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteRouteWithChildren
-  '/settings': typeof WorkspaceSettingsRoute
   '/': typeof WorkspaceIndexRoute
+  '/settings/$tab': typeof WorkspaceSettingsTabRoute
+  '/settings': typeof WorkspaceSettingsIndexRoute
   '/auth/onboarding': typeof AuthOnboardingIndexRoute
   '/auth/sign-in': typeof AuthSignInIndexRoute
 }
@@ -64,8 +79,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_workspace': typeof WorkspaceRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
-  '/_workspace/settings': typeof WorkspaceSettingsRoute
+  '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/_workspace/': typeof WorkspaceIndexRoute
+  '/_workspace/settings/$tab': typeof WorkspaceSettingsTabRoute
+  '/_workspace/settings/': typeof WorkspaceSettingsIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/auth/sign-in/': typeof AuthSignInIndexRoute
 }
@@ -75,16 +92,26 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/settings'
+    | '/settings/$tab'
+    | '/settings/'
     | '/auth/onboarding/'
     | '/auth/sign-in/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/settings' | '/' | '/auth/onboarding' | '/auth/sign-in'
+  to:
+    | '/auth'
+    | '/'
+    | '/settings/$tab'
+    | '/settings'
+    | '/auth/onboarding'
+    | '/auth/sign-in'
   id:
     | '__root__'
     | '/_workspace'
     | '/auth'
     | '/_workspace/settings'
     | '/_workspace/'
+    | '/_workspace/settings/$tab'
+    | '/_workspace/settings/'
     | '/auth/onboarding/'
     | '/auth/sign-in/'
   fileRoutesById: FileRoutesById
@@ -121,7 +148,7 @@ declare module '@tanstack/react-router' {
       id: '/_workspace/settings'
       path: '/settings'
       fullPath: '/settings'
-      preLoaderRoute: typeof WorkspaceSettingsRouteImport
+      preLoaderRoute: typeof WorkspaceSettingsRouteRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/auth/sign-in/': {
@@ -138,16 +165,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOnboardingIndexRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_workspace/settings/': {
+      id: '/_workspace/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof WorkspaceSettingsIndexRouteImport
+      parentRoute: typeof WorkspaceSettingsRouteRoute
+    }
+    '/_workspace/settings/$tab': {
+      id: '/_workspace/settings/$tab'
+      path: '/$tab'
+      fullPath: '/settings/$tab'
+      preLoaderRoute: typeof WorkspaceSettingsTabRouteImport
+      parentRoute: typeof WorkspaceSettingsRouteRoute
+    }
   }
 }
 
+interface WorkspaceSettingsRouteRouteChildren {
+  WorkspaceSettingsTabRoute: typeof WorkspaceSettingsTabRoute
+  WorkspaceSettingsIndexRoute: typeof WorkspaceSettingsIndexRoute
+}
+
+const WorkspaceSettingsRouteRouteChildren: WorkspaceSettingsRouteRouteChildren =
+  {
+    WorkspaceSettingsTabRoute: WorkspaceSettingsTabRoute,
+    WorkspaceSettingsIndexRoute: WorkspaceSettingsIndexRoute,
+  }
+
+const WorkspaceSettingsRouteRouteWithChildren =
+  WorkspaceSettingsRouteRoute._addFileChildren(
+    WorkspaceSettingsRouteRouteChildren,
+  )
+
 interface WorkspaceRouteRouteChildren {
-  WorkspaceSettingsRoute: typeof WorkspaceSettingsRoute
+  WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
-  WorkspaceSettingsRoute: WorkspaceSettingsRoute,
+  WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
 }
 

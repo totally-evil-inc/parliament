@@ -25,7 +25,7 @@ export function PrimaryNav({ items }: { items: Array<WorkspaceNavItem> }) {
               {item.to ? (
                 <SidebarMenuButton
                   tooltip={item.label}
-                  isActive={item.to === pathname}
+                  isActive={isActiveNavItem(item.to, pathname)}
                   render={<Link to={item.to} />}
                 >
                   <NavIcon icon={item.icon} />
@@ -46,6 +46,14 @@ export function PrimaryNav({ items }: { items: Array<WorkspaceNavItem> }) {
       </SidebarGroupContent>
     </SidebarGroup>
   )
+}
+
+function isActiveNavItem(to: string, pathname: string) {
+  if (to === "/") {
+    return pathname === to
+  }
+
+  return pathname === to || pathname.startsWith(`${to}/`)
 }
 
 function NavIcon({ icon }: { icon: IconSvgElement }) {
