@@ -19,3 +19,4 @@ To use the components in your app, import them from the `ui` package.
 ```tsx
 import { Button } from "@workspace/ui/components/button";
 ```
+![Alt](https://repobeats.axiom.co/api/embed/6fc1d12d66594d2e3bc50a7fa9cf9208a2aaaebe.svg "Repobeats analytics image")
