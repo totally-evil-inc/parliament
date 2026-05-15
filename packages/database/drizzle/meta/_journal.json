@@ -15,6 +15,13 @@
       "when": 1778273257063,
       "tag": "0001_violet_catseye",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778880293005,
+      "tag": "0002_rich_saracen",
+      "breakpoints": true
     }
   ]
 }
