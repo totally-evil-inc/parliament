@@ -1,21 +1,21 @@
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { organization } from "better-auth/plugins"
+import { jwt, organization } from "better-auth/plugins"
 import { db } from "@workspace/database"
 
 import { trustedOrigins } from "./utils"
 
 export const auth = betterAuth({
+  /**
+   * Database Configuration
+   */
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
-  advanced: {
-    database: {
-      generateId: false,
-    },
-  },
-  trustedOrigins,
 
+  /**
+   * Authentication Methods
+   */
   emailAndPassword: {
     enabled: true,
   },
@@ -23,12 +23,23 @@ export const auth = betterAuth({
     google: {
       prompt: "select_account consent",
       accessType: "offline",
-      clientId: process.env.GOOGLE_CLIENT_ID as string, 
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-    }
+    },
   },
 
-  plugins: [
-    organization()
-  ]
+  /**
+   * Security & Advanced
+   */
+  advanced: {
+    database: {
+      generateId: false,
+    },
+  },
+  trustedOrigins,
+
+  /**
+   * Plugins
+   */
+  plugins: [organization(), jwt()],
 })
