@@ -1,5 +1,3 @@
-import { getBackendJwt } from "./auth"
-
 const API_SERVER_URL = process.env.API_SERVER_URL ?? "http://localhost:8080"
 
 export type JsonValue =
@@ -14,6 +12,10 @@ export interface ApiResponse<T = unknown> {
   data?: T
   error?: string
   status: number
+}
+
+export interface ApiRequestAuth {
+  getBackendJwt: () => Promise<ApiResponse<string>>
 }
 
 interface ErrorResponse {
@@ -35,9 +37,10 @@ async function readJson<T>(response: Response): Promise<T | null> {
 
 export async function apiRequest<T = unknown>(
   endpoint: string,
+  auth: ApiRequestAuth,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  const jwt = await getBackendJwt()
+  const jwt = await auth.getBackendJwt()
 
   if (!jwt.data) {
     return {

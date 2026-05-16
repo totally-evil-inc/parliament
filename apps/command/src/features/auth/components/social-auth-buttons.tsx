@@ -12,7 +12,7 @@ export function SocialAuthButtons() {
     mutationFn: async (provider: SupportedOAuthProvider) => {
       return await authClient.signIn.social({
         provider,
-        callbackURL: "/",
+        callbackURL: window.location.origin,
       })
     },
   })

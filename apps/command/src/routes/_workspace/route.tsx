@@ -1,15 +1,15 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router"
 import { AppShell } from "@/layouts/app-shell"
-import { getSession } from "@/server/auth"
+import { getViewer } from "@/server/auth"
 
 export const Route = createFileRoute("/_workspace")({
   beforeLoad: async () => {
-    const session = await getSession()
-    if (!session) {
+    const viewer = await getViewer()
+    if (!viewer) {
       throw redirect({ to: "/auth/sign-in" })
     }
 
-    return { user: session.user }
+    return { user: viewer.user }
   },
   component: WorkspaceRoute,
 })

@@ -5,6 +5,8 @@ import { db } from "@workspace/database"
 
 import { trustedOrigins } from "./utils"
 
+const authCookieDomain = process.env.AUTH_COOKIE_DOMAIN
+
 export const auth = betterAuth({
   /**
    * Database Configuration
@@ -35,11 +37,26 @@ export const auth = betterAuth({
     database: {
       generateId: false,
     },
+    ...(authCookieDomain
+      ? {
+          crossSubDomainCookies: {
+            enabled: true,
+            domain: authCookieDomain,
+          },
+        }
+      : {}),
   },
   trustedOrigins,
 
   /**
    * Plugins
    */
-  plugins: [organization(), jwt()],
+  plugins: [
+    organization(),
+    jwt({
+      jwt: {
+        audience: process.env.API_SERVER_URL as string,
+      },
+    }),
+  ],
 })
