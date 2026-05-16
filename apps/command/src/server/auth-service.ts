@@ -116,25 +116,49 @@ async function fetchSession(headers: Headers) {
   }
 }
 
-function createBackendJwtResolver(headers: Headers) {
+function getActiveOrganizationId(session: SessionJson | null) {
+  const activeOrganizationId = session?.session?.activeOrganizationId
+
+  return typeof activeOrganizationId === "string" ? activeOrganizationId : null
+}
+
+function getSessionId(session: SessionJson | null) {
+  const sessionId = session?.session?.id
+
+  return typeof sessionId === "string" ? sessionId : null
+}
+
+function createBackendJwtResolver(
+  headers: Headers,
+  session: SessionJson | null
+) {
   let inFlightToken: Promise<AuthTokenResult> | null = null
 
   return async () => {
-    inFlightToken ??= fetchBackendJwt(headers)
+    inFlightToken ??= fetchBackendJwt(headers, session)
     return await inFlightToken
   }
 }
 
-async function fetchBackendJwt(headers: Headers): Promise<AuthTokenResult> {
+async function fetchBackendJwt(
+  headers: Headers,
+  session: SessionJson | null
+): Promise<AuthTokenResult> {
   try {
-    const cacheKey = await getSessionCacheKey(headers)
+    const sessionCookieKey = await getSessionCacheKey(headers)
 
-    if (!cacheKey) {
+    if (!sessionCookieKey) {
       return {
         error: "Unauthorized",
         status: 401,
       }
     }
+
+    const cacheKey = [
+      sessionCookieKey,
+      getSessionId(session) ?? "no-session-id",
+      getActiveOrganizationId(session) ?? "no-active-organization",
+    ].join(":")
 
     const cachedToken = tokenCache.get(cacheKey)
 
@@ -191,6 +215,6 @@ export async function createCommandAuthContext(
   return {
     user: session?.user ?? null,
     session,
-    getBackendJwt: createBackendJwtResolver(headers),
+    getBackendJwt: createBackendJwtResolver(headers, session),
   }
 }

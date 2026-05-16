@@ -9,6 +9,10 @@ type JsonValue =
 export type JsonObject = { [key: string]: JsonValue }
 
 export type SessionJson = JsonObject & {
+  session?: JsonObject & {
+    id?: string
+    activeOrganizationId?: string | null
+  }
   user: JsonObject
 }
 
