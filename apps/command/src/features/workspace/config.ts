@@ -27,52 +27,17 @@ export type WorkspaceActionNavItem = {
 
 export type WorkspaceNavItem = WorkspaceRouteNavItem | WorkspaceActionNavItem
 
+export type WorkspaceUserProfile = {
+  name: string
+  email: string
+  initials: string
+}
+
 export type WorkspaceConfig = {
-  workspace: {
-    name: string
-    plan: string
-    members: number
-  }
-  user: {
-    name: string
-    email: string
-    initials: string
-  }
-  workspaces: Array<WorkspaceIdentity>
   primaryNav: Array<WorkspaceNavItem>
 }
 
-export type WorkspaceIdentity = WorkspaceConfig["workspace"]
-export type WorkspaceUserProfile = WorkspaceConfig["user"]
-
 export const workspaceConfig = {
-  workspace: {
-    name: "Command",
-    plan: "Pro",
-    members: 24,
-  },
-  user: {
-    name: "Muchiri",
-    email: "muchiri@example.com",
-    initials: "M",
-  },
-  workspaces: [
-    {
-      name: "Command",
-      plan: "Pro",
-      members: 24,
-    },
-    {
-      name: "Parliament",
-      plan: "Team",
-      members: 8,
-    },
-    {
-      name: "Scratch pad",
-      plan: "Free",
-      members: 1,
-    },
-  ],
   primaryNav: [
     { icon: Home01Icon, label: "Home", to: "/" },
     { icon: InboxIcon, label: "Inbox", badge: 4 },
