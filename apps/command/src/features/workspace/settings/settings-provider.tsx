@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from "react"
 import type { ReactNode } from "react"
 import type { WorkspaceSettingsValues } from "./settings-form"
-import { workspaceConfig } from "@/features/workspace/config"
+import { authClient } from "@/lib/auth-client"
 
 type SettingsContextValue = {
   draftSettings: WorkspaceSettingsValues
@@ -18,15 +18,15 @@ type SettingsProviderProps = {
   children: ReactNode
 }
 
-const initialSettings = {
-  name: workspaceConfig.workspace.name,
-  slug: "command",
+const defaultSettings: WorkspaceSettingsValues = {
+  name: "",
+  slug: "",
   timezone: "utc+3",
   dateFormat: "ymd",
   publicSignup: true,
   adminTwoFactor: true,
   showProjectIds: false,
-} satisfies WorkspaceSettingsValues
+}
 
 const SettingsContext =
   createContext<SettingsContextValue | null>(null)
@@ -34,10 +34,18 @@ const SettingsContext =
 export function SettingsProvider({
   children,
 }: SettingsProviderProps) {
+  const { data: activeOrg } = authClient.useActiveOrganization()
+
+  const initialSettings: WorkspaceSettingsValues = {
+    ...defaultSettings,
+    name: activeOrg?.name ?? "",
+    slug: activeOrg?.slug ?? "",
+  }
+
   const [savedSettings, setSavedSettings] =
-    useState<WorkspaceSettingsValues>(initialSettings)
+    useState<WorkspaceSettingsValues>(() => initialSettings)
   const [draftSettings, setDraftSettings] =
-    useState<WorkspaceSettingsValues>(initialSettings)
+    useState<WorkspaceSettingsValues>(() => initialSettings)
 
   const dirty = !settingsEqual(draftSettings, savedSettings)
 

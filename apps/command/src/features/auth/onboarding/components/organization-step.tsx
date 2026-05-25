@@ -1,8 +1,16 @@
+import { useRef, useState } from "react"
 import { useForm } from "@tanstack/react-form"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { Label } from "@workspace/ui/components/label"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@workspace/ui/components/input-group"
+import { Spinner } from "@workspace/ui/components/spinner"
 import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
+import { useSlugAvailability } from "@/features/workspace/hooks/use-slug-availability"
 import { organizationSchema } from "@/utils/auth-schemas"
 import { type OrganizationDraft, slugify } from "../onboarding-draft"
 
@@ -15,6 +23,9 @@ export function OrganizationStep({
   pending: boolean
   onSubmit: (draft: OrganizationDraft) => void | Promise<void>
 }) {
+  const [slugValue, setSlugValue] = useState(draft?.organizationSlug ?? "")
+  const slugLockedRef = useRef(!!draft?.organizationSlug)
+
   const form = useForm({
     defaultValues: {
       organizationName: draft?.organizationName ?? "",
@@ -32,6 +43,8 @@ export function OrganizationStep({
     },
   })
 
+  const { state: slugState } = useSlugAvailability(slugValue)
+
   return (
     <>
       <div className="mt-8 font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
@@ -41,7 +54,7 @@ export function OrganizationStep({
         Name your organization
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        The slug is required and can be edited before setup continues.
+        The URL slug is required and can be changed later in settings.
       </p>
 
       <form
@@ -50,7 +63,7 @@ export function OrganizationStep({
           e.stopPropagation()
           void form.handleSubmit()
         }}
-        className="mt-8 flex flex-col gap-4"
+        className="mt-8 flex flex-col gap-5"
       >
         <form.Field name="organizationName">
           {(field) => {
@@ -58,9 +71,9 @@ export function OrganizationStep({
 
             return (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="onboarding-organization">
-                  Organization name
-                </Label>
+                <label className="block font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
+                  Workspace name
+                </label>
                 <Input
                   id="onboarding-organization"
                   placeholder="Acme Inc."
@@ -69,27 +82,17 @@ export function OrganizationStep({
                   onBlur={field.handleBlur}
                   onChange={(e) => {
                     field.handleChange(e.target.value)
-                    const slugField = form.getFieldValue("organizationSlug")
 
-                    if (!slugField.trim()) {
-                      form.setFieldValue(
-                        "organizationSlug",
-                        slugify(e.target.value)
-                      )
+                    if (!slugLockedRef.current) {
+                      const slug = slugify(e.target.value)
+                      form.setFieldValue("organizationSlug", slug)
+                      setSlugValue(slug)
                     }
                   }}
                   aria-invalid={!!error}
-                  aria-describedby={
-                    error ? "onboarding-organization-error" : undefined
-                  }
                 />
                 {error ? (
-                  <p
-                    id="onboarding-organization-error"
-                    className="text-xs text-destructive"
-                  >
-                    {error}
-                  </p>
+                  <p className="text-xs text-destructive">{error}</p>
                 ) : null}
               </div>
             )
@@ -102,24 +105,44 @@ export function OrganizationStep({
 
             return (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="onboarding-slug">Organization slug</Label>
-                <Input
-                  id="onboarding-slug"
-                  placeholder="acme-inc"
-                  autoComplete="off"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(slugify(e.target.value))}
-                  aria-invalid={!!error}
-                  aria-describedby={error ? "onboarding-slug-error" : undefined}
-                />
+                <label className="block font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
+                  Workspace URL
+                </label>
+                <InputGroup>
+                  <InputGroupAddon align="inline-start">
+                    <InputGroupText>app/</InputGroupText>
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="onboarding-slug"
+                    placeholder="acme-inc"
+                    autoComplete="off"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => {
+                      slugLockedRef.current = true
+                      const slug = slugify(e.target.value)
+                      field.handleChange(slug)
+                      setSlugValue(slug)
+                    }}
+                    aria-invalid={!!error || slugState === "taken"}
+                  />
+                  <InputGroupAddon align="inline-end">
+                    {slugState === "checking" ? (
+                      <Spinner className="size-3 text-muted-foreground" />
+                    ) : slugState === "available" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 font-mono text-[10px] text-emerald-700 dark:text-emerald-400">
+                        <span className="size-1 rounded-full bg-emerald-500" />
+                        available
+                      </span>
+                    ) : null}
+                  </InputGroupAddon>
+                </InputGroup>
                 {error ? (
-                  <p
-                    id="onboarding-slug-error"
-                    className="text-xs text-destructive"
-                  >
-                    {error}
-                  </p>
+                  <p className="text-xs text-destructive">{error}</p>
+                ) : slugState === "taken" ? (
+                  <p className="text-xs text-destructive">This slug is already taken.</p>
+                ) : slugState === "error" ? (
+                  <p className="text-xs text-destructive">Could not verify availability. Please try again.</p>
                 ) : null}
               </div>
             )
@@ -129,22 +152,27 @@ export function OrganizationStep({
         <form.Subscribe
           selector={(state) => ({
             canSubmit: state.canSubmit,
+            isSubmitting: state.isSubmitting,
             values: state.values,
           })}
         >
-          {({ canSubmit, values }) => (
+          {({ canSubmit, isSubmitting, values }) => (
             <Button
               type="submit"
               size="lg"
               disabled={
                 pending ||
+                isSubmitting ||
                 !canSubmit ||
                 !values.organizationName.trim() ||
-                !values.organizationSlug.trim()
+                !values.organizationSlug.trim() ||
+                slugState === "checking" ||
+                slugState === "taken" ||
+                slugState === "error"
               }
               className="mt-2"
             >
-              {pending ? "Creating..." : "Continue"}
+              {pending || isSubmitting ? "Working..." : "Continue"}
             </Button>
           )}
         </form.Subscribe>

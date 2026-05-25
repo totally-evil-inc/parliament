@@ -15,23 +15,41 @@ import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
 import { Link, useRouterState } from "@tanstack/react-router"
 import type { ReactNode } from "react"
+import * as React from "react"
+import { authClient } from "@/lib/auth-client"
 import { workspaceConfig } from "@/features/workspace/config"
 import { AppSidebar } from "./app-sidebar"
-import * as React from "react"
 
 type AppShellProps = {
   children: ReactNode
 }
 
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((s) => s[0] ?? "")
+    .join("")
+    .toUpperCase()
+}
+
 export function AppShell({ children }: AppShellProps) {
+  const session = authClient.useSession()
+  const userName = (session.data?.user.name as string | undefined) ?? "User"
+  const userEmail = (session.data?.user.email as string | undefined) ?? ""
+
+  const user = {
+    name: userName,
+    email: userEmail,
+    initials: getInitials(userName),
+  }
+
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar
         variant="inset"
-        workspace={workspaceConfig.workspace}
-        workspaces={workspaceConfig.workspaces}
         primaryNav={workspaceConfig.primaryNav}
-        user={workspaceConfig.user}
+        user={user}
       />
       <SidebarInset className="flex h-svh min-w-0 flex-col overflow-hidden">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border/60 px-4">
@@ -76,7 +94,8 @@ function Breadcrumbs() {
         {pathnames.map((value, index) => {
           const last = index === pathnames.length - 1
           const to = `/${pathnames.slice(0, index + 1).join("/")}`
-          const label = value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, " ")
+          const label =
+            value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, " ")
 
           return (
             <React.Fragment key={to}>

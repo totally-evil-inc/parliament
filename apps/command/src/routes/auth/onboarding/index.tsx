@@ -25,15 +25,11 @@ function OnboardingPage() {
     setStatus,
     draft,
     setDraft,
-    invitees,
     pendingOrganization,
     isAuthenticated,
     session,
     goToStep,
     createOrganization,
-    addInvitee,
-    removeInvitee,
-    submitInvites,
   } = useOnboardingFlow(step)
 
   return (
@@ -76,13 +72,10 @@ function OnboardingPage() {
         />
       ) : null}
 
-      {step === "invites" ? (
+      {step === "invites" && draft?.organizationId ? (
         <InviteStep
-          invitees={invitees}
-          pending={!draft?.organizationId}
-          onAdd={addInvitee}
-          onRemove={removeInvitee}
-          onContinue={submitInvites}
+          organizationId={draft.organizationId}
+          onSuccess={() => goToStep("ready")}
           onBack={() => goToStep("organization")}
         />
       ) : null}
@@ -90,7 +83,7 @@ function OnboardingPage() {
       {step === "ready" ? (
         <ReadyStep
           organization={draft?.organizationName || "Untitled"}
-          count={invitees.length}
+          count={0}
           onEnter={() => {
             setDraft(null)
             window.location.assign("/")
