@@ -180,6 +180,21 @@ export const editorCommands: Array<EditorCommand> = [
     },
   },
   {
+    id: "table",
+    title: "Table",
+    description: "Create a table with rows and columns.",
+    searchTerms: ["table", "grid", "rows", "columns", "cells"],
+    icon: Text,
+    group: "block",
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    command: ({ editor, range }) => {
+      deleteRangeIfPresent(editor, range)
+        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+        .run()
+    },
+  },
+  {
     id: "horizontal-rule",
     title: "Divider",
     description: "Separate sections with a horizontal rule.",

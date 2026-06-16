@@ -16,10 +16,15 @@ import HardBreak from "@tiptap/extension-hard-break"
 import HorizontalRule from "@tiptap/extension-horizontal-rule"
 import { Mathematics } from "@tiptap/extension-mathematics"
 import { TaskItem as BaseTaskItem, TaskList } from "@tiptap/extension-list"
+import { Table } from "@tiptap/extension-table/table"
+import { TableCell } from "@tiptap/extension-table/cell"
+import { TableHeader } from "@tiptap/extension-table/header"
+import { TableRow } from "@tiptap/extension-table/row"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import "katex/dist/katex.min.css"
 import { EditorFloatingMenu } from "./floating-menu"
 import { EditorBubbleMenu } from "./bubble-menu"
+import { EditorTableMenu } from "./table-menu"
 import { SlashCommand } from "./slash-command"
 import type { NodeViewProps } from "@tiptap/react"
 
@@ -103,7 +108,7 @@ export default function NotionEditor() {
           onClick: (node, pos) => {
             const latex = window.prompt("Edit inline LaTeX", node.attrs.latex)
 
-            if (latex === null) {
+            if (latex === null || !editor) {
               return
             }
 
@@ -114,7 +119,7 @@ export default function NotionEditor() {
           onClick: (node, pos) => {
             const latex = window.prompt("Edit display LaTeX", node.attrs.latex)
 
-            if (latex === null) {
+            if (latex === null || !editor) {
               return
             }
 
@@ -126,6 +131,18 @@ export default function NotionEditor() {
       TaskItem.configure({
         nested: true,
       }),
+      Table.configure({
+        resizable: true,
+        cellMinWidth: 96,
+        lastColumnResizable: false,
+        allowTableNodeSelection: true,
+        HTMLAttributes: {
+          class: "notion-table",
+        },
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
       Placeholder.configure({
         placeholder: ({ node }) => {
           if (node.type.name === "heading") {
@@ -140,6 +157,7 @@ export default function NotionEditor() {
       SlashCommand,
     ],
     content: "",
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class: [
@@ -150,6 +168,11 @@ export default function NotionEditor() {
           "prose-a:text-primary prose-hr:border-border prose-ul:data-[type=taskList]:list-none prose-ul:data-[type=taskList]:pl-0",
           "prose-p:leading-6 prose-li:leading-6 prose-headings:leading-tight",
           "[&_[data-type=detailsContent][hidden]]:hidden",
+          "[&_table]:my-4 [&_table]:w-full [&_table]:table-fixed [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-md",
+          "[&_th]:border [&_th]:border-border [&_th]:bg-muted/60 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-medium [&_th]:align-top",
+          "[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:align-top",
+          "[&_th_p]:m-0 [&_td_p]:m-0 [&_th_p]:leading-6 [&_td_p]:leading-6",
+          "[&_.selectedCell]:bg-primary/10 [&_.column-resize-handle]:pointer-events-none [&_.column-resize-handle]:absolute [&_.column-resize-handle]:right-[-2px] [&_.column-resize-handle]:top-0 [&_.column-resize-handle]:bottom-0 [&_.column-resize-handle]:w-1 [&_.column-resize-handle]:bg-primary [&_.resize-cursor]:cursor-col-resize",
           "[&_.tiptap-mathematics-render]:cursor-pointer [&_.tiptap-mathematics-render]:rounded-sm [&_.tiptap-mathematics-render]:border [&_.tiptap-mathematics-render]:border-transparent [&_.tiptap-mathematics-render]:px-1 [&_.tiptap-mathematics-render:hover]:border-border [&_.tiptap-mathematics-render:hover]:bg-muted/50",
           "[&_[data-type=block-math]]:my-3 [&_[data-type=block-math]]:overflow-x-auto [&_[data-type=block-math]]:py-3",
         ].join(" "),
@@ -161,8 +184,13 @@ export default function NotionEditor() {
     <div className="flex justify-center p-4">
       <div className="shadow-3xl rounded-md border-2 border-muted/50 p-4 shadow-muted/50">
         <div className="relative">
-          <EditorBubbleMenu editor={editor} />
-          <EditorFloatingMenu editor={editor} />
+          {editor ? (
+            <>
+              <EditorBubbleMenu editor={editor} />
+              <EditorFloatingMenu editor={editor} />
+              <EditorTableMenu editor={editor} />
+            </>
+          ) : null}
           <EditorContent editor={editor} />
         </div>
       </div>
