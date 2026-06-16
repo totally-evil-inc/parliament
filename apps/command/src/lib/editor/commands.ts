@@ -1,7 +1,7 @@
 import {
   Bold,
   ChevronRight,
-  Code,
+  CodeXml,
   Heading1,
   Heading2,
   Heading3,
@@ -9,7 +9,9 @@ import {
   List,
   ListOrdered,
   Quote,
+  SquarePi,
   Text,
+  Variable,
 } from "@hugeicons/core-free-icons"
 import type { Editor } from "@tiptap/react"
 import type { Range } from "@tiptap/core"
@@ -210,7 +212,7 @@ export const editorCommands: Array<EditorCommand> = [
     title: "Inline Math",
     description: "Insert an inline LaTeX formula.",
     searchTerms: ["math", "mathematics", "latex", "formula", "inline"],
-    icon: Code,
+    icon: Variable,
     group: "block",
     showInBubbleMenu: true,
     showInSlashMenu: true,
@@ -236,7 +238,7 @@ export const editorCommands: Array<EditorCommand> = [
       "block",
       "equation",
     ],
-    icon: Code,
+    icon: SquarePi,
     group: "block",
     showInBubbleMenu: true,
     showInSlashMenu: true,
@@ -281,7 +283,7 @@ export const editorCommands: Array<EditorCommand> = [
     title: "Code",
     description: "Format selected text as inline code.",
     searchTerms: ["code", "inline code", "monospace"],
-    icon: Code,
+    icon: CodeXml,
     group: "mark",
     showInBubbleMenu: true,
     isActive: (editor) => editor.isActive("code"),
@@ -314,5 +316,5 @@ export const getFilteredSlashCommands = (query: string) => {
           term.toLowerCase().includes(normalizedQuery)
         )
     )
-    .slice(0, 10)
+    .slice(0, 20)
 }
