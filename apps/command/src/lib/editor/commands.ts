@@ -1,5 +1,6 @@
 import {
   Bold,
+  ChevronRight,
   Code,
   Heading1,
   Heading2,
@@ -68,9 +69,7 @@ export const editorCommands: Array<EditorCommand> = [
     showInFloatingMenu: true,
     isActive: (editor) => editor.isActive("heading", { level: 1 }),
     command: ({ editor, range }) => {
-      deleteRangeIfPresent(editor, range)
-        .setNode("heading", { level: 1 })
-        .run()
+      deleteRangeIfPresent(editor, range).setNode("heading", { level: 1 }).run()
     },
   },
   {
@@ -85,9 +84,7 @@ export const editorCommands: Array<EditorCommand> = [
     showInFloatingMenu: true,
     isActive: (editor) => editor.isActive("heading", { level: 2 }),
     command: ({ editor, range }) => {
-      deleteRangeIfPresent(editor, range)
-        .setNode("heading", { level: 2 })
-        .run()
+      deleteRangeIfPresent(editor, range).setNode("heading", { level: 2 }).run()
     },
   },
   {
@@ -102,9 +99,7 @@ export const editorCommands: Array<EditorCommand> = [
     showInFloatingMenu: true,
     isActive: (editor) => editor.isActive("heading", { level: 3 }),
     command: ({ editor, range }) => {
-      deleteRangeIfPresent(editor, range)
-        .setNode("heading", { level: 3 })
-        .run()
+      deleteRangeIfPresent(editor, range).setNode("heading", { level: 3 }).run()
     },
   },
   {
@@ -153,6 +148,109 @@ export const editorCommands: Array<EditorCommand> = [
     },
   },
   {
+    id: "details",
+    title: "Details",
+    description: "Create a collapsible details block.",
+    searchTerms: ["details", "summary", "toggle", "collapse", "accordion"],
+    icon: ChevronRight,
+    group: "block",
+    showInBubbleMenu: true,
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    isActive: (editor) => editor.isActive("details"),
+    command: ({ editor, range }) => {
+      deleteRangeIfPresent(editor, range).setDetails().run()
+    },
+  },
+  {
+    id: "task-list",
+    title: "Task List",
+    description: "Track todos with checkboxes.",
+    searchTerms: ["task", "todo", "checkbox", "checklist", "list"],
+    icon: List,
+    group: "block",
+    showInBubbleMenu: true,
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    isActive: (editor) => editor.isActive("taskList"),
+    command: ({ editor, range }) => {
+      deleteRangeIfPresent(editor, range).toggleTaskList().run()
+    },
+  },
+  {
+    id: "horizontal-rule",
+    title: "Divider",
+    description: "Separate sections with a horizontal rule.",
+    searchTerms: ["horizontal rule", "hr", "divider", "separator", "line"],
+    icon: Text,
+    group: "block",
+    showInBubbleMenu: true,
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    command: ({ editor, range }) => {
+      deleteRangeIfPresent(editor, range).setHorizontalRule().run()
+    },
+  },
+  {
+    id: "hard-break",
+    title: "Line Break",
+    description: "Insert a hard line break.",
+    searchTerms: ["hard break", "line break", "br", "newline"],
+    icon: Text,
+    group: "block",
+    showInBubbleMenu: true,
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    command: ({ editor, range }) => {
+      deleteRangeIfPresent(editor, range).setHardBreak().run()
+    },
+  },
+  {
+    id: "inline-math",
+    title: "Inline Math",
+    description: "Insert an inline LaTeX formula.",
+    searchTerms: ["math", "mathematics", "latex", "formula", "inline"],
+    icon: Code,
+    group: "block",
+    showInBubbleMenu: true,
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    command: ({ editor, range }) => {
+      const latex = window.prompt("Enter inline LaTeX", "x^2")
+      if (!latex) {
+        return
+      }
+
+      deleteRangeIfPresent(editor, range).insertInlineMath({ latex }).run()
+    },
+  },
+  {
+    id: "block-math",
+    title: "Block Math",
+    description: "Insert a display LaTeX formula.",
+    searchTerms: [
+      "math",
+      "mathematics",
+      "latex",
+      "formula",
+      "block",
+      "equation",
+    ],
+    icon: Code,
+    group: "block",
+    showInBubbleMenu: true,
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    command: ({ editor, range }) => {
+      const latex = window.prompt("Enter display LaTeX", "\\frac{a}{b}")
+      if (!latex) {
+        return
+      }
+
+      deleteRangeIfPresent(editor, range).insertBlockMath({ latex }).run()
+    },
+  },
+  {
     id: "bold",
     title: "Bold",
     description: "Make selected text bold.",
@@ -194,15 +292,15 @@ export const editorCommands: Array<EditorCommand> = [
 ]
 
 export const slashMenuCommands = editorCommands.filter(
-  (command) => command.showInSlashMenu,
+  (command) => command.showInSlashMenu
 )
 
 export const floatingMenuCommands = editorCommands.filter(
-  (command) => command.showInFloatingMenu,
+  (command) => command.showInFloatingMenu
 )
 
 export const bubbleMenuCommands = editorCommands.filter(
-  (command) => command.showInBubbleMenu,
+  (command) => command.showInBubbleMenu
 )
 
 export const getFilteredSlashCommands = (query: string) => {
@@ -213,8 +311,8 @@ export const getFilteredSlashCommands = (query: string) => {
       (command) =>
         command.title.toLowerCase().includes(normalizedQuery) ||
         command.searchTerms.some((term) =>
-          term.toLowerCase().includes(normalizedQuery),
-        ),
+          term.toLowerCase().includes(normalizedQuery)
+        )
     )
     .slice(0, 10)
 }
