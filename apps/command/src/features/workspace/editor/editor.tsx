@@ -21,6 +21,13 @@ import { TableCell } from "@tiptap/extension-table/cell"
 import { TableHeader } from "@tiptap/extension-table/header"
 import { TableRow } from "@tiptap/extension-table/row"
 import { Checkbox } from "@workspace/ui/components/checkbox"
+import {
+  Timeline,
+  TimelineDate,
+  TimelineDescription,
+  TimelineItem,
+  TimelineTitle,
+} from "./timeline-extension"
 import "katex/dist/katex.min.css"
 import { EditorFloatingMenu } from "./floating-menu"
 import { EditorBubbleMenu } from "./bubble-menu"
@@ -131,6 +138,11 @@ export default function NotionEditor() {
       TaskItem.configure({
         nested: true,
       }),
+      Timeline,
+      TimelineItem,
+      TimelineDate,
+      TimelineTitle,
+      TimelineDescription,
       Table.configure({
         resizable: true,
         cellMinWidth: 96,
@@ -150,6 +162,15 @@ export default function NotionEditor() {
           }
           if (node.type.name === "detailsSummary") {
             return "Summary"
+          }
+          if (node.type.name === "timelineDate") {
+            return "March 15, 2024"
+          }
+          if (node.type.name === "timelineTitle") {
+            return "Project Kickoff"
+          }
+          if (node.type.name === "timelineDescription") {
+            return "Describe the milestone..."
           }
           return "Press '/' for commands..."
         },
@@ -175,6 +196,7 @@ export default function NotionEditor() {
           "[&_.selectedCell]:bg-primary/10 [&_.column-resize-handle]:pointer-events-none [&_.column-resize-handle]:absolute [&_.column-resize-handle]:right-[-2px] [&_.column-resize-handle]:top-0 [&_.column-resize-handle]:bottom-0 [&_.column-resize-handle]:w-1 [&_.column-resize-handle]:bg-primary [&_.resize-cursor]:cursor-col-resize",
           "[&_.tiptap-mathematics-render]:cursor-pointer [&_.tiptap-mathematics-render]:rounded-sm [&_.tiptap-mathematics-render]:border [&_.tiptap-mathematics-render]:border-transparent [&_.tiptap-mathematics-render]:px-1 [&_.tiptap-mathematics-render:hover]:border-border [&_.tiptap-mathematics-render:hover]:bg-muted/50",
           "[&_[data-type=block-math]]:my-3 [&_[data-type=block-math]]:overflow-x-auto [&_[data-type=block-math]]:py-3",
+          "[&_.timeline-item:last-child_.timeline-line]:hidden",
         ].join(" "),
       },
     },

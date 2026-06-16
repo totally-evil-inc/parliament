@@ -11,6 +11,7 @@ import {
   Quote,
   SquarePi,
   Text,
+  Tick01Icon,
   Variable,
 } from "@hugeicons/core-free-icons"
 import type { Editor } from "@tiptap/react"
@@ -265,6 +266,52 @@ export const editorCommands: Array<EditorCommand> = [
       }
 
       deleteRangeIfPresent(editor, range).insertBlockMath({ latex }).run()
+    },
+  },
+  {
+    id: "timeline",
+    title: "Timeline",
+    description: "Create a vertical timeline of events.",
+    searchTerms: ["timeline", "events", "milestones", "history", "roadmap"],
+    icon: Tick01Icon,
+    group: "block",
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    command: ({ editor, range }) => {
+      deleteRangeIfPresent(editor, range)
+        .insertContent({
+          type: "timeline",
+          content: [
+            {
+              type: "timelineItem",
+              content: [
+                {
+                  type: "timelineDate",
+                  content: [{ type: "text", text: "March 15, 2024" }],
+                },
+                {
+                  type: "timelineTitle",
+                  content: [{ type: "text", text: "Project Kickoff" }],
+                },
+                {
+                  type: "timelineDescription",
+                  content: [
+                    {
+                      type: "paragraph",
+                      content: [
+                        {
+                          type: "text",
+                          text: "Initial team meeting and project scope definition. Established key milestones and resource allocation.",
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        })
+        .run()
     },
   },
   {
