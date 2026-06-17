@@ -24,6 +24,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { useNavigate } from "@tanstack/react-router"
 
+import { ProposalDocument } from "../extensions/proposal-document"
 import { ProposalHeader } from "../extensions/proposal-header"
 import { KeyNumbers } from "../extensions/key-numbers"
 import { TeamMembers } from "../extensions/team-members"
@@ -50,10 +51,12 @@ export default function ProposalEditor() {
     {
       extensions: [
         StarterKit.configure({
+          document: false,
           hardBreak: false,
           heading: { levels: [1, 2, 3] },
           horizontalRule: false,
         }),
+        ProposalDocument,
         ProposalHeader,
         KeyNumbers,
         TeamMembers,
@@ -92,7 +95,11 @@ export default function ProposalEditor() {
       ],
       content: {
         type: "doc",
-        content: [{ type: "proposalHeader" }, { type: "paragraph" }],
+        content: [
+          { type: "proposalHeader" },
+          { type: "paragraph" },
+          { type: "pricingTable" },
+        ],
       },
       immediatelyRender: false,
       editorProps: {

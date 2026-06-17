@@ -4,7 +4,6 @@ import { PricingTableView } from "@/features/proposals/components/pricing-table-
 
 export const PricingTable = Node.create({
   name: "pricingTable",
-  group: "block",
   content: "block*",
   defining: true,
 
@@ -13,17 +12,20 @@ export const PricingTable = Node.create({
       items: {
         default: [
           {
-            description: "Initial Consultation",
+            description: "Item 1",
+            details: "",
             quantity: 1,
-            rate: 150,
-            total: 150,
+            rate: 0,
+            total: 0,
+            showDetails: false,
+            showImage: false,
           },
-          { description: "Design Phase", quantity: 1, rate: 2500, total: 2500 },
-          { description: "Development", quantity: 1, rate: 5000, total: 5000 },
         ],
       },
-      currency: { default: "$" },
+      discountRate: { default: 0 },
       taxRate: { default: 0 },
+      discountEnabled: { default: false },
+      taxEnabled: { default: false },
     }
   },
 

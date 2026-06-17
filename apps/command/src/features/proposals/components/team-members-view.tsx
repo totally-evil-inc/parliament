@@ -1,5 +1,6 @@
 import { NodeViewWrapper } from "@tiptap/react"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Delete02Icon,
@@ -56,24 +57,28 @@ export function TeamMembersView({ node, updateAttributes }: NodeViewProps) {
               <HugeiconsIcon icon={UserIcon} className="h-10 w-10" />
             </div>
             <div className="w-full space-y-1">
-              <input
-                className="w-full bg-transparent text-center text-base font-bold outline-none"
+              <Input
+                className="h-auto rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent p-0 text-center text-base font-bold shadow-none hover:border-border focus-visible:border-border focus-visible:ring-0"
                 value={member.name}
                 onChange={(e) => updateMember(index, "name", e.target.value)}
               />
-              <input
-                className="w-full bg-transparent text-center text-xs text-muted-foreground outline-none"
+              <Input
+                className="h-auto rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent p-0 text-center text-xs text-muted-foreground shadow-none hover:border-border focus-visible:border-border focus-visible:ring-0"
                 value={member.role}
                 onChange={(e) => updateMember(index, "role", e.target.value)}
               />
             </div>
 
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => removeMember(index)}
               className="absolute -top-2 -right-2 text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive/80"
+              aria-label="Remove team member"
             >
               <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         ))}
       </div>

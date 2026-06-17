@@ -1,5 +1,7 @@
 import { NodeViewWrapper } from "@tiptap/react"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Delete02Icon,
@@ -64,31 +66,31 @@ export function TestimonialsView({ node, updateAttributes }: NodeViewProps) {
               <HugeiconsIcon icon={QuillWrite02Icon} className="h-6 w-6" />
             </div>
 
-            <textarea
-              className="w-full resize-none overflow-hidden bg-transparent text-center text-xl leading-relaxed font-medium italic outline-none"
+            <Textarea
+              className="min-h-0 w-full resize-none overflow-hidden rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent p-0 text-center text-xl leading-relaxed font-medium italic shadow-none hover:border-border focus-visible:border-border focus-visible:ring-0"
               value={testimonial.content}
               rows={2}
               onChange={(e) => {
                 updateTestimonial(index, "content", e.target.value)
                 e.target.style.height = "auto"
-                e.target.style.height = e.target.scrollHeight + "px"
+                e.target.style.height = `${e.target.scrollHeight}px`
               }}
               onFocus={(e) => {
                 e.target.style.height = "auto"
-                e.target.style.height = e.target.scrollHeight + "px"
+                e.target.style.height = `${e.target.scrollHeight}px`
               }}
             />
 
             <div className="space-y-1">
-              <input
-                className="w-full bg-transparent text-center text-base font-bold outline-none"
+              <Input
+                className="h-auto rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent p-0 text-center text-base font-bold shadow-none hover:border-border focus-visible:border-border focus-visible:ring-0"
                 value={testimonial.author}
                 onChange={(e) =>
                   updateTestimonial(index, "author", e.target.value)
                 }
               />
-              <input
-                className="w-full bg-transparent text-center text-xs tracking-widest text-muted-foreground uppercase outline-none"
+              <Input
+                className="h-auto rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent p-0 text-center text-xs tracking-widest text-muted-foreground uppercase shadow-none hover:border-border focus-visible:border-border focus-visible:ring-0"
                 value={testimonial.role}
                 onChange={(e) =>
                   updateTestimonial(index, "role", e.target.value)
@@ -96,12 +98,16 @@ export function TestimonialsView({ node, updateAttributes }: NodeViewProps) {
               />
             </div>
 
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => removeTestimonial(index)}
               className="absolute top-0 -right-2 text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive/80"
+              aria-label="Remove testimonial"
             >
               <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         ))}
       </div>

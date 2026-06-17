@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react"
 import {
   Calendar03Icon,
   Delete02Icon,
@@ -9,10 +8,17 @@ import { NodeViewWrapper } from "@tiptap/react"
 import { Button } from "@workspace/ui/components/button"
 import { Calendar } from "@workspace/ui/components/calendar"
 import {
+  Editable,
+  EditableArea,
+  EditableInput,
+  EditablePreview,
+} from "@workspace/ui/components/editable"
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
+import { useEffect, useRef } from "react"
 import type { NodeViewProps } from "@tiptap/react"
 
 type CustomField = {
@@ -415,15 +421,22 @@ function Field({
   onChange: (v: string) => void
   className?: string
 }) {
+  const fieldClassName = [
+    "min-h-6 w-full rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-0 py-0.5 text-sm shadow-none transition-colors placeholder:text-muted-foreground/40 hover:border-border focus-visible:border-border focus-visible:outline-none focus-visible:ring-0 data-empty:text-muted-foreground/40",
+    className,
+  ].join(" ")
+
   return (
-    <input
-      className={[
-        "w-full border-b border-transparent bg-transparent py-0.5 text-sm transition-colors outline-none placeholder:text-muted-foreground/40 focus:border-border",
-        className,
-      ].join(" ")}
-      placeholder={placeholder}
+    <Editable
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
+      onValueChange={onChange}
+      placeholder={placeholder}
+      className="gap-0"
+    >
+      <EditableArea className="block w-full">
+        <EditablePreview className={fieldClassName} />
+        <EditableInput className={fieldClassName} />
+      </EditableArea>
+    </Editable>
   )
 }

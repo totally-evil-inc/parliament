@@ -1,5 +1,6 @@
 import { NodeViewWrapper } from "@tiptap/react"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Delete02Icon, PlusSignIcon } from "@hugeicons/core-free-icons"
 import type { NodeViewProps } from "@tiptap/react"
@@ -48,23 +49,27 @@ export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
             key={index}
             className="group relative flex flex-col items-center justify-center gap-1 text-center"
           >
-            <input
-              className="w-full bg-transparent text-center text-4xl font-black tracking-tight outline-none"
+            <Input
+              className="h-auto rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent p-0 text-center text-4xl font-black tracking-tight shadow-none hover:border-border focus-visible:border-border focus-visible:ring-0"
               value={metric.value}
               onChange={(e) => updateMetric(index, "value", e.target.value)}
             />
-            <input
-              className="w-full bg-transparent text-center text-xs font-bold tracking-widest text-muted-foreground uppercase outline-none"
+            <Input
+              className="h-auto rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent p-0 text-center text-xs font-bold tracking-widest text-muted-foreground uppercase shadow-none hover:border-border focus-visible:border-border focus-visible:ring-0"
               value={metric.label}
               onChange={(e) => updateMetric(index, "label", e.target.value)}
             />
 
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => removeMetric(index)}
               className="absolute -top-2 -right-2 text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive/80"
+              aria-label="Remove metric"
             >
               <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         ))}
       </div>

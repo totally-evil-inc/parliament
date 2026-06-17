@@ -51,12 +51,16 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
               </span>
             </div>
 
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => removeImage(index)}
               className="absolute top-2 right-2 text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive/80"
+              aria-label="Remove image"
             >
               <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         ))}
       </div>
