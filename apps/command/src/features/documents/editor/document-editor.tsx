@@ -2,20 +2,23 @@ import * as React from "react"
 import { EditorContent } from "@tiptap/react"
 import type { JSONContent } from "@tiptap/core"
 import type { Editor } from "@tiptap/react"
+import type { EditorCommand } from "@/lib/editor/commands"
 
-import { EditorFloatingMenu } from "@/features/workspace/editor/floating-menu"
 import { EditorBubbleMenu } from "@/features/workspace/editor/bubble-menu"
+import { EditorFloatingMenu } from "@/features/workspace/editor/floating-menu"
 import { EditorTableMenu } from "@/features/workspace/editor/table-menu"
 
-interface ProposalEditorProps {
+type DocumentEditorProps = {
   editor: Editor | null
   onContentChange?: (content: JSONContent) => void
+  bubbleCommands?: Array<EditorCommand>
 }
 
-export default function ProposalEditor({
+export function DocumentEditor({
   editor,
   onContentChange,
-}: ProposalEditorProps) {
+  bubbleCommands,
+}: DocumentEditorProps) {
   const lastContentRef = React.useRef<string | null>(null)
 
   React.useEffect(() => {
@@ -45,7 +48,7 @@ export default function ProposalEditor({
       <div className="mx-auto max-w-5xl pb-32">
         {editor ? (
           <>
-            <EditorBubbleMenu editor={editor} />
+            <EditorBubbleMenu editor={editor} commands={bubbleCommands} />
             <EditorFloatingMenu editor={editor} />
             <EditorTableMenu editor={editor} />
           </>

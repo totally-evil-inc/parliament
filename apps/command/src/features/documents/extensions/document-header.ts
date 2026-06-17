@@ -1,9 +1,9 @@
 import { Node, mergeAttributes } from "@tiptap/core"
 import { ReactNodeViewRenderer } from "@tiptap/react"
-import { ProposalHeaderView } from "@/features/proposals/components/proposal-header-view"
+import DocumentHeaderView from "@/features/documents/components/document-header-view"
 
-export const ProposalHeader = Node.create({
-  name: "proposalHeader",
+export const DocumentHeader = Node.create({
+  name: "documentHeader",
   group: "block",
   atom: true,
   defining: true,
@@ -35,18 +35,21 @@ export const ProposalHeader = Node.create({
   },
 
   parseHTML() {
-    return [{ tag: 'div[data-type="proposal-header"]' }]
+    return [
+      { tag: 'div[data-type="document-header"]' },
+      { tag: 'div[data-type="proposal-header"]' },
+    ]
   },
 
   renderHTML({ HTMLAttributes }) {
     return [
       "div",
-      mergeAttributes(HTMLAttributes, { "data-type": "proposal-header" }),
+      mergeAttributes(HTMLAttributes, { "data-type": "document-header" }),
     ]
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(ProposalHeaderView, {
+    return ReactNodeViewRenderer(DocumentHeaderView, {
       stopEvent: () => true,
     })
   },

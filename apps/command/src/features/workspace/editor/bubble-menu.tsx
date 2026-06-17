@@ -2,15 +2,23 @@ import { BubbleMenu } from "@tiptap/react/menus"
 import { Toggle } from "@workspace/ui/components/toggle"
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { Editor } from "@tiptap/react"
+import type { EditorCommand } from "@/lib/editor/commands"
+
 import { bubbleMenuCommands } from "@/lib/editor/commands"
 
-export const EditorBubbleMenu = ({ editor }: { editor: Editor }) => {
+export const EditorBubbleMenu = ({
+  editor,
+  commands = bubbleMenuCommands,
+}: {
+  editor: Editor
+  commands?: Array<EditorCommand>
+}) => {
   return (
     <BubbleMenu
       editor={editor}
       className="flex items-center gap-1 rounded-md border bg-popover p-1 shadow-md"
     >
-      {bubbleMenuCommands.map((command) => (
+      {commands.map((command) => (
         <div key={command.id} className="flex items-center gap-1">
           <Toggle
             size="sm"

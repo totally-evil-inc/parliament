@@ -1,15 +1,5 @@
 import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  Download01Icon,
-  Image01Icon,
-  LayoutGridIcon,
-  LayoutTableIcon,
-  QuillWrite02Icon,
-  Share01Icon,
-  StarIcon,
-  TextFontIcon,
-  VideoReplayIcon,
-} from "@hugeicons/core-free-icons"
+import { Download01Icon, Share01Icon } from "@hugeicons/core-free-icons"
 import { Button } from "@workspace/ui/components/button"
 import {
   Tooltip,
@@ -18,58 +8,46 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 import { useSidebar } from "@workspace/ui/components/sidebar"
+import { insertDocumentBlockFromDefinition } from "./definition"
+import type { DocumentDefinition } from "./types"
 import type { Editor } from "@tiptap/react"
 
-import { insertProposalBlock } from "@/features/proposals/utils/insert-proposal-block"
-
-const ACTIONS = [
-  { icon: TextFontIcon, label: "Text", command: "text" },
-  { icon: Image01Icon, label: "Image", command: "image" },
-  { icon: VideoReplayIcon, label: "Video", command: "video" },
-  { icon: QuillWrite02Icon, label: "Quote", command: "quote" },
-  { icon: StarIcon, label: "Icon", command: "icon" },
-  { icon: LayoutTableIcon, label: "Table", command: "table" },
-  { icon: LayoutGridIcon, label: "Layout", command: "layout" },
-]
-
-interface ProposalToolbarProps {
+type DocumentToolbarProps = {
   editor: Editor | null
+  definition: DocumentDefinition
   onExport?: () => void
-  onSendProposal?: () => void
+  onSend?: () => void
 }
 
-export function ProposalToolbar({
+export function DocumentToolbar({
   editor,
+  definition,
   onExport,
-  onSendProposal,
-}: ProposalToolbarProps) {
+  onSend,
+}: DocumentToolbarProps) {
   const { toggleSidebar } = useSidebar()
 
-  const runCommand = (command: string) => {
+  const runAction = (actionId: string) => {
     if (!editor) return
 
-    switch (command) {
-      case "text":
-        editor.chain().focus().setNode("paragraph").run()
-        break
-      case "image":
-        insertProposalBlock(editor, { type: "gallery" })
-        break
-      case "video":
-        insertProposalBlock(editor, { type: "timeline" })
-        break
-      case "quote":
-        insertProposalBlock(editor, { type: "testimonials" })
-        break
-      case "table":
-        insertProposalBlock(editor, { type: "pricingTable" })
-        break
-      case "layout":
-        toggleSidebar()
-        break
-      case "icon":
-        insertProposalBlock(editor, { type: "teamMembers" })
-        break
+    const action = definition.toolbarActions.find((item) => item.id === actionId)
+    if (!action) return
+
+    if (action.togglesSidebar) {
+      toggleSidebar()
+      return
+    }
+
+    if (action.command) {
+      action.command(editor)
+      return
+    }
+
+    if (action.blockId) {
+      const block = definition.blocks.find((item) => item.id === action.blockId)
+      if (!block) return
+
+      insertDocumentBlockFromDefinition({ editor, definition, block })
     }
   }
 
@@ -77,14 +55,14 @@ export function ProposalToolbar({
     <TooltipProvider delay={0}>
       <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2">
         <div className="flex items-center gap-1 rounded-2xl border bg-background/80 p-1.5 shadow-2xl backdrop-blur-xl transition-all hover:bg-background">
-          {ACTIONS.map((action) => (
-            <Tooltip key={action.label}>
+          {definition.toolbarActions.map((action) => (
+            <Tooltip key={action.id}>
               <TooltipTrigger
                 render={
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => runCommand(action.command)}
+                    onClick={() => runAction(action.id)}
                     className="h-10 w-10 rounded-xl hover:bg-accent hover:text-accent-foreground"
                   />
                 }
@@ -120,8 +98,8 @@ export function ProposalToolbar({
             <TooltipTrigger
               render={
                 <Button
-                  onClick={onSendProposal}
-                  size={"icon-lg"}
+                  onClick={onSend}
+                  size="icon-lg"
                   className="aspect-square h-10 w-10 gap-2 rounded-full"
                 />
               }
@@ -129,7 +107,7 @@ export function ProposalToolbar({
               <HugeiconsIcon icon={Share01Icon} className="h-4 w-4" />
             </TooltipTrigger>
             <TooltipContent side="top" className="rounded-lg font-medium">
-              Send Proposal
+              Send {definition.title}
             </TooltipContent>
           </Tooltip>
         </div>

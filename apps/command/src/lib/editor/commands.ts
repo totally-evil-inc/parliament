@@ -5,22 +5,16 @@ import {
   Heading1,
   Heading2,
   Heading3,
-  Image01Icon,
   Italic,
   List,
   ListOrdered,
-  PlusSignIcon,
   Quote,
   SquarePi,
   Text,
-  Tick01Icon,
-  UserIcon,
   Variable,
 } from "@hugeicons/core-free-icons"
 import type { Editor } from "@tiptap/react"
 import type { Range } from "@tiptap/core"
-
-import { insertProposalBlock } from "@/features/proposals/utils/insert-proposal-block"
 
 type EditorCommandContext = {
   editor: Editor
@@ -274,93 +268,6 @@ export const editorCommands: Array<EditorCommand> = [
     },
   },
   {
-    id: "timeline",
-    title: "Timeline",
-    description: "Create a vertical timeline of events.",
-    searchTerms: ["timeline", "events", "milestones", "history", "roadmap"],
-    icon: Tick01Icon,
-    group: "block",
-    showInSlashMenu: true,
-    showInFloatingMenu: true,
-    command: ({ editor, range }) => {
-      insertProposalBlock(
-        editor,
-        {
-          type: "timeline",
-          content: [
-            {
-              type: "timelineItem",
-              content: [
-                {
-                  type: "timelineDate",
-                  content: [{ type: "text", text: "March 15, 2024" }],
-                },
-                {
-                  type: "timelineTitle",
-                  content: [{ type: "text", text: "Project Kickoff" }],
-                },
-                {
-                  type: "timelineDescription",
-                  content: [
-                    {
-                      type: "paragraph",
-                      content: [
-                        {
-                          type: "text",
-                          text: "Initial team meeting and project scope definition. Established key milestones and resource allocation.",
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-        range
-      )
-    },
-  },
-  {
-    id: "key-numbers",
-    title: "Key Numbers",
-    description: "Highlight important metrics.",
-    searchTerms: ["key numbers", "metrics", "stats", "highlights"],
-    icon: PlusSignIcon,
-    group: "block",
-    showInSlashMenu: true,
-    showInFloatingMenu: true,
-    command: ({ editor, range }) => {
-      insertProposalBlock(editor, { type: "keyNumbers" }, range)
-    },
-  },
-  {
-    id: "team-members",
-    title: "Team Members",
-    description: "Showcase your team experts.",
-    searchTerms: ["team", "members", "people", "staff"],
-    icon: UserIcon,
-    group: "block",
-    showInSlashMenu: true,
-    showInFloatingMenu: true,
-    command: ({ editor, range }) => {
-      insertProposalBlock(editor, { type: "teamMembers" }, range)
-    },
-  },
-  {
-    id: "gallery",
-    title: "Gallery",
-    description: "Showcase images in a grid.",
-    searchTerms: ["gallery", "images", "photos", "grid"],
-    icon: Image01Icon,
-    group: "block",
-    showInSlashMenu: true,
-    showInFloatingMenu: true,
-    command: ({ editor, range }) => {
-      insertProposalBlock(editor, { type: "gallery" }, range)
-    },
-  },
-  {
     id: "bold",
     title: "Bold",
     description: "Make selected text bold.",
@@ -412,17 +319,3 @@ export const floatingMenuCommands = editorCommands.filter(
 export const bubbleMenuCommands = editorCommands.filter(
   (command) => command.showInBubbleMenu
 )
-
-export const getFilteredSlashCommands = (query: string) => {
-  const normalizedQuery = query.toLowerCase()
-
-  return slashMenuCommands
-    .filter(
-      (command) =>
-        command.title.toLowerCase().includes(normalizedQuery) ||
-        command.searchTerms.some((term) =>
-          term.toLowerCase().includes(normalizedQuery)
-        )
-    )
-    .slice(0, 20)
-}

@@ -1,9 +1,9 @@
 import { Node, mergeAttributes } from "@tiptap/core"
 import { ReactNodeViewRenderer } from "@tiptap/react"
-import { PricingTableView } from "@/features/proposals/components/pricing-table-view"
+import LineItemsView from "@/features/documents/components/line-items-view"
 
-export const PricingTable = Node.create({
-  name: "pricingTable",
+export const LineItems = Node.create({
+  name: "lineItems",
   atom: true,
   defining: true,
   isolating: true,
@@ -21,18 +21,18 @@ export const PricingTable = Node.create({
   },
 
   parseHTML() {
-    return [{ tag: 'div[data-type="pricing-table"]' }]
-  },
-
-  renderHTML({ HTMLAttributes }) {
     return [
-      "div",
-      mergeAttributes(HTMLAttributes, { "data-type": "pricing-table" }),
+      { tag: 'div[data-type="line-items"]' },
+      { tag: 'div[data-type="pricing-table"]' },
     ]
   },
 
+  renderHTML({ HTMLAttributes }) {
+    return ["div", mergeAttributes(HTMLAttributes, { "data-type": "line-items" })]
+  },
+
   addNodeView() {
-    return ReactNodeViewRenderer(PricingTableView, {
+    return ReactNodeViewRenderer(LineItemsView, {
       stopEvent: () => true,
     })
   },

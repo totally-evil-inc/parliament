@@ -1,15 +1,18 @@
-import { slashMenuCommands } from "./commands"
+import type { EditorCommand } from "./commands"
 
 const SLASH_COMMAND_LIMIT = 20
 
-export const getSlashCommandItems = (query: string) => {
+export const filterSlashCommandItems = (
+  query: string,
+  commands: Array<EditorCommand>
+) => {
   const normalizedQuery = query.trim().toLowerCase()
 
   if (!normalizedQuery) {
-    return slashMenuCommands.slice(0, SLASH_COMMAND_LIMIT)
+    return commands.slice(0, SLASH_COMMAND_LIMIT)
   }
 
-  return slashMenuCommands
+  return commands
     .filter((command) => {
       const searchableText = [
         command.title,

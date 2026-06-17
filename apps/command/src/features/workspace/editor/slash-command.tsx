@@ -1,10 +1,21 @@
 import { Extension } from "@tiptap/core"
 import Suggestion from "@tiptap/suggestion"
 import { renderSlashCommandItems } from "./slash-command-renderer"
-import { getSlashCommandItems } from "@/lib/editor/command-filter"
+import type { EditorCommand } from "@/lib/editor/commands"
 
-export const SlashCommand = Extension.create({
+import { slashMenuCommands } from "@/lib/editor/commands"
+import { filterSlashCommandItems } from "@/lib/editor/command-filter"
+
+export const SlashCommand = Extension.create<{
+  commands: Array<EditorCommand>
+}>({
   name: "slashCommand",
+
+  addOptions() {
+    return {
+      commands: slashMenuCommands,
+    }
+  },
 
   addProseMirrorPlugins() {
     return [
@@ -12,7 +23,7 @@ export const SlashCommand = Extension.create({
         editor: this.editor,
         char: "/",
         startOfLine: true,
-        items: ({ query }) => getSlashCommandItems(query),
+        items: ({ query }) => filterSlashCommandItems(query, this.options.commands),
         render: renderSlashCommandItems,
         command: ({ editor, range, props }) => {
           props.command({ editor, range })

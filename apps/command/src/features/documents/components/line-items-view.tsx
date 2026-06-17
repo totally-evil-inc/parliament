@@ -49,7 +49,10 @@ function getLineTotal(item: PricingItem) {
   return safeNumber(item.quantity) * safeNumber(item.rate)
 }
 
-export function PricingTableView({ node, updateAttributes }: NodeViewProps) {
+function LineItemsView({
+  node,
+  updateAttributes,
+}: NodeViewProps) {
   const {
     items = [],
     discountRate = 0,
@@ -128,7 +131,7 @@ export function PricingTableView({ node, updateAttributes }: NodeViewProps) {
 
   return (
     <NodeViewWrapper
-      className="proposal-billing-section my-12 overflow-hidden rounded-xl border bg-background shadow-sm"
+      className="document-line-items my-12 overflow-hidden rounded-xl border bg-background shadow-sm"
       contentEditable={false}
     >
       <div className="bg-muted/40 px-6 py-4">
@@ -138,7 +141,7 @@ export function PricingTableView({ node, updateAttributes }: NodeViewProps) {
               Services & Billing
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Capture proposal line items, discounts, tax, and signature.
+              Capture line items, discounts, tax, and signature.
             </p>
           </div>
         </div>
@@ -170,8 +173,7 @@ export function PricingTableView({ node, updateAttributes }: NodeViewProps) {
                   colSpan={5}
                   className="px-4 py-8 text-center text-sm text-muted-foreground"
                 >
-                  No line items yet. Add a service to start building the
-                  proposal total.
+                  No line items yet. Add a service to start building the total.
                 </TableCell>
               </TableRow>
             ) : null}
@@ -317,7 +319,7 @@ export function PricingTableView({ node, updateAttributes }: NodeViewProps) {
             <p className="font-medium text-foreground">Billing notes</p>
             <p>
               Use this section to confirm the services, quantities, pricing,
-              discounts, and taxes included in this proposal.
+              discounts, and taxes included in this document.
             </p>
           </div>
 
@@ -399,6 +401,9 @@ export function PricingTableView({ node, updateAttributes }: NodeViewProps) {
     </NodeViewWrapper>
   )
 }
+
+export { LineItemsView }
+export default LineItemsView
 
 function AdjustmentRow({
   label,

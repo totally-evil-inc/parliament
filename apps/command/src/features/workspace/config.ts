@@ -13,7 +13,7 @@ import type { IconSvgElement } from "@hugeicons/react"
 
 export type WorkspaceRouteNavItem = {
   label: string
-  to: "/" | "/settings"
+  to: "/" | "/proposals" | "/settings"
   icon: IconSvgElement
   badge?: number
 }

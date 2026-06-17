@@ -77,7 +77,10 @@ function toDateValue(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-export function ProposalHeaderView({ node, updateAttributes }: NodeViewProps) {
+function DocumentHeaderView({
+  node,
+  updateAttributes,
+}: NodeViewProps) {
   const {
     title,
     date,
@@ -152,7 +155,7 @@ export function ProposalHeaderView({ node, updateAttributes }: NodeViewProps) {
 
   return (
     <NodeViewWrapper
-      className="proposal-header mb-12 space-y-12"
+      className="document-header mb-12 space-y-12"
       contentEditable={false}
     >
       <div className="space-y-6">
@@ -169,7 +172,7 @@ export function ProposalHeaderView({ node, updateAttributes }: NodeViewProps) {
           />
         </div>
 
-        <ProposalTitleField
+        <DocumentTitleField
           value={title}
           onChange={(value) => handleChange("title", value)}
         />
@@ -298,7 +301,10 @@ export function ProposalHeaderView({ node, updateAttributes }: NodeViewProps) {
   )
 }
 
-function ProposalTitleField({
+export { DocumentHeaderView }
+export default DocumentHeaderView
+
+function DocumentTitleField({
   value,
   onChange,
 }: {
@@ -321,7 +327,7 @@ function ProposalTitleField({
       ref={textareaRef}
       rows={1}
       className="block w-full resize-none overflow-hidden bg-transparent text-4xl leading-tight font-bold tracking-tight wrap-break-word whitespace-pre-wrap outline-none placeholder:text-muted-foreground/30"
-      placeholder="Proposal title..."
+      placeholder="Document title..."
       value={value}
       onChange={(e) => onChange(e.target.value)}
     />
