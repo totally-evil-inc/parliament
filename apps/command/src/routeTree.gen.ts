@@ -8,124 +8,124 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root"
-import { Route as AuthRouteRouteImport } from "./routes/auth/route"
-import { Route as WorkspaceRouteRouteImport } from "./routes/_workspace/route"
-import { Route as WorkspaceIndexRouteImport } from "./routes/_workspace/index"
-import { Route as WorkspaceSettingsRouteRouteImport } from "./routes/_workspace/settings/route"
-import { Route as AuthSignInIndexRouteImport } from "./routes/auth/sign-in/index"
-import { Route as AuthOnboardingIndexRouteImport } from "./routes/auth/onboarding/index"
-import { Route as WorkspaceSettingsIndexRouteImport } from "./routes/_workspace/settings/index"
-import { Route as WorkspaceProposalsIndexRouteImport } from "./routes/_workspace/proposals/index"
-import { Route as WorkspaceSettingsTabRouteImport } from "./routes/_workspace/settings/$tab"
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteRouteImport } from './routes/auth/route'
+import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
+import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
+import { Route as WorkspaceSettingsRouteRouteImport } from './routes/_workspace/settings/route'
+import { Route as AuthSignInIndexRouteImport } from './routes/auth/sign-in/index'
+import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
+import { Route as WorkspaceSettingsIndexRouteImport } from './routes/_workspace/settings/index'
+import { Route as WorkspaceProposalsIndexRouteImport } from './routes/_workspace/proposals/index'
+import { Route as WorkspaceSettingsTabRouteImport } from './routes/_workspace/settings/$tab'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
-  id: "/auth",
-  path: "/auth",
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkspaceRouteRoute = WorkspaceRouteRouteImport.update({
-  id: "/_workspace",
+  id: '/_workspace',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceSettingsRouteRoute = WorkspaceSettingsRouteRouteImport.update({
-  id: "/settings",
-  path: "/settings",
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const AuthSignInIndexRoute = AuthSignInIndexRouteImport.update({
-  id: "/sign-in/",
-  path: "/sign-in/",
+  id: '/sign-in/',
+  path: '/sign-in/',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthOnboardingIndexRoute = AuthOnboardingIndexRouteImport.update({
-  id: "/onboarding/",
-  path: "/onboarding/",
+  id: '/onboarding/',
+  path: '/onboarding/',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 const WorkspaceSettingsIndexRoute = WorkspaceSettingsIndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => WorkspaceSettingsRouteRoute,
 } as any)
 const WorkspaceProposalsIndexRoute = WorkspaceProposalsIndexRouteImport.update({
-  id: "/proposals/",
-  path: "/proposals/",
+  id: '/proposals/',
+  path: '/proposals/',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceSettingsTabRoute = WorkspaceSettingsTabRouteImport.update({
-  id: "/$tab",
-  path: "/$tab",
+  id: '/$tab',
+  path: '/$tab',
   getParentRoute: () => WorkspaceSettingsRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof WorkspaceIndexRoute
-  "/auth": typeof AuthRouteRouteWithChildren
-  "/settings": typeof WorkspaceSettingsRouteRouteWithChildren
-  "/settings/$tab": typeof WorkspaceSettingsTabRoute
-  "/proposals/": typeof WorkspaceProposalsIndexRoute
-  "/settings/": typeof WorkspaceSettingsIndexRoute
-  "/auth/onboarding/": typeof AuthOnboardingIndexRoute
-  "/auth/sign-in/": typeof AuthSignInIndexRoute
+  '/': typeof WorkspaceIndexRoute
+  '/auth': typeof AuthRouteRouteWithChildren
+  '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
+  '/settings/$tab': typeof WorkspaceSettingsTabRoute
+  '/proposals/': typeof WorkspaceProposalsIndexRoute
+  '/settings/': typeof WorkspaceSettingsIndexRoute
+  '/auth/onboarding/': typeof AuthOnboardingIndexRoute
+  '/auth/sign-in/': typeof AuthSignInIndexRoute
 }
 export interface FileRoutesByTo {
-  "/auth": typeof AuthRouteRouteWithChildren
-  "/": typeof WorkspaceIndexRoute
-  "/settings/$tab": typeof WorkspaceSettingsTabRoute
-  "/proposals": typeof WorkspaceProposalsIndexRoute
-  "/settings": typeof WorkspaceSettingsIndexRoute
-  "/auth/onboarding": typeof AuthOnboardingIndexRoute
-  "/auth/sign-in": typeof AuthSignInIndexRoute
+  '/auth': typeof AuthRouteRouteWithChildren
+  '/': typeof WorkspaceIndexRoute
+  '/settings/$tab': typeof WorkspaceSettingsTabRoute
+  '/proposals': typeof WorkspaceProposalsIndexRoute
+  '/settings': typeof WorkspaceSettingsIndexRoute
+  '/auth/onboarding': typeof AuthOnboardingIndexRoute
+  '/auth/sign-in': typeof AuthSignInIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  "/_workspace": typeof WorkspaceRouteRouteWithChildren
-  "/auth": typeof AuthRouteRouteWithChildren
-  "/_workspace/settings": typeof WorkspaceSettingsRouteRouteWithChildren
-  "/_workspace/": typeof WorkspaceIndexRoute
-  "/_workspace/settings/$tab": typeof WorkspaceSettingsTabRoute
-  "/_workspace/proposals/": typeof WorkspaceProposalsIndexRoute
-  "/_workspace/settings/": typeof WorkspaceSettingsIndexRoute
-  "/auth/onboarding/": typeof AuthOnboardingIndexRoute
-  "/auth/sign-in/": typeof AuthSignInIndexRoute
+  '/_workspace': typeof WorkspaceRouteRouteWithChildren
+  '/auth': typeof AuthRouteRouteWithChildren
+  '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
+  '/_workspace/': typeof WorkspaceIndexRoute
+  '/_workspace/settings/$tab': typeof WorkspaceSettingsTabRoute
+  '/_workspace/proposals/': typeof WorkspaceProposalsIndexRoute
+  '/_workspace/settings/': typeof WorkspaceSettingsIndexRoute
+  '/auth/onboarding/': typeof AuthOnboardingIndexRoute
+  '/auth/sign-in/': typeof AuthSignInIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/auth"
-    | "/settings"
-    | "/settings/$tab"
-    | "/proposals/"
-    | "/settings/"
-    | "/auth/onboarding/"
-    | "/auth/sign-in/"
+    | '/'
+    | '/auth'
+    | '/settings'
+    | '/settings/$tab'
+    | '/proposals/'
+    | '/settings/'
+    | '/auth/onboarding/'
+    | '/auth/sign-in/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | "/auth"
-    | "/"
-    | "/settings/$tab"
-    | "/proposals"
-    | "/settings"
-    | "/auth/onboarding"
-    | "/auth/sign-in"
+    | '/auth'
+    | '/'
+    | '/settings/$tab'
+    | '/proposals'
+    | '/settings'
+    | '/auth/onboarding'
+    | '/auth/sign-in'
   id:
-    | "__root__"
-    | "/_workspace"
-    | "/auth"
-    | "/_workspace/settings"
-    | "/_workspace/"
-    | "/_workspace/settings/$tab"
-    | "/_workspace/proposals/"
-    | "/_workspace/settings/"
-    | "/auth/onboarding/"
-    | "/auth/sign-in/"
+    | '__root__'
+    | '/_workspace'
+    | '/auth'
+    | '/_workspace/settings'
+    | '/_workspace/'
+    | '/_workspace/settings/$tab'
+    | '/_workspace/proposals/'
+    | '/_workspace/settings/'
+    | '/auth/onboarding/'
+    | '/auth/sign-in/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -133,68 +133,68 @@ export interface RootRouteChildren {
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/auth": {
-      id: "/auth"
-      path: "/auth"
-      fullPath: "/auth"
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    "/_workspace": {
-      id: "/_workspace"
-      path: ""
-      fullPath: "/"
+    '/_workspace': {
+      id: '/_workspace'
+      path: ''
+      fullPath: '/'
       preLoaderRoute: typeof WorkspaceRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    "/_workspace/": {
-      id: "/_workspace/"
-      path: "/"
-      fullPath: "/"
+    '/_workspace/': {
+      id: '/_workspace/'
+      path: '/'
+      fullPath: '/'
       preLoaderRoute: typeof WorkspaceIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    "/_workspace/settings": {
-      id: "/_workspace/settings"
-      path: "/settings"
-      fullPath: "/settings"
+    '/_workspace/settings': {
+      id: '/_workspace/settings'
+      path: '/settings'
+      fullPath: '/settings'
       preLoaderRoute: typeof WorkspaceSettingsRouteRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    "/auth/sign-in/": {
-      id: "/auth/sign-in/"
-      path: "/sign-in"
-      fullPath: "/auth/sign-in/"
+    '/auth/sign-in/': {
+      id: '/auth/sign-in/'
+      path: '/sign-in'
+      fullPath: '/auth/sign-in/'
       preLoaderRoute: typeof AuthSignInIndexRouteImport
       parentRoute: typeof AuthRouteRoute
     }
-    "/auth/onboarding/": {
-      id: "/auth/onboarding/"
-      path: "/onboarding"
-      fullPath: "/auth/onboarding/"
+    '/auth/onboarding/': {
+      id: '/auth/onboarding/'
+      path: '/onboarding'
+      fullPath: '/auth/onboarding/'
       preLoaderRoute: typeof AuthOnboardingIndexRouteImport
       parentRoute: typeof AuthRouteRoute
     }
-    "/_workspace/settings/": {
-      id: "/_workspace/settings/"
-      path: "/"
-      fullPath: "/settings/"
+    '/_workspace/settings/': {
+      id: '/_workspace/settings/'
+      path: '/'
+      fullPath: '/settings/'
       preLoaderRoute: typeof WorkspaceSettingsIndexRouteImport
       parentRoute: typeof WorkspaceSettingsRouteRoute
     }
-    "/_workspace/proposals/": {
-      id: "/_workspace/proposals/"
-      path: "/proposals"
-      fullPath: "/proposals/"
+    '/_workspace/proposals/': {
+      id: '/_workspace/proposals/'
+      path: '/proposals'
+      fullPath: '/proposals/'
       preLoaderRoute: typeof WorkspaceProposalsIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    "/_workspace/settings/$tab": {
-      id: "/_workspace/settings/$tab"
-      path: "/$tab"
-      fullPath: "/settings/$tab"
+    '/_workspace/settings/$tab': {
+      id: '/_workspace/settings/$tab'
+      path: '/$tab'
+      fullPath: '/settings/$tab'
       preLoaderRoute: typeof WorkspaceSettingsTabRouteImport
       parentRoute: typeof WorkspaceSettingsRouteRoute
     }
@@ -214,7 +214,7 @@ const WorkspaceSettingsRouteRouteChildren: WorkspaceSettingsRouteRouteChildren =
 
 const WorkspaceSettingsRouteRouteWithChildren =
   WorkspaceSettingsRouteRoute._addFileChildren(
-    WorkspaceSettingsRouteRouteChildren
+    WorkspaceSettingsRouteRouteChildren,
   )
 
 interface WorkspaceRouteRouteChildren {
@@ -230,7 +230,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
 }
 
 const WorkspaceRouteRouteWithChildren = WorkspaceRouteRoute._addFileChildren(
-  WorkspaceRouteRouteChildren
+  WorkspaceRouteRouteChildren,
 )
 
 interface AuthRouteRouteChildren {
@@ -244,7 +244,7 @@ const AuthRouteRouteChildren: AuthRouteRouteChildren = {
 }
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
-  AuthRouteRouteChildren
+  AuthRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
@@ -255,9 +255,9 @@ export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx"
-import type { startInstance } from "./start.ts"
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>

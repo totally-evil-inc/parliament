@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react"
 import {
   Calendar03Icon,
   Delete02Icon,
@@ -145,17 +146,8 @@ export function ProposalHeaderView({ node, updateAttributes }: NodeViewProps) {
 
   return (
     <NodeViewWrapper className="proposal-header mb-12 space-y-12">
-      <div className="flex items-start justify-between gap-8">
-        <div className="flex-1 space-y-4">
-          <input
-            className="w-full bg-transparent text-5xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/30"
-            placeholder="Proposal title..."
-            value={title}
-            onChange={(e) => handleChange("title", e.target.value)}
-          />
-        </div>
-
-        <div className="flex flex-col items-end gap-4 text-right">
+      <div className="space-y-6">
+        <div className="ml-auto grid w-fit min-w-64 grid-cols-2 gap-6 text-right">
           <DatePickerField
             label="Date"
             value={date}
@@ -167,6 +159,11 @@ export function ProposalHeaderView({ node, updateAttributes }: NodeViewProps) {
             onChange={(value) => handleDateChange("due", value)}
           />
         </div>
+
+        <ProposalTitleField
+          value={title}
+          onChange={(value) => handleChange("title", value)}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-16 border-t pt-8">
@@ -292,6 +289,36 @@ export function ProposalHeaderView({ node, updateAttributes }: NodeViewProps) {
   )
 }
 
+function ProposalTitleField({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (value: string) => void
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    const textarea = textareaRef.current
+
+    if (!textarea) return
+
+    textarea.style.height = "auto"
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }, [value])
+
+  return (
+    <textarea
+      ref={textareaRef}
+      rows={1}
+      className="block w-full resize-none overflow-hidden bg-transparent text-4xl leading-tight font-bold tracking-tight wrap-break-word whitespace-pre-wrap outline-none placeholder:text-muted-foreground/30"
+      placeholder="Proposal title..."
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  )
+}
+
 function DatePickerField({
   label,
   value,
@@ -302,8 +329,8 @@ function DatePickerField({
   onChange: (value: string) => void
 }) {
   return (
-    <div className="space-y-1">
-      <label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+    <div className="space-y-1.5">
+      <label className="block text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
         {label}
       </label>
       <Popover>
@@ -312,7 +339,7 @@ function DatePickerField({
             <Button
               type="button"
               variant="ghost"
-              className="h-auto gap-2 px-0 py-0 text-sm font-medium hover:bg-transparent"
+              className="h-auto w-full justify-end gap-2 px-0 py-0 text-sm font-medium hover:bg-transparent"
             />
           }
         >
@@ -320,7 +347,7 @@ function DatePickerField({
             icon={Calendar03Icon}
             className="h-4 w-4 text-muted-foreground"
           />
-          {formatDate(value)}
+          <span>{formatDate(value)}</span>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-auto p-0">
           <Calendar

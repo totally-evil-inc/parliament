@@ -20,10 +20,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowLeft01Icon,
   Download01Icon,
-  Layers01Icon,
-  LayoutGridIcon,
   Share01Icon,
-  Sorting05Icon,
 } from "@hugeicons/core-free-icons"
 import { useNavigate } from "@tanstack/react-router"
 
@@ -132,19 +129,6 @@ export default function ProposalEditor() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-lg border bg-muted/50 p-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <HugeiconsIcon icon={Layers01Icon} className="h-4 w-4" />
-            </Button>
-
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <HugeiconsIcon icon={Sorting05Icon} className="h-4 w-4" />
-            </Button>
-          </div>
-
           <Button variant="outline" className="h-9 gap-2">
             <HugeiconsIcon icon={Download01Icon} className="h-4 w-4" />
             Export
