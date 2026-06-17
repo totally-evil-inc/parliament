@@ -73,6 +73,17 @@ function TeamPreview() {
   )
 }
 
+function TestimonialPreview() {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-1.5 border-l-2 border-border pl-2">
+      <div className="h-1.5 w-full rounded-full bg-muted-foreground/25" />
+      <div className="h-1.5 w-4/5 rounded-full bg-muted-foreground/20" />
+      <div className="mt-1.5 h-1.5 w-2/3 rounded-full bg-muted-foreground/30" />
+      <div className="h-1 w-1/2 rounded-full bg-muted-foreground/15" />
+    </div>
+  )
+}
+
 export function ProposalSidebar({ editor }: { editor: Editor | null }) {
   const { setOpen } = useSidebar()
   const [activeTab, setActiveTab] = React.useState<"all" | "my">("all")
@@ -324,32 +335,92 @@ export function ProposalSidebar({ editor }: { editor: Editor | null }) {
         ),
         layouts: [
           {
-            name: "Testimonial Cards",
-            description:
-              "Showcase client testimonials and feedback with ratings",
+            name: "1-Column Testimonials",
+            description: "Feature one quote with attribution",
             type: "testimonials",
+            attrs: {
+              columns: 1,
+              testimonials: [
+                {
+                  content:
+                    "The team brought clarity, speed, and care to every phase of the project.",
+                  author: "Jane Doe",
+                  role: "CEO, Tech Corp",
+                  avatar: "",
+                },
+              ],
+            },
+            preview: (
+              <div className="flex h-20 w-full items-center px-6">
+                <TestimonialPreview />
+              </div>
+            ),
+          },
+          {
+            name: "2-Column Testimonials",
+            description: "Showcase two client quotes side by side",
+            type: "testimonials",
+            attrs: {
+              columns: 2,
+              testimonials: [
+                {
+                  content:
+                    "The team brought clarity, speed, and care to every phase of the project.",
+                  author: "Jane Doe",
+                  role: "CEO, Tech Corp",
+                  avatar: "",
+                },
+                {
+                  content:
+                    "Their process helped us move faster without sacrificing quality or alignment.",
+                  author: "Michael Smith",
+                  role: "Founder, Northstar Labs",
+                  avatar: "",
+                },
+              ],
+            },
             preview: (
               <div className="flex h-20 w-full items-center gap-3">
-                <div className="flex flex-1 flex-col gap-1.5 rounded-xl border border-border/40 bg-muted/50 p-2 shadow-sm">
-                  <div className="flex gap-0.5 text-[8px] text-yellow-500">
-                    <span>★</span>
-                    <span>★</span>
-                    <span>★</span>
-                    <span>★</span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-muted/40" />
-                  <div className="h-1.5 w-2/3 rounded-full bg-muted/40" />
-                </div>
-                <div className="flex flex-1 flex-col gap-1.5 rounded-xl border border-border/40 bg-muted/50 p-2 shadow-sm">
-                  <div className="flex gap-0.5 text-[8px] text-yellow-500">
-                    <span>★</span>
-                    <span>★</span>
-                    <span>★</span>
-                    <span>★</span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-muted/40" />
-                  <div className="h-1.5 w-2/3 rounded-full bg-muted/40" />
-                </div>
+                <TestimonialPreview />
+                <TestimonialPreview />
+              </div>
+            ),
+          },
+          {
+            name: "3-Column Testimonials",
+            description: "Display three concise testimonials in a clean grid",
+            type: "testimonials",
+            attrs: {
+              columns: 3,
+              testimonials: [
+                {
+                  content:
+                    "The team brought clarity, speed, and care to every phase of the project.",
+                  author: "Jane Doe",
+                  role: "CEO, Tech Corp",
+                  avatar: "",
+                },
+                {
+                  content:
+                    "Their process helped us move faster without sacrificing quality or alignment.",
+                  author: "Michael Smith",
+                  role: "Founder, Northstar Labs",
+                  avatar: "",
+                },
+                {
+                  content:
+                    "We had confidence in the plan from kickoff through final delivery.",
+                  author: "Priya Patel",
+                  role: "COO, Atlas Studio",
+                  avatar: "",
+                },
+              ],
+            },
+            preview: (
+              <div className="flex h-20 w-full items-center gap-2">
+                <TestimonialPreview />
+                <TestimonialPreview />
+                <TestimonialPreview />
               </div>
             ),
           },
@@ -495,7 +566,10 @@ export function ProposalSidebar({ editor }: { editor: Editor | null }) {
         })
         break
       case "testimonials":
-        insertProposalBlock(editor, { type: "testimonials" })
+        insertProposalBlock(editor, {
+          type: "testimonials",
+          attrs: layout.attrs,
+        })
         break
       case "gallery":
         insertProposalBlock(editor, { type: "gallery" })

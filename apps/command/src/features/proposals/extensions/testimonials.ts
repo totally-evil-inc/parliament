@@ -14,13 +14,28 @@ export const Testimonials = Node.create({
         default: [
           {
             content:
-              "The level of professionalism and attention to detail exceeded our expectations. Highly recommended!",
+              "The team brought clarity, speed, and care to every phase of the project.",
             author: "Jane Doe",
             role: "CEO, Tech Corp",
             avatar: "",
           },
+          {
+            content:
+              "Their process helped us move faster without sacrificing quality or alignment.",
+            author: "Michael Smith",
+            role: "Founder, Northstar Labs",
+            avatar: "",
+          },
+          {
+            content:
+              "We had confidence in the plan from kickoff through final delivery.",
+            author: "Priya Patel",
+            role: "COO, Atlas Studio",
+            avatar: "",
+          },
         ],
       },
+      columns: { default: 3 },
     }
   },
 
