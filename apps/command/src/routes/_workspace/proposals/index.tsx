@@ -20,7 +20,7 @@ function RouteComponent() {
   )
 
   const editor = useDocumentEditor({
-    documentType: proposalDocumentDefinition.type,
+    documentId: proposalDocumentDefinition.type,
     content: editorContent,
     onContentChange: setEditorContent,
     definition: proposalDocumentDefinition,

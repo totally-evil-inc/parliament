@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import type { EditorCommand } from "@/lib/editor/commands"
 
 export type DocumentType = "proposal" | "invoice" | "receipt"
+export type DocumentEditorPreset = "business"
 
 export type DocumentInsertPolicy = {
   beforeNodeType?: string
@@ -18,22 +19,42 @@ export type DocumentLayoutPreset = {
   preview: ReactNode
 }
 
-export type DocumentBlockDefinition = {
+type DocumentBlockBase = {
   id: string
-  nodeType: string
   label: string
   description: string
   searchTerms: Array<string>
   icon: EditorCommand["icon"]
-  extension?: AnyExtension
-  defaultContent?: JSONContent
   preview?: ReactNode
-  layouts?: Array<DocumentLayoutPreset>
-  singleton?: boolean
   showInSlashMenu?: boolean
   showInFloatingMenu?: boolean
   showInSidebar?: boolean
 }
+
+export type InsertableDocumentBlockDefinition = DocumentBlockBase & {
+  kind: "insertable"
+  nodeType?: string
+  extension?: AnyExtension
+  layouts?: Array<DocumentLayoutPreset>
+  createContent: (layout?: DocumentLayoutPreset) => JSONContent
+}
+
+export type SingletonDocumentBlockDefinition = DocumentBlockBase & {
+  kind: "singleton"
+  nodeType: string
+  layouts?: Array<DocumentLayoutPreset>
+  createContent?: (layout?: DocumentLayoutPreset) => JSONContent
+}
+
+export type ActionDocumentBlockDefinition = DocumentBlockBase & {
+  kind: "action"
+  command: (editor: Editor) => void
+}
+
+export type DocumentBlockDefinition =
+  | InsertableDocumentBlockDefinition
+  | SingletonDocumentBlockDefinition
+  | ActionDocumentBlockDefinition
 
 export type DocumentToolbarAction = {
   id: string
@@ -49,6 +70,7 @@ export type DocumentDefinition = {
   title: string
   initialContent: JSONContent
   placeholder: string
+  presets?: Array<DocumentEditorPreset>
   insertPolicy?: DocumentInsertPolicy
   schemaExtensions?: Array<AnyExtension>
   blocks: Array<DocumentBlockDefinition>
@@ -56,13 +78,10 @@ export type DocumentDefinition = {
 }
 
 export type DocumentEditorConfig = {
-  documentType: DocumentType
+  documentId?: string
   content: JSONContent
   onContentChange?: (content: JSONContent) => void
-  placeholder?: string
-  extensions?: Array<AnyExtension>
-  commands?: Array<EditorCommand>
-  definition?: DocumentDefinition
+  definition: DocumentDefinition
 }
 
 export type InsertDocumentBlockOptions = {

@@ -15,7 +15,12 @@ import {
 } from "@workspace/ui/components/sidebar"
 import { cn } from "@workspace/ui/lib/utils"
 import { insertDocumentBlockFromDefinition } from "./definition"
-import type { DocumentBlockDefinition, DocumentDefinition } from "./types"
+import type {
+  DocumentBlockDefinition,
+  DocumentDefinition,
+  InsertableDocumentBlockDefinition,
+  SingletonDocumentBlockDefinition,
+} from "./types"
 import type { Editor } from "@tiptap/react"
 
 type DocumentBlockSidebarProps = {
@@ -34,7 +39,10 @@ export function DocumentBlockSidebar({
   )
 
   const blocks = React.useMemo(
-    () => definition.blocks.filter((block) => block.showInSidebar),
+    () =>
+      definition.blocks.filter(
+        (block) => block.kind !== "action" && block.showInSidebar
+      ),
     [definition.blocks]
   )
 
@@ -43,13 +51,24 @@ export function DocumentBlockSidebar({
   }, [blocks, selectedBlockId])
 
   const handleInsertLayout = (
-    block: DocumentBlockDefinition,
+    block: InsertableDocumentBlockDefinition | SingletonDocumentBlockDefinition,
     layoutId?: string
   ) => {
     if (!editor) return
 
     const layout = block.layouts?.find((item) => item.id === layoutId)
     insertDocumentBlockFromDefinition({ editor, definition, block, layout })
+  }
+
+  const handleSelectBlock = (block: DocumentBlockDefinition) => {
+    if (block.kind === "action") return
+
+    if (!block.layouts?.length) {
+      handleInsertLayout(block)
+      return
+    }
+
+    setSelectedBlockId(block.id)
   }
 
   return (
@@ -63,7 +82,7 @@ export function DocumentBlockSidebar({
         "*:data-[sidebar=sidebar]:bg-background/95 *:data-[sidebar=sidebar]:shadow-2xl *:data-[sidebar=sidebar]:backdrop-blur-xl"
       )}
     >
-      {selectedBlock ? (
+      {selectedBlock && selectedBlock.kind !== "action" ? (
         <>
           <SidebarHeader className="flex shrink-0 flex-row items-center justify-between gap-3 border-b border-border/70 px-4 py-4">
             <button
@@ -97,7 +116,7 @@ export function DocumentBlockSidebar({
                   {definition.title.toLowerCase()}.
                 </div>
                 <div className="space-y-3">
-                  {(selectedBlock.layouts ?? []).map((layout) => (
+                  {selectedBlock.layouts?.map((layout) => (
                     <button
                       key={layout.id}
                       onClick={() =>
@@ -170,7 +189,7 @@ export function DocumentBlockSidebar({
                   {blocks.map((block) => (
                     <button
                       key={block.id}
-                      onClick={() => setSelectedBlockId(block.id)}
+                      onClick={() => handleSelectBlock(block)}
                       className="group w-full rounded-xl border border-border/60 bg-background/50 p-3 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
                     >
                       <div className="flex w-full items-center justify-between">

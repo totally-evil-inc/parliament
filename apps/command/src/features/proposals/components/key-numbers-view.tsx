@@ -2,14 +2,21 @@ import { NodeViewWrapper } from "@tiptap/react"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
 import type { NodeViewProps } from "@tiptap/react"
+import type { KeyNumberMetric } from "@/features/proposals/types"
+import { getArrayAttr, getColumnCount } from "@/features/proposals/types"
 
 const inputClassName =
   "h-auto rounded-none !border-0 !bg-transparent !p-0 text-center shadow-none !outline-none !ring-0 hover:!border-transparent focus-visible:!border-transparent focus-visible:!ring-0 dark:!bg-transparent"
 
 export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
-  const { metrics, columns } = node.attrs
+  const metrics = getArrayAttr<KeyNumberMetric>(node.attrs.metrics)
+  const columns = getColumnCount(node.attrs.columns)
 
-  const updateMetric = (index: number, key: string, value: string) => {
+  const updateMetric = (
+    index: number,
+    key: keyof KeyNumberMetric,
+    value: string
+  ) => {
     const newMetrics = [...metrics]
     newMetrics[index] = { ...newMetrics[index], [key]: value }
     updateAttributes({ metrics: newMetrics })
@@ -25,7 +32,7 @@ export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
   return (
     <NodeViewWrapper className="key-numbers my-12">
       <div className={`grid gap-x-16 gap-y-14 ${gridColumns}`}>
-        {metrics.map((metric: any, index: number) => (
+        {metrics.map((metric, index) => (
           <div
             key={index}
             className="flex flex-col items-center justify-start text-center"

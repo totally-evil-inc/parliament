@@ -1,7 +1,8 @@
 import type {
-  DocumentBlockDefinition,
   DocumentDefinition,
   DocumentLayoutPreset,
+  InsertableDocumentBlockDefinition,
+  SingletonDocumentBlockDefinition,
 } from "./types"
 import type { EditorCommand } from "@/lib/editor/commands"
 import type { Editor } from "@tiptap/react"
@@ -12,9 +13,37 @@ import { insertDocumentBlock } from "@/features/documents/utils/insert-document-
 type InsertFromDefinitionOptions = {
   editor: Editor
   definition: DocumentDefinition
-  block: DocumentBlockDefinition
+  block: InsertableDocumentBlockDefinition | SingletonDocumentBlockDefinition
   layout?: DocumentLayoutPreset
   range?: Range
+}
+
+function findTopLevelNodePosition(editor: Editor, type: string) {
+  let position = 0
+
+  for (let index = 0; index < editor.state.doc.childCount; index += 1) {
+    const child = editor.state.doc.child(index)
+
+    if (child.type.name === type) return position
+
+    position += child.nodeSize
+  }
+
+  return null
+}
+
+function focusSingletonBlock(
+  editor: Editor,
+  block: SingletonDocumentBlockDefinition
+) {
+  const position = findTopLevelNodePosition(editor, block.nodeType)
+
+  if (position === null) {
+    return false
+  }
+
+  editor.chain().focus().setNodeSelection(position).run()
+  return true
 }
 
 export function insertDocumentBlockFromDefinition({
@@ -24,8 +53,22 @@ export function insertDocumentBlockFromDefinition({
   layout,
   range,
 }: InsertFromDefinitionOptions) {
-  if (block.singleton) {
-    editor.commands.focus()
+  if (block.kind === "singleton") {
+    if (focusSingletonBlock(editor, block)) {
+      return
+    }
+
+    if (!block.createContent) {
+      editor.commands.focus()
+      return
+    }
+
+    insertDocumentBlock({
+      editor,
+      range,
+      beforeNodeType: definition.insertPolicy?.beforeNodeType,
+      block: block.createContent(layout),
+    })
     return
   }
 
@@ -33,11 +76,7 @@ export function insertDocumentBlockFromDefinition({
     editor,
     range,
     beforeNodeType: definition.insertPolicy?.beforeNodeType,
-    block: {
-      type: block.nodeType,
-      attrs: layout?.attrs ?? block.defaultContent?.attrs,
-      content: layout?.content ?? block.defaultContent?.content,
-    },
+    block: block.createContent(layout),
   })
 }
 
@@ -56,6 +95,11 @@ export function createDocumentCommands(
       showInSlashMenu: block.showInSlashMenu,
       showInFloatingMenu: block.showInFloatingMenu,
       command: ({ editor, range }) => {
+        if (block.kind === "action") {
+          block.command(editor)
+          return
+        }
+
         insertDocumentBlockFromDefinition({
           editor,
           definition,

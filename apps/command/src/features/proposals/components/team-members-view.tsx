@@ -4,14 +4,17 @@ import { Textarea } from "@workspace/ui/components/textarea"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { UserIcon } from "@hugeicons/core-free-icons"
 import type { NodeViewProps } from "@tiptap/react"
+import type { TeamMember } from "@/features/proposals/types"
+import { getArrayAttr, getColumnCount } from "@/features/proposals/types"
 
 const inputClassName =
   "h-auto rounded-none !border-0 !bg-transparent !p-0 text-center shadow-none !outline-none !ring-0 hover:!border-transparent focus-visible:!border-transparent focus-visible:!ring-0 dark:!bg-transparent"
 
 export function TeamMembersView({ node, updateAttributes }: NodeViewProps) {
-  const { members, columns } = node.attrs
+  const members = getArrayAttr<TeamMember>(node.attrs.members)
+  const columns = getColumnCount(node.attrs.columns)
 
-  const updateMember = (index: number, key: string, value: string) => {
+  const updateMember = (index: number, key: keyof TeamMember, value: string) => {
     const newMembers = [...members]
     newMembers[index] = { ...newMembers[index], [key]: value }
     updateAttributes({ members: newMembers })
@@ -27,7 +30,7 @@ export function TeamMembersView({ node, updateAttributes }: NodeViewProps) {
   return (
     <NodeViewWrapper className="team-members my-12">
       <div className={`grid gap-x-10 gap-y-10 ${gridColumns}`}>
-        {members.map((member: any, index: number) => (
+        {members.map((member, index) => (
           <div
             key={index}
             className="flex flex-col items-center justify-start text-center"

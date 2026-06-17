@@ -7,9 +7,18 @@ import {
   PlusSignIcon,
 } from "@hugeicons/core-free-icons"
 import type { NodeViewProps } from "@tiptap/react"
+import type { GalleryImage } from "@/features/proposals/types"
+import { getArrayAttr, getColumnCount } from "@/features/proposals/types"
+
+const gridColumnClassNames = {
+  1: "grid-cols-1",
+  2: "grid-cols-1 md:grid-cols-2",
+  3: "grid-cols-1 md:grid-cols-3",
+} as const
 
 export function GalleryView({ node, updateAttributes }: NodeViewProps) {
-  const { images, columns } = node.attrs
+  const images = getArrayAttr<GalleryImage>(node.attrs.images)
+  const columns = getColumnCount(node.attrs.columns)
 
   const addImage = () => {
     updateAttributes({ images: [...images, { url: "", alt: "New Image" }] })
@@ -17,7 +26,7 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
 
   const removeImage = (index: number) => {
     updateAttributes({
-      images: images.filter((_: any, i: number) => i !== index),
+      images: images.filter((_, i) => i !== index),
     })
   }
 
@@ -38,8 +47,8 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
         </Button>
       </div>
 
-      <div className={`grid gap-4 grid-cols-${columns}`}>
-        {images.map((_: any, index: number) => (
+      <div className={`grid gap-4 ${gridColumnClassNames[columns]}`}>
+        {images.map((_, index) => (
           <div
             key={index}
             className="group relative aspect-square overflow-hidden rounded-lg bg-muted"
