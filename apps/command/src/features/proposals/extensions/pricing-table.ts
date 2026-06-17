@@ -12,7 +12,12 @@ export const PricingTable = Node.create({
     return {
       items: {
         default: [
-          { description: "Initial Consultation", quantity: 1, rate: 150, total: 150 },
+          {
+            description: "Initial Consultation",
+            quantity: 1,
+            rate: 150,
+            total: 150,
+          },
           { description: "Design Phase", quantity: 1, rate: 2500, total: 2500 },
           { description: "Development", quantity: 1, rate: 5000, total: 5000 },
         ],
@@ -27,7 +32,11 @@ export const PricingTable = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["div", mergeAttributes(HTMLAttributes, { "data-type": "pricing-table" }), 0]
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-type": "pricing-table" }),
+      0,
+    ]
   },
 
   addNodeView() {

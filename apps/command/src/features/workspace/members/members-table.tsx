@@ -63,7 +63,11 @@ function getInitials(name: string) {
 
 function formatDate(value: Date | string) {
   const date = value instanceof Date ? value : new Date(value)
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
 }
 
 type Props = {
@@ -72,7 +76,11 @@ type Props = {
   organizationId: string
 }
 
-export function MembersTable({ members, currentUserId, organizationId }: Props) {
+export function MembersTable({
+  members,
+  currentUserId,
+  organizationId,
+}: Props) {
   const queryClient = useQueryClient()
   const [roleUpdating, setRoleUpdating] = useState<string | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
@@ -106,14 +114,14 @@ export function MembersTable({ members, currentUserId, organizationId }: Props) 
   }
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card shadow-xs/5 overflow-hidden">
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-xs/5">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="ps-4">Member</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Joined</TableHead>
-            <TableHead className="pe-4 w-px" />
+            <TableHead className="w-px pe-4" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -133,14 +141,21 @@ export function MembersTable({ members, currentUserId, organizationId }: Props) 
                     </Avatar>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{member.user.name}</span>
+                        <span className="text-sm font-medium">
+                          {member.user.name}
+                        </span>
                         {isSelf ? (
-                          <Badge variant="outline" className="font-mono text-[9px] uppercase tracking-wider py-0">
+                          <Badge
+                            variant="outline"
+                            className="py-0 font-mono text-[9px] tracking-wider uppercase"
+                          >
                             you
                           </Badge>
                         ) : null}
                       </div>
-                      <div className="text-xs text-muted-foreground">{member.user.email}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {member.user.email}
+                      </div>
                     </div>
                   </div>
                 </TableCell>
@@ -148,13 +163,19 @@ export function MembersTable({ members, currentUserId, organizationId }: Props) 
                 <TableCell>
                   {isOwner ? (
                     <Badge variant="outline" className="gap-1.5">
-                      <HugeiconsIcon icon={Shield01Icon} strokeWidth={2} className="size-3" />
+                      <HugeiconsIcon
+                        icon={Shield01Icon}
+                        strokeWidth={2}
+                        className="size-3"
+                      />
                       Owner
                     </Badge>
                   ) : (
                     <Select
                       value={member.role ?? "member"}
-                      onValueChange={(role) => handleRoleChange(member.id, role)}
+                      onValueChange={(role) =>
+                        handleRoleChange(member.id, role)
+                      }
                       disabled={roleUpdating === member.id || isSelf}
                     >
                       <SelectTrigger size="sm" className="h-8 w-32 text-sm">
@@ -189,13 +210,23 @@ export function MembersTable({ members, currentUserId, organizationId }: Props) 
                           />
                         }
                       >
-                        <HugeiconsIcon icon={More01Icon} strokeWidth={2} className="size-4" />
+                        <HugeiconsIcon
+                          icon={More01Icon}
+                          strokeWidth={2}
+                          className="size-4"
+                        />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-44">
                         <DropdownMenuItem
-                          onClick={() => member.user.email && window.open(`mailto:${member.user.email}`)}
+                          onClick={() =>
+                            member.user.email &&
+                            window.open(`mailto:${member.user.email}`)
+                          }
                         >
-                          <HugeiconsIcon icon={MailSend01Icon} strokeWidth={2} />
+                          <HugeiconsIcon
+                            icon={MailSend01Icon}
+                            strokeWidth={2}
+                          />
                           Send email
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />

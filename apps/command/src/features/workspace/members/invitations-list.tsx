@@ -40,21 +40,27 @@ export function InvitationsList({ invitations }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
+        <span className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
           Pending invitations
         </span>
-        <Badge variant="outline" className="font-mono text-[9px] uppercase py-0">
+        <Badge
+          variant="outline"
+          className="py-0 font-mono text-[9px] uppercase"
+        >
           {invitations.length}
         </Badge>
       </div>
 
-      <div className="rounded-xl border border-border/60 divide-y divide-border/60 overflow-hidden">
+      <div className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/60">
         {invitations.map((inv) => (
-          <div key={inv.id} className="flex items-center justify-between gap-3 px-4 py-3">
+          <div
+            key={inv.id}
+            className="flex items-center justify-between gap-3 px-4 py-3"
+          >
             <div className="min-w-0">
-              <div className="text-sm font-medium truncate">{inv.email}</div>
+              <div className="truncate text-sm font-medium">{inv.email}</div>
               <div className="mt-0.5 flex items-center gap-2">
-                <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em]">
+                <span className="font-mono text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
                   {inv.role ?? "member"}
                 </span>
                 <span className="text-muted-foreground/50">·</span>
@@ -66,7 +72,7 @@ export function InvitationsList({ invitations }: Props) {
             <Button
               variant="ghost"
               size="sm"
-              className="shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground hover:text-destructive"
+              className="shrink-0 font-mono text-[10px] tracking-[0.15em] text-muted-foreground uppercase hover:text-destructive"
               disabled={canceling === inv.id}
               onClick={() => handleCancel(inv.id)}
             >

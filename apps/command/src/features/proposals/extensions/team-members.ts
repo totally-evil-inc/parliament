@@ -25,7 +25,11 @@ export const TeamMembers = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["div", mergeAttributes(HTMLAttributes, { "data-type": "team-members" }), 0]
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-type": "team-members" }),
+      0,
+    ]
   },
 
   addNodeView() {

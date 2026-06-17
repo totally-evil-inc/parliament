@@ -39,7 +39,7 @@ export function MembersPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-8 px-6 py-8 md:px-8">
       <div>
-        <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
+        <div className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
           Members · Invite
         </div>
         <h2 className="mt-1 font-heading text-xl">Invite teammates</h2>
@@ -54,11 +54,12 @@ export function MembersPage() {
       <div className="space-y-5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
+            <div className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
               Members · List
             </div>
             <h2 className="mt-1 font-heading text-xl">
-              {members?.length ?? "—"} {(members?.length ?? 0) === 1 ? "person" : "people"}
+              {members?.length ?? "—"}{" "}
+              {(members?.length ?? 0) === 1 ? "person" : "people"}
             </h2>
           </div>
         </div>

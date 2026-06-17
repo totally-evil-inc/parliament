@@ -43,7 +43,9 @@ export function CreateWorkspaceForm({
   className,
 }: Props) {
   const [serverError, setServerError] = useState<string | null>(null)
-  const [slugValue, setSlugValue] = useState(defaultValues?.organizationSlug ?? "")
+  const [slugValue, setSlugValue] = useState(
+    defaultValues?.organizationSlug ?? ""
+  )
   const slugLockedRef = useRef(!!defaultValues?.organizationSlug)
 
   const form = useForm({
@@ -95,7 +97,7 @@ export function CreateWorkspaceForm({
 
           return (
             <div className="flex flex-col gap-1.5">
-              <label className="block font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
+              <label className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
                 Workspace name
               </label>
               <Input
@@ -128,7 +130,7 @@ export function CreateWorkspaceForm({
 
           return (
             <div className="flex flex-col gap-1.5">
-              <label className="block font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
+              <label className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
                 Workspace URL
               </label>
               <InputGroup>
@@ -162,9 +164,13 @@ export function CreateWorkspaceForm({
               {error ? (
                 <p className="text-xs text-destructive">{error}</p>
               ) : slugState === "taken" ? (
-                <p className="text-xs text-destructive">This slug is already taken.</p>
+                <p className="text-xs text-destructive">
+                  This slug is already taken.
+                </p>
               ) : slugState === "error" ? (
-                <p className="text-xs text-destructive">Could not verify availability. Please try again.</p>
+                <p className="text-xs text-destructive">
+                  Could not verify availability. Please try again.
+                </p>
               ) : null}
             </div>
           )

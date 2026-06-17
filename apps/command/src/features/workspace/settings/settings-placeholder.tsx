@@ -10,9 +10,7 @@ type SettingsPlaceholderProps = {
   tab: WorkspaceSettingsTabItem
 }
 
-export function SettingsPlaceholder({
-  tab,
-}: SettingsPlaceholderProps) {
+export function SettingsPlaceholder({ tab }: SettingsPlaceholderProps) {
   return (
     <div className="mx-auto max-w-4xl px-6 py-8 md:px-8">
       <Empty className="min-h-64 border border-dashed border-border/70">

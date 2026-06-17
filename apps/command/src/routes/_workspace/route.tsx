@@ -11,7 +11,10 @@ export const Route = createFileRoute("/_workspace")({
 
     const session = await getSession()
     if (!session?.session?.activeOrganizationId) {
-      throw redirect({ to: "/auth/onboarding", search: { step: "organization" } })
+      throw redirect({
+        to: "/auth/onboarding",
+        search: { step: "organization" },
+      })
     }
 
     return { user: viewer.user }

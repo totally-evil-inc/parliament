@@ -8,12 +8,7 @@ type MetricCardProps = {
   icon: IconSvgElement
 }
 
-export function MetricCard({
-  label,
-  value,
-  detail,
-  icon,
-}: MetricCardProps) {
+export function MetricCard({ label, value, detail, icon }: MetricCardProps) {
   return (
     <div className="rounded-lg border border-border/70 bg-card p-4 text-card-foreground">
       <div className="flex items-center justify-between gap-3">

@@ -26,7 +26,11 @@ export const Gallery = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["div", mergeAttributes(HTMLAttributes, { "data-type": "gallery" }), 0]
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-type": "gallery" }),
+      0,
+    ]
   },
 
   addNodeView() {

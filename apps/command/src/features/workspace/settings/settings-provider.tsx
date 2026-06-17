@@ -28,12 +28,9 @@ const defaultSettings: WorkspaceSettingsValues = {
   showProjectIds: false,
 }
 
-const SettingsContext =
-  createContext<SettingsContextValue | null>(null)
+const SettingsContext = createContext<SettingsContextValue | null>(null)
 
-export function SettingsProvider({
-  children,
-}: SettingsProviderProps) {
+export function SettingsProvider({ children }: SettingsProviderProps) {
   const { data: activeOrg } = authClient.useActiveOrganization()
 
   const initialSettings: WorkspaceSettingsValues = {
@@ -42,10 +39,12 @@ export function SettingsProvider({
     slug: activeOrg?.slug ?? "",
   }
 
-  const [savedSettings, setSavedSettings] =
-    useState<WorkspaceSettingsValues>(() => initialSettings)
-  const [draftSettings, setDraftSettings] =
-    useState<WorkspaceSettingsValues>(() => initialSettings)
+  const [savedSettings, setSavedSettings] = useState<WorkspaceSettingsValues>(
+    () => initialSettings
+  )
+  const [draftSettings, setDraftSettings] = useState<WorkspaceSettingsValues>(
+    () => initialSettings
+  )
 
   const dirty = !settingsEqual(draftSettings, savedSettings)
 
@@ -86,9 +85,7 @@ export function useSettings() {
   const context = useContext(SettingsContext)
 
   if (!context) {
-    throw new Error(
-      "useSettings must be used inside SettingsProvider"
-    )
+    throw new Error("useSettings must be used inside SettingsProvider")
   }
 
   return context

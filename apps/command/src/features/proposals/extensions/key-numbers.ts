@@ -26,7 +26,11 @@ export const KeyNumbers = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["div", mergeAttributes(HTMLAttributes, { "data-type": "key-numbers" }), 0]
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-type": "key-numbers" }),
+      0,
+    ]
   },
 
   addNodeView() {

@@ -32,7 +32,7 @@ export function InviteStep({
       <button
         type="button"
         onClick={onBack}
-        className="mt-4 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em] hover:text-foreground"
+        className="mt-4 font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase hover:text-foreground"
       >
         ← Back
       </button>

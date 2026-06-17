@@ -13,10 +13,11 @@ export const Testimonials = Node.create({
       testimonials: {
         default: [
           {
-            content: "The level of professionalism and attention to detail exceeded our expectations. Highly recommended!",
+            content:
+              "The level of professionalism and attention to detail exceeded our expectations. Highly recommended!",
             author: "Jane Doe",
             role: "CEO, Tech Corp",
-            avatar: ""
+            avatar: "",
           },
         ],
       },
@@ -28,7 +29,11 @@ export const Testimonials = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["div", mergeAttributes(HTMLAttributes, { "data-type": "testimonials" }), 0]
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-type": "testimonials" }),
+      0,
+    ]
   },
 
   addNodeView() {
