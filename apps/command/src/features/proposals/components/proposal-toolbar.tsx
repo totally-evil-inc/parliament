@@ -20,6 +20,8 @@ import {
 import { useSidebar } from "@workspace/ui/components/sidebar"
 import type { Editor } from "@tiptap/react"
 
+import { insertProposalBlock } from "@/features/proposals/utils/insert-proposal-block"
+
 const ACTIONS = [
   { icon: TextFontIcon, label: "Text", command: "text" },
   { icon: Image01Icon, label: "Image", command: "image" },
@@ -51,29 +53,29 @@ export function ProposalToolbar({
         editor.chain().focus().setNode("paragraph").run()
         break
       case "image":
-        editor.chain().focus().insertContent({ type: "gallery" }).run()
+        insertProposalBlock(editor, { type: "gallery" })
         break
       case "video":
-        editor.chain().focus().insertContent({ type: "timeline" }).run()
+        insertProposalBlock(editor, { type: "timeline" })
         break
       case "quote":
-        editor.chain().focus().insertContent({ type: "testimonials" }).run()
+        insertProposalBlock(editor, { type: "testimonials" })
         break
       case "table":
-        editor.chain().focus().insertContent({ type: "pricingTable" }).run()
+        insertProposalBlock(editor, { type: "pricingTable" })
         break
       case "layout":
         toggleSidebar()
         break
       case "icon":
-        editor.chain().focus().insertContent({ type: "teamMembers" }).run()
+        insertProposalBlock(editor, { type: "teamMembers" })
         break
     }
   }
 
   return (
     <TooltipProvider delay={0}>
-      <div className="fixed flex items-center gap-2 bottom-6 left-1/2 z-50 -translate-x-1/2">
+      <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2">
         <div className="flex items-center gap-1 rounded-2xl border bg-background/80 p-1.5 shadow-2xl backdrop-blur-xl transition-all hover:bg-background">
           {ACTIONS.map((action) => (
             <Tooltip key={action.label}>
@@ -120,7 +122,7 @@ export function ProposalToolbar({
                 <Button
                   onClick={onSendProposal}
                   size={"icon-lg"}
-                  className="gap-2 h-10 w-10 aspect-square rounded-full"
+                  className="aspect-square h-10 w-10 gap-2 rounded-full"
                 />
               }
             >

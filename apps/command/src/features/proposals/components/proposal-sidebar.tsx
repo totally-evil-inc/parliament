@@ -20,6 +20,8 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 import type { Editor } from "@tiptap/react"
 
+import { insertProposalBlock } from "@/features/proposals/utils/insert-proposal-block"
+
 type LayoutOption = {
   name: string
   description: string
@@ -346,22 +348,22 @@ export function ProposalSidebar({ editor }: { editor: Editor | null }) {
 
     switch (type) {
       case "keyNumbers":
-        editor.chain().focus().insertContent({ type: "keyNumbers" }).run()
+        insertProposalBlock(editor, { type: "keyNumbers" })
         break
       case "teamMembers":
-        editor.chain().focus().insertContent({ type: "teamMembers" }).run()
+        insertProposalBlock(editor, { type: "teamMembers" })
         break
       case "testimonials":
-        editor.chain().focus().insertContent({ type: "testimonials" }).run()
+        insertProposalBlock(editor, { type: "testimonials" })
         break
       case "gallery":
-        editor.chain().focus().insertContent({ type: "gallery" }).run()
+        insertProposalBlock(editor, { type: "gallery" })
         break
       case "timeline":
-        editor.chain().focus().insertContent({ type: "timeline" }).run()
+        insertProposalBlock(editor, { type: "timeline" })
         break
       case "pricingTable":
-        editor.chain().focus().insertContent({ type: "pricingTable" }).run()
+        insertProposalBlock(editor, { type: "pricingTable" })
         break
     }
   }
@@ -404,7 +406,7 @@ export function ProposalSidebar({ editor }: { editor: Editor | null }) {
             </button>
           </SidebarHeader>
 
-          <SidebarContent className="flex relative min-h-0 flex-col overflow-scroll p-4">
+          <SidebarContent className="relative flex min-h-0 flex-col overflow-scroll p-4">
             <ScrollArea className="relative min-h-0 flex-1">
               <div className="space-y-4">
                 <div className="px-1 text-xs text-muted-foreground/85">
@@ -451,7 +453,7 @@ export function ProposalSidebar({ editor }: { editor: Editor | null }) {
             </button>
           </SidebarHeader>
 
-          <SidebarContent className="flex relative min-h-0 flex-col gap-4 p-4">
+          <SidebarContent className="relative flex min-h-0 flex-col gap-4 p-4">
             {/* Tabs Segmented Control */}
             <div className="flex shrink-0 rounded-xl border border-border/15 bg-muted/65 p-1">
               <button
@@ -478,7 +480,7 @@ export function ProposalSidebar({ editor }: { editor: Editor | null }) {
               </button>
             </div>
 
-            <ScrollArea className="relative flex-1 min-h-0 px-4">
+            <ScrollArea className="relative min-h-0 flex-1 px-4">
               {activeTab === "all" ? (
                 <div className="grid grid-cols-1 gap-3 pb-4">
                   {categories.map((category) => (
