@@ -1,4 +1,4 @@
-import type { JSONContent } from "@tiptap/core"
+import type { JSONContent, Range } from "@tiptap/core"
 import type { Editor } from "@tiptap/react"
 
 const EDITABLE_SPACER: JSONContent = { type: "paragraph" }
@@ -17,7 +17,15 @@ function findTopLevelNodePosition(editor: Editor, type: string) {
   return null
 }
 
-export function insertProposalBlock(editor: Editor, block: JSONContent) {
+export function insertProposalBlock(
+  editor: Editor,
+  block: JSONContent,
+  range?: Range
+) {
+  if (range) {
+    editor.chain().focus().deleteRange(range).run()
+  }
+
   const pricingTablePosition = findTopLevelNodePosition(editor, "pricingTable")
 
   if (pricingTablePosition === null) {

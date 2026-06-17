@@ -18,6 +18,7 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar"
 import { cn } from "@workspace/ui/lib/utils"
+import type { JSONContent } from "@tiptap/core"
 import type { Editor } from "@tiptap/react"
 
 import { insertProposalBlock } from "@/features/proposals/utils/insert-proposal-block"
@@ -26,6 +27,7 @@ type LayoutOption = {
   name: string
   description: string
   type: string
+  attrs?: JSONContent["attrs"]
   preview: React.ReactNode
 }
 
@@ -35,6 +37,30 @@ type Category = {
   icon: any
   preview: React.ReactNode
   layouts: Array<LayoutOption>
+}
+
+function MetricPreview({
+  value,
+  label,
+  detail,
+}: {
+  value: string
+  label: string
+  detail?: boolean
+}) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-xl bg-muted/35 p-2 text-center">
+      <span className="text-sm leading-none font-black text-muted-foreground">
+        {value}
+      </span>
+      <span className="mt-1 text-[8px] leading-none font-medium text-muted-foreground/80">
+        {label}
+      </span>
+      {detail ? (
+        <span className="mt-1.5 h-1 w-8 rounded-full bg-muted-foreground/20" />
+      ) : null}
+    </div>
+  )
 }
 
 export function ProposalSidebar({ editor }: { editor: Editor | null }) {
@@ -80,35 +106,80 @@ export function ProposalSidebar({ editor }: { editor: Editor | null }) {
         ),
         layouts: [
           {
-            name: "3-Column Stat Cards",
-            description: "Showcase core metrics or KPIs in a clean grid",
+            name: "1-Column Metrics",
+            description: "Feature one headline metric with supporting context",
             type: "keyNumbers",
+            attrs: {
+              columns: 1,
+              metrics: [
+                {
+                  value: "99%",
+                  label: "Projects Delivered",
+                  detail: "Briefly explain what makes this result meaningful.",
+                },
+              ],
+            },
+            preview: (
+              <div className="flex h-20 w-full items-center justify-center">
+                <MetricPreview value="99%" label="Projects" detail />
+              </div>
+            ),
+          },
+          {
+            name: "2-Column Metrics",
+            description: "Compare two important numbers side by side",
+            type: "keyNumbers",
+            attrs: {
+              columns: 2,
+              metrics: [
+                {
+                  value: "99%",
+                  label: "Projects Delivered",
+                  detail: "Briefly explain what makes this result meaningful.",
+                },
+                {
+                  value: "$10M",
+                  label: "Managed budget",
+                  detail: "Add muted context that supports this metric.",
+                },
+              ],
+            },
             preview: (
               <div className="flex h-20 w-full gap-2.5">
-                <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-border/40 bg-muted/50 p-2 shadow-sm">
-                  <span className="text-sm font-bold text-muted-foreground">
-                    99%
-                  </span>
-                  <span className="mt-1 text-[8px] text-muted-foreground/60">
-                    Success
-                  </span>
-                </div>
-                <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-border/40 bg-muted/50 p-2 shadow-sm">
-                  <span className="text-sm font-bold text-muted-foreground">
-                    $10M
-                  </span>
-                  <span className="mt-1 text-[8px] text-muted-foreground/60">
-                    Funding
-                  </span>
-                </div>
-                <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-border/40 bg-muted/50 p-2 shadow-sm">
-                  <span className="text-sm font-bold text-muted-foreground">
-                    24/7
-                  </span>
-                  <span className="mt-1 text-[8px] text-muted-foreground/60">
-                    Support
-                  </span>
-                </div>
+                <MetricPreview value="99%" label="Projects" detail />
+                <MetricPreview value="$10M" label="Budget" detail />
+              </div>
+            ),
+          },
+          {
+            name: "3-Column Metrics",
+            description: "Showcase three core metrics or KPIs in a clean grid",
+            type: "keyNumbers",
+            attrs: {
+              columns: 3,
+              metrics: [
+                {
+                  value: "150+",
+                  label: "Projects Delivered",
+                  detail: "Successfully completed across multiple industries",
+                },
+                {
+                  value: "150+",
+                  label: "Projects Delivered",
+                  detail: "Successfully completed across multiple industries",
+                },
+                {
+                  value: "24/7",
+                  label: "Support coverage",
+                  detail: "Describe the promise, impact, or scope behind it.",
+                },
+              ],
+            },
+            preview: (
+              <div className="flex h-20 w-full gap-2.5">
+                <MetricPreview value="150+" label="Projects" detail />
+                <MetricPreview value="150+" label="Projects" detail />
+                <MetricPreview value="24/7" label="Support" detail />
               </div>
             ),
           },
@@ -343,12 +414,12 @@ export function ProposalSidebar({ editor }: { editor: Editor | null }) {
     return categories.find((c) => c.id === selectedCategoryId)
   }, [categories, selectedCategoryId])
 
-  const handleInsertLayout = (type: string) => {
+  const handleInsertLayout = (layout: LayoutOption) => {
     if (!editor) return
 
-    switch (type) {
+    switch (layout.type) {
       case "keyNumbers":
-        insertProposalBlock(editor, { type: "keyNumbers" })
+        insertProposalBlock(editor, { type: "keyNumbers", attrs: layout.attrs })
         break
       case "teamMembers":
         insertProposalBlock(editor, { type: "teamMembers" })
@@ -416,7 +487,7 @@ export function ProposalSidebar({ editor }: { editor: Editor | null }) {
                   {selectedCategory.layouts.map((layout, idx) => (
                     <button
                       key={idx}
-                      onClick={() => handleInsertLayout(layout.type)}
+                      onClick={() => handleInsertLayout(layout)}
                       className="group w-full rounded-xl border border-border/60 bg-background/50 p-3.5 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
                     >
                       <div className="mb-3.5 rounded-lg border border-border/30 bg-muted/15 p-2 transition-all group-hover:bg-muted/25">

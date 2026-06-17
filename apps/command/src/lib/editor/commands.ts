@@ -20,6 +20,8 @@ import {
 import type { Editor } from "@tiptap/react"
 import type { Range } from "@tiptap/core"
 
+import { insertProposalBlock } from "@/features/proposals/utils/insert-proposal-block"
+
 type EditorCommandContext = {
   editor: Editor
   range?: Range
@@ -281,8 +283,9 @@ export const editorCommands: Array<EditorCommand> = [
     showInSlashMenu: true,
     showInFloatingMenu: true,
     command: ({ editor, range }) => {
-      deleteRangeIfPresent(editor, range)
-        .insertContent({
+      insertProposalBlock(
+        editor,
+        {
           type: "timeline",
           content: [
             {
@@ -313,8 +316,9 @@ export const editorCommands: Array<EditorCommand> = [
               ],
             },
           ],
-        })
-        .run()
+        },
+        range
+      )
     },
   },
   {
@@ -327,9 +331,7 @@ export const editorCommands: Array<EditorCommand> = [
     showInSlashMenu: true,
     showInFloatingMenu: true,
     command: ({ editor, range }) => {
-      deleteRangeIfPresent(editor, range)
-        .insertContent({ type: "keyNumbers" })
-        .run()
+      insertProposalBlock(editor, { type: "keyNumbers" }, range)
     },
   },
   {
@@ -342,9 +344,7 @@ export const editorCommands: Array<EditorCommand> = [
     showInSlashMenu: true,
     showInFloatingMenu: true,
     command: ({ editor, range }) => {
-      deleteRangeIfPresent(editor, range)
-        .insertContent({ type: "teamMembers" })
-        .run()
+      insertProposalBlock(editor, { type: "teamMembers" }, range)
     },
   },
   {
@@ -357,9 +357,7 @@ export const editorCommands: Array<EditorCommand> = [
     showInSlashMenu: true,
     showInFloatingMenu: true,
     command: ({ editor, range }) => {
-      deleteRangeIfPresent(editor, range)
-        .insertContent({ type: "gallery" })
-        .run()
+      insertProposalBlock(editor, { type: "gallery" }, range)
     },
   },
   {

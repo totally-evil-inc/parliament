@@ -12,9 +12,21 @@ export const KeyNumbers = Node.create({
     return {
       metrics: {
         default: [
-          { label: "Metric 1", value: "000" },
-          { label: "Metric 2", value: "000" },
-          { label: "Metric 3", value: "000" },
+          {
+            value: "150+",
+            label: "Projects Delivered",
+            detail: "Successfully completed across multiple industries",
+          },
+          {
+            value: "$10M",
+            label: "Managed budget",
+            detail: "Add muted context that supports this metric.",
+          },
+          {
+            value: "24/7",
+            label: "Support coverage",
+            detail: "Describe the promise, impact, or scope behind it.",
+          },
         ],
       },
       columns: { default: 3 },
