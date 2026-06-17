@@ -5,13 +5,16 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Image01Icon,
   Italic,
   List,
   ListOrdered,
+  PlusSignIcon,
   Quote,
   SquarePi,
   Text,
   Tick01Icon,
+  UserIcon,
   Variable,
 } from "@hugeicons/core-free-icons"
 import type { Editor } from "@tiptap/react"
@@ -311,6 +314,51 @@ export const editorCommands: Array<EditorCommand> = [
             },
           ],
         })
+        .run()
+    },
+  },
+  {
+    id: "key-numbers",
+    title: "Key Numbers",
+    description: "Highlight important metrics.",
+    searchTerms: ["key numbers", "metrics", "stats", "highlights"],
+    icon: PlusSignIcon,
+    group: "block",
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    command: ({ editor, range }) => {
+      deleteRangeIfPresent(editor, range)
+        .insertContent({ type: "keyNumbers" })
+        .run()
+    },
+  },
+  {
+    id: "team-members",
+    title: "Team Members",
+    description: "Showcase your team experts.",
+    searchTerms: ["team", "members", "people", "staff"],
+    icon: UserIcon,
+    group: "block",
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    command: ({ editor, range }) => {
+      deleteRangeIfPresent(editor, range)
+        .insertContent({ type: "teamMembers" })
+        .run()
+    },
+  },
+  {
+    id: "gallery",
+    title: "Gallery",
+    description: "Showcase images in a grid.",
+    searchTerms: ["gallery", "images", "photos", "grid"],
+    icon: Image01Icon,
+    group: "block",
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    command: ({ editor, range }) => {
+      deleteRangeIfPresent(editor, range)
+        .insertContent({ type: "gallery" })
         .run()
     },
   },

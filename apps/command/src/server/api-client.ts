@@ -1,5 +1,13 @@
 const API_SERVER_URL = process.env.API_SERVER_URL ?? "http://localhost:8080"
 
+type BunRequestInit = RequestInit & { verbose?: boolean }
+
+function getFetchErrorMessage(url: string, error: unknown) {
+  const message = error instanceof Error ? error.message : "Unknown API error"
+
+  return `Failed to fetch ${url}: ${message}. Check that API_SERVER_URL is correct and the API server is running.`
+}
+
 export type JsonValue =
   | string
   | number
@@ -57,10 +65,12 @@ export async function apiRequest<T = unknown>(
       headers.set("Content-Type", "application/json")
     }
 
-    const response = await fetch(`${API_SERVER_URL}${endpoint}`, {
+    const url = `${API_SERVER_URL}${endpoint}`
+    const response = await fetch(url, {
       ...options,
       headers,
-    })
+      verbose: process.env.NODE_ENV !== "production",
+    } as BunRequestInit)
     const data = await readJson<ErrorResponse & T>(response)
 
     if (!response.ok) {
@@ -85,7 +95,7 @@ export async function apiRequest<T = unknown>(
     }
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Unknown API error",
+      error: getFetchErrorMessage(`${API_SERVER_URL}${endpoint}`, error),
       status: 0,
     }
   }

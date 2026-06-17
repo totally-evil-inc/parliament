@@ -6,11 +6,24 @@ import type {
   SessionJson,
 } from "./auth-context"
 
-const AUTH_SERVER_URL =
-  process.env.AUTH_SERVER_URL ??
-  "http://localhost:4000"
+const AUTH_SERVER_URL = process.env.AUTH_SERVER_URL ?? "http://localhost:4000"
 
 const TOKEN_CACHE_SKEW_MS = 30_000
+
+type BunRequestInit = RequestInit & { verbose?: boolean }
+
+function getFetchErrorMessage(url: string, error: unknown) {
+  const message = error instanceof Error ? error.message : "Unknown auth error"
+
+  return `Failed to fetch ${url}: ${message}. Check that AUTH_SERVER_URL is correct and the auth server is running.`
+}
+
+function createFetchInit(init: RequestInit): BunRequestInit {
+  return {
+    ...init,
+    verbose: process.env.NODE_ENV !== "production",
+  }
+}
 
 interface TokenResponse {
   token?: string
@@ -101,17 +114,24 @@ function decodeJwtExpiresAtMs(token: string) {
 
 async function fetchSession(headers: Headers) {
   try {
-    const response = await fetch(`${AUTH_SERVER_URL}/api/auth/get-session`, {
-      method: "GET",
-      headers,
-    })
+    const url = `${AUTH_SERVER_URL}/api/auth/get-session`
+    const response = await fetch(
+      url,
+      createFetchInit({
+        method: "GET",
+        headers,
+      })
+    )
 
     if (!response.ok) {
       return null
     }
 
     return await readJson<SessionJson>(response)
-  } catch {
+  } catch (error) {
+    console.warn(
+      getFetchErrorMessage(`${AUTH_SERVER_URL}/api/auth/get-session`, error)
+    )
     return null
   }
 }
@@ -169,10 +189,14 @@ async function fetchBackendJwt(
       }
     }
 
-    const response = await fetch(`${AUTH_SERVER_URL}/api/auth/token`, {
-      method: "GET",
-      headers,
-    })
+    const url = `${AUTH_SERVER_URL}/api/auth/token`
+    const response = await fetch(
+      url,
+      createFetchInit({
+        method: "GET",
+        headers,
+      })
+    )
     const data = await readJson<TokenResponse>(response)
 
     if (!response.ok || !data?.token) {
@@ -200,7 +224,7 @@ async function fetchBackendJwt(
     }
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Unknown auth error",
+      error: getFetchErrorMessage(`${AUTH_SERVER_URL}/api/auth/token`, error),
       status: 0,
     }
   }
