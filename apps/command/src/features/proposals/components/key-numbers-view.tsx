@@ -33,14 +33,14 @@ export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
             <Input
               aria-label="Metric value"
               spellCheck={false}
-              className={`${inputClassName} text-5xl font-black tracking-tight md:text-6xl`}
+              className={`${inputClassName} text-3xl font-black tracking-tight md:text-5xl`}
               value={metric.value}
               onChange={(e) => updateMetric(index, "value", e.target.value)}
             />
             <Input
               aria-label="Metric summary"
               spellCheck={false}
-              className={`${inputClassName} mt-4 text-lg font-bold tracking-tight md:text-xl`}
+              className={`${inputClassName} text-base font-bold tracking-tight md:text-lg`}
               value={metric.label}
               onChange={(e) => updateMetric(index, "label", e.target.value)}
             />
@@ -48,7 +48,7 @@ export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
               aria-label="Metric description"
               rows={2}
               spellCheck={false}
-              className={`${inputClassName} mt-4 min-h-0 resize-none overflow-hidden text-lg leading-relaxed text-muted-foreground md:text-xl`}
+              className={`${inputClassName} min-h-0 resize-none overflow-hidden text-base leading-relaxed text-muted-foreground md:text-lg`}
               value={metric.detail ?? ""}
               onChange={(e) => updateMetric(index, "detail", e.target.value)}
             />
