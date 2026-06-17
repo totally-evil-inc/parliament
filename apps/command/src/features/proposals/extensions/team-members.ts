@@ -12,11 +12,24 @@ export const TeamMembers = Node.create({
     return {
       members: {
         default: [
-          { name: "Team Member 1", role: "Role", bio: "" },
-          { name: "Team Member 2", role: "Role", bio: "" },
-          { name: "Team Member 3", role: "Role", bio: "" },
+          {
+            name: "Alex Morgan",
+            role: "Project Lead",
+            bio: "Guides delivery strategy and keeps every milestone aligned.",
+          },
+          {
+            name: "Jamie Chen",
+            role: "Design Director",
+            bio: "Shapes the customer experience across every touchpoint.",
+          },
+          {
+            name: "Taylor Brooks",
+            role: "Technical Lead",
+            bio: "Owns the implementation plan from architecture to launch.",
+          },
         ],
       },
+      columns: { default: 3 },
     }
   },
 

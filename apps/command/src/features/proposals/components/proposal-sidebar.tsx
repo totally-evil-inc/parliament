@@ -63,6 +63,16 @@ function MetricPreview({
   )
 }
 
+function TeamPreview() {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col items-center justify-center text-center">
+      <div className="h-8 w-8 rounded-full bg-muted/60" />
+      <div className="mt-2 h-1.5 w-11 rounded-full bg-muted-foreground/25" />
+      <div className="mt-1.5 h-1 w-8 rounded-full bg-muted-foreground/15" />
+    </div>
+  )
+}
+
 export function ProposalSidebar({ editor }: { editor: Editor | null }) {
   const { setOpen } = useSidebar()
   const [activeTab, setActiveTab] = React.useState<"all" | "my">("all")
@@ -207,23 +217,80 @@ export function ProposalSidebar({ editor }: { editor: Editor | null }) {
         ),
         layouts: [
           {
-            name: "Team Grid Layout",
-            description: "Display your core team members with profile cards",
+            name: "1-Member Team",
+            description: "Highlight one project owner or point of contact",
             type: "teamMembers",
+            attrs: {
+              columns: 1,
+              members: [
+                {
+                  name: "Alex Morgan",
+                  role: "Project Lead",
+                  bio: "Guides delivery strategy and keeps every milestone aligned.",
+                },
+              ],
+            },
+            preview: (
+              <div className="flex h-20 w-full items-center justify-center px-8">
+                <TeamPreview />
+              </div>
+            ),
+          },
+          {
+            name: "2-Member Team",
+            description: "Introduce two leads with clear responsibilities",
+            type: "teamMembers",
+            attrs: {
+              columns: 2,
+              members: [
+                {
+                  name: "Alex Morgan",
+                  role: "Project Lead",
+                  bio: "Guides delivery strategy and keeps every milestone aligned.",
+                },
+                {
+                  name: "Jamie Chen",
+                  role: "Design Director",
+                  bio: "Shapes the customer experience across every touchpoint.",
+                },
+              ],
+            },
+            preview: (
+              <div className="flex h-20 w-full items-center justify-around gap-4 px-4">
+                <TeamPreview />
+                <TeamPreview />
+              </div>
+            ),
+          },
+          {
+            name: "3-Member Team",
+            description: "Display your core team members in a clean grid",
+            type: "teamMembers",
+            attrs: {
+              columns: 3,
+              members: [
+                {
+                  name: "Alex Morgan",
+                  role: "Project Lead",
+                  bio: "Guides delivery strategy and keeps every milestone aligned.",
+                },
+                {
+                  name: "Jamie Chen",
+                  role: "Design Director",
+                  bio: "Shapes the customer experience across every touchpoint.",
+                },
+                {
+                  name: "Taylor Brooks",
+                  role: "Technical Lead",
+                  bio: "Owns the implementation plan from architecture to launch.",
+                },
+              ],
+            },
             preview: (
               <div className="flex h-20 w-full items-center justify-around gap-2 px-2">
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="h-8 w-8 rounded-full border border-border/40 bg-muted/60 shadow-sm" />
-                  <div className="h-1.5 w-10 rounded-full bg-muted/40" />
-                </div>
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="h-8 w-8 rounded-full border border-border/40 bg-muted/60 shadow-sm" />
-                  <div className="h-1.5 w-10 rounded-full bg-muted/40" />
-                </div>
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="h-8 w-8 rounded-full border border-border/40 bg-muted/60 shadow-sm" />
-                  <div className="h-1.5 w-10 rounded-full bg-muted/40" />
-                </div>
+                <TeamPreview />
+                <TeamPreview />
+                <TeamPreview />
               </div>
             ),
           },
@@ -422,7 +489,10 @@ export function ProposalSidebar({ editor }: { editor: Editor | null }) {
         insertProposalBlock(editor, { type: "keyNumbers", attrs: layout.attrs })
         break
       case "teamMembers":
-        insertProposalBlock(editor, { type: "teamMembers" })
+        insertProposalBlock(editor, {
+          type: "teamMembers",
+          attrs: layout.attrs,
+        })
         break
       case "testimonials":
         insertProposalBlock(editor, { type: "testimonials" })
