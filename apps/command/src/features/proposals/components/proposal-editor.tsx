@@ -16,11 +16,21 @@ export default function ProposalEditor({
   editor,
   onContentChange,
 }: ProposalEditorProps) {
+  const lastContentRef = React.useRef<string | null>(null)
+
   React.useEffect(() => {
     if (!editor || !onContentChange) return
 
+    lastContentRef.current = JSON.stringify(editor.getJSON())
+
     const handleUpdate = () => {
-      onContentChange(editor.getJSON())
+      const content = editor.getJSON()
+      const serializedContent = JSON.stringify(content)
+
+      if (serializedContent === lastContentRef.current) return
+
+      lastContentRef.current = serializedContent
+      onContentChange(content)
     }
 
     editor.on("update", handleUpdate)

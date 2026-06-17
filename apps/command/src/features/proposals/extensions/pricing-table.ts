@@ -4,23 +4,14 @@ import { PricingTableView } from "@/features/proposals/components/pricing-table-
 
 export const PricingTable = Node.create({
   name: "pricingTable",
-  content: "block*",
+  atom: true,
   defining: true,
+  isolating: true,
 
   addAttributes() {
     return {
       items: {
-        default: [
-          {
-            description: "Item 1",
-            details: "",
-            quantity: 1,
-            rate: 0,
-            total: 0,
-            showDetails: false,
-            showImage: false,
-          },
-        ],
+        default: [],
       },
       discountRate: { default: 0 },
       taxRate: { default: 0 },
@@ -37,11 +28,12 @@ export const PricingTable = Node.create({
     return [
       "div",
       mergeAttributes(HTMLAttributes, { "data-type": "pricing-table" }),
-      0,
     ]
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(PricingTableView)
+    return ReactNodeViewRenderer(PricingTableView, {
+      stopEvent: () => true,
+    })
   },
 })

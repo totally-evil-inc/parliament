@@ -151,7 +151,10 @@ export function ProposalHeaderView({ node, updateAttributes }: NodeViewProps) {
   }
 
   return (
-    <NodeViewWrapper className="proposal-header mb-12 space-y-12">
+    <NodeViewWrapper
+      className="proposal-header mb-12 space-y-12"
+      contentEditable={false}
+    >
       <div className="space-y-6">
         <div className="ml-auto grid w-fit min-w-64 grid-cols-2 gap-6 text-right">
           <DatePickerField

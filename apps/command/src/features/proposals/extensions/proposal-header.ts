@@ -5,14 +5,15 @@ import { ProposalHeaderView } from "@/features/proposals/components/proposal-hea
 export const ProposalHeader = Node.create({
   name: "proposalHeader",
   group: "block",
-  content: "block*", // We'll handle internal fields via attributes or nested nodes
+  atom: true,
   defining: true,
+  isolating: true,
   draggable: false,
   selectable: false,
 
   addAttributes() {
     return {
-      title: { default: "Untitled Proposal" },
+      title: { default: "" },
       date: { default: new Date().toISOString().slice(0, 10) },
       due: { default: "" },
       validUntil: { default: "" },
@@ -41,11 +42,12 @@ export const ProposalHeader = Node.create({
     return [
       "div",
       mergeAttributes(HTMLAttributes, { "data-type": "proposal-header" }),
-      0,
     ]
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(ProposalHeaderView)
+    return ReactNodeViewRenderer(ProposalHeaderView, {
+      stopEvent: () => true,
+    })
   },
 })

@@ -127,7 +127,10 @@ export function PricingTableView({ node, updateAttributes }: NodeViewProps) {
   const total = taxableAmount + taxAmount
 
   return (
-    <NodeViewWrapper className="proposal-billing-section my-12 overflow-hidden rounded-xl border bg-background shadow-sm">
+    <NodeViewWrapper
+      className="proposal-billing-section my-12 overflow-hidden rounded-xl border bg-background shadow-sm"
+      contentEditable={false}
+    >
       <div className="bg-muted/40 px-6 py-4">
         <div className="flex items-center justify-between gap-4">
           <div>
