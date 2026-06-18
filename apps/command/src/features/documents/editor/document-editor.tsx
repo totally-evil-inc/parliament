@@ -4,6 +4,7 @@ import type { JSONContent } from "@tiptap/core"
 import type { Editor } from "@tiptap/react"
 import type { EditorCommand } from "@/lib/editor/commands"
 
+import { DocumentDragHandle } from "@/features/documents/editor/document-drag-handle"
 import { EditorBubbleMenu } from "@/features/workspace/editor/bubble-menu"
 import { EditorFloatingMenu } from "@/features/workspace/editor/floating-menu"
 import { EditorTableMenu } from "@/features/workspace/editor/table-menu"
@@ -51,6 +52,7 @@ export function DocumentEditor({
             <EditorBubbleMenu editor={editor} commands={bubbleCommands} />
             <EditorFloatingMenu editor={editor} />
             <EditorTableMenu editor={editor} />
+            <DocumentDragHandle editor={editor} />
           </>
         ) : null}
         <EditorContent editor={editor} />
