@@ -169,7 +169,8 @@
 }
 
 @layer components {
-  .document-drag-handle {
+  .document-drag-handle,
+  .document-delete-handle {
     z-index: 50;
     width: 1.5rem;
     height: 1.5rem;
@@ -178,12 +179,33 @@
     justify-content: center;
     border-radius: var(--radius-sm);
     color: var(--muted-foreground);
-    cursor: grab;
     opacity: 0.72;
     transition:
       opacity 120ms ease,
       background-color 120ms ease,
       color 120ms ease;
+  }
+
+  .document-drag-handle {
+    cursor: grab;
+  }
+
+  .document-delete-handle {
+    cursor: pointer;
+  }
+
+  .document-drag-handle-button,
+  .document-delete-handle-button {
+    width: 100%;
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    color: inherit;
+    padding: 0;
   }
 
   .document-drag-handle-grip {
@@ -200,6 +222,13 @@
   .document-drag-handle[data-dragging="true"] {
     background-color: var(--accent);
     color: var(--accent-foreground);
+    opacity: 1;
+  }
+
+  .document-delete-handle:hover,
+  .document-delete-handle:focus-visible {
+    background-color: color-mix(in oklab, var(--destructive) 12%, transparent);
+    color: var(--destructive);
     opacity: 1;
   }
 
