@@ -1,21 +1,25 @@
 export type KeyNumberMetric = {
+  id: string
   value: string
   label: string
   detail?: string
 }
 
 export type TeamMember = {
+  id: string
   name: string
   role: string
   bio?: string
 }
 
 export type GalleryImage = {
+  id: string
   url: string
   alt: string
 }
 
 export type Testimonial = {
+  id: string
   content: string
   author: string
   role: string

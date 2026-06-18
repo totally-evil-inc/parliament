@@ -1,9 +1,4 @@
-import {
-  type ClipboardEvent,
-  type KeyboardEvent,
-  useRef,
-  useState,
-} from "react"
+import { useRef, useState } from "react"
 import { useForm } from "@tanstack/react-form"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -19,11 +14,12 @@ import {
   Cancel01Icon,
   Tick01Icon,
 } from "@hugeicons/core-free-icons"
+import type { ClipboardEvent, KeyboardEvent } from "react"
 import { authClient } from "@/lib/auth-client"
 
 type Role = "admin" | "member"
 
-const ROLES: { value: Role; label: string; description: string }[] = [
+const ROLES: Array<{ value: Role; label: string; description: string }> = [
   {
     value: "admin",
     label: "Admin",
@@ -53,7 +49,7 @@ export function InviteTeammatesForm({
   onSuccess,
   onSkip,
 }: Props) {
-  const [chips, setChips] = useState<InternalChip[]>([])
+  const [chips, setChips] = useState<Array<InternalChip>>([])
   const [draft, setDraft] = useState("")
   const [defaultRole, setDefaultRole] = useState<Role>("member")
   const [serverError, setServerError] = useState<string | null>(null)
@@ -67,17 +63,25 @@ export function InviteTeammatesForm({
     onSubmit: async () => {
       setServerError(null)
 
-      for (const chip of validChips) {
-        const { error } = await authClient.organization.inviteMember({
-          email: chip.email,
-          role: chip.role,
-          organizationId,
-        })
+      const results = await Promise.all(
+        validChips.map(async (chip) => ({
+          chip,
+          result: await authClient.organization.inviteMember({
+            email: chip.email,
+            role: chip.role,
+            organizationId,
+          }),
+        }))
+      )
 
-        if (error) {
-          setServerError(error.message ?? `Could not invite ${chip.email}.`)
-          return
-        }
+      const failedInvite = results.find(({ result }) => result.error)
+
+      if (failedInvite) {
+        setServerError(
+          failedInvite.result.error?.message ??
+            `Could not invite ${failedInvite.chip.email}.`
+        )
+        return
       }
 
       onSuccess?.()
@@ -85,10 +89,10 @@ export function InviteTeammatesForm({
   })
 
   const addEmails = (raw: string) => {
-    const parts = raw
-      .split(SPLIT_RE)
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean)
+    const parts = raw.split(SPLIT_RE).flatMap((s) => {
+      const email = s.trim().toLowerCase()
+      return email ? [email] : []
+    })
 
     if (!parts.length) return
 
@@ -164,7 +168,10 @@ export function InviteTeammatesForm({
 
       <div className="rounded-xl border border-border/60 bg-background/40 p-5">
         <div className="flex items-center justify-between gap-3">
-          <label className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+          <label
+            htmlFor="invite-teammates-email"
+            className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase"
+          >
             Invitees
           </label>
           <div className="flex items-center gap-2">
@@ -222,9 +229,7 @@ export function InviteTeammatesForm({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => inputRef.current?.focus()}
+        <div
           className="mt-3 flex w-full cursor-text flex-wrap items-center gap-1.5 rounded-lg border border-input bg-background p-2 text-left transition-shadow focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/24"
         >
           {chips.map((chip) => (
@@ -236,8 +241,10 @@ export function InviteTeammatesForm({
             />
           ))}
           <input
+            id="invite-teammates-email"
             ref={inputRef}
             type="email"
+            aria-label="Invitee email"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={onKeyDown}
@@ -250,7 +257,7 @@ export function InviteTeammatesForm({
             }
             className="min-w-[12ch] flex-1 bg-transparent px-1.5 py-1 text-sm outline-none placeholder:text-muted-foreground"
           />
-        </button>
+        </div>
 
         <div className="mt-2 flex items-center gap-3 font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
           <span>

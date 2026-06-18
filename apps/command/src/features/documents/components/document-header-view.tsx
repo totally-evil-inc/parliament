@@ -28,18 +28,34 @@ import type {
 } from "@/features/documents/editor/types"
 import { isDocumentHeaderLayoutId } from "@/features/documents/editor/header-layouts"
 import { useConfirm } from "@/components/confirm-dialog-provider"
+import { createId } from "@/lib/create-id"
 
 type DateFieldKey = "date" | "due" | "validUntil"
 
+const headerDateFormatter = new Intl.DateTimeFormat(undefined, {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+})
+
 function getCustomFields(value: unknown): Array<DocumentHeaderCustomField> {
   return Array.isArray(value)
-    ? value.filter(
-        (field): field is DocumentHeaderCustomField =>
-          typeof field === "object" &&
-          field !== null &&
-          "label" in field &&
-          "value" in field
-      )
+    ? value
+        .filter(
+          (field): field is DocumentHeaderCustomField =>
+            typeof field === "object" &&
+            field !== null &&
+            "label" in field &&
+            "value" in field
+        )
+        .map((field) => ({
+          id:
+            typeof field.id === "string" && field.id
+              ? field.id
+              : `custom-field-${field.label}-${field.value}`,
+          label: field.label,
+          value: field.value,
+        }))
     : []
 }
 
@@ -63,13 +79,7 @@ function parseDate(value: unknown) {
 function formatDate(value: unknown) {
   const date = parseDate(value)
 
-  return date
-    ? new Intl.DateTimeFormat(undefined, {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }).format(date)
-    : "Select date"
+  return date ? headerDateFormatter.format(date) : "Select date"
 }
 
 function toDateValue(date: Date) {
@@ -148,7 +158,10 @@ function DocumentHeaderView({ node, updateAttributes }: NodeViewProps) {
       key === "fromCustomFields" ? fromCustomFields : billToCustomFields
 
     updateAttributes({
-      [key]: [...fields, { label: "New Field", value: "" }],
+      [key]: [
+        ...fields,
+        { id: createId("custom-field"), label: "New Field", value: "" },
+      ],
     })
   }
 
@@ -209,9 +222,9 @@ function DocumentHeaderView({ node, updateAttributes }: NodeViewProps) {
 
       <div className="grid grid-cols-2 gap-16 border-t border-[var(--document-border)] pt-8">
         <div className="space-y-6">
-          <label className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+          <div className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
             From
-          </label>
+          </div>
           <div className="space-y-3">
             <Field
               placeholder="Your business name"
@@ -269,9 +282,9 @@ function DocumentHeaderView({ node, updateAttributes }: NodeViewProps) {
         </div>
 
         <div className="space-y-6">
-          <label className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+          <div className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
             Bill To
-          </label>
+          </div>
           <div className="space-y-3">
             <Field
               placeholder="Search or type customer name"
@@ -529,6 +542,7 @@ function DocumentTitleField({
         align === "center" ? "text-center" : "text-left",
       ].join(" ")}
       placeholder="Document title..."
+      aria-label="Document title"
       value={value}
       onChange={(e) => onChange(e.target.value)}
     />
@@ -548,9 +562,9 @@ function DatePickerField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+      <div className="block text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
         {label}
-      </label>
+      </div>
       <Popover>
         <PopoverTrigger
           render={
@@ -561,6 +575,7 @@ function DatePickerField({
                 "h-auto w-full gap-2 px-0 py-0 text-sm font-medium text-[var(--document-foreground)] hover:bg-transparent",
                 justifyClassName,
               ].join(" ")}
+              aria-label={`${label}: ${formatDate(value)}`}
             />
           }
         >
@@ -601,7 +616,7 @@ function CustomFields({
 }) {
   return fields.map((field, index) => (
     <div
-      key={index}
+      key={field.id || `custom-field-${field.label}-${field.value}`}
       className="group grid grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)_auto] items-center gap-2"
     >
       <Field

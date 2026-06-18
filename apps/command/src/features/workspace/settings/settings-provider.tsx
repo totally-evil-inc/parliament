@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react"
 import type { ReactNode } from "react"
 import type { WorkspaceSettingsValues } from "./settings-form"
 import { useWorkspace } from "@/layouts/workspace-provider"
@@ -33,57 +39,68 @@ const SettingsContext = createContext<SettingsContextValue | null>(null)
 export function SettingsProvider({ children }: SettingsProviderProps) {
   const { activeOrg } = useWorkspace()
 
-  const initialSettings: WorkspaceSettingsValues = {
-    ...defaultSettings,
-    name: activeOrg?.name ?? "",
-    slug: activeOrg?.slug ?? "",
-  }
-
-  const [savedSettings, setSavedSettings] = useState<WorkspaceSettingsValues>(
-    () => initialSettings
+  const initialSettings = useMemo<WorkspaceSettingsValues>(
+    () => ({
+      ...defaultSettings,
+      name: activeOrg?.name ?? "",
+      slug: activeOrg?.slug ?? "",
+    }),
+    [activeOrg?.name, activeOrg?.slug]
   )
-  const [draftSettings, setDraftSettings] = useState<WorkspaceSettingsValues>(
-    () => initialSettings
-  )
+  const activeOrgSignature = `${activeOrg?.id ?? ""}:${initialSettings.name}:${initialSettings.slug}`
 
-  useEffect(() => {
-    setSavedSettings(initialSettings)
-    setDraftSettings(initialSettings)
-  }, [activeOrg?.id])
+  return (
+    <SettingsStateProvider
+      key={activeOrgSignature}
+      initialSettings={initialSettings}
+    >
+      {children}
+    </SettingsStateProvider>
+  )
+}
+
+function SettingsStateProvider({
+  children,
+  initialSettings,
+}: SettingsProviderProps & { initialSettings: WorkspaceSettingsValues }) {
+  const [savedSettings, setSavedSettings] = useState(initialSettings)
+  const [draftSettings, setDraftSettings] = useState(initialSettings)
 
   const dirty = !settingsEqual(draftSettings, savedSettings)
 
-  function updateSetting<TKey extends keyof WorkspaceSettingsValues>(
-    key: TKey,
-    value: WorkspaceSettingsValues[TKey]
-  ) {
-    setDraftSettings((current) => ({
-      ...current,
-      [key]: value,
-    }))
-  }
-
-  function discardChanges() {
-    setDraftSettings(savedSettings)
-  }
-
-  function saveChanges() {
-    setSavedSettings(draftSettings)
-  }
-
-  return (
-    <SettingsContext
-      value={{
-        draftSettings,
-        dirty,
-        updateSetting,
-        discardChanges,
-        saveChanges,
-      }}
-    >
-      {children}
-    </SettingsContext>
+  const updateSetting = useCallback(
+    <TKey extends keyof WorkspaceSettingsValues>(
+      key: TKey,
+      value: WorkspaceSettingsValues[TKey]
+    ) => {
+      setDraftSettings((current) => ({
+        ...current,
+        [key]: value,
+      }))
+    },
+    []
   )
+
+  const discardChanges = useCallback(() => {
+    setDraftSettings(savedSettings)
+  }, [savedSettings])
+
+  const saveChanges = useCallback(() => {
+    setSavedSettings(draftSettings)
+  }, [draftSettings])
+
+  const value = useMemo<SettingsContextValue>(
+    () => ({
+      draftSettings,
+      dirty,
+      updateSetting,
+      discardChanges,
+      saveChanges,
+    }),
+    [dirty, discardChanges, draftSettings, saveChanges, updateSetting]
+  )
+
+  return <SettingsContext value={value}>{children}</SettingsContext>
 }
 
 export function useSettings() {

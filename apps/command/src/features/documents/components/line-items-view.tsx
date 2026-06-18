@@ -21,8 +21,10 @@ import {
 import type { NodeViewProps } from "@tiptap/react"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { authClient } from "@/lib/auth-client"
+import { createId } from "@/lib/create-id"
 
 type PricingItem = {
+  id: string
   description: string
   details?: string
   quantity: number
@@ -50,10 +52,13 @@ function getLineTotal(item: PricingItem) {
   return safeNumber(item.quantity) * safeNumber(item.rate)
 }
 
-function LineItemsView({
-  node,
-  updateAttributes,
-}: NodeViewProps) {
+function getLineItemKey(item: PricingItem) {
+  return (
+    item.id || `line-item-${item.description}-${item.quantity}-${item.rate}`
+  )
+}
+
+function LineItemsView({ node, updateAttributes }: NodeViewProps) {
   const {
     items = [],
     discountRate = 0,
@@ -75,7 +80,7 @@ function LineItemsView({
     const nextItems = lineItems.map((item, itemIndex) => {
       if (itemIndex !== index) return item
 
-      const nextItem = { ...item, [key]: value }
+      const nextItem = { ...item, id: getLineItemKey(item), [key]: value }
       return { ...nextItem, total: getLineTotal(nextItem) }
     })
 
@@ -87,6 +92,7 @@ function LineItemsView({
       items: [
         ...lineItems,
         {
+          id: createId("line-item"),
           description: `Item ${lineItems.length + 1}`,
           details: "",
           quantity: 1,
@@ -104,6 +110,7 @@ function LineItemsView({
       items: [
         ...lineItems,
         {
+          id: createId("line-item"),
           description: "Catalog service",
           details:
             "Describe the selected service scope, assumptions, and deliverables.",
@@ -197,7 +204,7 @@ function LineItemsView({
 
               return (
                 <TableRow
-                  key={index}
+                  key={getLineItemKey(item)}
                   className="group align-top hover:bg-[color-mix(in_oklab,var(--document-accent)_4%,transparent)]"
                 >
                   <TableCell className="px-4 py-5 whitespace-normal">
@@ -309,6 +316,7 @@ function LineItemsView({
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={addItem}
@@ -318,6 +326,7 @@ function LineItemsView({
             Add Line Item
           </Button>
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={addCatalogItem}

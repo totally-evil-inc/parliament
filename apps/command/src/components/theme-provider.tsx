@@ -80,10 +80,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     typeof window === "undefined" ? DEFAULT_PALETTE : readPalette()
   )
 
-  const resolved = useMemo(
-    () => (preference === "system" ? osScheme : preference),
-    [preference, osScheme]
-  )
+  const resolved = preference === "system" ? osScheme : preference
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", resolved === "dark")

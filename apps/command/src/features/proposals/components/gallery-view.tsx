@@ -10,6 +10,7 @@ import type { NodeViewProps } from "@tiptap/react"
 import type { GalleryImage } from "@/features/proposals/types"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { getArrayAttr, getColumnCount } from "@/features/proposals/types"
+import { createId } from "@/lib/create-id"
 
 const gridColumnClassNames = {
   1: "grid-cols-1",
@@ -23,7 +24,12 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
   const columns = getColumnCount(node.attrs.columns)
 
   const addImage = () => {
-    updateAttributes({ images: [...images, { url: "", alt: "New Image" }] })
+    updateAttributes({
+      images: [
+        ...images,
+        { id: createId("gallery-image"), url: "", alt: "New Image" },
+      ],
+    })
   }
 
   const removeImage = async (index: number) => {
@@ -59,9 +65,9 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
       </div>
 
       <div className={`grid gap-4 ${gridColumnClassNames[columns]}`}>
-        {images.map((_, index) => (
+        {images.map((image, index) => (
           <div
-            key={index}
+            key={image.id || `${image.url}-${image.alt}`}
             className="group relative aspect-square overflow-hidden rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)]"
           >
             <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[color-mix(in_oklab,var(--document-muted-foreground)_50%,transparent)]">

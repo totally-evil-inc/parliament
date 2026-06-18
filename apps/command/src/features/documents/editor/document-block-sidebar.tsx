@@ -69,12 +69,17 @@ export function DocumentBlockSidebar({
   const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(
     null
   )
-  const [headerLayout, setHeaderLayout] =
-    React.useState<DocumentHeaderLayoutId>(() => getHeaderLayout(editor))
+  const [headerLayoutState, setHeaderLayoutState] = React.useState<{
+    editor: Editor | null
+    override: DocumentHeaderLayoutId | null
+  }>({ editor, override: null })
 
-  React.useEffect(() => {
-    setHeaderLayout(getHeaderLayout(editor))
-  }, [editor])
+  let headerLayout = headerLayoutState.override ?? getHeaderLayout(editor)
+
+  if (headerLayoutState.editor !== editor) {
+    headerLayout = getHeaderLayout(editor)
+    setHeaderLayoutState({ editor, override: null })
+  }
 
   const blocks = React.useMemo(
     () =>
@@ -122,7 +127,7 @@ export function DocumentBlockSidebar({
   }
 
   const updateHeaderLayout = (layout: DocumentHeaderLayoutId) => {
-    setHeaderLayout(layout)
+    setHeaderLayoutState({ editor, override: layout })
     updateDocumentHeaderLayout(editor, layout)
   }
 
@@ -141,6 +146,7 @@ export function DocumentBlockSidebar({
         <>
           <SidebarHeader className="flex shrink-0 flex-row items-center justify-between gap-3 border-b border-border/70 px-4 py-4">
             <button
+              type="button"
               onClick={() => setSelectedBlockId(null)}
               className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
             >
@@ -156,6 +162,7 @@ export function DocumentBlockSidebar({
               </span>
             </div>
             <button
+              type="button"
               onClick={() => setOpen(false)}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
             >
@@ -173,6 +180,7 @@ export function DocumentBlockSidebar({
                 <div className="space-y-3">
                   {selectedBlock.layouts?.map((layout) => (
                     <button
+                      type="button"
                       key={layout.id}
                       onClick={() =>
                         handleInsertLayout(selectedBlock, layout.id)
@@ -208,6 +216,7 @@ export function DocumentBlockSidebar({
                 </span>
               </div>
               <button
+                type="button"
                 onClick={() => setOpen(false)}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
               >
@@ -261,6 +270,7 @@ function SidebarTabButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all",
@@ -286,6 +296,7 @@ function BlocksPanel({
       <div className="grid grid-cols-1 gap-3 pb-4">
         {blocks.map((block) => (
           <button
+            type="button"
             key={block.id}
             onClick={() => onSelectBlock(block)}
             className="group w-full rounded-xl border border-border/60 bg-background/50 p-3 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"

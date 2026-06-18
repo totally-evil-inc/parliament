@@ -9,10 +9,11 @@ import {
   InputGroupText,
 } from "@workspace/ui/components/input-group"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { slugify } from "../onboarding-draft"
+import type { OrganizationDraft } from "../onboarding-draft"
 import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
 import { useSlugAvailability } from "@/features/workspace/hooks/use-slug-availability"
 import { organizationSchema } from "@/utils/auth-schemas"
-import { type OrganizationDraft, slugify } from "../onboarding-draft"
 
 export function OrganizationStep({
   draft,
@@ -71,7 +72,10 @@ export function OrganizationStep({
 
             return (
               <div className="flex flex-col gap-1.5">
-                <label className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+                <label
+                  htmlFor="onboarding-organization"
+                  className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase"
+                >
                   Workspace name
                 </label>
                 <Input
@@ -105,7 +109,10 @@ export function OrganizationStep({
 
             return (
               <div className="flex flex-col gap-1.5">
-                <label className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+                <label
+                  htmlFor="onboarding-slug"
+                  className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase"
+                >
                   Workspace URL
                 </label>
                 <InputGroup>
