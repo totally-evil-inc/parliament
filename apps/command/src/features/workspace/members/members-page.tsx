@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { authClient } from "@/lib/auth-client"
 import { InviteTeammatesForm } from "@/features/workspace/components/invite-teammates-form"
+import { useWorkspace } from "@/layouts/workspace-provider"
 import { MembersTable } from "./members-table"
 import { InvitationsList } from "./invitations-list"
 
 export function MembersPage() {
-  const { data: activeOrg } = authClient.useActiveOrganization()
+  const { activeOrg, isSwitching } = useWorkspace()
   const session = authClient.useSession()
   const currentUserId = session.data?.user?.id as string | undefined
 
@@ -64,7 +65,7 @@ export function MembersPage() {
           </div>
         </div>
 
-        {membersPending ? (
+        {isSwitching || membersPending ? (
           <div className="flex items-center justify-center py-10">
             <Spinner />
           </div>

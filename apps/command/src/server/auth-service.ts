@@ -1,5 +1,7 @@
 import "@tanstack/react-start/server-only"
 
+import { db, desc, eq, schema } from "@workspace/database"
+
 import type {
   AuthTokenResult,
   CommandAuthContext,
@@ -148,6 +150,58 @@ function getSessionId(session: SessionJson | null) {
   return typeof sessionId === "string" ? sessionId : null
 }
 
+function getUserId(session: SessionJson | null) {
+  const userId = session?.user?.id
+
+  return typeof userId === "string" ? userId : null
+}
+
+async function selectActiveOrganizationFromMemberships(
+  session: SessionJson | null
+) {
+  if (!session || getActiveOrganizationId(session)) {
+    return session
+  }
+
+  const sessionId = getSessionId(session)
+  const userId = getUserId(session)
+
+  if (!sessionId || !userId) {
+    return session
+  }
+
+  try {
+    const [membership] = await db
+      .select({ organizationId: schema.member.organizationId })
+      .from(schema.member)
+      .where(eq(schema.member.userId, userId))
+      .orderBy(desc(schema.member.createdAt))
+      .limit(1)
+
+    if (!membership) {
+      return session
+    }
+
+    await db
+      .update(schema.session)
+      .set({ activeOrganizationId: membership.organizationId })
+      .where(eq(schema.session.id, sessionId))
+
+    return {
+      ...session,
+      session: {
+        ...session.session,
+        activeOrganizationId: membership.organizationId,
+      },
+    }
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown organization error"
+    console.warn(`Failed to select active organization: ${message}`)
+    return session
+  }
+}
+
 function createBackendJwtResolver(
   headers: Headers,
   session: SessionJson | null
@@ -234,7 +288,9 @@ export async function createCommandAuthContext(
   request: Request
 ): Promise<CommandAuthContext> {
   const headers = getForwardedHeaders(request)
-  const session = await fetchSession(headers)
+  const session = await selectActiveOrganizationFromMemberships(
+    await fetchSession(headers)
+  )
 
   return {
     user: session?.user ?? null,

@@ -20,6 +20,7 @@ import {
 } from "@workspace/ui/components/popover"
 import { useEffect, useRef } from "react"
 import type { NodeViewProps } from "@tiptap/react"
+import { useConfirm } from "@/components/confirm-dialog-provider"
 
 type CustomField = {
   label: string
@@ -81,6 +82,7 @@ function DocumentHeaderView({
   node,
   updateAttributes,
 }: NodeViewProps) {
+  const confirm = useConfirm()
   const {
     title,
     date,
@@ -141,12 +143,24 @@ function DocumentHeaderView({
     })
   }
 
-  const removeCustomField = (
+  const removeCustomField = async (
     key: "fromCustomFields" | "billToCustomFields",
     index: number
   ) => {
     const fields =
       key === "fromCustomFields" ? fromCustomFields : billToCustomFields
+
+    const confirmed = await confirm({
+      title: "Remove custom field?",
+      description:
+        key === "fromCustomFields"
+          ? "This will remove the selected sender field."
+          : "This will remove the selected recipient field.",
+      confirmLabel: "Remove field",
+      variant: "destructive",
+    })
+
+    if (!confirmed) return
 
     updateAttributes({
       [key]: fields.filter((_, fieldIndex) => fieldIndex !== index),
@@ -221,7 +235,9 @@ function DocumentHeaderView({
               onChange={(index, fieldKey, value) =>
                 updateCustomField("fromCustomFields", index, fieldKey, value)
               }
-              onRemove={(index) => removeCustomField("fromCustomFields", index)}
+              onRemove={(index) =>
+                void removeCustomField("fromCustomFields", index)
+              }
             />
 
             <Button
@@ -280,7 +296,7 @@ function DocumentHeaderView({
                 updateCustomField("billToCustomFields", index, fieldKey, value)
               }
               onRemove={(index) =>
-                removeCustomField("billToCustomFields", index)
+                void removeCustomField("billToCustomFields", index)
               }
             />
 

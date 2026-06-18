@@ -32,6 +32,7 @@ import {
   More01Icon,
   Shield01Icon,
 } from "@hugeicons/core-free-icons"
+import { useConfirm } from "@/components/confirm-dialog-provider"
 import { authClient } from "@/lib/auth-client"
 
 type Member = {
@@ -47,16 +48,22 @@ type Member = {
   }
 }
 
+type EditableRole = "admin" | "member"
+
 const EDITABLE_ROLES = [
   { value: "admin", label: "Admin" },
   { value: "member", label: "Member" },
-]
+] satisfies Array<{ value: EditableRole; label: string }>
+
+function isEditableRole(role: string | null): role is EditableRole {
+  return role === "admin" || role === "member"
+}
 
 function getInitials(name: string) {
   return name
     .split(/\s+/)
     .slice(0, 2)
-    .map((s) => s[0] ?? "")
+    .map((s) => s.charAt(0))
     .join("")
     .toUpperCase()
 }
@@ -71,7 +78,7 @@ function formatDate(value: Date | string) {
 }
 
 type Props = {
-  members: Member[]
+  members: Array<Member>
   currentUserId?: string
   organizationId: string
 }
@@ -82,16 +89,26 @@ export function MembersTable({
   organizationId,
 }: Props) {
   const queryClient = useQueryClient()
+  const confirm = useConfirm()
   const [roleUpdating, setRoleUpdating] = useState<string | null>(null)
   const [removing, setRemoving] = useState<string | null>(null)
 
-  const handleRoleChange = async (memberId: string, role: string | null) => {
-    if (!role) return
-    setRoleUpdating(memberId)
+  const handleRoleChange = async (member: Member, role: string | null) => {
+    if (!isEditableRole(role) || role === member.role) return
+
+    const confirmed = await confirm({
+      title: `Change ${member.user.name}'s role?`,
+      description: `${member.user.name} will become ${role === "admin" ? "an admin" : "a member"} in this workspace.`,
+      confirmLabel: "Change role",
+    })
+
+    if (!confirmed) return
+
+    setRoleUpdating(member.id)
     try {
       await authClient.organization.updateMemberRole({
-        memberId,
-        role: role as "admin" | "member",
+        memberId: member.id,
+        role,
         organizationId,
       })
       await queryClient.invalidateQueries({ queryKey: ["org-members"] })
@@ -100,11 +117,20 @@ export function MembersTable({
     }
   }
 
-  const handleRemove = async (memberId: string) => {
-    setRemoving(memberId)
+  const handleRemove = async (member: Member) => {
+    const confirmed = await confirm({
+      title: `Remove ${member.user.name}?`,
+      description: `${member.user.email} will lose access to this workspace.`,
+      confirmLabel: "Remove member",
+      variant: "destructive",
+    })
+
+    if (!confirmed) return
+
+    setRemoving(member.id)
     try {
       await authClient.organization.removeMember({
-        memberIdOrEmail: memberId,
+        memberIdOrEmail: member.id,
         organizationId,
       })
       await queryClient.invalidateQueries({ queryKey: ["org-members"] })
@@ -172,9 +198,9 @@ export function MembersTable({
                     </Badge>
                   ) : (
                     <Select
-                      value={member.role ?? "member"}
+                      value={member.role}
                       onValueChange={(role) =>
-                        handleRoleChange(member.id, role)
+                        void handleRoleChange(member, role)
                       }
                       disabled={roleUpdating === member.id || isSelf}
                     >
@@ -232,7 +258,7 @@ export function MembersTable({
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
-                          onClick={() => handleRemove(member.id)}
+                          onClick={() => void handleRemove(member)}
                         >
                           <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
                           Remove

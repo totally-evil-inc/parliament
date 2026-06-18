@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 import { z } from "zod"
+import { getSession } from "@/server/auth"
 import { ONBOARDING_STEP_IDS } from "@/features/auth/onboarding/constants"
 import { useOnboardingFlow } from "@/hooks/use-onboarding-flow"
 import { Stepper } from "@/features/auth/onboarding/components/stepper"
@@ -14,6 +15,13 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/auth/onboarding/")({
   validateSearch: searchSchema,
+  beforeLoad: async () => {
+    const session = await getSession()
+
+    if (session?.session?.activeOrganizationId) {
+      throw redirect({ to: "/" })
+    }
+  },
   component: OnboardingPage,
 })
 

@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import { useConfirm } from "@/components/confirm-dialog-provider"
 import { authClient } from "@/lib/auth-client"
 
 type Invitation = {
@@ -18,17 +19,29 @@ function formatDate(value: Date | string) {
 }
 
 type Props = {
-  invitations: Invitation[]
+  invitations: Array<Invitation>
 }
 
 export function InvitationsList({ invitations }: Props) {
   const queryClient = useQueryClient()
+  const confirm = useConfirm()
   const [canceling, setCanceling] = useState<string | null>(null)
 
-  const handleCancel = async (invitationId: string) => {
-    setCanceling(invitationId)
+  const handleCancel = async (invitation: Invitation) => {
+    const confirmed = await confirm({
+      title: "Revoke invitation?",
+      description: `${invitation.email} will no longer be able to join from this invitation.`,
+      confirmLabel: "Revoke invitation",
+      variant: "destructive",
+    })
+
+    if (!confirmed) return
+
+    setCanceling(invitation.id)
     try {
-      await authClient.organization.cancelInvitation({ invitationId })
+      await authClient.organization.cancelInvitation({
+        invitationId: invitation.id,
+      })
       await queryClient.invalidateQueries({ queryKey: ["org-invitations"] })
     } finally {
       setCanceling(null)
@@ -74,7 +87,7 @@ export function InvitationsList({ invitations }: Props) {
               size="sm"
               className="shrink-0 font-mono text-[10px] tracking-[0.15em] text-muted-foreground uppercase hover:text-destructive"
               disabled={canceling === inv.id}
-              onClick={() => handleCancel(inv.id)}
+              onClick={() => void handleCancel(inv)}
             >
               {canceling === inv.id ? "Revoking…" : "Revoke"}
             </Button>

@@ -1,6 +1,4 @@
 import { useState } from "react"
-import { useRouter } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,33 +14,27 @@ import {
   ArrowDown01Icon,
   Tick01Icon,
 } from "@hugeicons/core-free-icons"
-import { authClient } from "@/lib/auth-client"
 import { CreateWorkspaceModal } from "@/features/workspace/components/create-workspace-modal"
 import type { CreatedOrg } from "@/features/workspace/components/create-workspace-form"
+import { useWorkspace } from "./workspace-provider"
 
 export function WorkspaceSwitcher() {
-  const router = useRouter()
   const [createOpen, setCreateOpen] = useState(false)
-
-  const { data: activeOrg } = authClient.useActiveOrganization()
-
-  const { data: orgs = [] } = useQuery({
-    queryKey: ["organizations"],
-    queryFn: async () => {
-      const result = await authClient.organization.list()
-      return result.data ?? []
-    },
-  })
+  const {
+    activeOrg,
+    organizations,
+    isSwitching,
+    switchOrganization,
+    refreshWorkspaceState,
+  } = useWorkspace()
 
   const handleSwitch = async (organizationId: string) => {
-    if (organizationId === activeOrg?.id) return
-    await authClient.organization.setActive({ organizationId })
-    await router.invalidate()
+    await switchOrganization(organizationId)
   }
 
   const handleCreated = async (org: CreatedOrg) => {
-    await authClient.organization.setActive({ organizationId: org.id })
-    await router.invalidate()
+    await switchOrganization(org.id)
+    await refreshWorkspaceState()
   }
 
   const displayName = activeOrg?.name ?? "…"
@@ -84,13 +76,14 @@ export function WorkspaceSwitcher() {
         >
           <DropdownMenuGroup>
             <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
-            {orgs.map((org) => {
+            {organizations.map((org) => {
               const isActive = org.id === activeOrg?.id
               return (
                 <DropdownMenuItem
                   key={org.id}
                   className="min-h-10 cursor-pointer"
                   onClick={() => handleSwitch(org.id)}
+                  disabled={isSwitching}
                 >
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-medium text-muted-foreground">
                     {org.name.slice(0, 1)}

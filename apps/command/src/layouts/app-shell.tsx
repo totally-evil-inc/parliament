@@ -19,6 +19,7 @@ import * as React from "react"
 import { authClient } from "@/lib/auth-client"
 import { workspaceConfig } from "@/features/workspace/config"
 import { AppSidebar } from "./app-sidebar"
+import { WorkspaceProvider } from "./workspace-provider"
 
 type AppShellProps = {
   children: ReactNode
@@ -46,23 +47,25 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <AppSidebar
-        variant="inset"
-        primaryNav={workspaceConfig.primaryNav}
-        user={user}
-      />
-      <SidebarInset className="flex h-svh min-w-0 flex-col overflow-hidden">
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border/60 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumbs />
-        </header>
-        <ScrollArea className="min-h-0 flex-1">
-          <main className="flex min-h-full flex-col bg-background text-foreground">
-            {children}
-          </main>
-        </ScrollArea>
-      </SidebarInset>
+      <WorkspaceProvider>
+        <AppSidebar
+          variant="inset"
+          primaryNav={workspaceConfig.primaryNav}
+          user={user}
+        />
+        <SidebarInset className="flex h-svh min-w-0 flex-col overflow-hidden">
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border/60 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumbs />
+          </header>
+          <ScrollArea className="min-h-0 flex-1">
+            <main className="flex min-h-full flex-col bg-background text-foreground">
+              {children}
+            </main>
+          </ScrollArea>
+        </SidebarInset>
+      </WorkspaceProvider>
     </SidebarProvider>
   )
 }
