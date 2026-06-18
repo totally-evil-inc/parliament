@@ -23,10 +23,11 @@ type DocumentDragHandleProps = {
 export function DocumentDragHandle({ editor }: DocumentDragHandleProps) {
   return (
     <DragHandle
+      className="document-drag-handle"
       editor={editor}
       computePositionConfig={{
         placement: "left-start",
-        strategy: "fixed",
+        strategy: "absolute",
       }}
       nested={{
         defaultRules: true,
@@ -34,12 +35,7 @@ export function DocumentDragHandle({ editor }: DocumentDragHandleProps) {
         rules: proposalDragHandleRules,
       }}
     >
-      <button
-        aria-label="Drag block"
-        className="document-drag-handle"
-        contentEditable={false}
-        type="button"
-      />
+      <span aria-hidden="true" className="document-drag-handle-grip" />
     </DragHandle>
   )
 }

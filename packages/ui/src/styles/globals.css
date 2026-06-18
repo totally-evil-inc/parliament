@@ -170,7 +170,6 @@
 
 @layer components {
   .document-drag-handle {
-    position: fixed;
     z-index: 50;
     width: 1.5rem;
     height: 1.5rem;
@@ -187,8 +186,7 @@
       color 120ms ease;
   }
 
-  .document-drag-handle::before {
-    content: "";
+  .document-drag-handle-grip {
     width: 0.75rem;
     height: 1rem;
     background-image: radial-gradient(currentColor 1.25px, transparent 1.25px);

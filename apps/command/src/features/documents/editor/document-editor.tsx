@@ -46,7 +46,7 @@ export function DocumentEditor({
 
   return (
     <div className="p-3">
-      <div className="mx-auto max-w-5xl pb-32">
+      <div className="relative mx-auto max-w-5xl pb-32">
         {editor ? (
           <>
             <EditorBubbleMenu editor={editor} commands={bubbleCommands} />
