@@ -13,6 +13,7 @@ export const DocumentHeader = Node.create({
 
   addAttributes() {
     return {
+      headerLayout: { default: "mark-left-dates-right" },
       title: { default: "" },
       date: { default: new Date().toISOString().slice(0, 10) },
       due: { default: "" },

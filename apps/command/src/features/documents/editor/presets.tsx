@@ -70,8 +70,10 @@ const TaskItem = BaseTaskItem.extend({
 export const documentEditorClassName = [
   "prose prose-sm dark:prose-invert",
   "max-w-4xl min-h-[1200px] w-full cursor-text focus:outline-none px-12 py-16",
-  "mx-auto rounded-xl border bg-background text-foreground shadow-sm",
+  "mx-auto border bg-[var(--document-page-background)] text-[var(--document-foreground)] shadow-sm",
+  "rounded-[var(--document-radius)] [font-family:var(--document-font-family)]",
   "prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground",
+  "prose-headings:[font-family:var(--document-heading-font-family)]",
   "prose-code:text-foreground prose-blockquote:text-muted-foreground",
   "prose-a:text-primary prose-hr:border-border prose-ul:data-[type=taskList]:list-none prose-ul:data-[type=taskList]:pl-0",
   "prose-p:leading-6 prose-li:leading-6 prose-headings:leading-tight",

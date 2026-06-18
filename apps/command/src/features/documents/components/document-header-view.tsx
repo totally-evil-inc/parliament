@@ -1,6 +1,7 @@
 import {
   Calendar03Icon,
   Delete02Icon,
+  Image01Icon,
   PlusSignIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -20,19 +21,20 @@ import {
 } from "@workspace/ui/components/popover"
 import { useEffect, useRef } from "react"
 import type { NodeViewProps } from "@tiptap/react"
+import type {
+  DocumentHeaderAttrs,
+  DocumentHeaderCustomField,
+  DocumentHeaderLayoutId,
+} from "@/features/documents/editor/types"
+import { isDocumentHeaderLayoutId } from "@/features/documents/editor/header-layouts"
 import { useConfirm } from "@/components/confirm-dialog-provider"
-
-type CustomField = {
-  label: string
-  value: string
-}
 
 type DateFieldKey = "date" | "due" | "validUntil"
 
-function getCustomFields(value: unknown): Array<CustomField> {
+function getCustomFields(value: unknown): Array<DocumentHeaderCustomField> {
   return Array.isArray(value)
     ? value.filter(
-        (field): field is CustomField =>
+        (field): field is DocumentHeaderCustomField =>
           typeof field === "object" &&
           field !== null &&
           "label" in field &&
@@ -78,13 +80,39 @@ function toDateValue(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-function DocumentHeaderView({
-  node,
-  updateAttributes,
-}: NodeViewProps) {
+function getHeaderAttrs(attrs: Record<string, unknown>): DocumentHeaderAttrs {
+  return {
+    headerLayout: isDocumentHeaderLayoutId(attrs.headerLayout)
+      ? attrs.headerLayout
+      : "mark-left-dates-right",
+    title: typeof attrs.title === "string" ? attrs.title : "",
+    date: typeof attrs.date === "string" ? attrs.date : "",
+    due: typeof attrs.due === "string" ? attrs.due : "",
+    validUntil: typeof attrs.validUntil === "string" ? attrs.validUntil : "",
+    fromName: typeof attrs.fromName === "string" ? attrs.fromName : "",
+    fromEmail: typeof attrs.fromEmail === "string" ? attrs.fromEmail : "",
+    fromAddress: typeof attrs.fromAddress === "string" ? attrs.fromAddress : "",
+    fromPhone: typeof attrs.fromPhone === "string" ? attrs.fromPhone : "",
+    fromWebsite: typeof attrs.fromWebsite === "string" ? attrs.fromWebsite : "",
+    fromTaxId: typeof attrs.fromTaxId === "string" ? attrs.fromTaxId : "",
+    fromCustomFields: getCustomFields(attrs.fromCustomFields),
+    billToName: typeof attrs.billToName === "string" ? attrs.billToName : "",
+    billToEmail: typeof attrs.billToEmail === "string" ? attrs.billToEmail : "",
+    billToAddress:
+      typeof attrs.billToAddress === "string" ? attrs.billToAddress : "",
+    billToPhone: typeof attrs.billToPhone === "string" ? attrs.billToPhone : "",
+    billToWebsite:
+      typeof attrs.billToWebsite === "string" ? attrs.billToWebsite : "",
+    billToTaxId: typeof attrs.billToTaxId === "string" ? attrs.billToTaxId : "",
+    billToCustomFields: getCustomFields(attrs.billToCustomFields),
+  }
+}
+
+function DocumentHeaderView({ node, updateAttributes }: NodeViewProps) {
   const confirm = useConfirm()
   const {
     title,
+    headerLayout,
     date,
     due,
     validUntil,
@@ -94,18 +122,15 @@ function DocumentHeaderView({
     fromPhone,
     fromWebsite,
     fromTaxId,
-    fromCustomFields: rawFromCustomFields,
+    fromCustomFields,
     billToName,
     billToEmail,
     billToAddress,
     billToPhone,
     billToWebsite,
     billToTaxId,
-    billToCustomFields: rawBillToCustomFields,
-  } = node.attrs
-
-  const fromCustomFields = getCustomFields(rawFromCustomFields)
-  const billToCustomFields = getCustomFields(rawBillToCustomFields)
+    billToCustomFields,
+  } = getHeaderAttrs(node.attrs)
   const dueDate = due || validUntil
 
   const handleChange = (key: string, value: string) => {
@@ -130,7 +155,7 @@ function DocumentHeaderView({
   const updateCustomField = (
     key: "fromCustomFields" | "billToCustomFields",
     index: number,
-    fieldKey: keyof CustomField,
+    fieldKey: keyof DocumentHeaderCustomField,
     value: string
   ) => {
     const fields =
@@ -169,32 +194,22 @@ function DocumentHeaderView({
 
   return (
     <NodeViewWrapper
-      className="document-header mb-12 space-y-12"
+      className="document-header space-y-[var(--document-section-spacing)] pb-[var(--document-section-spacing)] text-[var(--document-foreground)]"
       contentEditable={false}
     >
-      <div className="space-y-6">
-        <div className="ml-auto grid w-fit min-w-64 grid-cols-2 gap-6 text-right">
-          <DatePickerField
-            label="Date"
-            value={date}
-            onChange={(value) => handleDateChange("date", value)}
-          />
-          <DatePickerField
-            label="Due"
-            value={dueDate}
-            onChange={(value) => handleDateChange("due", value)}
-          />
-        </div>
+      <HeaderLayout
+        layout={headerLayout}
+        title={title}
+        date={date}
+        dueDate={dueDate}
+        onDateChange={(value) => handleDateChange("date", value)}
+        onDueDateChange={(value) => handleDateChange("due", value)}
+        onTitleChange={(value) => handleChange("title", value)}
+      />
 
-        <DocumentTitleField
-          value={title}
-          onChange={(value) => handleChange("title", value)}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-16 border-t pt-8">
+      <div className="grid grid-cols-2 gap-16 border-t border-[var(--document-border)] pt-8">
         <div className="space-y-6">
-          <label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+          <label className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
             From
           </label>
           <div className="space-y-3">
@@ -254,7 +269,7 @@ function DocumentHeaderView({
         </div>
 
         <div className="space-y-6">
-          <label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+          <label className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
             Bill To
           </label>
           <div className="space-y-3">
@@ -320,10 +335,177 @@ function DocumentHeaderView({
 export { DocumentHeaderView }
 export default DocumentHeaderView
 
+function HeaderLayout({
+  date,
+  dueDate,
+  layout,
+  onDateChange,
+  onDueDateChange,
+  onTitleChange,
+  title,
+}: {
+  date: string
+  dueDate: string
+  layout: DocumentHeaderLayoutId
+  onDateChange: (value: string) => void
+  onDueDateChange: (value: string) => void
+  onTitleChange: (value: string) => void
+  title: string
+}) {
+  const logo = <LogoPlaceholder />
+  const titleField = (
+    <DocumentTitleField value={title} onChange={onTitleChange} />
+  )
+  const centeredTitleField = (
+    <DocumentTitleField align="center" value={title} onChange={onTitleChange} />
+  )
+  const datesHorizontal = (
+    <DateFields
+      align="left"
+      date={date}
+      dueDate={dueDate}
+      onDateChange={onDateChange}
+      onDueDateChange={onDueDateChange}
+      orientation="horizontal"
+    />
+  )
+  const datesVertical = (
+    <DateFields
+      align="right"
+      date={date}
+      dueDate={dueDate}
+      onDateChange={onDateChange}
+      onDueDateChange={onDueDateChange}
+      orientation="vertical"
+    />
+  )
+
+  if (layout === "centered-stack") {
+    return (
+      <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
+        {logo}
+        <DateFields
+          align="center"
+          date={date}
+          dueDate={dueDate}
+          onDateChange={onDateChange}
+          onDueDateChange={onDueDateChange}
+          orientation="horizontal"
+        />
+        <div className="w-full">{centeredTitleField}</div>
+      </div>
+    )
+  }
+
+  if (layout === "left-stack") {
+    return (
+      <div className="max-w-3xl space-y-5 text-left">
+        {logo}
+        {titleField}
+        {datesHorizontal}
+      </div>
+    )
+  }
+
+  if (layout === "editorial-band") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-start justify-between gap-8">
+          {logo}
+          {datesVertical}
+        </div>
+        <div className="mx-auto max-w-4xl">{centeredTitleField}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-start justify-between gap-8">
+      <div className="max-w-4xl space-y-6 text-left">
+        {logo}
+        {titleField}
+      </div>
+      {datesVertical}
+    </div>
+  )
+}
+
+function LogoPlaceholder() {
+  return (
+    <button
+      type="button"
+      className="flex h-16 w-28 shrink-0 items-center justify-center rounded-[var(--document-radius)] border border-dashed border-[var(--document-border)] bg-[color-mix(in_oklab,var(--document-accent)_6%,transparent)] text-[var(--document-muted-foreground)] transition-colors hover:border-[var(--document-accent)] hover:text-[var(--document-accent)]"
+      aria-label="Logo placeholder"
+    >
+      <div className="flex flex-col items-center gap-1">
+        <HugeiconsIcon icon={Image01Icon} className="h-5 w-5" />
+        <span className="text-[10px] font-bold tracking-widest uppercase">
+          Logo
+        </span>
+      </div>
+    </button>
+  )
+}
+
+function DateFields({
+  align,
+  date,
+  dueDate,
+  onDateChange,
+  onDueDateChange,
+  orientation,
+}: {
+  align: "left" | "center" | "right"
+  date: string
+  dueDate: string
+  onDateChange: (value: string) => void
+  onDueDateChange: (value: string) => void
+  orientation: "horizontal" | "vertical"
+}) {
+  const textAlignClassName =
+    align === "center"
+      ? "text-center"
+      : align === "right"
+        ? "text-right"
+        : "text-left"
+  const justifyClassName =
+    align === "center"
+      ? "justify-center"
+      : align === "right"
+        ? "justify-end"
+        : "justify-start"
+
+  return (
+    <div
+      className={[
+        orientation === "horizontal"
+          ? "grid w-fit min-w-64 grid-cols-2 gap-6"
+          : "grid w-fit min-w-32 gap-3",
+        textAlignClassName,
+      ].join(" ")}
+    >
+      <DatePickerField
+        justifyClassName={justifyClassName}
+        label="Date"
+        value={date}
+        onChange={onDateChange}
+      />
+      <DatePickerField
+        justifyClassName={justifyClassName}
+        label="Due"
+        value={dueDate}
+        onChange={onDueDateChange}
+      />
+    </div>
+  )
+}
+
 function DocumentTitleField({
+  align = "left",
   value,
   onChange,
 }: {
+  align?: "left" | "center"
   value: string
   onChange: (value: string) => void
 }) {
@@ -342,7 +524,10 @@ function DocumentTitleField({
     <textarea
       ref={textareaRef}
       rows={1}
-      className="block w-full resize-none overflow-hidden bg-transparent text-4xl leading-tight font-bold tracking-tight wrap-break-word whitespace-pre-wrap outline-none placeholder:text-muted-foreground/30"
+      className={[
+        "block w-full resize-none overflow-hidden bg-transparent [font-family:var(--document-heading-font-family)] text-4xl leading-tight font-bold tracking-tight wrap-break-word whitespace-pre-wrap text-[var(--document-foreground)] outline-none placeholder:text-[color-mix(in_oklab,var(--document-muted-foreground)_45%,transparent)]",
+        align === "center" ? "text-center" : "text-left",
+      ].join(" ")}
       placeholder="Document title..."
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -351,17 +536,19 @@ function DocumentTitleField({
 }
 
 function DatePickerField({
+  justifyClassName,
   label,
   value,
   onChange,
 }: {
+  justifyClassName: string
   label: string
   value: string
   onChange: (value: string) => void
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+      <label className="block text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
         {label}
       </label>
       <Popover>
@@ -370,13 +557,16 @@ function DatePickerField({
             <Button
               type="button"
               variant="ghost"
-              className="h-auto w-full justify-end gap-2 px-0 py-0 text-sm font-medium hover:bg-transparent"
+              className={[
+                "h-auto w-full gap-2 px-0 py-0 text-sm font-medium text-[var(--document-foreground)] hover:bg-transparent",
+                justifyClassName,
+              ].join(" ")}
             />
           }
         >
           <HugeiconsIcon
             icon={Calendar03Icon}
-            className="h-4 w-4 text-muted-foreground"
+            className="h-4 w-4 text-[var(--document-muted-foreground)]"
           />
           <span>{formatDate(value)}</span>
         </PopoverTrigger>
@@ -401,8 +591,12 @@ function CustomFields({
   onChange,
   onRemove,
 }: {
-  fields: Array<CustomField>
-  onChange: (index: number, fieldKey: keyof CustomField, value: string) => void
+  fields: Array<DocumentHeaderCustomField>
+  onChange: (
+    index: number,
+    fieldKey: keyof DocumentHeaderCustomField,
+    value: string
+  ) => void
   onRemove: (index: number) => void
 }) {
   return fields.map((field, index) => (
@@ -414,7 +608,7 @@ function CustomFields({
         placeholder="Label"
         value={field.label}
         onChange={(value) => onChange(index, "label", value)}
-        className="text-xs font-bold tracking-wider text-muted-foreground"
+        className="text-xs font-bold tracking-wider text-[var(--document-muted-foreground)]"
       />
       <Field
         placeholder="Value"
@@ -447,7 +641,7 @@ function Field({
   className?: string
 }) {
   const fieldClassName = [
-    "min-h-6 w-full rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-0 py-0.5 text-sm shadow-none transition-colors placeholder:text-muted-foreground/40 hover:border-border focus-visible:border-border focus-visible:outline-none focus-visible:ring-0 data-empty:text-muted-foreground/40",
+    "min-h-6 w-full rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-0 py-0.5 text-sm text-[var(--document-foreground)] shadow-none transition-colors placeholder:text-[color-mix(in_oklab,var(--document-muted-foreground)_58%,transparent)] hover:border-[var(--document-border)] focus-visible:border-[var(--document-border)] focus-visible:outline-none focus-visible:ring-0 data-empty:text-[var(--document-muted-foreground)]",
     className,
   ].join(" ")
 

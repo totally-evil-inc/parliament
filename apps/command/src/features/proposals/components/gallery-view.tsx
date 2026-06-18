@@ -42,9 +42,9 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
   }
 
   return (
-    <NodeViewWrapper className="gallery my-12 rounded-xl border-2 border-dashed border-muted-foreground/20 p-8 transition-colors hover:border-primary/30">
+    <NodeViewWrapper className="gallery my-[var(--document-section-spacing)] rounded-[var(--document-radius)] border-2 border-dashed border-[color-mix(in_oklab,var(--document-muted-foreground)_24%,transparent)] p-8 transition-colors hover:border-[color-mix(in_oklab,var(--document-accent)_40%,transparent)]">
       <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-sm font-bold tracking-widest text-muted-foreground uppercase">
+        <h3 className="text-sm font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
           Gallery
         </h3>
         <Button
@@ -62,9 +62,9 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
         {images.map((_, index) => (
           <div
             key={index}
-            className="group relative aspect-square overflow-hidden rounded-lg bg-muted"
+            className="group relative aspect-square overflow-hidden rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)]"
           >
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground/40">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[color-mix(in_oklab,var(--document-muted-foreground)_50%,transparent)]">
               <HugeiconsIcon icon={Image01Icon} className="h-8 w-8" />
               <span className="text-[10px] font-medium tracking-wider uppercase">
                 Placeholder

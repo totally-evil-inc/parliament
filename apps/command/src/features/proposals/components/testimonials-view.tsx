@@ -30,18 +30,18 @@ export function TestimonialsView({ node, updateAttributes }: NodeViewProps) {
         : "grid-cols-1 md:grid-cols-3"
 
   return (
-    <NodeViewWrapper className="testimonials my-12">
+    <NodeViewWrapper className="testimonials my-[var(--document-section-spacing)]">
       <div className={`grid gap-x-10 gap-y-10 ${gridColumns}`}>
         {testimonials.map((testimonial, index) => (
           <blockquote
             key={index}
-            className="m-0 border-l-2 border-border py-1 pl-5 text-left"
+            className="m-0 border-l-2 border-[var(--document-accent)] py-1 pl-5 text-left"
           >
             <Textarea
               aria-label="Testimonial quote"
               rows={4}
               spellCheck={false}
-              className={`${inputClassName} min-h-0 resize-none overflow-hidden text-left text-base leading-relaxed font-medium text-muted-foreground italic md:text-lg`}
+              className={`${inputClassName} min-h-0 resize-none overflow-hidden text-left text-base leading-relaxed font-medium text-[var(--document-muted-foreground)] italic md:text-lg`}
               value={testimonial.content}
               onChange={(e) =>
                 updateTestimonial(index, "content", e.target.value)
@@ -52,7 +52,7 @@ export function TestimonialsView({ node, updateAttributes }: NodeViewProps) {
               <Input
                 aria-label="Testimonial author"
                 spellCheck={false}
-                className={`${inputClassName} text-left text-sm leading-tight font-bold tracking-normal md:text-base`}
+                className={`${inputClassName} text-left text-sm leading-tight font-bold tracking-normal text-[var(--document-foreground)] md:text-base`}
                 value={testimonial.author}
                 onChange={(e) =>
                   updateTestimonial(index, "author", e.target.value)
@@ -61,7 +61,7 @@ export function TestimonialsView({ node, updateAttributes }: NodeViewProps) {
               <Input
                 aria-label="Testimonial author role"
                 spellCheck={false}
-                className={`${inputClassName} mt-1 text-left text-xs leading-snug font-medium tracking-normal text-muted-foreground md:text-sm`}
+                className={`${inputClassName} mt-1 text-left text-xs leading-snug font-medium tracking-normal text-[var(--document-muted-foreground)] md:text-sm`}
                 value={testimonial.role}
                 onChange={(e) =>
                   updateTestimonial(index, "role", e.target.value)

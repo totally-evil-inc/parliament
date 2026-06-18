@@ -1,6 +1,6 @@
 import type { AnyExtension, JSONContent, Range } from "@tiptap/core"
 import type { Editor } from "@tiptap/react"
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 import type { EditorCommand } from "@/lib/editor/commands"
 
 export type DocumentType = "proposal" | "invoice" | "receipt"
@@ -8,6 +8,78 @@ export type DocumentEditorPreset = "business"
 
 export type DocumentInsertPolicy = {
   beforeNodeType?: string
+}
+
+export type DocumentFontToken = "sans" | "serif" | "mono"
+
+export type DocumentTemplateTokens = {
+  canvasBackground: string
+  pageBackground: string
+  foreground: string
+  mutedForeground: string
+  accent: string
+  border: string
+  fontFamily: DocumentFontToken
+  headingFontFamily: DocumentFontToken
+  radius: string
+  spacingScale: "compact" | "comfortable" | "spacious"
+}
+
+export type DocumentTemplate = {
+  id: string
+  name: string
+  tokens: DocumentTemplateTokens
+}
+
+export type DocumentTemplateStyle = CSSProperties & {
+  "--document-canvas-background": string
+  "--document-page-background": string
+  "--document-foreground": string
+  "--document-muted-foreground": string
+  "--document-accent": string
+  "--document-border": string
+  "--document-radius": string
+  "--document-font-family": string
+  "--document-heading-font-family": string
+  "--document-section-spacing": string
+  "--background": string
+  "--foreground": string
+  "--muted-foreground": string
+  "--primary": string
+  "--border": string
+}
+
+export type DocumentHeaderCustomField = {
+  label: string
+  value: string
+}
+
+export type DocumentHeaderLayoutId =
+  | "mark-left-dates-right"
+  | "centered-stack"
+  | "left-stack"
+  | "editorial-band"
+
+export type DocumentHeaderAttrs = {
+  headerLayout: DocumentHeaderLayoutId
+  title: string
+  date: string
+  due: string
+  validUntil: string
+  fromName: string
+  fromEmail: string
+  fromAddress: string
+  fromPhone: string
+  fromWebsite: string
+  fromTaxId: string
+  fromCustomFields: Array<DocumentHeaderCustomField>
+  billToName: string
+  billToEmail: string
+  billToAddress: string
+  billToPhone: string
+  billToWebsite: string
+  billToTaxId: string
+  billToCustomFields: Array<DocumentHeaderCustomField>
 }
 
 export type DocumentLayoutPreset = {
@@ -70,6 +142,7 @@ export type DocumentDefinition = {
   title: string
   initialContent: JSONContent
   placeholder: string
+  defaultTemplate?: DocumentTemplate
   presets?: Array<DocumentEditorPreset>
   insertPolicy?: DocumentInsertPolicy
   schemaExtensions?: Array<AnyExtension>
@@ -82,6 +155,7 @@ export type DocumentEditorConfig = {
   content: JSONContent
   onContentChange?: (content: JSONContent) => void
   definition: DocumentDefinition
+  template?: DocumentTemplate
 }
 
 export type InsertDocumentBlockOptions = {

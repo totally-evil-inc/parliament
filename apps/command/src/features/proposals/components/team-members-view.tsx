@@ -28,14 +28,14 @@ export function TeamMembersView({ node, updateAttributes }: NodeViewProps) {
         : "grid-cols-1 md:grid-cols-3"
 
   return (
-    <NodeViewWrapper className="team-members my-12">
+    <NodeViewWrapper className="team-members my-[var(--document-section-spacing)]">
       <div className={`grid gap-x-10 gap-y-10 ${gridColumns}`}>
         {members.map((member, index) => (
           <div
             key={index}
             className="flex flex-col items-center justify-start text-center"
           >
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/40 text-muted-foreground md:h-20 md:w-20">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--document-accent)_10%,transparent)] text-[var(--document-accent)] md:h-20 md:w-20">
               <HugeiconsIcon
                 icon={UserIcon}
                 className="h-8 w-8 md:h-9 md:w-9"
@@ -44,14 +44,14 @@ export function TeamMembersView({ node, updateAttributes }: NodeViewProps) {
             <Input
               aria-label="Team member name"
               spellCheck={false}
-              className={`${inputClassName} text-base leading-tight font-bold tracking-normal md:text-lg`}
+              className={`${inputClassName} text-base leading-tight font-bold tracking-normal text-[var(--document-foreground)] md:text-lg`}
               value={member.name}
               onChange={(e) => updateMember(index, "name", e.target.value)}
             />
             <Input
               aria-label="Team member role"
               spellCheck={false}
-              className={`${inputClassName} mt-1.5 text-sm leading-snug font-medium tracking-normal text-muted-foreground md:text-base`}
+              className={`${inputClassName} mt-1.5 text-sm leading-snug font-medium tracking-normal text-[var(--document-muted-foreground)] md:text-base`}
               value={member.role}
               onChange={(e) => updateMember(index, "role", e.target.value)}
             />
@@ -59,7 +59,7 @@ export function TeamMembersView({ node, updateAttributes }: NodeViewProps) {
               aria-label="Team member bio"
               rows={3}
               spellCheck={false}
-              className={`${inputClassName} mt-3 min-h-0 resize-none overflow-hidden text-sm leading-normal text-muted-foreground md:text-base`}
+              className={`${inputClassName} mt-3 min-h-0 resize-none overflow-hidden text-sm leading-normal text-[var(--document-muted-foreground)] md:text-base`}
               value={member.bio ?? ""}
               onChange={(e) => updateMember(index, "bio", e.target.value)}
             />
