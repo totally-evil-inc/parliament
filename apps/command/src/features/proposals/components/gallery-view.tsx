@@ -8,6 +8,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import type { NodeViewProps } from "@tiptap/react"
 import type { GalleryImage } from "@/features/proposals/types"
+import { useConfirm } from "@/components/confirm-dialog-provider"
 import { getArrayAttr, getColumnCount } from "@/features/proposals/types"
 
 const gridColumnClassNames = {
@@ -17,6 +18,7 @@ const gridColumnClassNames = {
 } as const
 
 export function GalleryView({ node, updateAttributes }: NodeViewProps) {
+  const confirm = useConfirm()
   const images = getArrayAttr<GalleryImage>(node.attrs.images)
   const columns = getColumnCount(node.attrs.columns)
 
@@ -24,7 +26,16 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
     updateAttributes({ images: [...images, { url: "", alt: "New Image" }] })
   }
 
-  const removeImage = (index: number) => {
+  const removeImage = async (index: number) => {
+    const confirmed = await confirm({
+      title: "Remove image?",
+      description: "This will remove the selected gallery image.",
+      confirmLabel: "Remove image",
+      variant: "destructive",
+    })
+
+    if (!confirmed) return
+
     updateAttributes({
       images: images.filter((_, i) => i !== index),
     })
@@ -64,7 +75,7 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
               type="button"
               variant="ghost"
               size="icon-sm"
-              onClick={() => removeImage(index)}
+              onClick={() => void removeImage(index)}
               className="absolute top-2 right-2 text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive/80"
               aria-label="Remove image"
             >

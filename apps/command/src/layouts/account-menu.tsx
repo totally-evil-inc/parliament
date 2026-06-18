@@ -23,6 +23,7 @@ import {
 import type { WorkspaceUserProfile } from "@/features/workspace/config"
 import type { ThemePreference } from "@/components/theme-provider"
 import { authClient } from "@/lib/auth-client"
+import { useConfirm } from "@/components/confirm-dialog-provider"
 import { useTheme } from "@/components/theme-provider"
 
 function ThemeIcon({ preference }: { preference: ThemePreference }) {
@@ -38,8 +39,18 @@ function ThemeIcon({ preference }: { preference: ThemePreference }) {
 
 export function AccountMenu({ user }: { user: WorkspaceUserProfile }) {
   const { setPreference } = useTheme()
+  const confirm = useConfirm()
 
   const handleSignOut = async () => {
+    const confirmed = await confirm({
+      title: "Sign out?",
+      description: "You will need to sign in again to access this workspace.",
+      confirmLabel: "Sign out",
+      variant: "destructive",
+    })
+
+    if (!confirmed) return
+
     await authClient.signOut()
   }
 

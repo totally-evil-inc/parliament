@@ -19,6 +19,7 @@ import {
   PlusSignIcon,
 } from "@hugeicons/core-free-icons"
 import type { NodeViewProps } from "@tiptap/react"
+import { useConfirm } from "@/components/confirm-dialog-provider"
 import { authClient } from "@/lib/auth-client"
 
 type PricingItem = {
@@ -61,6 +62,7 @@ function LineItemsView({
     taxEnabled = false,
   } = node.attrs
   const session = authClient.useSession()
+  const confirm = useConfirm()
   const signedInUserName = session.data?.user.name ?? ""
 
   const lineItems: Array<PricingItem> = Array.isArray(items) ? items : []
@@ -115,7 +117,19 @@ function LineItemsView({
     })
   }
 
-  const removeItem = (index: number) => {
+  const removeItem = async (index: number) => {
+    const item = lineItems[index]
+    const confirmed = await confirm({
+      title: "Remove line item?",
+      description: item.description
+        ? `This will remove "${item.description}" from the document.`
+        : "This will remove the selected line item from the document.",
+      confirmLabel: "Remove item",
+      variant: "destructive",
+    })
+
+    if (!confirmed) return
+
     updateAttributes({
       items: lineItems.filter((_, itemIndex) => itemIndex !== index),
     })
@@ -280,7 +294,7 @@ function LineItemsView({
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      onClick={() => removeItem(index)}
+                      onClick={() => void removeItem(index)}
                       className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                       aria-label="Remove line item"
                     >

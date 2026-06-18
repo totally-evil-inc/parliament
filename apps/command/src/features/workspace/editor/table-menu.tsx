@@ -10,11 +10,13 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import type { Editor } from "@tiptap/react"
+import { useConfirm } from "@/components/confirm-dialog-provider"
 
 type TableMenuItem = {
   id: string
   label: string
   variant?: "default" | "destructive"
+  confirmDescription?: string
   command: (editor: Editor) => void
 }
 
@@ -32,6 +34,8 @@ const rowCommands: Array<TableMenuItem> = [
   {
     id: "delete-row",
     label: "Delete row",
+    variant: "destructive",
+    confirmDescription: "This will remove the selected table row.",
     command: (editor) => editor.chain().focus().deleteRow().run(),
   },
 ]
@@ -50,6 +54,8 @@ const columnCommands: Array<TableMenuItem> = [
   {
     id: "delete-column",
     label: "Delete column",
+    variant: "destructive",
+    confirmDescription: "This will remove the selected table column.",
     command: (editor) => editor.chain().focus().deleteColumn().run(),
   },
 ]
@@ -82,22 +88,43 @@ const destructiveCommands: Array<TableMenuItem> = [
     id: "delete-table",
     label: "Delete table",
     variant: "destructive",
+    confirmDescription: "This will remove the entire table from the document.",
     command: (editor) => editor.chain().focus().deleteTable().run(),
   },
 ]
 
-const renderMenuItems = (items: Array<TableMenuItem>, editor: Editor) =>
+const renderMenuItems = (
+  items: Array<TableMenuItem>,
+  onSelect: (item: TableMenuItem) => void
+) =>
   items.map((item) => (
     <DropdownMenuItem
       key={item.id}
       variant={item.variant}
-      onClick={() => item.command(editor)}
+      onClick={() => onSelect(item)}
     >
       {item.label}
     </DropdownMenuItem>
   ))
 
 export const EditorTableMenu = ({ editor }: { editor: Editor }) => {
+  const confirm = useConfirm()
+
+  const handleSelect = async (item: TableMenuItem) => {
+    if (item.variant === "destructive") {
+      const confirmed = await confirm({
+        title: `${item.label}?`,
+        description: item.confirmDescription,
+        confirmLabel: item.label,
+        variant: "destructive",
+      })
+
+      if (!confirmed) return
+    }
+
+    item.command(editor)
+  }
+
   return (
     <BubbleMenu
       editor={editor}
@@ -117,20 +144,22 @@ export const EditorTableMenu = ({ editor }: { editor: Editor }) => {
         <DropdownMenuContent align="start" className="w-48">
           <DropdownMenuGroup>
             <DropdownMenuLabel>Rows</DropdownMenuLabel>
-            {renderMenuItems(rowCommands, editor)}
+            {renderMenuItems(rowCommands, (item) => void handleSelect(item))}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuLabel>Columns</DropdownMenuLabel>
-            {renderMenuItems(columnCommands, editor)}
+            {renderMenuItems(columnCommands, (item) => void handleSelect(item))}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuLabel>Cells</DropdownMenuLabel>
-            {renderMenuItems(tableCommands, editor)}
+            {renderMenuItems(tableCommands, (item) => void handleSelect(item))}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          {renderMenuItems(destructiveCommands, editor)}
+          {renderMenuItems(destructiveCommands, (item) =>
+            void handleSelect(item)
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </BubbleMenu>
