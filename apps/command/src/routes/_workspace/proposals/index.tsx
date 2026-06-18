@@ -3,21 +3,33 @@ import { createFileRoute } from "@tanstack/react-router"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { SidebarProvider } from "@workspace/ui/components/sidebar"
 import type { JSONContent } from "@tiptap/core"
+import type { DocumentTemplate } from "@/features/documents/editor/types"
 
 import { DocumentBlockSidebar } from "@/features/documents/editor/document-block-sidebar"
 import { DocumentEditor } from "@/features/documents/editor/document-editor"
+import { getDefaultDocumentTemplateForScheme } from "@/features/documents/editor/templates"
 import { DocumentToolbar } from "@/features/documents/editor/document-toolbar"
 import { useDocumentEditor } from "@/features/documents/editor/use-document-editor"
 import { proposalDocumentDefinition } from "@/features/proposals/document-definition"
+import { useTheme } from "@/components/theme-provider"
 
 export const Route = createFileRoute("/_workspace/proposals/")({
   component: RouteComponent,
 })
 
 function RouteComponent() {
+  const { resolved } = useTheme()
+  const resolvedDefaultTemplate = React.useMemo(
+    () => getDefaultDocumentTemplateForScheme(resolved),
+    [resolved]
+  )
   const [editorContent, setEditorContent] = React.useState<JSONContent>(
     proposalDocumentDefinition.initialContent
   )
+  const [template, setTemplate] = React.useState<DocumentTemplate>(
+    () => resolvedDefaultTemplate
+  )
+  const [templateCustomized, setTemplateCustomized] = React.useState(false)
 
   const editor = useDocumentEditor({
     documentId: proposalDocumentDefinition.type,
@@ -25,6 +37,22 @@ function RouteComponent() {
     onContentChange: setEditorContent,
     definition: proposalDocumentDefinition,
   })
+
+  React.useEffect(() => {
+    if (templateCustomized) return
+
+    setTemplate(resolvedDefaultTemplate)
+  }, [resolvedDefaultTemplate, templateCustomized])
+
+  const handleTemplateChange = React.useCallback((nextTemplate: DocumentTemplate) => {
+    setTemplate(nextTemplate)
+    setTemplateCustomized(true)
+  }, [])
+
+  const handleTemplateReset = React.useCallback(() => {
+    setTemplate(resolvedDefaultTemplate)
+    setTemplateCustomized(false)
+  }, [resolvedDefaultTemplate])
 
   return (
     <div className="flex h-[calc(100svh-3rem)] min-h-0 w-full flex-col overflow-hidden bg-muted/30">
@@ -38,6 +66,7 @@ function RouteComponent() {
             <DocumentEditor
               editor={editor}
               onContentChange={setEditorContent}
+              template={template}
             />
             <DocumentToolbar
               editor={editor}
@@ -48,6 +77,10 @@ function RouteComponent() {
           <DocumentBlockSidebar
             editor={editor}
             definition={proposalDocumentDefinition}
+            defaultTemplate={resolvedDefaultTemplate}
+            template={template}
+            onTemplateChange={handleTemplateChange}
+            onTemplateReset={handleTemplateReset}
           />
         </div>
       </SidebarProvider>

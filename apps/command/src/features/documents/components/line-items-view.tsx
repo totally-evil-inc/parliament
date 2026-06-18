@@ -145,16 +145,16 @@ function LineItemsView({
 
   return (
     <NodeViewWrapper
-      className="document-line-items my-12 overflow-hidden rounded-xl border bg-background shadow-sm"
+      className="document-line-items my-[var(--document-section-spacing)] overflow-hidden rounded-[var(--document-radius)] border border-[var(--document-border)] bg-[var(--document-page-background)] text-[var(--document-foreground)] shadow-sm"
       contentEditable={false}
     >
-      <div className="bg-muted/40 px-6 py-4">
+      <div className="bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] px-6 py-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h3 className="text-sm font-bold tracking-widest text-muted-foreground uppercase">
+            <h3 className="text-sm font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
               Services & Billing
             </h3>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-[var(--document-muted-foreground)]">
               Capture line items, discounts, tax, and signature.
             </p>
           </div>
@@ -164,17 +164,17 @@ function LineItemsView({
       <div className="p-6">
         <Table className="min-w-180 text-left">
           <TableHeader>
-            <TableRow className="bg-muted/20 text-[10px] font-bold tracking-widest text-muted-foreground uppercase hover:bg-muted/20">
-              <TableHead className="rounded-l-md px-4 py-3 text-muted-foreground">
+            <TableRow className="bg-[color-mix(in_oklab,var(--document-accent)_5%,transparent)] text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase hover:bg-[color-mix(in_oklab,var(--document-accent)_5%,transparent)]">
+              <TableHead className="rounded-l-md px-4 py-3 text-[var(--document-muted-foreground)]">
                 Description
               </TableHead>
-              <TableHead className="px-4 py-3 text-center text-muted-foreground">
+              <TableHead className="px-4 py-3 text-center text-[var(--document-muted-foreground)]">
                 Qty
               </TableHead>
-              <TableHead className="px-4 py-3 text-right text-muted-foreground">
+              <TableHead className="px-4 py-3 text-right text-[var(--document-muted-foreground)]">
                 Price
               </TableHead>
-              <TableHead className="px-4 py-3 text-right text-muted-foreground">
+              <TableHead className="px-4 py-3 text-right text-[var(--document-muted-foreground)]">
                 Amount
               </TableHead>
               <TableHead className="w-10 rounded-r-md px-2 py-3" />
@@ -185,7 +185,7 @@ function LineItemsView({
               <TableRow>
                 <TableCell
                   colSpan={5}
-                  className="px-4 py-8 text-center text-sm text-muted-foreground"
+                  className="px-4 py-8 text-center text-sm text-[var(--document-muted-foreground)]"
                 >
                   No line items yet. Add a service to start building the total.
                 </TableCell>
@@ -198,7 +198,7 @@ function LineItemsView({
               return (
                 <TableRow
                   key={index}
-                  className="group align-top hover:bg-muted/10"
+                  className="group align-top hover:bg-[color-mix(in_oklab,var(--document-accent)_4%,transparent)]"
                 >
                   <TableCell className="px-4 py-5 whitespace-normal">
                     <div className="flex gap-3">
@@ -207,7 +207,7 @@ function LineItemsView({
                           type="button"
                           variant="ghost"
                           size="icon-lg"
-                          className="mt-0.5 size-10 shrink-0 rounded-xl bg-muted text-muted-foreground hover:text-foreground"
+                          className="mt-0.5 size-10 shrink-0 rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
                           aria-label="Line item image placeholder"
                         >
                           <HugeiconsIcon
@@ -218,7 +218,7 @@ function LineItemsView({
                       ) : null}
                       <div className="min-w-0 flex-1 space-y-2">
                         <Input
-                          className="rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-0 font-medium shadow-none hover:border-border focus-visible:border-border focus-visible:ring-0"
+                          className="rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-0 font-medium text-[var(--document-foreground)] shadow-none hover:border-[var(--document-border)] focus-visible:border-[var(--document-border)] focus-visible:ring-0"
                           placeholder="Item description..."
                           value={item.description}
                           onChange={(event) =>
@@ -229,7 +229,7 @@ function LineItemsView({
                         {item.showDetails ? (
                           <Textarea
                             rows={2}
-                            className="min-h-12 rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-0 py-0 text-sm text-muted-foreground shadow-none hover:border-border focus-visible:border-border focus-visible:ring-0"
+                            className="min-h-12 rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-0 py-0 text-sm text-[var(--document-muted-foreground)] shadow-none hover:border-[var(--document-border)] focus-visible:border-[var(--document-border)] focus-visible:ring-0"
                             placeholder="Add service details, scope, or billing notes..."
                             value={item.details ?? ""}
                             onChange={(event) =>
@@ -244,7 +244,7 @@ function LineItemsView({
                             onClick={() =>
                               updateItem(index, "showDetails", true)
                             }
-                            className="h-auto px-0 py-0 text-sm text-muted-foreground hover:bg-transparent hover:text-foreground"
+                            className="h-auto px-0 py-0 text-sm text-[var(--document-muted-foreground)] hover:bg-transparent hover:text-[var(--document-foreground)]"
                           >
                             + Add details
                           </Button>
@@ -254,7 +254,7 @@ function LineItemsView({
                   </TableCell>
                   <TableCell className="px-4 py-5 text-center">
                     <Input
-                      className="mx-auto w-16 rounded-none border-x-0 border-t-0 border-b border-transparent text-center shadow-none hover:border-border focus-visible:border-border focus-visible:ring-0"
+                      className="mx-auto w-16 rounded-none border-x-0 border-t-0 border-b border-transparent text-center text-[var(--document-foreground)] shadow-none hover:border-[var(--document-border)] focus-visible:border-[var(--document-border)] focus-visible:ring-0"
                       type="number"
                       min={0}
                       step={1}
@@ -271,7 +271,7 @@ function LineItemsView({
                   </TableCell>
                   <TableCell className="px-4 py-5 text-right">
                     <Input
-                      className="ml-auto w-28 rounded-none border-x-0 border-t-0 border-b border-transparent text-right shadow-none hover:border-border focus-visible:border-border focus-visible:ring-0"
+                      className="ml-auto w-28 rounded-none border-x-0 border-t-0 border-b border-transparent text-right text-[var(--document-foreground)] shadow-none hover:border-[var(--document-border)] focus-visible:border-[var(--document-border)] focus-visible:ring-0"
                       type="number"
                       min={0}
                       step="0.01"
@@ -295,7 +295,7 @@ function LineItemsView({
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => void removeItem(index)}
-                      className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                      className="text-[var(--document-muted-foreground)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                       aria-label="Remove line item"
                     >
                       <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
@@ -312,7 +312,7 @@ function LineItemsView({
             variant="outline"
             size="sm"
             onClick={addItem}
-            className="h-8 gap-1.5 rounded-full border-dashed text-xs text-muted-foreground hover:text-foreground"
+            className="h-8 gap-1.5 rounded-full border-dashed border-[var(--document-border)] text-xs text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
           >
             <HugeiconsIcon icon={PlusSignIcon} className="h-3.5 w-3.5" />
             Add Line Item
@@ -321,16 +321,18 @@ function LineItemsView({
             variant="outline"
             size="sm"
             onClick={addCatalogItem}
-            className="h-8 gap-1.5 rounded-full border-dashed text-xs text-muted-foreground hover:text-foreground"
+            className="h-8 gap-1.5 rounded-full border-dashed border-[var(--document-border)] text-xs text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
           >
             <HugeiconsIcon icon={PlusSignIcon} className="h-3.5 w-3.5" />
             From Catalog
           </Button>
         </div>
 
-        <div className="mt-10 grid gap-8 border-t pt-8 md:grid-cols-[1fr_28rem]">
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Billing notes</p>
+        <div className="mt-10 grid gap-8 border-t border-[var(--document-border)] pt-8 md:grid-cols-[1fr_28rem]">
+          <div className="space-y-3 text-sm text-[var(--document-muted-foreground)]">
+            <p className="font-medium text-[var(--document-foreground)]">
+              Billing notes
+            </p>
             <p>
               Use this section to confirm the services, quantities, pricing,
               discounts, and taxes included in this document.
@@ -339,7 +341,9 @@ function LineItemsView({
 
           <div className="space-y-4">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal</span>
+              <span className="text-[var(--document-muted-foreground)]">
+                Subtotal
+              </span>
               <span className="font-semibold">{money(subtotal)}</span>
             </div>
 
@@ -349,7 +353,7 @@ function LineItemsView({
                   variant="outline"
                   size="sm"
                   onClick={() => updateAttributes({ discountEnabled: true })}
-                  className="h-8 rounded-full border-dashed text-xs text-muted-foreground hover:text-foreground"
+                  className="h-8 rounded-full border-dashed border-[var(--document-border)] text-xs text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
                 >
                   + Discount
                 </Button>
@@ -359,7 +363,7 @@ function LineItemsView({
                   variant="outline"
                   size="sm"
                   onClick={() => updateAttributes({ taxEnabled: true })}
-                  className="h-8 rounded-full border-dashed text-xs text-muted-foreground hover:text-foreground"
+                  className="h-8 rounded-full border-dashed border-[var(--document-border)] text-xs text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
                 >
                   + Tax
                 </Button>
@@ -402,10 +406,10 @@ function LineItemsView({
             </div>
 
             <div className="pt-8 text-right">
-              <p className="font-[cursive] text-3xl leading-none text-foreground">
+              <p className="font-[cursive] text-3xl leading-none text-[var(--document-foreground)]">
                 {signedInUserName || "Signed in user"}
               </p>
-              <p className="mt-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+              <p className="mt-2 text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
                 Signature
               </p>
             </div>
@@ -434,22 +438,22 @@ function AdjustmentRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-4 text-sm">
-      <div className="flex items-center gap-3 text-muted-foreground">
+      <div className="flex items-center gap-3 text-[var(--document-muted-foreground)]">
         <Button
           type="button"
           variant="ghost"
           size="icon-xs"
           onClick={onRemove}
-          className="text-muted-foreground hover:text-destructive"
+          className="text-[var(--document-muted-foreground)] hover:text-destructive"
           aria-label={`Remove ${label.toLowerCase()}`}
         >
           <HugeiconsIcon icon={Cancel01Icon} className="h-3.5 w-3.5" />
         </Button>
         <span>{label}</span>
       </div>
-      <div className="ml-auto flex items-center gap-2 text-muted-foreground">
+      <div className="ml-auto flex items-center gap-2 text-[var(--document-muted-foreground)]">
         <Input
-          className="w-16 rounded-none border-x-0 border-t-0 border-b border-transparent text-right shadow-none hover:border-border focus-visible:border-border focus-visible:ring-0"
+          className="w-16 rounded-none border-x-0 border-t-0 border-b border-transparent text-right text-[var(--document-foreground)] shadow-none hover:border-[var(--document-border)] focus-visible:border-[var(--document-border)] focus-visible:ring-0"
           type="number"
           min={0}
           step="0.01"

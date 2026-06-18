@@ -4,8 +4,15 @@ import {
   ArrowLeft01Icon,
   Cancel01Icon,
   LayoutGridIcon,
-  StarIcon,
 } from "@hugeicons/core-free-icons"
+import { ColorPicker } from "@workspace/ui/components/color-picker"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import {
   Sidebar,
@@ -15,28 +22,59 @@ import {
 } from "@workspace/ui/components/sidebar"
 import { cn } from "@workspace/ui/lib/utils"
 import { insertDocumentBlockFromDefinition } from "./definition"
+import {
+  documentHeaderLayouts,
+  isDocumentHeaderLayoutId,
+} from "./header-layouts"
+import {
+  documentColorTokenOptions,
+  documentFontOptions,
+  documentRadiusOptions,
+  documentSpacingOptions,
+  updateDocumentTemplateToken,
+} from "./templates"
 import type {
   DocumentBlockDefinition,
   DocumentDefinition,
+  DocumentHeaderLayoutId,
+  DocumentTemplate,
+  DocumentTemplateTokens,
   InsertableDocumentBlockDefinition,
   SingletonDocumentBlockDefinition,
 } from "./types"
 import type { Editor } from "@tiptap/react"
 
+type SidebarPanel = "customize" | "blocks"
+
 type DocumentBlockSidebarProps = {
   editor: Editor | null
   definition: DocumentDefinition
+  defaultTemplate: DocumentTemplate
+  template: DocumentTemplate
+  onTemplateChange: (template: DocumentTemplate) => void
+  onTemplateReset: () => void
 }
 
 export function DocumentBlockSidebar({
   editor,
   definition,
+  defaultTemplate,
+  template,
+  onTemplateChange,
+  onTemplateReset,
 }: DocumentBlockSidebarProps) {
   const { setOpen } = useSidebar()
-  const [activeTab, setActiveTab] = React.useState<"all" | "my">("all")
+  const [activePanel, setActivePanel] =
+    React.useState<SidebarPanel>("customize")
   const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(
     null
   )
+  const [headerLayout, setHeaderLayout] =
+    React.useState<DocumentHeaderLayoutId>(() => getHeaderLayout(editor))
+
+  React.useEffect(() => {
+    setHeaderLayout(getHeaderLayout(editor))
+  }, [editor])
 
   const blocks = React.useMemo(
     () =>
@@ -69,6 +107,23 @@ export function DocumentBlockSidebar({
     }
 
     setSelectedBlockId(block.id)
+  }
+
+  const updateToken = <TKey extends keyof DocumentTemplateTokens>(
+    key: TKey,
+    value: DocumentTemplateTokens[TKey]
+  ) => {
+    onTemplateChange(updateDocumentTemplateToken(template, key, value))
+  }
+
+  const openPanel = (panel: SidebarPanel) => {
+    setActivePanel(panel)
+    setSelectedBlockId(null)
+  }
+
+  const updateHeaderLayout = (layout: DocumentHeaderLayoutId) => {
+    setHeaderLayout(layout)
+    updateDocumentHeaderLayout(editor, layout)
   }
 
   return (
@@ -142,105 +197,439 @@ export function DocumentBlockSidebar({
         </>
       ) : (
         <>
-          <SidebarHeader className="flex shrink-0 flex-row items-center justify-between gap-3 border-b border-border/70 px-4 py-4">
-            <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-                <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
+          <SidebarHeader className="flex shrink-0 flex-col gap-3 border-b border-border/70 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-bold">
+                  {definition.title} Builder
+                </span>
               </div>
-              <span className="text-sm font-bold">Section Blocks</span>
+              <button
+                onClick={() => setOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
+              >
+                <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
+              </button>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
-            >
-              <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
-            </button>
+            <div className="flex rounded-xl border border-border/15 bg-muted/65 p-1">
+              <SidebarTabButton
+                active={activePanel === "customize"}
+                onClick={() => openPanel("customize")}
+              >
+                Customize
+              </SidebarTabButton>
+              <SidebarTabButton
+                active={activePanel === "blocks"}
+                onClick={() => openPanel("blocks")}
+              >
+                Blocks
+              </SidebarTabButton>
+            </div>
           </SidebarHeader>
 
           <SidebarContent className="relative flex min-h-0 flex-col gap-4 p-4">
-            <div className="flex shrink-0 rounded-xl border border-border/15 bg-muted/65 p-1">
-              <button
-                onClick={() => setActiveTab("all")}
-                className={cn(
-                  "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all",
-                  activeTab === "all"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                All Blocks
-              </button>
-              <button
-                onClick={() => setActiveTab("my")}
-                className={cn(
-                  "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all",
-                  activeTab === "my"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                My Blocks
-              </button>
-            </div>
-
-            <ScrollArea className="relative min-h-0 flex-1 px-4">
-              {activeTab === "all" ? (
-                <div className="grid grid-cols-1 gap-3 pb-4">
-                  {blocks.map((block) => (
-                    <button
-                      key={block.id}
-                      onClick={() => handleSelectBlock(block)}
-                      className="group w-full rounded-xl border border-border/60 bg-background/50 p-3 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
-                    >
-                      <div className="flex w-full items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <HugeiconsIcon
-                            icon={block.icon}
-                            className="h-4 w-4 text-muted-foreground"
-                          />
-                          <span className="text-sm font-bold text-foreground">
-                            {block.label}
-                          </span>
-                        </div>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="2.5"
-                          stroke="currentColor"
-                          className="h-3.5 w-3.5 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-foreground"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                          />
-                        </svg>
-                      </div>
-                      <div className="mt-1.5 rounded-lg border border-border/30 bg-muted/15 p-2 transition-all group-hover:bg-muted/25">
-                        {block.preview}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
-                  <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                    <HugeiconsIcon icon={StarIcon} className="h-4 w-4" />
-                  </div>
-                  <h4 className="text-xs font-semibold text-foreground">
-                    Custom blocks feature coming soon.
-                  </h4>
-                  <p className="mt-1 max-w-40 text-[11px] leading-normal text-muted-foreground">
-                    Save customized sections from your{" "}
-                    {definition.title.toLowerCase()}s to access them here.
-                  </p>
-                </div>
-              )}
-            </ScrollArea>
+            {activePanel === "customize" ? (
+              <DesignPanel
+                defaultTemplate={defaultTemplate}
+                headerLayout={headerLayout}
+                template={template}
+                onHeaderLayoutChange={updateHeaderLayout}
+                onReset={onTemplateReset}
+                onTokenChange={updateToken}
+              />
+            ) : (
+              <BlocksPanel blocks={blocks} onSelectBlock={handleSelectBlock} />
+            )}
           </SidebarContent>
         </>
       )}
     </Sidebar>
   )
+}
+
+function SidebarTabButton({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean
+  children: React.ReactNode
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all",
+        active
+          ? "bg-background text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground"
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
+function BlocksPanel({
+  blocks,
+  onSelectBlock,
+}: {
+  blocks: Array<DocumentBlockDefinition>
+  onSelectBlock: (block: DocumentBlockDefinition) => void
+}) {
+  return (
+    <ScrollArea className="relative min-h-0 flex-1 px-4">
+      <div className="grid grid-cols-1 gap-3 pb-4">
+        {blocks.map((block) => (
+          <button
+            key={block.id}
+            onClick={() => onSelectBlock(block)}
+            className="group w-full rounded-xl border border-border/60 bg-background/50 p-3 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
+          >
+            <div className="flex w-full items-center justify-between">
+              <div className="flex items-center gap-2">
+                <HugeiconsIcon
+                  icon={block.icon}
+                  className="h-4 w-4 text-muted-foreground"
+                />
+                <span className="text-sm font-bold text-foreground">
+                  {block.label}
+                </span>
+              </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="2.5"
+                stroke="currentColor"
+                className="h-3.5 w-3.5 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-foreground"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                />
+              </svg>
+            </div>
+            <div className="mt-1.5 rounded-lg border border-border/30 bg-muted/15 p-2 transition-all group-hover:bg-muted/25">
+              {block.preview}
+            </div>
+          </button>
+        ))}
+      </div>
+    </ScrollArea>
+  )
+}
+
+function DesignPanel({
+  defaultTemplate,
+  headerLayout,
+  template,
+  onHeaderLayoutChange,
+  onReset,
+  onTokenChange,
+}: {
+  defaultTemplate: DocumentTemplate
+  headerLayout: DocumentHeaderLayoutId
+  template: DocumentTemplate
+  onHeaderLayoutChange: (layout: DocumentHeaderLayoutId) => void
+  onReset: () => void
+  onTokenChange: <TKey extends keyof DocumentTemplateTokens>(
+    key: TKey,
+    value: DocumentTemplateTokens[TKey]
+  ) => void
+}) {
+  return (
+    <ScrollArea className="relative min-h-0 flex-1 px-1">
+      <div className="space-y-6 pb-4">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Customize</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {template.name}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onReset}
+            className="rounded-md px-2 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            Reset
+          </button>
+        </div>
+
+        <DesignSection title="Colors">
+          <div className="space-y-3">
+            {documentColorTokenOptions.map((option) => (
+              <ColorTokenField
+                key={option.key}
+                colors={option.colors}
+                label={option.label}
+                value={template.tokens[option.key]}
+                onChange={(value) => onTokenChange(option.key, value)}
+              />
+            ))}
+          </div>
+        </DesignSection>
+
+        <DesignSection title="Header layout">
+          <div className="grid grid-cols-2 gap-2">
+            {documentHeaderLayouts.map((layout) => (
+              <button
+                key={layout.id}
+                type="button"
+                onClick={() => onHeaderLayoutChange(layout.id)}
+                className={cn(
+                  "rounded-lg border p-2 text-left transition-colors hover:bg-muted/50",
+                  headerLayout === layout.id
+                    ? "border-primary bg-primary/10"
+                    : "border-border/60 bg-background/50"
+                )}
+              >
+                <HeaderLayoutPreview layout={layout.id} />
+                <div className="mt-2 text-xs font-semibold text-foreground">
+                  {layout.name}
+                </div>
+                <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-muted-foreground">
+                  {layout.description}
+                </div>
+              </button>
+            ))}
+          </div>
+        </DesignSection>
+
+        <DesignSection title="Typography">
+          <SelectTokenField
+            label="Body font"
+            value={template.tokens.fontFamily}
+            onChange={(value) => onTokenChange("fontFamily", value)}
+            options={documentFontOptions}
+          />
+          <SelectTokenField
+            label="Heading font"
+            value={template.tokens.headingFontFamily}
+            onChange={(value) => onTokenChange("headingFontFamily", value)}
+            options={documentFontOptions}
+          />
+        </DesignSection>
+
+        <DesignSection title="Layout">
+          <SelectTokenField
+            label="Spacing"
+            value={template.tokens.spacingScale}
+            onChange={(value) => onTokenChange("spacingScale", value)}
+            options={documentSpacingOptions}
+          />
+          <SelectTokenField
+            label="Radius"
+            value={template.tokens.radius}
+            onChange={(value) => onTokenChange("radius", value)}
+            options={documentRadiusOptions}
+          />
+        </DesignSection>
+
+        <div className="rounded-xl border border-border/60 bg-background/50 p-3">
+          <div className="text-xs font-semibold text-foreground">
+            Default template
+          </div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            Reset restores {defaultTemplate.name}.
+          </div>
+        </div>
+      </div>
+    </ScrollArea>
+  )
+}
+
+function HeaderLayoutPreview({ layout }: { layout: DocumentHeaderLayoutId }) {
+  const logo = <div className="h-4 w-7 rounded-sm border border-current/25" />
+  const title = <div className="h-2 w-14 rounded-full bg-current" />
+  const shortTitle = <div className="h-2 w-10 rounded-full bg-current" />
+  const dates = (
+    <div className="grid justify-items-end gap-1">
+      <div className="h-1 w-8 rounded-full bg-current/45" />
+      <div className="h-1 w-8 rounded-full bg-current/30" />
+    </div>
+  )
+  const centeredDatesHorizontal = (
+    <div className="flex justify-center gap-1">
+      <div className="h-1 w-8 rounded-full bg-current/45" />
+      <div className="h-1 w-8 rounded-full bg-current/30" />
+    </div>
+  )
+  const leftDatesHorizontal = (
+    <div className="flex justify-start gap-1">
+      <div className="h-1 w-8 rounded-full bg-current/45" />
+      <div className="h-1 w-8 rounded-full bg-current/30" />
+    </div>
+  )
+
+  if (layout === "centered-stack") {
+    return (
+      <div className="flex h-14 flex-col items-center justify-center gap-2 text-muted-foreground">
+        {logo}
+        {centeredDatesHorizontal}
+        {title}
+      </div>
+    )
+  }
+
+  if (layout === "left-stack") {
+    return (
+      <div className="flex h-14 flex-col items-start justify-center gap-2 text-muted-foreground">
+        {logo}
+        {title}
+        {leftDatesHorizontal}
+      </div>
+    )
+  }
+
+  if (layout === "editorial-band") {
+    return (
+      <div className="flex h-14 flex-col justify-center gap-2 text-muted-foreground">
+        <div className="flex justify-between">
+          {logo}
+          {dates}
+        </div>
+        <div className="flex justify-center">{title}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid h-14 grid-cols-[1fr_auto] items-start gap-2 text-muted-foreground">
+      <div className="flex flex-col items-start gap-2">
+        {logo}
+        {shortTitle}
+      </div>
+      {dates}
+    </div>
+  )
+}
+
+function DesignSection({
+  children,
+  title,
+}: {
+  children: React.ReactNode
+  title: string
+}) {
+  return (
+    <section className="space-y-3">
+      <h4 className="px-1 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+        {title}
+      </h4>
+      <div className="space-y-3 rounded-xl border border-border/60 bg-background/50 p-3">
+        {children}
+      </div>
+    </section>
+  )
+}
+
+function ColorTokenField({
+  colors,
+  label,
+  value,
+  onChange,
+}: {
+  colors: ReadonlyArray<string>
+  label: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="grid grid-cols-[minmax(0,1fr)_minmax(0,8.5rem)] items-center gap-3">
+      <span className="text-xs font-medium text-foreground">{label}</span>
+      <ColorPicker
+        colors={colors}
+        label={label}
+        value={value}
+        onValueChange={onChange}
+      />
+    </label>
+  )
+}
+
+function SelectTokenField<TValue extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string
+  options: ReadonlyArray<{ value: TValue; label: string }>
+  value: TValue
+  onChange: (value: TValue) => void
+}) {
+  return (
+    <label className="grid grid-cols-[minmax(0,1fr)_8.5rem] items-center gap-3">
+      <span className="text-xs font-medium text-foreground">{label}</span>
+      <Select
+        value={value}
+        onValueChange={(nextValue) => {
+          if (nextValue !== null) {
+            onChange(nextValue)
+          }
+        }}
+      >
+        <SelectTrigger size="sm" className="h-7 w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </label>
+  )
+}
+
+function getHeaderLayout(editor: Editor | null): DocumentHeaderLayoutId {
+  if (!editor) return "mark-left-dates-right"
+
+  const header = editor
+    .getJSON()
+    .content.find((node) => node.type === "documentHeader")
+  const layout = header?.attrs?.headerLayout
+
+  return isDocumentHeaderLayoutId(layout) ? layout : "mark-left-dates-right"
+}
+
+function updateDocumentHeaderLayout(
+  editor: Editor | null,
+  layout: DocumentHeaderLayoutId
+) {
+  if (!editor) return
+
+  editor
+    .chain()
+    .focus()
+    .command(({ dispatch, state, tr }) => {
+      let position = 0
+
+      for (let index = 0; index < state.doc.childCount; index += 1) {
+        const child = state.doc.child(index)
+
+        if (child.type.name === "documentHeader") {
+          tr.setNodeMarkup(position, undefined, {
+            ...child.attrs,
+            headerLayout: layout,
+          })
+          dispatch?.(tr)
+          return true
+        }
+
+        position += child.nodeSize
+      }
+
+      return false
+    })
+    .run()
 }

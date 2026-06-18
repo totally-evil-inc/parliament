@@ -11,11 +11,20 @@ import {
 } from "@hugeicons/core-free-icons"
 import { proposalBlocks } from "./blocks/proposal-blocks"
 import type { DocumentDefinition } from "@/features/documents/editor/types"
+import { defaultDocumentTemplate } from "@/features/documents/editor/templates"
+
+export const proposalDocumentTemplate = {
+  ...defaultDocumentTemplate,
+  id: "proposal-classic",
+  name: "Proposal Classic",
+  tokens: defaultDocumentTemplate.tokens,
+} satisfies DocumentDefinition["defaultTemplate"]
 
 export const proposalDocumentDefinition: DocumentDefinition = {
   type: "proposal",
   title: "Proposal",
   placeholder: "Start building your proposal...",
+  defaultTemplate: proposalDocumentTemplate,
   presets: ["business"],
   insertPolicy: {
     beforeNodeType: "lineItems",

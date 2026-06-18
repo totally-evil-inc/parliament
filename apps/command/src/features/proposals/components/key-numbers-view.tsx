@@ -30,7 +30,7 @@ export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
         : "grid-cols-1 md:grid-cols-3"
 
   return (
-    <NodeViewWrapper className="key-numbers my-12">
+    <NodeViewWrapper className="key-numbers my-[var(--document-section-spacing)]">
       <div className={`grid gap-x-16 gap-y-14 ${gridColumns}`}>
         {metrics.map((metric, index) => (
           <div
@@ -40,14 +40,14 @@ export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
             <Input
               aria-label="Metric value"
               spellCheck={false}
-              className={`${inputClassName} text-3xl font-black tracking-tight md:text-5xl`}
+              className={`${inputClassName} text-3xl font-black tracking-tight text-[var(--document-accent)] md:text-5xl`}
               value={metric.value}
               onChange={(e) => updateMetric(index, "value", e.target.value)}
             />
             <Input
               aria-label="Metric summary"
               spellCheck={false}
-              className={`${inputClassName} text-base font-bold tracking-tight md:text-lg`}
+              className={`${inputClassName} text-base font-bold tracking-tight text-[var(--document-foreground)] md:text-lg`}
               value={metric.label}
               onChange={(e) => updateMetric(index, "label", e.target.value)}
             />
@@ -55,7 +55,7 @@ export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
               aria-label="Metric description"
               rows={2}
               spellCheck={false}
-              className={`${inputClassName} min-h-0 resize-none overflow-hidden text-base leading-relaxed text-muted-foreground md:text-lg`}
+              className={`${inputClassName} min-h-0 resize-none overflow-hidden text-base leading-relaxed text-[var(--document-muted-foreground)] md:text-lg`}
               value={metric.detail ?? ""}
               onChange={(e) => updateMetric(index, "detail", e.target.value)}
             />
