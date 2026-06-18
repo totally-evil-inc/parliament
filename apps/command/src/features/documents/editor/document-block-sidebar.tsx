@@ -456,35 +456,39 @@ function DesignPanel({
   )
 }
 
-function HeaderLayoutPreview({ layout }: { layout: DocumentHeaderLayoutId }) {
-  const logo = <div className="h-4 w-7 rounded-sm border border-current/25" />
-  const title = <div className="h-2 w-14 rounded-full bg-current" />
-  const shortTitle = <div className="h-2 w-10 rounded-full bg-current" />
-  const dates = (
-    <div className="grid justify-items-end gap-1">
-      <div className="h-1 w-8 rounded-full bg-current/45" />
-      <div className="h-1 w-8 rounded-full bg-current/30" />
-    </div>
-  )
-  const centeredDatesHorizontal = (
-    <div className="flex justify-center gap-1">
-      <div className="h-1 w-8 rounded-full bg-current/45" />
-      <div className="h-1 w-8 rounded-full bg-current/30" />
-    </div>
-  )
-  const leftDatesHorizontal = (
-    <div className="flex justify-start gap-1">
-      <div className="h-1 w-8 rounded-full bg-current/45" />
-      <div className="h-1 w-8 rounded-full bg-current/30" />
-    </div>
-  )
+const HEADER_PREVIEW_LOGO = (
+  <div className="h-4 w-7 rounded-sm border border-current/25" />
+)
+const HEADER_PREVIEW_TITLE = <div className="h-2 w-14 rounded-full bg-current" />
+const HEADER_PREVIEW_SHORT_TITLE = (
+  <div className="h-2 w-10 rounded-full bg-current" />
+)
+const HEADER_PREVIEW_DATES = (
+  <div className="grid justify-items-end gap-1">
+    <div className="h-1 w-8 rounded-full bg-current/45" />
+    <div className="h-1 w-8 rounded-full bg-current/30" />
+  </div>
+)
+const HEADER_PREVIEW_CENTERED_DATES = (
+  <div className="flex justify-center gap-1">
+    <div className="h-1 w-8 rounded-full bg-current/45" />
+    <div className="h-1 w-8 rounded-full bg-current/30" />
+  </div>
+)
+const HEADER_PREVIEW_LEFT_DATES = (
+  <div className="flex justify-start gap-1">
+    <div className="h-1 w-8 rounded-full bg-current/45" />
+    <div className="h-1 w-8 rounded-full bg-current/30" />
+  </div>
+)
 
+function HeaderLayoutPreview({ layout }: { layout: DocumentHeaderLayoutId }) {
   if (layout === "centered-stack") {
     return (
       <div className="flex h-14 flex-col items-center justify-center gap-2 text-muted-foreground">
-        {logo}
-        {centeredDatesHorizontal}
-        {title}
+        {HEADER_PREVIEW_LOGO}
+        {HEADER_PREVIEW_CENTERED_DATES}
+        {HEADER_PREVIEW_TITLE}
       </div>
     )
   }
@@ -492,9 +496,9 @@ function HeaderLayoutPreview({ layout }: { layout: DocumentHeaderLayoutId }) {
   if (layout === "left-stack") {
     return (
       <div className="flex h-14 flex-col items-start justify-center gap-2 text-muted-foreground">
-        {logo}
-        {title}
-        {leftDatesHorizontal}
+        {HEADER_PREVIEW_LOGO}
+        {HEADER_PREVIEW_TITLE}
+        {HEADER_PREVIEW_LEFT_DATES}
       </div>
     )
   }
@@ -503,10 +507,10 @@ function HeaderLayoutPreview({ layout }: { layout: DocumentHeaderLayoutId }) {
     return (
       <div className="flex h-14 flex-col justify-center gap-2 text-muted-foreground">
         <div className="flex justify-between">
-          {logo}
-          {dates}
+          {HEADER_PREVIEW_LOGO}
+          {HEADER_PREVIEW_DATES}
         </div>
-        <div className="flex justify-center">{title}</div>
+        <div className="flex justify-center">{HEADER_PREVIEW_TITLE}</div>
       </div>
     )
   }
@@ -514,10 +518,10 @@ function HeaderLayoutPreview({ layout }: { layout: DocumentHeaderLayoutId }) {
   return (
     <div className="grid h-14 grid-cols-[1fr_auto] items-start gap-2 text-muted-foreground">
       <div className="flex flex-col items-start gap-2">
-        {logo}
-        {shortTitle}
+        {HEADER_PREVIEW_LOGO}
+        {HEADER_PREVIEW_SHORT_TITLE}
       </div>
-      {dates}
+      {HEADER_PREVIEW_DATES}
     </div>
   )
 }

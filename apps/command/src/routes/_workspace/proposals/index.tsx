@@ -29,7 +29,7 @@ function RouteComponent() {
   const [template, setTemplate] = React.useState<DocumentTemplate>(
     () => resolvedDefaultTemplate
   )
-  const [templateCustomized, setTemplateCustomized] = React.useState(false)
+  const templateCustomizedRef = React.useRef(false)
 
   const editor = useDocumentEditor({
     documentId: proposalDocumentDefinition.type,
@@ -39,19 +39,19 @@ function RouteComponent() {
   })
 
   React.useEffect(() => {
-    if (templateCustomized) return
+    if (templateCustomizedRef.current) return
 
     setTemplate(resolvedDefaultTemplate)
-  }, [resolvedDefaultTemplate, templateCustomized])
+  }, [resolvedDefaultTemplate])
 
   const handleTemplateChange = React.useCallback((nextTemplate: DocumentTemplate) => {
     setTemplate(nextTemplate)
-    setTemplateCustomized(true)
+    templateCustomizedRef.current = true
   }, [])
 
   const handleTemplateReset = React.useCallback(() => {
     setTemplate(resolvedDefaultTemplate)
-    setTemplateCustomized(false)
+    templateCustomizedRef.current = false
   }, [resolvedDefaultTemplate])
 
   return (

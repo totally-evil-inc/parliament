@@ -32,7 +32,7 @@ export const workspaceSettingsTabs = [
   },
 ] as const
 
-export const workspaceSettingsParamTabs = workspaceSettingsTabs.filter(
+const workspaceSettingsParamTabs = workspaceSettingsTabs.filter(
   (tab) => tab.value !== defaultWorkspaceSettingsTab
 )
 

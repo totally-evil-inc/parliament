@@ -6,57 +6,15 @@ import {
   Tick01Icon,
   UserIcon,
 } from "@hugeicons/core-free-icons"
+import { MetricPreview } from "./metric-preview"
+import { TeamPreview } from "./team-preview"
+import { TestimonialPreview } from "./testimonial-preview"
 import type { DocumentBlockDefinition } from "@/features/documents/editor/types"
 
 import { Gallery } from "@/features/proposals/extensions/gallery"
 import { KeyNumbers } from "@/features/proposals/extensions/key-numbers"
 import { TeamMembers } from "@/features/proposals/extensions/team-members"
 import { Testimonials } from "@/features/proposals/extensions/testimonials"
-
-function MetricPreview({
-  value,
-  label,
-  detail,
-}: {
-  value: string
-  label: string
-  detail?: boolean
-}) {
-  return (
-    <div className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-xl bg-muted/35 p-2 text-center">
-      <span className="text-sm leading-none font-black text-muted-foreground">
-        {value}
-      </span>
-      <span className="mt-1 text-[8px] leading-none font-medium text-muted-foreground/80">
-        {label}
-      </span>
-      {detail ? (
-        <span className="mt-1.5 h-1 w-8 rounded-full bg-muted-foreground/20" />
-      ) : null}
-    </div>
-  )
-}
-
-function TeamPreview() {
-  return (
-    <div className="flex min-w-0 flex-1 flex-col items-center justify-center text-center">
-      <div className="h-8 w-8 rounded-full bg-muted/60" />
-      <div className="mt-2 h-1.5 w-11 rounded-full bg-muted-foreground/25" />
-      <div className="mt-1.5 h-1 w-8 rounded-full bg-muted-foreground/15" />
-    </div>
-  )
-}
-
-function TestimonialPreview() {
-  return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1.5 border-l-2 border-border pl-2">
-      <div className="h-1.5 w-full rounded-full bg-muted-foreground/25" />
-      <div className="h-1.5 w-4/5 rounded-full bg-muted-foreground/20" />
-      <div className="mt-1.5 h-1.5 w-2/3 rounded-full bg-muted-foreground/30" />
-      <div className="h-1 w-1/2 rounded-full bg-muted-foreground/15" />
-    </div>
-  )
-}
 
 const timelineContent = {
   type: "timeline",

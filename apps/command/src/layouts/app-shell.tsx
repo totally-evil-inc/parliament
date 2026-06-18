@@ -1,3 +1,4 @@
+import * as React from "react"
 import {
   SidebarInset,
   SidebarProvider,
@@ -14,12 +15,11 @@ import {
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
 import { Link, useRouterState } from "@tanstack/react-router"
-import type { ReactNode } from "react"
-import * as React from "react"
-import { authClient } from "@/lib/auth-client"
-import { workspaceConfig } from "@/features/workspace/config"
 import { AppSidebar } from "./app-sidebar"
 import { WorkspaceProvider } from "./workspace-provider"
+import type { ReactNode } from "react"
+import { workspaceConfig } from "@/features/workspace/config"
+import { authClient } from "@/lib/auth-client"
 
 type AppShellProps = {
   children: ReactNode
@@ -29,15 +29,15 @@ function getInitials(name: string) {
   return name
     .split(/\s+/)
     .slice(0, 2)
-    .map((s) => s[0] ?? "")
+    .map((s) => s.charAt(0))
     .join("")
     .toUpperCase()
 }
 
 export function AppShell({ children }: AppShellProps) {
   const session = authClient.useSession()
-  const userName = (session.data?.user.name as string | undefined) ?? "User"
-  const userEmail = (session.data?.user.email as string | undefined) ?? ""
+  const userName = session.data?.user.name ?? "User"
+  const userEmail = session.data?.user.email ?? ""
 
   const user = {
     name: userName,

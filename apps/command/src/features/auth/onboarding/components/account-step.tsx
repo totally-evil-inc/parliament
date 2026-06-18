@@ -1,12 +1,12 @@
 import { useMemo } from "react"
 import { useForm } from "@tanstack/react-form"
 import { Button } from "@workspace/ui/components/button"
-import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
-import { signUpSchema } from "@/utils/auth-schemas"
-import { authClient } from "@/lib/auth-client"
 import { AuthSeparator } from "../../components/auth-separator"
 import { AuthTextField } from "../../components/auth-text-field"
-import { GoogleIcon, AppleIcon } from "../../components/social-icons"
+import { AppleIcon, GoogleIcon } from "../../components/social-icons"
+import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
+import { authClient } from "@/lib/auth-client"
+import { signUpSchema } from "@/utils/auth-schemas"
 
 export function AccountStep({
   pending,

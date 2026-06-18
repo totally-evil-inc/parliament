@@ -1,7 +1,7 @@
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
   useMemo,
   useRef,
   useState,
@@ -94,7 +94,7 @@ export function ConfirmDialogProvider({
 }
 
 export function useConfirm(): ConfirmContextValue["confirm"] {
-  const context = useContext(ConfirmContext)
+  const context = use(ConfirmContext)
 
   if (!context) {
     throw new Error("useConfirm must be used within ConfirmDialogProvider")

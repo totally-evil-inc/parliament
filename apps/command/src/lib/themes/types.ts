@@ -1,7 +1,7 @@
-export const THEME_MODES = ["light", "dark", "system"] as const
+const THEME_MODES = ["light", "dark", "system"] as const
 export type ThemeMode = (typeof THEME_MODES)[number]
 
-export const THEME_PALETTES = [
+const THEME_PALETTES = [
   "graphite",
   "indigo",
   "crimson",

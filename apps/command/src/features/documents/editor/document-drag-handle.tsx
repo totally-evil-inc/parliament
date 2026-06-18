@@ -24,18 +24,20 @@ type DocumentDragHandleProps = {
 }
 
 export function DocumentDragHandle({ editor }: DocumentDragHandleProps) {
-  const [activePos, setActivePos] = React.useState<number | null>(null)
+  const activePosRef = React.useRef<number | null>(null)
 
   const handleNodeChange = React.useCallback(
     ({ node, pos }: { node: unknown | null; pos: number }) => {
       if (!node) return
 
-      setActivePos(pos)
+      activePosRef.current = pos
     },
     []
   )
 
   const handleDelete = React.useCallback(() => {
+    const activePos = activePosRef.current
+
     if (activePos === null) return
 
     const node = editor.state.doc.nodeAt(activePos)
@@ -49,8 +51,8 @@ export function DocumentDragHandle({ editor }: DocumentDragHandleProps) {
       .deleteSelection()
       .run()
 
-    setActivePos(null)
-  }, [activePos, editor])
+    activePosRef.current = null
+  }, [editor])
 
   return (
     <>

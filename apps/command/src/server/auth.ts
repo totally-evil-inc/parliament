@@ -52,15 +52,3 @@ export const getViewer = createServerFn({ method: "GET" }).handler(
 export const getSession = createServerFn({ method: "GET" }).handler(
   ({ context }) => getAuthContext(context).session
 )
-
-export const ensureSession = createServerFn({ method: "GET" }).handler(
-  ({ context }) => {
-    const auth = getAuthContext(context)
-
-    if (!auth.session) {
-      throw new Error("Unauthorized")
-    }
-
-    return auth.session
-  }
-)

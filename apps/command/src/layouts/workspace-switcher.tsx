@@ -14,9 +14,9 @@ import {
   ArrowDown01Icon,
   Tick01Icon,
 } from "@hugeicons/core-free-icons"
-import { CreateWorkspaceModal } from "@/features/workspace/components/create-workspace-modal"
-import type { CreatedOrg } from "@/features/workspace/components/create-workspace-form"
 import { useWorkspace } from "./workspace-provider"
+import type { CreatedOrg } from "@/features/workspace/components/create-workspace-form"
+import { CreateWorkspaceModal } from "@/features/workspace/components/create-workspace-modal"
 
 export function WorkspaceSwitcher() {
   const [createOpen, setCreateOpen] = useState(false)

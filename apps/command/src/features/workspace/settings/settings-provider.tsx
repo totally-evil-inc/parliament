@@ -1,7 +1,7 @@
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
   useMemo,
   useState,
 } from "react"
@@ -104,7 +104,7 @@ function SettingsStateProvider({
 }
 
 export function useSettings() {
-  const context = useContext(SettingsContext)
+  const context = use(SettingsContext)
 
   if (!context) {
     throw new Error("useSettings must be used inside SettingsProvider")

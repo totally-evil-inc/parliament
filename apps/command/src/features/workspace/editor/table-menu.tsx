@@ -93,11 +93,14 @@ const destructiveCommands: Array<TableMenuItem> = [
   },
 ]
 
-const renderMenuItems = (
-  items: Array<TableMenuItem>,
+function TableMenuItems({
+  items,
+  onSelect,
+}: {
+  items: Array<TableMenuItem>
   onSelect: (item: TableMenuItem) => void
-) =>
-  items.map((item) => (
+}) {
+  return items.map((item) => (
     <DropdownMenuItem
       key={item.id}
       variant={item.variant}
@@ -106,6 +109,7 @@ const renderMenuItems = (
       {item.label}
     </DropdownMenuItem>
   ))
+}
 
 export const EditorTableMenu = ({ editor }: { editor: Editor }) => {
   const confirm = useConfirm()
@@ -144,22 +148,32 @@ export const EditorTableMenu = ({ editor }: { editor: Editor }) => {
         <DropdownMenuContent align="start" className="w-48">
           <DropdownMenuGroup>
             <DropdownMenuLabel>Rows</DropdownMenuLabel>
-            {renderMenuItems(rowCommands, (item) => void handleSelect(item))}
+            <TableMenuItems
+              items={rowCommands}
+              onSelect={(item) => void handleSelect(item)}
+            />
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuLabel>Columns</DropdownMenuLabel>
-            {renderMenuItems(columnCommands, (item) => void handleSelect(item))}
+            <TableMenuItems
+              items={columnCommands}
+              onSelect={(item) => void handleSelect(item)}
+            />
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuLabel>Cells</DropdownMenuLabel>
-            {renderMenuItems(tableCommands, (item) => void handleSelect(item))}
+            <TableMenuItems
+              items={tableCommands}
+              onSelect={(item) => void handleSelect(item)}
+            />
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          {renderMenuItems(destructiveCommands, (item) =>
-            void handleSelect(item)
-          )}
+          <TableMenuItems
+            items={destructiveCommands}
+            onSelect={(item) => void handleSelect(item)}
+          />
         </DropdownMenuContent>
       </DropdownMenu>
     </BubbleMenu>

@@ -1,7 +1,7 @@
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
   useMemo,
   useState,
 } from "react"
@@ -168,7 +168,7 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
 }
 
 export function useWorkspace() {
-  const context = useContext(WorkspaceContext)
+  const context = use(WorkspaceContext)
 
   if (!context) {
     throw new Error("useWorkspace must be used inside WorkspaceProvider")

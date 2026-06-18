@@ -348,6 +348,8 @@ function DocumentHeaderView({ node, updateAttributes }: NodeViewProps) {
 export { DocumentHeaderView }
 export default DocumentHeaderView
 
+const HEADER_LOGO_PLACEHOLDER = <LogoPlaceholder />
+
 function HeaderLayout({
   date,
   dueDate,
@@ -365,7 +367,6 @@ function HeaderLayout({
   onTitleChange: (value: string) => void
   title: string
 }) {
-  const logo = <LogoPlaceholder />
   const titleField = (
     <DocumentTitleField value={title} onChange={onTitleChange} />
   )
@@ -396,7 +397,7 @@ function HeaderLayout({
   if (layout === "centered-stack") {
     return (
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
-        {logo}
+        {HEADER_LOGO_PLACEHOLDER}
         <DateFields
           align="center"
           date={date}
@@ -413,7 +414,7 @@ function HeaderLayout({
   if (layout === "left-stack") {
     return (
       <div className="max-w-3xl space-y-5 text-left">
-        {logo}
+        {HEADER_LOGO_PLACEHOLDER}
         {titleField}
         {datesHorizontal}
       </div>
@@ -424,7 +425,7 @@ function HeaderLayout({
     return (
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-8">
-          {logo}
+          {HEADER_LOGO_PLACEHOLDER}
           {datesVertical}
         </div>
         <div className="mx-auto max-w-4xl">{centeredTitleField}</div>
@@ -435,7 +436,7 @@ function HeaderLayout({
   return (
     <div className="flex items-start justify-between gap-8">
       <div className="max-w-4xl space-y-6 text-left">
-        {logo}
+        {HEADER_LOGO_PLACEHOLDER}
         {titleField}
       </div>
       {datesVertical}
