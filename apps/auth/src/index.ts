@@ -17,6 +17,18 @@ const port = Number(Bun.env.AUTH_PORT ?? Bun.env.PORT ?? 4000)
 app.use(poweredBy())
 app.use(logger())
 
+app.use(
+  "*",
+  cors({
+    origin: trustedOrigins,
+    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["*"],
+    exposeHeaders: ["Content-Length"],
+    maxAge: 600,
+    credentials: true,
+  })
+)
+
 app.use("*", async (c, next) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
@@ -30,18 +42,6 @@ app.use("*", async (c, next) => {
   c.set("session", session.session)
   return next()
 })
-
-app.use(
-  "*",
-  cors({
-    origin: trustedOrigins,
-    allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["*"],
-    exposeHeaders: ["Content-Length"],
-    maxAge: 600,
-    credentials: true,
-  })
-)
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw)

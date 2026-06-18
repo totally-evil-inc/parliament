@@ -104,7 +104,9 @@ function Breadcrumbs() {
                 {last ? (
                   <BreadcrumbPage>{label}</BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink render={<Link to={to} />}>{label}</BreadcrumbLink>
+                  <BreadcrumbLink render={<Link to={to} />}>
+                    {label}
+                  </BreadcrumbLink>
                 )}
               </BreadcrumbItem>
             </React.Fragment>

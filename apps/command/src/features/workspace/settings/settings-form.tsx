@@ -49,16 +49,10 @@ const dateFormatOptions = [
   { value: "mdy", label: "MM/DD/YYYY" },
 ]
 
-export function SettingsForm({
-  values,
-  onChange,
-}: SettingsFormProps) {
+export function SettingsForm({ values, onChange }: SettingsFormProps) {
   return (
     <div className="mx-auto max-w-4xl px-6 md:px-8">
-      <SettingsSection
-        title="Identity"
-        hint="Visible to anyone with access."
-      >
+      <SettingsSection title="Identity" hint="Visible to anyone with access.">
         <div className="flex items-center gap-4">
           <div className="size-14 rounded-lg bg-gradient-to-br from-primary/40 to-primary/10 ring-1 ring-border/60" />
           <div className="min-w-0 flex-1">

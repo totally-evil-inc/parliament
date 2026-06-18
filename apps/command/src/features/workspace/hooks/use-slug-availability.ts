@@ -3,7 +3,12 @@ import { useQuery } from "@tanstack/react-query"
 import { checkOrgSlug } from "@/server/org"
 import { organizationSchema } from "@/utils/auth-schemas"
 
-export type SlugAvailabilityState = "idle" | "checking" | "available" | "taken" | "error"
+export type SlugAvailabilityState =
+  | "idle"
+  | "checking"
+  | "available"
+  | "taken"
+  | "error"
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value)
@@ -17,7 +22,9 @@ function useDebounce<T>(value: T, delay: number): T {
 const formatOk = (s: string) =>
   organizationSchema.shape.organizationSlug.safeParse(s).success
 
-export function useSlugAvailability(slug: string): { state: SlugAvailabilityState } {
+export function useSlugAvailability(slug: string): {
+  state: SlugAvailabilityState
+} {
   const debouncedSlug = useDebounce(slug, 400)
   const isDebouncing = slug !== debouncedSlug && !!slug && formatOk(slug)
 

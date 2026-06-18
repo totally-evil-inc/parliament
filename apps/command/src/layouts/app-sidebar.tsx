@@ -7,7 +7,10 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@workspace/ui/components/sidebar"
-import type { WorkspaceNavItem, WorkspaceUserProfile } from "@/features/workspace/config"
+import type {
+  WorkspaceNavItem,
+  WorkspaceUserProfile,
+} from "@/features/workspace/config"
 import { SidebarPrimaryNav } from "./sidebar-primary-nav"
 import { SidebarSearch } from "./sidebar-search"
 import { WorkspaceSwitcher } from "./workspace-switcher"

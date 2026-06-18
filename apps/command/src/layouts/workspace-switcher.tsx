@@ -11,7 +11,11 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Add01Icon, ArrowDown01Icon, Tick01Icon } from "@hugeicons/core-free-icons"
+import {
+  Add01Icon,
+  ArrowDown01Icon,
+  Tick01Icon,
+} from "@hugeicons/core-free-icons"
 import { authClient } from "@/lib/auth-client"
 import { CreateWorkspaceModal } from "@/features/workspace/components/create-workspace-modal"
 import type { CreatedOrg } from "@/features/workspace/components/create-workspace-form"
@@ -72,7 +76,12 @@ export function WorkspaceSwitcher() {
           />
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent side="right" align="start" className="w-64" sideOffset={8}>
+        <DropdownMenuContent
+          side="right"
+          align="start"
+          className="w-64"
+          sideOffset={8}
+        >
           <DropdownMenuGroup>
             <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
             {orgs.map((org) => {
@@ -88,12 +97,16 @@ export function WorkspaceSwitcher() {
                   </span>
                   <span className="grid min-w-0 flex-1">
                     <span className="truncate font-medium">{org.name}</span>
-                    <span className="truncate font-mono text-[0.625rem] text-muted-foreground tracking-[0.15em] uppercase">
+                    <span className="truncate font-mono text-[0.625rem] tracking-[0.15em] text-muted-foreground uppercase">
                       {org.slug}
                     </span>
                   </span>
                   {isActive ? (
-                    <HugeiconsIcon icon={Tick01Icon} strokeWidth={2} className="size-3.5 text-muted-foreground" />
+                    <HugeiconsIcon
+                      icon={Tick01Icon}
+                      strokeWidth={2}
+                      className="size-3.5 text-muted-foreground"
+                    />
                   ) : null}
                 </DropdownMenuItem>
               )

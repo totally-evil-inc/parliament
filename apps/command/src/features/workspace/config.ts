@@ -1,6 +1,6 @@
 import {
   Activity01Icon,
-  CompassIcon,
+  FileInputIcon,
   Folder01Icon,
   Home01Icon,
   InboxIcon,
@@ -13,7 +13,7 @@ import type { IconSvgElement } from "@hugeicons/react"
 
 export type WorkspaceRouteNavItem = {
   label: string
-  to: "/" | "/settings"
+  to: "/" | "/proposals" | "/settings"
   icon: IconSvgElement
   badge?: number
 }
@@ -44,7 +44,7 @@ export const workspaceConfig = {
     { icon: Notification01Icon, label: "Activity" },
     { icon: Layers01Icon, label: "Projects" },
     { icon: UserGroupIcon, label: "People" },
-    { icon: CompassIcon, label: "Discover" },
+    { icon: FileInputIcon, label: "Proposals", to: "/proposals" },
     { icon: Settings01Icon, label: "Settings", to: "/settings" },
   ],
 } satisfies WorkspaceConfig

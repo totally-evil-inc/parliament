@@ -24,7 +24,11 @@ import { authClient } from "@/lib/auth-client"
 type Role = "admin" | "member"
 
 const ROLES: { value: Role; label: string; description: string }[] = [
-  { value: "admin", label: "Admin", description: "Manage workspace and members." },
+  {
+    value: "admin",
+    label: "Admin",
+    description: "Manage workspace and members.",
+  },
   { value: "member", label: "Member", description: "Create and edit content." },
 ]
 
@@ -44,7 +48,11 @@ type Props = {
   onSkip?: () => void
 }
 
-export function InviteTeammatesForm({ organizationId, onSuccess, onSkip }: Props) {
+export function InviteTeammatesForm({
+  organizationId,
+  onSuccess,
+  onSkip,
+}: Props) {
   const [chips, setChips] = useState<InternalChip[]>([])
   const [draft, setDraft] = useState("")
   const [defaultRole, setDefaultRole] = useState<Role>("member")
@@ -109,7 +117,11 @@ export function InviteTeammatesForm({ organizationId, onSuccess, onSkip }: Props
       e.preventDefault()
       addEmails(draft)
       setDraft("")
-    } else if (e.key === "Backspace" && draft.length === 0 && chips.length > 0) {
+    } else if (
+      e.key === "Backspace" &&
+      draft.length === 0 &&
+      chips.length > 0
+    ) {
       e.preventDefault()
       setChips((prev) => prev.slice(0, -1))
     }
@@ -152,11 +164,11 @@ export function InviteTeammatesForm({ organizationId, onSuccess, onSkip }: Props
 
       <div className="rounded-xl border border-border/60 bg-background/40 p-5">
         <div className="flex items-center justify-between gap-3">
-          <label className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
+          <label className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
             Invitees
           </label>
           <div className="flex items-center gap-2">
-            <span className="hidden font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em] sm:inline">
+            <span className="hidden font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase sm:inline">
               Default role
             </span>
             <DropdownMenu>
@@ -240,9 +252,10 @@ export function InviteTeammatesForm({ organizationId, onSuccess, onSkip }: Props
           />
         </button>
 
-        <div className="mt-2 flex items-center gap-3 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
+        <div className="mt-2 flex items-center gap-3 font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
           <span>
-            <span className="text-foreground">{validChips.length}</span> to invite
+            <span className="text-foreground">{validChips.length}</span> to
+            invite
           </span>
           {invalidCount > 0 ? (
             <span className="text-destructive">{invalidCount} invalid</span>
@@ -250,7 +263,9 @@ export function InviteTeammatesForm({ organizationId, onSuccess, onSkip }: Props
         </div>
       </div>
 
-      <form.Subscribe selector={(state) => ({ isSubmitting: state.isSubmitting })}>
+      <form.Subscribe
+        selector={(state) => ({ isSubmitting: state.isSubmitting })}
+      >
         {({ isSubmitting }) => (
           <div className="flex items-center justify-between gap-2">
             {onSkip ? (
@@ -297,7 +312,7 @@ function EmailChip({
   return (
     <span
       className={cn(
-        "group inline-flex h-7 items-center gap-1.5 rounded-full border pl-1 pr-1 text-xs",
+        "group inline-flex h-7 items-center gap-1.5 rounded-full border pr-1 pl-1 text-xs",
         valid
           ? "border-border bg-foreground/[0.03] text-foreground"
           : "border-destructive/50 bg-destructive/8 text-destructive"
@@ -322,7 +337,7 @@ function EmailChip({
             render={
               <button
                 type="button"
-                className="flex h-5 items-center gap-0.5 rounded-full px-1.5 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.18em] transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
+                className="flex h-5 items-center gap-0.5 rounded-full px-1.5 font-mono text-[10px] tracking-[0.18em] text-muted-foreground uppercase transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
               >
                 {ROLES.find((r) => r.value === chip.role)?.label}
                 <svg
@@ -367,7 +382,7 @@ function EmailChip({
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <span className="font-mono text-[9px] uppercase tracking-[0.2em]">
+        <span className="font-mono text-[9px] tracking-[0.2em] uppercase">
           Invalid
         </span>
       )}

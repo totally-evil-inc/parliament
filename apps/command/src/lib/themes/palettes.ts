@@ -1,4 +1,4 @@
-import type { ThemePalette } from "@/lib/themes/types";
+import type { ThemePalette } from "@/lib/themes/types"
 
 /**
  * Per-palette CSS variable overrides. Each palette declares its
@@ -13,23 +13,23 @@ import type { ThemePalette } from "@/lib/themes/types";
  * is possible but out of scope).
  */
 export interface PaletteVars {
-  "--primary": string;
-  "--primary-foreground": string;
-  "--ring": string;
-  "--sidebar-primary": string;
-  "--sidebar-primary-foreground": string;
-  "--sidebar-ring": string;
+  "--primary": string
+  "--primary-foreground": string
+  "--ring": string
+  "--sidebar-primary": string
+  "--sidebar-primary-foreground": string
+  "--sidebar-ring": string
 }
 
 export interface PaletteDefinition {
-  readonly id: ThemePalette;
-  readonly name: string;
+  readonly id: ThemePalette
+  readonly name: string
   /** Short one-word accent description for aria-labels. */
-  readonly accent: string;
-  readonly light: PaletteVars;
-  readonly dark: PaletteVars;
+  readonly accent: string
+  readonly light: PaletteVars
+  readonly dark: PaletteVars
   /** 2 swatch hexes for the picker card dots (light, dark accent). */
-  readonly swatch: readonly [string, string];
+  readonly swatch: readonly [string, string]
 }
 
 export const PALETTES: Record<ThemePalette, PaletteDefinition> = {
@@ -165,6 +165,6 @@ export const PALETTES: Record<ThemePalette, PaletteDefinition> = {
     },
     swatch: ["#a855f7", "#7e22ce"],
   },
-};
+}
 
-export const DEFAULT_PALETTE: ThemePalette = "graphite";
+export const DEFAULT_PALETTE: ThemePalette = "graphite"
