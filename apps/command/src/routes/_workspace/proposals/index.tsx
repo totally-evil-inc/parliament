@@ -44,10 +44,13 @@ function RouteComponent() {
     setTemplate(resolvedDefaultTemplate)
   }, [resolvedDefaultTemplate])
 
-  const handleTemplateChange = React.useCallback((nextTemplate: DocumentTemplate) => {
-    setTemplate(nextTemplate)
-    templateCustomizedRef.current = true
-  }, [])
+  const handleTemplateChange = React.useCallback(
+    (nextTemplate: DocumentTemplate) => {
+      setTemplate(nextTemplate)
+      templateCustomizedRef.current = true
+    },
+    []
+  )
 
   const handleTemplateReset = React.useCallback(() => {
     setTemplate(resolvedDefaultTemplate)
@@ -61,7 +64,13 @@ function RouteComponent() {
         className="h-full min-h-0 overflow-hidden"
         style={{ "--sidebar-width": "22rem" } as React.CSSProperties}
       >
-        <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        <div
+          className="relative flex min-h-0 flex-1 overflow-hidden"
+          style={{
+            backgroundColor: template.tokens.canvasBackground,
+          }}
+          data-document-template={template.id}
+        >
           <ScrollArea className="relative min-h-0 flex-1">
             <DocumentEditor
               editor={editor}

@@ -14,12 +14,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  useSidebar,
-} from "@workspace/ui/components/sidebar"
+import { useSidebar } from "@workspace/ui/components/sidebar"
 import { cn } from "@workspace/ui/lib/utils"
 import { insertDocumentBlockFromDefinition } from "./definition"
 import {
@@ -63,7 +58,7 @@ export function DocumentBlockSidebar({
   onTemplateChange,
   onTemplateReset,
 }: DocumentBlockSidebarProps) {
-  const { setOpen } = useSidebar()
+  const { isMobile, open, openMobile, setOpen, setOpenMobile } = useSidebar()
   const [activePanel, setActivePanel] =
     React.useState<SidebarPanel>("customize")
   const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(
@@ -131,131 +126,145 @@ export function DocumentBlockSidebar({
     updateDocumentHeaderLayout(editor, layout)
   }
 
+  const visible = isMobile ? openMobile : open
+  const closeSidebar = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+      return
+    }
+
+    setOpen(false)
+  }
+
   return (
-    <Sidebar
-      side="right"
-      variant="floating"
-      collapsible="offcanvas"
+    <aside
+      aria-hidden={!visible}
       className={cn(
-        "absolute! h-full p-3!",
-        "*:data-[sidebar=sidebar]:rounded-xl *:data-[sidebar=sidebar]:border *:data-[sidebar=sidebar]:border-border/70",
-        "*:data-[sidebar=sidebar]:bg-background/95 *:data-[sidebar=sidebar]:shadow-2xl *:data-[sidebar=sidebar]:backdrop-blur-xl"
+        "absolute inset-y-0 right-0 z-30 flex w-[min(var(--sidebar-width),calc(100%-1rem))] overflow-hidden p-3 text-foreground transition-[opacity,transform] duration-200 ease-linear md:relative md:z-auto md:w-(--sidebar-width) md:shrink-0 md:transition-[width,padding,opacity]",
+        visible
+          ? "translate-x-0 opacity-100"
+          : "pointer-events-none translate-x-full opacity-0 md:w-0 md:translate-x-0 md:p-0"
       )}
     >
-      {selectedBlock && selectedBlock.kind !== "action" ? (
-        <>
-          <SidebarHeader className="flex shrink-0 flex-row items-center justify-between gap-3 border-b border-border/70 px-4 py-4">
-            <button
-              type="button"
-              onClick={() => setSelectedBlockId(null)}
-              className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <HugeiconsIcon
-                icon={ArrowLeft01Icon}
-                className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
-              />
-              Back
-            </button>
-            <div className="absolute left-1/2 -translate-x-1/2">
-              <span className="text-sm font-semibold">
-                {selectedBlock.label}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
-            >
-              <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
-            </button>
-          </SidebarHeader>
-
-          <SidebarContent className="relative flex min-h-0 flex-col overflow-scroll p-4">
-            <ScrollArea className="relative min-h-0 flex-1">
-              <div className="space-y-4">
-                <div className="px-1 text-xs text-muted-foreground/85">
-                  Select a layout structure to insert into your{" "}
-                  {definition.title.toLowerCase()}.
-                </div>
-                <div className="space-y-3">
-                  {selectedBlock.layouts?.map((layout) => (
-                    <button
-                      type="button"
-                      key={layout.id}
-                      onClick={() =>
-                        handleInsertLayout(selectedBlock, layout.id)
-                      }
-                      className="group w-full rounded-xl border border-border/60 bg-background/50 p-3.5 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
-                    >
-                      <div className="mb-3.5 rounded-lg border border-border/30 bg-muted/15 p-2 transition-all group-hover:bg-muted/25">
-                        {layout.preview}
-                      </div>
-                      <h4 className="text-sm leading-none font-bold">
-                        {layout.name}
-                      </h4>
-                      <p className="mt-1 text-xs leading-normal text-muted-foreground">
-                        {layout.description}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </ScrollArea>
-          </SidebarContent>
-        </>
-      ) : (
-        <>
-          <SidebarHeader className="flex shrink-0 flex-col gap-3 border-b border-border/70 px-4 py-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
-                </div>
-                <span className="text-sm font-bold">
-                  {definition.title} Builder
+      <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-background/95 shadow-2xl backdrop-blur-xl">
+        {selectedBlock && selectedBlock.kind !== "action" ? (
+          <>
+            <div className="flex shrink-0 flex-row items-center justify-between gap-3 border-b border-border/70 px-4 py-4">
+              <button
+                type="button"
+                onClick={() => setSelectedBlockId(null)}
+                className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <HugeiconsIcon
+                  icon={ArrowLeft01Icon}
+                  className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
+                />
+                Back
+              </button>
+              <div className="absolute left-1/2 -translate-x-1/2">
+                <span className="text-sm font-semibold">
+                  {selectedBlock.label}
                 </span>
               </div>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={closeSidebar}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
               >
                 <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
               </button>
             </div>
-            <div className="flex rounded-xl border border-border/15 bg-muted/65 p-1">
-              <SidebarTabButton
-                active={activePanel === "customize"}
-                onClick={() => openPanel("customize")}
-              >
-                Customize
-              </SidebarTabButton>
-              <SidebarTabButton
-                active={activePanel === "blocks"}
-                onClick={() => openPanel("blocks")}
-              >
-                Blocks
-              </SidebarTabButton>
-            </div>
-          </SidebarHeader>
 
-          <SidebarContent className="relative flex min-h-0 flex-col gap-4 p-4">
-            {activePanel === "customize" ? (
-              <DesignPanel
-                defaultTemplate={defaultTemplate}
-                headerLayout={headerLayout}
-                template={template}
-                onHeaderLayoutChange={updateHeaderLayout}
-                onReset={onTemplateReset}
-                onTokenChange={updateToken}
-              />
-            ) : (
-              <BlocksPanel blocks={blocks} onSelectBlock={handleSelectBlock} />
-            )}
-          </SidebarContent>
-        </>
-      )}
-    </Sidebar>
+            <div className="relative flex min-h-0 flex-col overflow-scroll p-4">
+              <ScrollArea className="relative min-h-0 flex-1">
+                <div className="space-y-4">
+                  <div className="px-1 text-xs text-muted-foreground/85">
+                    Select a layout structure to insert into your{" "}
+                    {definition.title.toLowerCase()}.
+                  </div>
+                  <div className="space-y-3">
+                    {selectedBlock.layouts?.map((layout) => (
+                      <button
+                        type="button"
+                        key={layout.id}
+                        onClick={() =>
+                          handleInsertLayout(selectedBlock, layout.id)
+                        }
+                        className="group w-full rounded-xl border border-border/60 bg-background/50 p-3.5 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
+                      >
+                        <div className="mb-3.5 rounded-lg border border-border/30 bg-muted/15 p-2 transition-all group-hover:bg-muted/25">
+                          {layout.preview}
+                        </div>
+                        <h4 className="text-sm leading-none font-bold">
+                          {layout.name}
+                        </h4>
+                        <p className="mt-1 text-xs leading-normal text-muted-foreground">
+                          {layout.description}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </ScrollArea>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex shrink-0 flex-col gap-3 border-b border-border/70 px-4 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-bold">
+                    {definition.title} Builder
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeSidebar}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
+                >
+                  <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex rounded-xl border border-border/15 bg-muted/65 p-1">
+                <SidebarTabButton
+                  active={activePanel === "customize"}
+                  onClick={() => openPanel("customize")}
+                >
+                  Customize
+                </SidebarTabButton>
+                <SidebarTabButton
+                  active={activePanel === "blocks"}
+                  onClick={() => openPanel("blocks")}
+                >
+                  Blocks
+                </SidebarTabButton>
+              </div>
+            </div>
+
+            <div className="relative flex min-h-0 flex-col gap-4 p-4">
+              {activePanel === "customize" ? (
+                <DesignPanel
+                  defaultTemplate={defaultTemplate}
+                  headerLayout={headerLayout}
+                  template={template}
+                  onHeaderLayoutChange={updateHeaderLayout}
+                  onReset={onTemplateReset}
+                  onTokenChange={updateToken}
+                />
+              ) : (
+                <BlocksPanel
+                  blocks={blocks}
+                  onSelectBlock={handleSelectBlock}
+                />
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </aside>
   )
 }
 
@@ -459,7 +468,9 @@ function DesignPanel({
 const HEADER_PREVIEW_LOGO = (
   <div className="h-4 w-7 rounded-sm border border-current/25" />
 )
-const HEADER_PREVIEW_TITLE = <div className="h-2 w-14 rounded-full bg-current" />
+const HEADER_PREVIEW_TITLE = (
+  <div className="h-2 w-14 rounded-full bg-current" />
+)
 const HEADER_PREVIEW_SHORT_TITLE = (
   <div className="h-2 w-10 rounded-full bg-current" />
 )
