@@ -17,6 +17,7 @@ import { Route as AuthSignInIndexRouteImport } from './routes/auth/sign-in/index
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
 import { Route as WorkspaceSettingsIndexRouteImport } from './routes/_workspace/settings/index'
 import { Route as WorkspaceProposalsIndexRouteImport } from './routes/_workspace/proposals/index'
+import { Route as WorkspaceIntegrationsIndexRouteImport } from './routes/_workspace/integrations/index'
 import { Route as WorkspaceSettingsTabRouteImport } from './routes/_workspace/settings/$tab'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
@@ -58,6 +59,12 @@ const WorkspaceProposalsIndexRoute = WorkspaceProposalsIndexRouteImport.update({
   path: '/proposals/',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
+const WorkspaceIntegrationsIndexRoute =
+  WorkspaceIntegrationsIndexRouteImport.update({
+    id: '/integrations/',
+    path: '/integrations/',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceSettingsTabRoute = WorkspaceSettingsTabRouteImport.update({
   id: '/$tab',
   path: '/$tab',
@@ -69,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteRouteWithChildren
   '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/settings/$tab': typeof WorkspaceSettingsTabRoute
+  '/integrations/': typeof WorkspaceIntegrationsIndexRoute
   '/proposals/': typeof WorkspaceProposalsIndexRoute
   '/settings/': typeof WorkspaceSettingsIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
@@ -78,6 +86,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRouteRouteWithChildren
   '/': typeof WorkspaceIndexRoute
   '/settings/$tab': typeof WorkspaceSettingsTabRoute
+  '/integrations': typeof WorkspaceIntegrationsIndexRoute
   '/proposals': typeof WorkspaceProposalsIndexRoute
   '/settings': typeof WorkspaceSettingsIndexRoute
   '/auth/onboarding': typeof AuthOnboardingIndexRoute
@@ -90,6 +99,7 @@ export interface FileRoutesById {
   '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/_workspace/': typeof WorkspaceIndexRoute
   '/_workspace/settings/$tab': typeof WorkspaceSettingsTabRoute
+  '/_workspace/integrations/': typeof WorkspaceIntegrationsIndexRoute
   '/_workspace/proposals/': typeof WorkspaceProposalsIndexRoute
   '/_workspace/settings/': typeof WorkspaceSettingsIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
@@ -102,6 +112,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/settings'
     | '/settings/$tab'
+    | '/integrations/'
     | '/proposals/'
     | '/settings/'
     | '/auth/onboarding/'
@@ -111,6 +122,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/'
     | '/settings/$tab'
+    | '/integrations'
     | '/proposals'
     | '/settings'
     | '/auth/onboarding'
@@ -122,6 +134,7 @@ export interface FileRouteTypes {
     | '/_workspace/settings'
     | '/_workspace/'
     | '/_workspace/settings/$tab'
+    | '/_workspace/integrations/'
     | '/_workspace/proposals/'
     | '/_workspace/settings/'
     | '/auth/onboarding/'
@@ -191,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceProposalsIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/integrations/': {
+      id: '/_workspace/integrations/'
+      path: '/integrations'
+      fullPath: '/integrations/'
+      preLoaderRoute: typeof WorkspaceIntegrationsIndexRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/settings/$tab': {
       id: '/_workspace/settings/$tab'
       path: '/$tab'
@@ -220,12 +240,14 @@ const WorkspaceSettingsRouteRouteWithChildren =
 interface WorkspaceRouteRouteChildren {
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
+  WorkspaceIntegrationsIndexRoute: typeof WorkspaceIntegrationsIndexRoute
   WorkspaceProposalsIndexRoute: typeof WorkspaceProposalsIndexRoute
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
+  WorkspaceIntegrationsIndexRoute: WorkspaceIntegrationsIndexRoute,
   WorkspaceProposalsIndexRoute: WorkspaceProposalsIndexRoute,
 }
 
