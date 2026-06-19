@@ -13,6 +13,7 @@ export const Testimonials = Node.create({
       testimonials: {
         default: [
           {
+            id: "testimonial-default-1",
             content:
               "The team brought clarity, speed, and care to every phase of the project.",
             author: "Jane Doe",
@@ -20,6 +21,7 @@ export const Testimonials = Node.create({
             avatar: "",
           },
           {
+            id: "testimonial-default-2",
             content:
               "Their process helped us move faster without sacrificing quality or alignment.",
             author: "Michael Smith",
@@ -27,6 +29,7 @@ export const Testimonials = Node.create({
             avatar: "",
           },
           {
+            id: "testimonial-default-3",
             content:
               "We had confidence in the plan from kickoff through final delivery.",
             author: "Priya Patel",

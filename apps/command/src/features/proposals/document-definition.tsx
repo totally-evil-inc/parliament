@@ -13,7 +13,7 @@ import { proposalBlocks } from "./blocks/proposal-blocks"
 import type { DocumentDefinition } from "@/features/documents/editor/types"
 import { defaultDocumentTemplate } from "@/features/documents/editor/templates"
 
-export const proposalDocumentTemplate = {
+const proposalDocumentTemplate = {
   ...defaultDocumentTemplate,
   id: "proposal-classic",
   name: "Proposal Classic",

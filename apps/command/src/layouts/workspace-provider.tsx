@@ -1,14 +1,13 @@
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
-  useEffect,
   useMemo,
   useState,
 } from "react"
-import type { ReactNode } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "@tanstack/react-router"
+import type { ReactNode } from "react"
 import { authClient } from "@/lib/auth-client"
 
 export type WorkspaceOrganization = {
@@ -36,28 +35,44 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
   const queryClient = useQueryClient()
   const activeOrgResult = authClient.useActiveOrganization()
   const persistedActiveOrg = activeOrgResult.data
+  const persistedActiveOrgId = persistedActiveOrg?.id
+  const persistedActiveOrgName = persistedActiveOrg?.name
+  const persistedActiveOrgSlug = persistedActiveOrg?.slug
   const refetchActiveOrg =
-    "refetch" in activeOrgResult && typeof activeOrgResult.refetch === "function"
+    "refetch" in activeOrgResult &&
+    typeof activeOrgResult.refetch === "function"
       ? activeOrgResult.refetch
       : undefined
-  const [activeOrg, setActiveOrg] = useState<WorkspaceOrganization | null>(
-    () => toWorkspaceOrg(persistedActiveOrg)
+  const persistedWorkspaceOrg = useMemo(
+    () =>
+      persistedActiveOrgId && persistedActiveOrgName && persistedActiveOrgSlug
+        ? {
+            id: persistedActiveOrgId,
+            name: persistedActiveOrgName,
+            slug: persistedActiveOrgSlug,
+          }
+        : null,
+    [persistedActiveOrgId, persistedActiveOrgName, persistedActiveOrgSlug]
   )
+  const [optimisticActiveOrg, setOptimisticActiveOrg] =
+    useState<WorkspaceOrganization | null>(null)
   const [isSwitching, setIsSwitching] = useState(false)
+  const activeOrg = optimisticActiveOrg ?? persistedWorkspaceOrg
 
   const { data: organizations = [], refetch: refetchOrganizations } = useQuery({
     queryKey: ["organizations"],
     queryFn: async () => {
       const result = await authClient.organization.list()
-      return (result.data ?? [])
-        .map(toWorkspaceOrg)
-        .filter(isWorkspaceOrganization)
+      const nextOrganizations: Array<WorkspaceOrganization> = []
+
+      for (const org of result.data ?? []) {
+        const workspaceOrg = toWorkspaceOrg(org)
+        if (workspaceOrg) nextOrganizations.push(workspaceOrg)
+      }
+
+      return nextOrganizations
     },
   })
-
-  useEffect(() => {
-    setActiveOrg(toWorkspaceOrg(persistedActiveOrg))
-  }, [persistedActiveOrg])
 
   const invalidateOrgScopedState = useCallback(async () => {
     await Promise.all([
@@ -79,7 +94,11 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
       refetchOrganizations(),
       invalidateOrgScopedState(),
     ])
-  }, [invalidateOrgScopedState, refetchOrganizations, refreshActiveOrganization])
+  }, [
+    invalidateOrgScopedState,
+    refetchOrganizations,
+    refreshActiveOrganization,
+  ])
 
   const switchOrganization = useCallback(
     async (organizationId: string) => {
@@ -96,17 +115,20 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
       }
 
       if (nextActiveOrg) {
-        setActiveOrg(nextActiveOrg)
+        setOptimisticActiveOrg(nextActiveOrg)
       }
 
       setIsSwitching(true)
 
       try {
         await authClient.organization.setActive({ organizationId })
-        await invalidateOrgScopedState()
-        await refreshActiveOrganization()
+        await Promise.all([
+          invalidateOrgScopedState(),
+          refreshActiveOrganization(),
+        ])
+        setOptimisticActiveOrg(null)
       } catch (error) {
-        setActiveOrg(previousActiveOrg)
+        setOptimisticActiveOrg(previousActiveOrg)
         throw error
       } finally {
         setIsSwitching(false)
@@ -146,7 +168,7 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
 }
 
 export function useWorkspace() {
-  const context = useContext(WorkspaceContext)
+  const context = use(WorkspaceContext)
 
   if (!context) {
     throw new Error("useWorkspace must be used inside WorkspaceProvider")
@@ -164,10 +186,4 @@ function toWorkspaceOrg(
     name: org.name,
     slug: org.slug,
   }
-}
-
-function isWorkspaceOrganization(
-  org: WorkspaceOrganization | null
-): org is WorkspaceOrganization {
-  return org !== null
 }

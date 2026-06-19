@@ -12,15 +12,11 @@ import { Table } from "@tiptap/extension-table/table"
 import { TableCell } from "@tiptap/extension-table/cell"
 import { TableHeader } from "@tiptap/extension-table/header"
 import { TableRow } from "@tiptap/extension-table/row"
-import {
-  NodeViewContent,
-  NodeViewWrapper,
-  ReactNodeViewRenderer,
-} from "@tiptap/react"
+import { ReactNodeViewRenderer } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
-import { Checkbox } from "@workspace/ui/components/checkbox"
+import { TaskItemNodeView } from "./task-item-node-view"
 import type { AnyExtension } from "@tiptap/core"
-import type { Editor, NodeViewProps } from "@tiptap/react"
+import type { Editor } from "@tiptap/react"
 import type { EditorCommand } from "@/lib/editor/commands"
 
 import { BusinessDocument } from "@/features/documents/extensions/document"
@@ -34,32 +30,6 @@ import {
   TimelineItem,
   TimelineTitle,
 } from "@/features/workspace/editor/timeline-extension"
-
-const TaskItemNodeView = ({ node, updateAttributes }: NodeViewProps) => {
-  const checked = Boolean(node.attrs.checked)
-
-  return (
-    <NodeViewWrapper
-      as="li"
-      className="flex list-none items-start gap-2 py-1 pl-0"
-      data-checked={checked ? "true" : "false"}
-      data-type="taskItem"
-    >
-      <Checkbox
-        aria-label={
-          checked ? "Mark task as incomplete" : "Mark task as complete"
-        }
-        checked={checked}
-        className="mt-1"
-        contentEditable={false}
-        onCheckedChange={(nextChecked) => {
-          updateAttributes({ checked: nextChecked === true })
-        }}
-      />
-      <NodeViewContent className="min-w-0 flex-1 [&_p]:m-0" />
-    </NodeViewWrapper>
-  )
-}
 
 const TaskItem = BaseTaskItem.extend({
   addNodeView() {

@@ -5,7 +5,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
-import { type CreatedOrg, CreateWorkspaceForm } from "./create-workspace-form"
+import { CreateWorkspaceForm } from "./create-workspace-form"
+import type { CreatedOrg } from "./create-workspace-form"
 
 type Props = {
   open: boolean

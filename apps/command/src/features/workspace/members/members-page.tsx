@@ -1,15 +1,15 @@
 import { useQuery } from "@tanstack/react-query"
 import { Spinner } from "@workspace/ui/components/spinner"
-import { authClient } from "@/lib/auth-client"
-import { InviteTeammatesForm } from "@/features/workspace/components/invite-teammates-form"
-import { useWorkspace } from "@/layouts/workspace-provider"
-import { MembersTable } from "./members-table"
 import { InvitationsList } from "./invitations-list"
+import { MembersTable } from "./members-table"
+import { InviteTeammatesForm } from "@/features/workspace/components/invite-teammates-form"
+import { authClient } from "@/lib/auth-client"
+import { useWorkspace } from "@/layouts/workspace-provider"
 
 export function MembersPage() {
   const { activeOrg, isSwitching } = useWorkspace()
   const session = authClient.useSession()
-  const currentUserId = session.data?.user?.id as string | undefined
+  const currentUserId = session.data?.user.id
 
   const { data: members, isPending: membersPending } = useQuery({
     queryKey: ["org-members", activeOrg?.id],

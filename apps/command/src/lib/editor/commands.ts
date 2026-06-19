@@ -312,10 +312,6 @@ export const slashMenuCommands = editorCommands.filter(
   (command) => command.showInSlashMenu
 )
 
-export const floatingMenuCommands = editorCommands.filter(
-  (command) => command.showInFloatingMenu
-)
-
 export const bubbleMenuCommands = editorCommands.filter(
   (command) => command.showInBubbleMenu
 )

@@ -151,7 +151,7 @@ function getSessionId(session: SessionJson | null) {
 }
 
 function getUserId(session: SessionJson | null) {
-  const userId = session?.user?.id
+  const userId = session?.user.id
 
   return typeof userId === "string" ? userId : null
 }
@@ -171,12 +171,13 @@ async function selectActiveOrganizationFromMemberships(
   }
 
   try {
-    const [membership] = await db
+    const memberships = await db
       .select({ organizationId: schema.member.organizationId })
       .from(schema.member)
       .where(eq(schema.member.userId, userId))
       .orderBy(desc(schema.member.createdAt))
       .limit(1)
+    const membership = memberships.at(0)
 
     if (!membership) {
       return session

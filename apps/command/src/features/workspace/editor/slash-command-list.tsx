@@ -1,4 +1,5 @@
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react"
+import { useImperativeHandle, useState } from "react"
+import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Command,
   CommandEmpty,
@@ -6,27 +7,32 @@ import {
   CommandItem,
   CommandList,
 } from "@workspace/ui/components/command"
-import { HugeiconsIcon } from "@hugeicons/react"
+import type { Ref } from "react"
 import type { EditorCommand } from "@/lib/editor/commands"
 
 type SlashCommandListProps = {
   items: Array<EditorCommand>
   command: (item: EditorCommand) => void
+  ref?: Ref<SlashCommandListRef>
 }
 
 export type SlashCommandListRef = {
   onKeyDown: (props: { event: KeyboardEvent }) => boolean
 }
 
-export const SlashCommandList = forwardRef<
-  SlashCommandListRef,
-  SlashCommandListProps
->(({ items, command }, ref) => {
-  const [selectedIndex, setSelectedIndex] = useState(0)
+export function SlashCommandList({
+  items,
+  command,
+  ref,
+}: SlashCommandListProps) {
+  const [selection, setSelection] = useState({ items, index: 0 })
 
-  useEffect(() => {
-    setSelectedIndex(0)
-  }, [items])
+  let selectedIndex = selection.index
+
+  if (selection.items !== items) {
+    selectedIndex = 0
+    setSelection({ items, index: 0 })
+  }
 
   const selectItem = (index: number) => {
     if (index < 0 || index >= items.length) {
@@ -43,14 +49,23 @@ export const SlashCommandList = forwardRef<
       }
 
       if (event.key === "ArrowUp") {
-        setSelectedIndex(
-          (currentIndex) => (currentIndex + items.length - 1) % items.length
+        setSelection((current) =>
+          current.items === items
+            ? {
+                items,
+                index: (current.index + items.length - 1) % items.length,
+              }
+            : { items, index: items.length - 1 }
         )
         return true
       }
 
       if (event.key === "ArrowDown") {
-        setSelectedIndex((currentIndex) => (currentIndex + 1) % items.length)
+        setSelection((current) =>
+          current.items === items
+            ? { items, index: (current.index + 1) % items.length }
+            : { items, index: 0 }
+        )
         return true
       }
 
@@ -80,7 +95,7 @@ export const SlashCommandList = forwardRef<
                 <CommandItem
                   key={item.id}
                   value={item.id}
-                  onMouseEnter={() => setSelectedIndex(index)}
+                  onMouseEnter={() => setSelection({ items, index })}
                   onSelect={() => selectItem(index)}
                   className={[
                     "flex cursor-pointer items-center gap-2 px-2 py-1",
@@ -105,6 +120,6 @@ export const SlashCommandList = forwardRef<
       </CommandList>
     </Command>
   )
-})
+}
 
 SlashCommandList.displayName = "SlashCommandList"

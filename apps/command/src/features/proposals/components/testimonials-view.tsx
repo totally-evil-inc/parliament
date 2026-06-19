@@ -8,6 +8,13 @@ import { getArrayAttr, getColumnCount } from "@/features/proposals/types"
 const inputClassName =
   "h-auto rounded-none !border-0 !bg-transparent !p-0 shadow-none !outline-none !ring-0 hover:!border-transparent focus-visible:!border-transparent focus-visible:!ring-0 dark:!bg-transparent"
 
+function getTestimonialKey(testimonial: Testimonial) {
+  return (
+    testimonial.id ||
+    `testimonial-${testimonial.author}-${testimonial.role}-${testimonial.content}`
+  )
+}
+
 export function TestimonialsView({ node, updateAttributes }: NodeViewProps) {
   const testimonials = getArrayAttr<Testimonial>(node.attrs.testimonials)
   const columns = getColumnCount(node.attrs.columns)
@@ -18,7 +25,11 @@ export function TestimonialsView({ node, updateAttributes }: NodeViewProps) {
     value: string
   ) => {
     const newTestimonials = [...testimonials]
-    newTestimonials[index] = { ...newTestimonials[index], [key]: value }
+    newTestimonials[index] = {
+      ...newTestimonials[index],
+      id: getTestimonialKey(newTestimonials[index]),
+      [key]: value,
+    }
     updateAttributes({ testimonials: newTestimonials })
   }
 
@@ -34,7 +45,7 @@ export function TestimonialsView({ node, updateAttributes }: NodeViewProps) {
       <div className={`grid gap-x-10 gap-y-10 ${gridColumns}`}>
         {testimonials.map((testimonial, index) => (
           <blockquote
-            key={index}
+            key={getTestimonialKey(testimonial)}
             className="m-0 border-l-2 border-[var(--document-accent)] py-1 pl-5 text-left"
           >
             <Textarea

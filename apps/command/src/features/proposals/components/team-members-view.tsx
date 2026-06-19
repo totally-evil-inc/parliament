@@ -10,13 +10,25 @@ import { getArrayAttr, getColumnCount } from "@/features/proposals/types"
 const inputClassName =
   "h-auto rounded-none !border-0 !bg-transparent !p-0 text-center shadow-none !outline-none !ring-0 hover:!border-transparent focus-visible:!border-transparent focus-visible:!ring-0 dark:!bg-transparent"
 
+function getMemberKey(member: TeamMember) {
+  return member.id || `team-member-${member.name}-${member.role}-${member.bio}`
+}
+
 export function TeamMembersView({ node, updateAttributes }: NodeViewProps) {
   const members = getArrayAttr<TeamMember>(node.attrs.members)
   const columns = getColumnCount(node.attrs.columns)
 
-  const updateMember = (index: number, key: keyof TeamMember, value: string) => {
+  const updateMember = (
+    index: number,
+    key: keyof TeamMember,
+    value: string
+  ) => {
     const newMembers = [...members]
-    newMembers[index] = { ...newMembers[index], [key]: value }
+    newMembers[index] = {
+      ...newMembers[index],
+      id: getMemberKey(newMembers[index]),
+      [key]: value,
+    }
     updateAttributes({ members: newMembers })
   }
 
@@ -32,7 +44,7 @@ export function TeamMembersView({ node, updateAttributes }: NodeViewProps) {
       <div className={`grid gap-x-10 gap-y-10 ${gridColumns}`}>
         {members.map((member, index) => (
           <div
-            key={index}
+            key={getMemberKey(member)}
             className="flex flex-col items-center justify-start text-center"
           >
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--document-accent)_10%,transparent)] text-[var(--document-accent)] md:h-20 md:w-20">

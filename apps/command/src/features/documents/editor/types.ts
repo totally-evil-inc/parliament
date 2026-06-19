@@ -50,6 +50,7 @@ export type DocumentTemplateStyle = CSSProperties & {
 }
 
 export type DocumentHeaderCustomField = {
+  id: string
   label: string
   value: string
 }

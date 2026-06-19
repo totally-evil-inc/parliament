@@ -12,9 +12,9 @@ export const Gallery = Node.create({
     return {
       images: {
         default: [
-          { url: "", alt: "Image 1" },
-          { url: "", alt: "Image 2" },
-          { url: "", alt: "Image 3" },
+          { id: "gallery-image-default-1", url: "", alt: "Image 1" },
+          { id: "gallery-image-default-2", url: "", alt: "Image 2" },
+          { id: "gallery-image-default-3", url: "", alt: "Image 3" },
         ],
       },
       columns: { default: 3 },

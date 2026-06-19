@@ -83,9 +83,14 @@ export function insertDocumentBlockFromDefinition({
 export function createDocumentCommands(
   definition: DocumentDefinition
 ): Array<EditorCommand> {
-  return definition.blocks
-    .filter((block) => block.showInSlashMenu || block.showInFloatingMenu)
-    .map((block) => ({
+  const commands: Array<EditorCommand> = []
+
+  for (const block of definition.blocks) {
+    if (!block.showInSlashMenu && !block.showInFloatingMenu) {
+      continue
+    }
+
+    commands.push({
       id: block.id,
       title: block.label,
       description: block.description,
@@ -107,5 +112,8 @@ export function createDocumentCommands(
           range,
         })
       },
-    }))
+    })
+  }
+
+  return commands
 }

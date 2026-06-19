@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
+import type { OrganizationDraft } from "@/features/auth/onboarding/onboarding-draft"
 import { ONBOARDING_STEP_IDS } from "@/features/auth/onboarding/constants"
 import {
-  type OrganizationDraft,
   readDraft,
   writeDraft,
 } from "@/features/auth/onboarding/onboarding-draft"
@@ -23,55 +23,62 @@ export function useOnboardingFlow(step: OnboardingStep) {
   const currentStepIndex = ONBOARDING_STEP_IDS.indexOf(step)
   const isAuthenticated = !!session.data?.user
 
-  const goToStep = (nextStep: OnboardingStep) => {
-    void navigate({ search: { step: nextStep } })
-  }
+  const goToStep = useCallback(
+    (nextStep: OnboardingStep) => {
+      void navigate({ search: { step: nextStep } })
+    },
+    [navigate]
+  )
 
-  const setDraft = (nextDraft: OrganizationDraft | null) => {
+  const setDraft = useCallback((nextDraft: OrganizationDraft | null) => {
     setDraftState(nextDraft)
     writeDraft(nextDraft)
-  }
+  }, [])
 
-  const createOrganization = async (nextDraft = draft) => {
-    if (!nextDraft) {
-      goToStep("organization")
-      return null
-    }
+  const createOrganization = useCallback(
+    async (nextDraft = draft) => {
+      if (!nextDraft) {
+        goToStep("organization")
+        return null
+      }
 
-    if (nextDraft.organizationId) {
-      return nextDraft
-    }
+      if (nextDraft.organizationId) {
+        return nextDraft
+      }
 
-    setPendingOrganization(true)
-    setStatus(null)
+      setPendingOrganization(true)
+      setStatus(null)
 
-    const { data, error } = await authClient.organization.create({
-      name: nextDraft.organizationName,
-      slug: nextDraft.organizationSlug,
-    })
+      const { data, error } = await authClient.organization.create({
+        name: nextDraft.organizationName,
+        slug: nextDraft.organizationSlug,
+      })
 
-    setPendingOrganization(false)
+      setPendingOrganization(false)
 
-    if (error) {
-      const message =
-        error.message || "We could not create that organization yet."
-      setStatus(message)
-      goToStep("organization")
-      return null
-    }
+      if (error) {
+        const message =
+          error.message || "We could not create that organization yet."
+        setStatus(message)
+        goToStep("organization")
+        return null
+      }
 
-    const savedDraft = {
-      ...nextDraft,
-      organizationId: data.id,
-    }
-    setDraft(savedDraft)
-    return savedDraft
-  }
+      const savedDraft = {
+        ...nextDraft,
+        organizationId: data.id,
+      }
+      setDraft(savedDraft)
+      return savedDraft
+    },
+    [draft, goToStep, setDraft]
+  )
 
   const addInvitee = (email: string) => {
     const trimmed = email.trim().toLowerCase()
-    if (invitees.includes(trimmed)) return
-    setInvitees((prev) => [...prev, trimmed])
+    setInvitees((prev) =>
+      trimmed && !prev.includes(trimmed) ? [...prev, trimmed] : prev
+    )
   }
 
   const removeInvitee = (email: string) => {
@@ -83,17 +90,25 @@ export function useOnboardingFlow(step: OnboardingStep) {
 
     setStatus(null)
 
-    for (const email of invitees) {
-      const { error } = await authClient.organization.inviteMember({
+    const results = await Promise.all(
+      invitees.map(async (email) => ({
         email,
-        role: "member",
-        organizationId: draft.organizationId,
-      })
+        result: await authClient.organization.inviteMember({
+          email,
+          role: "member",
+          organizationId: draft.organizationId,
+        }),
+      }))
+    )
 
-      if (error) {
-        setStatus(error.message || `Could not invite ${email}.`)
-        return
-      }
+    const failedInvite = results.find(({ result }) => result.error)
+
+    if (failedInvite) {
+      setStatus(
+        failedInvite.result.error?.message ||
+          `Could not invite ${failedInvite.email}.`
+      )
+      return
     }
 
     goToStep("ready")
@@ -101,13 +116,6 @@ export function useOnboardingFlow(step: OnboardingStep) {
 
   useEffect(() => {
     if (session.isPending || pendingOrganization) return
-
-    if (step === "account" && isAuthenticated) {
-      void createOrganization().then((savedDraft) => {
-        if (savedDraft) goToStep("invites")
-      })
-      return
-    }
 
     if ((step === "account" || step === "invites") && !draft) {
       goToStep("organization")
@@ -117,7 +125,14 @@ export function useOnboardingFlow(step: OnboardingStep) {
     if (step === "invites" && !isAuthenticated) {
       goToStep("account")
     }
-  }, [draft, isAuthenticated, pendingOrganization, session.isPending, step])
+  }, [
+    draft,
+    goToStep,
+    isAuthenticated,
+    pendingOrganization,
+    session.isPending,
+    step,
+  ])
 
   return {
     step,

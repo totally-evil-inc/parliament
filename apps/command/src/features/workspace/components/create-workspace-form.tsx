@@ -97,10 +97,14 @@ export function CreateWorkspaceForm({
 
           return (
             <div className="flex flex-col gap-1.5">
-              <label className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+              <label
+                htmlFor="create-workspace-name"
+                className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase"
+              >
                 Workspace name
               </label>
               <Input
+                id="create-workspace-name"
                 placeholder="Acme Studios"
                 autoComplete="organization"
                 value={field.state.value}
@@ -130,7 +134,10 @@ export function CreateWorkspaceForm({
 
           return (
             <div className="flex flex-col gap-1.5">
-              <label className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+              <label
+                htmlFor="create-workspace-slug"
+                className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase"
+              >
                 Workspace URL
               </label>
               <InputGroup>
@@ -138,6 +145,7 @@ export function CreateWorkspaceForm({
                   <InputGroupText>app/</InputGroupText>
                 </InputGroupAddon>
                 <InputGroupInput
+                  id="create-workspace-slug"
                   placeholder="acme-studios"
                   autoComplete="off"
                   value={field.state.value}

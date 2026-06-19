@@ -1,3 +1,4 @@
+import { useId } from "react"
 import { ImageUpload01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
@@ -6,7 +7,6 @@ import {
   FieldContent,
   FieldDescription,
   FieldLabel,
-  FieldTitle,
 } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import {
@@ -81,6 +81,7 @@ export function SettingsForm({ values, onChange }: SettingsFormProps) {
             <span className="shrink-0 text-muted-foreground">command.so/</span>
             <input
               id="workspace-slug"
+              aria-label="Workspace slug"
               value={values.slug}
               onChange={(event) => onChange("slug", event.target.value)}
               className="min-w-0 flex-1 bg-transparent outline-none"
@@ -164,16 +165,22 @@ function SettingsSwitch({
   checked,
   onCheckedChange,
 }: SettingsSwitchProps) {
+  const switchId = useId()
+
   return (
     <Field
       orientation="horizontal"
       className="items-start justify-between gap-6 rounded-lg border border-border/60 bg-card px-4 py-3 text-card-foreground"
     >
       <FieldContent>
-        <FieldTitle>{title}</FieldTitle>
+        <FieldLabel htmlFor={switchId}>{title}</FieldLabel>
         <FieldDescription>{description}</FieldDescription>
       </FieldContent>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+      <Switch
+        id={switchId}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+      />
     </Field>
   )
 }

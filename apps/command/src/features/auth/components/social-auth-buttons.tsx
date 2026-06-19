@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query"
+import { useState } from "react"
 import { Button } from "@workspace/ui/components/button"
 import {
   SUPPORTED_OAUTH_PROVIDERS,
@@ -8,14 +8,19 @@ import type { SupportedOAuthProvider } from "../lib/o-auth-providers"
 import { authClient } from "@/lib/auth-client"
 
 export function SocialAuthButtons() {
-  const { mutate: signIn, isPending } = useMutation({
-    mutationFn: async (provider: SupportedOAuthProvider) => {
-      return await authClient.signIn.social({
+  const [isPending, setIsPending] = useState(false)
+
+  const signIn = async (provider: SupportedOAuthProvider) => {
+    setIsPending(true)
+    try {
+      await authClient.signIn.social({
         provider,
         callbackURL: window.location.origin,
       })
-    },
-  })
+    } finally {
+      setIsPending(false)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -29,7 +34,7 @@ export function SocialAuthButtons() {
             size="lg"
             type="button"
             disabled={isPending}
-            onClick={() => signIn(provider)}
+            onClick={() => void signIn(provider)}
           >
             <Icon />
             Continue with {name}

@@ -29,7 +29,7 @@ function RouteComponent() {
   const [template, setTemplate] = React.useState<DocumentTemplate>(
     () => resolvedDefaultTemplate
   )
-  const [templateCustomized, setTemplateCustomized] = React.useState(false)
+  const templateCustomizedRef = React.useRef(false)
 
   const editor = useDocumentEditor({
     documentId: proposalDocumentDefinition.type,
@@ -39,19 +39,22 @@ function RouteComponent() {
   })
 
   React.useEffect(() => {
-    if (templateCustomized) return
+    if (templateCustomizedRef.current) return
 
     setTemplate(resolvedDefaultTemplate)
-  }, [resolvedDefaultTemplate, templateCustomized])
+  }, [resolvedDefaultTemplate])
 
-  const handleTemplateChange = React.useCallback((nextTemplate: DocumentTemplate) => {
-    setTemplate(nextTemplate)
-    setTemplateCustomized(true)
-  }, [])
+  const handleTemplateChange = React.useCallback(
+    (nextTemplate: DocumentTemplate) => {
+      setTemplate(nextTemplate)
+      templateCustomizedRef.current = true
+    },
+    []
+  )
 
   const handleTemplateReset = React.useCallback(() => {
     setTemplate(resolvedDefaultTemplate)
-    setTemplateCustomized(false)
+    templateCustomizedRef.current = false
   }, [resolvedDefaultTemplate])
 
   return (
@@ -61,7 +64,13 @@ function RouteComponent() {
         className="h-full min-h-0 overflow-hidden"
         style={{ "--sidebar-width": "22rem" } as React.CSSProperties}
       >
-        <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        <div
+          className="relative flex min-h-0 flex-1 overflow-hidden"
+          style={{
+            backgroundColor: template.tokens.canvasBackground,
+          }}
+          data-document-template={template.id}
+        >
           <ScrollArea className="relative min-h-0 flex-1">
             <DocumentEditor
               editor={editor}

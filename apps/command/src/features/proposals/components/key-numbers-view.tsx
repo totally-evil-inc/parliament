@@ -8,6 +8,10 @@ import { getArrayAttr, getColumnCount } from "@/features/proposals/types"
 const inputClassName =
   "h-auto rounded-none !border-0 !bg-transparent !p-0 text-center shadow-none !outline-none !ring-0 hover:!border-transparent focus-visible:!border-transparent focus-visible:!ring-0 dark:!bg-transparent"
 
+function getMetricKey(metric: KeyNumberMetric) {
+  return metric.id || `metric-${metric.value}-${metric.label}-${metric.detail}`
+}
+
 export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
   const metrics = getArrayAttr<KeyNumberMetric>(node.attrs.metrics)
   const columns = getColumnCount(node.attrs.columns)
@@ -18,7 +22,11 @@ export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
     value: string
   ) => {
     const newMetrics = [...metrics]
-    newMetrics[index] = { ...newMetrics[index], [key]: value }
+    newMetrics[index] = {
+      ...newMetrics[index],
+      id: getMetricKey(newMetrics[index]),
+      [key]: value,
+    }
     updateAttributes({ metrics: newMetrics })
   }
 
@@ -34,7 +42,7 @@ export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
       <div className={`grid gap-x-16 gap-y-14 ${gridColumns}`}>
         {metrics.map((metric, index) => (
           <div
-            key={index}
+            key={getMetricKey(metric)}
             className="flex flex-col items-center justify-start text-center"
           >
             <Input

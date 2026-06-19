@@ -201,7 +201,7 @@ export const defaultDocumentTemplate: DocumentTemplate = {
   },
 }
 
-export const darkDocumentTemplate: DocumentTemplate = {
+const darkDocumentTemplate: DocumentTemplate = {
   id: "classic-dark",
   name: "Classic Dark",
   tokens: {
@@ -218,7 +218,7 @@ export const darkDocumentTemplate: DocumentTemplate = {
   },
 }
 
-export const defaultDocumentTemplates = {
+const defaultDocumentTemplates = {
   light: defaultDocumentTemplate,
   dark: darkDocumentTemplate,
 } satisfies Record<"light" | "dark", DocumentTemplate>
