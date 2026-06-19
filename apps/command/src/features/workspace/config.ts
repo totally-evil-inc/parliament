@@ -7,13 +7,14 @@ import {
   Layers01Icon,
   Notification01Icon,
   Settings01Icon,
+  Share01Icon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons"
 import type { IconSvgElement } from "@hugeicons/react"
 
 export type WorkspaceRouteNavItem = {
   label: string
-  to: "/" | "/proposals" | "/settings"
+  to: "/" | "/integrations" | "/proposals" | "/settings"
   icon: IconSvgElement
   badge?: number
 }
@@ -45,6 +46,7 @@ export const workspaceConfig = {
     { icon: Layers01Icon, label: "Projects" },
     { icon: UserGroupIcon, label: "People" },
     { icon: FileInputIcon, label: "Proposals", to: "/proposals" },
+    { icon: Share01Icon, label: "Integrations", to: "/integrations" },
     { icon: Settings01Icon, label: "Settings", to: "/settings" },
   ],
 } satisfies WorkspaceConfig
