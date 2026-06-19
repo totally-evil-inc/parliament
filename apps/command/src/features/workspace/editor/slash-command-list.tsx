@@ -1,4 +1,5 @@
-import { forwardRef, useImperativeHandle, useState } from "react"
+import { useImperativeHandle, useState } from "react"
+import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Command,
   CommandEmpty,
@@ -6,22 +7,24 @@ import {
   CommandItem,
   CommandList,
 } from "@workspace/ui/components/command"
-import { HugeiconsIcon } from "@hugeicons/react"
+import type { Ref } from "react"
 import type { EditorCommand } from "@/lib/editor/commands"
 
 type SlashCommandListProps = {
   items: Array<EditorCommand>
   command: (item: EditorCommand) => void
+  ref?: Ref<SlashCommandListRef>
 }
 
 export type SlashCommandListRef = {
   onKeyDown: (props: { event: KeyboardEvent }) => boolean
 }
 
-export const SlashCommandList = forwardRef<
-  SlashCommandListRef,
-  SlashCommandListProps
->(({ items, command }, ref) => {
+export function SlashCommandList({
+  items,
+  command,
+  ref,
+}: SlashCommandListProps) {
   const [selection, setSelection] = useState({ items, index: 0 })
 
   let selectedIndex = selection.index
@@ -117,6 +120,6 @@ export const SlashCommandList = forwardRef<
       </CommandList>
     </Command>
   )
-})
+}
 
 SlashCommandList.displayName = "SlashCommandList"

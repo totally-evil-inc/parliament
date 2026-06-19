@@ -76,8 +76,9 @@ export function useOnboardingFlow(step: OnboardingStep) {
 
   const addInvitee = (email: string) => {
     const trimmed = email.trim().toLowerCase()
-    if (invitees.includes(trimmed)) return
-    setInvitees((prev) => [...prev, trimmed])
+    setInvitees((prev) =>
+      trimmed && !prev.includes(trimmed) ? [...prev, trimmed] : prev
+    )
   }
 
   const removeInvitee = (email: string) => {
