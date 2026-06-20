@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { JSONContent } from "@tiptap/core"
 import type { NodeViewProps } from "@tiptap/react"
 import type {
@@ -541,7 +541,7 @@ function HeaderLayout({
 
   return (
     <div className="flex items-start justify-between gap-8">
-      <div className="max-w-4xl space-y-6 text-left">
+      <div className="max-w-4xl min-w-0 flex-1 space-y-6 text-left">
         {HEADER_LOGO_PLACEHOLDER}
         {titleField}
       </div>
@@ -645,7 +645,7 @@ function DocumentTitleField({
     <div
       ref={containerRef}
       className={[
-        "block w-full bg-transparent [font-family:var(--document-heading-font-family)] text-4xl leading-tight font-bold tracking-tight wrap-break-word whitespace-pre-wrap text-[var(--document-foreground)] outline-none [&_.ProseMirror]:outline-none [&_p]:m-0 [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:h-0 [&_p.is-editor-empty:first-child::before]:text-[color-mix(in_oklab,var(--document-muted-foreground)_45%,transparent)] [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]",
+        "block min-h-12 w-full bg-transparent [font-family:var(--document-heading-font-family)] text-4xl leading-tight font-bold tracking-tight wrap-break-word whitespace-pre-wrap text-[var(--document-foreground)] outline-none [&_.ProseMirror]:min-h-12 [&_.ProseMirror]:outline-none [&_p]:m-0",
         align === "center" ? "text-center" : "text-left",
       ].join(" ")}
     >
@@ -654,6 +654,7 @@ function DocumentTitleField({
         content={content}
         fallbackText={value}
         placeholder="Document title..."
+        placeholderMode="overlay"
         onChange={onChange}
       />
     </div>
@@ -795,13 +796,19 @@ function HeaderRichTextField({
   fallbackText,
   onChange,
   placeholder,
+  placeholderMode = "inline",
 }: {
   ariaLabel: string
   content?: JSONContent
   fallbackText: string
   onChange: (value: string, content: JSONContent) => void
   placeholder: string
+  placeholderMode?: "inline" | "overlay"
 }) {
+  const initialContent = getRichTextContent(content, fallbackText)
+  const [isEmpty, setIsEmpty] = useState(
+    richTextToPlainText(initialContent).trim().length === 0
+  )
   const editor = useEditor(
     {
       extensions: [
@@ -814,11 +821,15 @@ function HeaderRichTextField({
           listItem: false,
           orderedList: false,
         }),
-        Placeholder.configure({
-          placeholder,
-        }),
+        ...(placeholderMode === "inline"
+          ? [
+              Placeholder.configure({
+                placeholder,
+              }),
+            ]
+          : []),
       ],
-      content: getRichTextContent(content, fallbackText),
+      content: initialContent,
       editorProps: {
         attributes: {
           "aria-label": ariaLabel,
@@ -832,6 +843,7 @@ function HeaderRichTextField({
       },
       onUpdate: ({ editor: updatedEditor }) => {
         const nextContent = updatedEditor.getJSON()
+        setIsEmpty(updatedEditor.isEmpty)
         onChange(richTextToPlainText(nextContent), nextContent)
       },
       immediatelyRender: false,
@@ -848,6 +860,8 @@ function HeaderRichTextField({
     if (JSON.stringify(currentContent) !== JSON.stringify(nextContent)) {
       editor.commands.setContent(nextContent, { emitUpdate: false })
     }
+
+    setIsEmpty(editor.isEmpty)
   }, [content, editor, fallbackText])
 
   useEffect(() => {
@@ -858,5 +872,14 @@ function HeaderRichTextField({
       .forEach((node) => node.setAttribute("data-placeholder", placeholder))
   }, [editor, placeholder])
 
-  return <EditorContent editor={editor} />
+  return (
+    <div className="relative">
+      <EditorContent editor={editor} />
+      {placeholderMode === "overlay" && isEmpty ? (
+        <div className="pointer-events-none absolute inset-x-0 top-0 text-[color-mix(in_oklab,var(--document-muted-foreground)_45%,transparent)]">
+          {placeholder}
+        </div>
+      ) : null}
+    </div>
+  )
 }
