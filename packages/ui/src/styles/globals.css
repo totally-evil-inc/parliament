@@ -6,8 +6,8 @@
 @import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
-@source "../../../apps/**/*.{ts,tsx}";
-@source "../../../components/**/*.{ts,tsx}";
+@source "../../../../apps/**/*.{ts,tsx}";
+@source "../../../document-editor/src/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
 :root {
@@ -169,43 +169,59 @@
 }
 
 @layer components {
-  .document-drag-handle,
-  .document-delete-handle {
+  .document-block-controls {
     z-index: 50;
-    width: 1.5rem;
-    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .document-block-controls-left {
+    cursor: grab;
+    translate: -0.5rem 0;
+  }
+
+  .document-block-controls-right {
+    translate: 0.5rem 0;
+  }
+
+  .document-block-control {
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 2rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    background: var(--background);
     color: var(--muted-foreground);
-    opacity: 0.72;
+    padding: 0;
+    box-shadow: var(--shadow-sm);
+    opacity: 0.88;
     transition:
       opacity 120ms ease,
       background-color 120ms ease,
-      color 120ms ease;
+      border-color 120ms ease,
+      color 120ms ease,
+      box-shadow 120ms ease;
   }
 
-  .document-drag-handle {
-    cursor: grab;
-  }
-
-  .document-delete-handle {
+  .document-block-insert-control,
+  .document-block-delete-control {
     cursor: pointer;
   }
 
-  .document-drag-handle-button,
-  .document-delete-handle-button {
-    width: 100%;
-    height: 100%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: inherit;
-    background: transparent;
-    color: inherit;
-    padding: 0;
+  .document-block-control:hover,
+  .document-block-control:focus-visible {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+    opacity: 1;
+  }
+
+  .document-block-control:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--ring) 45%, transparent);
+    outline-offset: 2px;
   }
 
   .document-drag-handle-grip {
@@ -217,23 +233,23 @@
     background-repeat: repeat;
   }
 
-  .document-drag-handle:hover,
-  .document-drag-handle:focus-visible,
-  .document-drag-handle[data-dragging="true"] {
+  .document-block-controls-left[data-dragging="true"]
+    .document-block-drag-control {
     background-color: var(--accent);
     color: var(--accent-foreground);
     opacity: 1;
   }
 
-  .document-delete-handle:hover,
-  .document-delete-handle:focus-visible {
+  .document-block-delete-control:hover,
+  .document-block-delete-control:focus-visible {
     background-color: color-mix(in oklab, var(--destructive) 12%, transparent);
+    border-color: color-mix(in oklab, var(--destructive) 24%, var(--border));
     color: var(--destructive);
     opacity: 1;
   }
 
-  .document-drag-handle:active,
-  .document-drag-handle[data-dragging="true"] {
+  .document-block-controls-left:active,
+  .document-block-controls-left[data-dragging="true"] {
     cursor: grabbing;
   }
 }

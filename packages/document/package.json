@@ -11,6 +11,7 @@
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
     "./proposal": "./src/proposal.ts",
+    "./presentation": "./src/presentation.ts",
     "./calculate": "./src/calculate.ts",
     "./render": "./src/render.ts",
     "./text": "./src/text.ts"

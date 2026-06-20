@@ -3,9 +3,9 @@ import { createFileRoute } from "@tanstack/react-router"
 import { buildProposalRenderModel } from "@workspace/document/render"
 import { createProposalDraft } from "@workspace/document/proposal"
 import { safeParseProposalDraft } from "@workspace/document/schema"
+import { defaultDocumentTemplate } from "@workspace/document/presentation"
 
 import { ProposalPrintView } from "@/features/documents/print/proposal-print-view"
-import { defaultDocumentTemplate } from "@/features/documents/editor/templates"
 
 export const Route = createFileRoute("/documents/print")({
   component: PrintRoute,

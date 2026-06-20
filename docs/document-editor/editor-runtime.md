@@ -79,18 +79,10 @@ occur within 750 ms.
 
 ## TipTap initialization
 
-Canonical blocks are converted before editor creation:
+`useProposalEditorRuntime` converts canonical blocks and creates the editor:
 
 ```ts
-const initialContent = compositionToTiptap(
-  store.getSnapshot().composition.blocks
-)
-
-const editor = useDocumentEditor({
-  documentId: store.getSnapshot().id,
-  content: initialContent,
-  definition: proposalDocumentDefinition,
-})
+const runtime = useProposalEditorRuntime({ store })
 ```
 
 `useDocumentEditorAdapter` creates TipTap with `immediatelyRender: false`. The
@@ -103,13 +95,11 @@ are the intended external update cases.
 
 ## Composition commits
 
-`DocumentEditorCanvas` subscribes to TipTap's `update` event and emits JSON.
-The route waits for a 300 ms quiet period, converts the JSON, and commits it:
+`DocumentEditorCanvas` emits TipTap updates to the package runtime. The runtime
+waits for a 300 ms quiet period, converts the JSON, and commits it:
 
 ```ts
-compositionTimerRef.current = setTimeout(() => {
-  store.commands.setComposition(tiptapToComposition(content))
-}, 300)
+runtime.onContentChange(content)
 ```
 
 This avoids mirroring the entire TipTap tree through route React state on every
@@ -126,7 +116,7 @@ structured changes enter the same history stack.
 
 Keyboard behavior:
 
-- `Ctrl/Cmd+Z` calls the route's canonical undo handler.
+- `Ctrl/Cmd+Z` calls the runtime's canonical undo handler.
 - `Ctrl/Cmd+Shift+Z` calls redo.
 - Pending prose is committed before undo.
 - After undo/redo, canonical composition is pushed into TipTap with
@@ -187,8 +177,10 @@ reintroduce shaded field backgrounds.
 - Undo/redo keyboard interception.
 - Slots for editor accessories and child UI.
 
-The app wrapper injects bubble menus, floating menus, table menus, drag handles,
-template styles, and workspace-specific commands.
+The package owns bubble/table menus, slash commands, drag handles, the proposal
+command catalog, portable NodeViews, toolbar, sidebar, and template controls.
+The app mounts these components and provides host adapters for confirmation,
+text input, IDs, assets/sources, and export/send workflows.
 
 ## Replacing a document
 

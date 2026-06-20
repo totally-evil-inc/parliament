@@ -1,9 +1,9 @@
 import katex from "katex"
-import type { JSONContent } from "@tiptap/core"
+import type { RichTextNode } from "@workspace/document/schema"
 import type * as React from "react"
 
 type RichTextRendererProps = {
-  content?: JSONContent | string | null
+  content?: RichTextNode | string | null
   fallback?: string
   className?: string
 }
@@ -25,7 +25,7 @@ export function RichTextRenderer({
                 content: [{ type: "text", text: fallback }],
               },
             ],
-          } satisfies JSONContent)
+          } satisfies RichTextNode)
         : null
 
   if (!richContent) return null
@@ -33,7 +33,7 @@ export function RichTextRenderer({
   return <div className={className}>{renderNode(richContent)}</div>
 }
 
-function renderNode(node: JSONContent): React.ReactNode {
+function renderNode(node: RichTextNode): React.ReactNode {
   const children = node.content?.map((child, index) => (
     <RenderNode key={index} node={child} />
   ))
@@ -64,8 +64,9 @@ function renderNode(node: JSONContent): React.ReactNode {
   if (node.type === "heading") {
     const level =
       node.attrs?.level === 1 || node.attrs?.level === 2 ? node.attrs.level : 3
-    const HeadingTag = `h${level}` as "h1" | "h2" | "h3"
-    return <HeadingTag>{children}</HeadingTag>
+    if (level === 1) return <h1>{children}</h1>
+    if (level === 2) return <h2>{children}</h2>
+    return <h3>{children}</h3>
   }
   if (node.type === "bulletList") return <ul>{children}</ul>
   if (node.type === "orderedList") return <ol>{children}</ol>
@@ -80,13 +81,13 @@ function renderNode(node: JSONContent): React.ReactNode {
   return children
 }
 
-function RenderNode({ node }: { node: JSONContent }) {
+function RenderNode({ node }: { node: RichTextNode }) {
   return <>{renderNode(node)}</>
 }
 
 function renderMarks(
   text: string,
-  marks: JSONContent["marks"] | undefined
+  marks: RichTextNode["marks"]
 ): React.ReactNode {
   return (marks ?? []).reduce<React.ReactNode>((node, mark) => {
     if (mark.type === "bold") return <strong>{node}</strong>

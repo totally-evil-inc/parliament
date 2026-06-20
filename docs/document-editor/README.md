@@ -31,6 +31,11 @@ Implemented:
 - Deterministic proposal pricing in integer minor units.
 - A route-scoped external draft store with revision tracking and history.
 - TipTap-to-composition adapters and schema-only shared extensions.
+- A package-owned proposal registry, presets, portable NodeViews, toolbar, and
+  sidebar.
+- A debounced proposal editor runtime with explicit flush and history control.
+- Enforced boundaries preventing app imports from the editor package and
+  TipTap runtime imports from the command app.
 - A validated render model and registry-driven proposal print view.
 - Unit tests for schemas, calculations, composition conversion, and store
   behavior.

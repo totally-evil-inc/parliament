@@ -57,6 +57,10 @@ It owns:
 - TipTap to canonical composition conversion.
 - Schema-only document, party-header, and pricing extensions.
 - Generic TipTap lifecycle and editor canvas components.
+- Generic editor command contracts and filtering.
+- Slash-command suggestion UI, bubble/table menus, and document drag handles.
+- Proposal registry, portable NodeViews, base presets, toolbar, and sidebar.
+- Debounced proposal runtime with flush, replacement, undo, and redo.
 
 Public subpaths:
 
@@ -65,6 +69,11 @@ Public subpaths:
 @workspace/document-editor/store
 @workspace/document-editor/react
 @workspace/document-editor/composition
+@workspace/document-editor/components
+@workspace/document-editor/definition
+@workspace/document-editor/host
+@workspace/document-editor/proposal
+@workspace/document-editor/runtime
 ```
 
 ### `apps/command`
@@ -73,8 +82,8 @@ The application owns product workflow and workspace integrations:
 
 - Route lifecycle and authenticated user defaults.
 - Theme selection and editor layout.
-- Proposal toolbar and sidebar catalogs.
-- React NodeViews and app UI controls.
+- Route layout and composition of package editor components.
+- Confirmation, input, ID, asset/source, and workflow adapters.
 - Confirmation dialogs and source lookup workflows.
 - Preview navigation and temporary browser transport.
 - Read-only React components for the current print view.
@@ -189,7 +198,10 @@ recalculate totals or inspect TipTap business node attributes.
 | Live draft state                     | `@workspace/document-editor/store`             |
 | Selection and rich-text transactions | TipTap                                         |
 | Node schema                          | `@workspace/document-editor` (`extensions.ts`) |
-| NodeView implementation              | `apps/command`                                 |
+| NodeView implementation              | `@workspace/document-editor`                   |
+| Menu and drag-handle mechanics       | `@workspace/document-editor`                   |
+| Editor command catalog               | `@workspace/document-editor`                   |
+| Export/send workflow policy          | `apps/command`                                 |
 | Theme selection                      | `apps/command`                                 |
 | Read normalization                   | `@workspace/document/render`                   |
 | Current HTML print components        | `apps/command`                                 |

@@ -1,10 +1,9 @@
 import { formatDateOnly, formatMoneyMinor } from "@workspace/document/calculate"
+import { getDocumentTemplateStyle } from "@workspace/document/presentation"
 import { RichTextRenderer } from "./rich-text-renderer"
 import type { DocumentBlock } from "@workspace/document/schema"
 import type { ProposalRenderModel } from "@workspace/document/render"
-import type { DocumentTemplate } from "@/features/documents/editor/types"
-
-import { getDocumentTemplateStyle } from "@/features/documents/editor/templates"
+import type { DocumentTemplate } from "@workspace/document/presentation"
 
 type BlockRendererProps = {
   block: DocumentBlock
