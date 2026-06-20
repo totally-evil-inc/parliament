@@ -7,11 +7,13 @@ import type { DocumentTemplate } from "@/features/documents/editor/types"
 
 import { DocumentBlockSidebar } from "@/features/documents/editor/document-block-sidebar"
 import { DocumentEditor } from "@/features/documents/editor/document-editor"
+import { createDocumentSnapshot } from "@/features/documents/editor/snapshot"
 import { getDefaultDocumentTemplateForScheme } from "@/features/documents/editor/templates"
 import { DocumentToolbar } from "@/features/documents/editor/document-toolbar"
 import { useDocumentEditor } from "@/features/documents/editor/use-document-editor"
 import { proposalDocumentDefinition } from "@/features/proposals/document-definition"
 import { useTheme } from "@/components/theme-provider"
+import { authClient } from "@/lib/auth-client"
 
 export const Route = createFileRoute("/_workspace/proposals/")({
   component: RouteComponent,
@@ -19,6 +21,7 @@ export const Route = createFileRoute("/_workspace/proposals/")({
 
 function RouteComponent() {
   const { resolved } = useTheme()
+  const session = authClient.useSession()
   const resolvedDefaultTemplate = React.useMemo(
     () => getDefaultDocumentTemplateForScheme(resolved),
     [resolved]
@@ -57,6 +60,45 @@ function RouteComponent() {
     templateCustomizedRef.current = false
   }, [resolvedDefaultTemplate])
 
+  const definition = React.useMemo(
+    () => ({
+      ...proposalDocumentDefinition,
+      toolbarActions: proposalDocumentDefinition.toolbarActions.map((action) =>
+        action.id === "export"
+          ? {
+              ...action,
+              command: () => {
+                if (!editor) return
+
+                const snapshot = createDocumentSnapshot({
+                  content: editor.getJSON(),
+                  definition: proposalDocumentDefinition,
+                  documentId: "proposal-draft",
+                  renderData: {
+                    signerName: session.data?.user.name ?? "",
+                    signerTitle: "Signature",
+                  },
+                  template,
+                })
+                const snapshotKey = `document-snapshot:${snapshot.documentId}:${snapshot.createdAt}`
+
+                window.sessionStorage.setItem(
+                  snapshotKey,
+                  JSON.stringify(snapshot)
+                )
+                window.open(
+                  `/documents/print?snapshotKey=${encodeURIComponent(snapshotKey)}`,
+                  "_blank",
+                  "noopener,noreferrer"
+                )
+              },
+            }
+          : action
+      ),
+    }),
+    [editor, session.data?.user.name, template]
+  )
+
   return (
     <div className="flex h-[calc(100svh-3rem)] min-h-0 w-full flex-col overflow-hidden bg-muted/30">
       <SidebarProvider
@@ -77,10 +119,7 @@ function RouteComponent() {
               onContentChange={setEditorContent}
               template={template}
             />
-            <DocumentToolbar
-              editor={editor}
-              definition={proposalDocumentDefinition}
-            />
+            <DocumentToolbar editor={editor} definition={definition} />
           </ScrollArea>
 
           <DocumentBlockSidebar

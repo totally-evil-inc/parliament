@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
+import { Route as DocumentsPrintRouteImport } from './routes/documents/print'
 import { Route as WorkspaceSettingsRouteRouteImport } from './routes/_workspace/settings/route'
 import { Route as AuthSignInIndexRouteImport } from './routes/auth/sign-in/index'
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
@@ -33,6 +34,11 @@ const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => WorkspaceRouteRoute,
+} as any)
+const DocumentsPrintRoute = DocumentsPrintRouteImport.update({
+  id: '/documents/print',
+  path: '/documents/print',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const WorkspaceSettingsRouteRoute = WorkspaceSettingsRouteRouteImport.update({
   id: '/settings',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof WorkspaceIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
   '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
+  '/documents/print': typeof DocumentsPrintRoute
   '/settings/$tab': typeof WorkspaceSettingsTabRoute
   '/integrations/': typeof WorkspaceIntegrationsIndexRoute
   '/proposals/': typeof WorkspaceProposalsIndexRoute
@@ -84,6 +91,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteRouteWithChildren
+  '/documents/print': typeof DocumentsPrintRoute
   '/': typeof WorkspaceIndexRoute
   '/settings/$tab': typeof WorkspaceSettingsTabRoute
   '/integrations': typeof WorkspaceIntegrationsIndexRoute
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/_workspace': typeof WorkspaceRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
   '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
+  '/documents/print': typeof DocumentsPrintRoute
   '/_workspace/': typeof WorkspaceIndexRoute
   '/_workspace/settings/$tab': typeof WorkspaceSettingsTabRoute
   '/_workspace/integrations/': typeof WorkspaceIntegrationsIndexRoute
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/settings'
+    | '/documents/print'
     | '/settings/$tab'
     | '/integrations/'
     | '/proposals/'
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/documents/print'
     | '/'
     | '/settings/$tab'
     | '/integrations'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/_workspace'
     | '/auth'
     | '/_workspace/settings'
+    | '/documents/print'
     | '/_workspace/'
     | '/_workspace/settings/$tab'
     | '/_workspace/integrations/'
@@ -144,6 +156,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   WorkspaceRouteRoute: typeof WorkspaceRouteRouteWithChildren
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
+  DocumentsPrintRoute: typeof DocumentsPrintRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -168,6 +181,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof WorkspaceIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/documents/print': {
+      id: '/documents/print'
+      path: '/documents/print'
+      fullPath: '/documents/print'
+      preLoaderRoute: typeof DocumentsPrintRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_workspace/settings': {
       id: '/_workspace/settings'
@@ -272,6 +292,7 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   WorkspaceRouteRoute: WorkspaceRouteRouteWithChildren,
   AuthRouteRoute: AuthRouteRouteWithChildren,
+  DocumentsPrintRoute: DocumentsPrintRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

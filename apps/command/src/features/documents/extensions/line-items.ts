@@ -17,6 +17,8 @@ export const LineItems = Node.create({
       taxRate: { default: 0 },
       discountEnabled: { default: false },
       taxEnabled: { default: false },
+      signerName: { default: "" },
+      signerTitle: { default: "" },
     }
   },
 
@@ -28,7 +30,10 @@ export const LineItems = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["div", mergeAttributes(HTMLAttributes, { "data-type": "line-items" })]
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-type": "line-items" }),
+    ]
   },
 
   addNodeView() {

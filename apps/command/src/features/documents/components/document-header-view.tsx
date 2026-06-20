@@ -5,27 +5,28 @@ import {
   PlusSignIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { NodeViewWrapper } from "@tiptap/react"
+import { Placeholder } from "@tiptap/extensions"
+import { EditorContent, NodeViewWrapper, useEditor } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
 import { Button } from "@workspace/ui/components/button"
 import { Calendar } from "@workspace/ui/components/calendar"
-import {
-  Editable,
-  EditableArea,
-  EditableInput,
-  EditablePreview,
-} from "@workspace/ui/components/editable"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { useEffect, useRef } from "react"
+import type { JSONContent } from "@tiptap/core"
 import type { NodeViewProps } from "@tiptap/react"
 import type {
   DocumentHeaderAttrs,
   DocumentHeaderCustomField,
   DocumentHeaderLayoutId,
 } from "@/features/documents/editor/types"
+import {
+  getRichTextContent,
+  richTextToPlainText,
+} from "@/features/documents/editor/rich-text"
 import { isDocumentHeaderLayoutId } from "@/features/documents/editor/header-layouts"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { createId } from "@/lib/create-id"
@@ -55,8 +56,18 @@ function getCustomFields(value: unknown): Array<DocumentHeaderCustomField> {
               : `custom-field-${field.label}-${field.value}`,
           label: field.label,
           value: field.value,
+          labelContent: isJsonContent(field.labelContent)
+            ? field.labelContent
+            : undefined,
+          valueContent: isJsonContent(field.valueContent)
+            ? field.valueContent
+            : undefined,
         }))
     : []
+}
+
+function isJsonContent(value: unknown): value is JSONContent {
+  return typeof value === "object" && value !== null && "type" in value
 }
 
 function parseDate(value: unknown) {
@@ -96,24 +107,63 @@ function getHeaderAttrs(attrs: Record<string, unknown>): DocumentHeaderAttrs {
       ? attrs.headerLayout
       : "mark-left-dates-right",
     title: typeof attrs.title === "string" ? attrs.title : "",
+    titleContent: isJsonContent(attrs.titleContent)
+      ? attrs.titleContent
+      : undefined,
     date: typeof attrs.date === "string" ? attrs.date : "",
     due: typeof attrs.due === "string" ? attrs.due : "",
     validUntil: typeof attrs.validUntil === "string" ? attrs.validUntil : "",
     fromName: typeof attrs.fromName === "string" ? attrs.fromName : "",
+    fromNameContent: isJsonContent(attrs.fromNameContent)
+      ? attrs.fromNameContent
+      : undefined,
     fromEmail: typeof attrs.fromEmail === "string" ? attrs.fromEmail : "",
+    fromEmailContent: isJsonContent(attrs.fromEmailContent)
+      ? attrs.fromEmailContent
+      : undefined,
     fromAddress: typeof attrs.fromAddress === "string" ? attrs.fromAddress : "",
+    fromAddressContent: isJsonContent(attrs.fromAddressContent)
+      ? attrs.fromAddressContent
+      : undefined,
     fromPhone: typeof attrs.fromPhone === "string" ? attrs.fromPhone : "",
+    fromPhoneContent: isJsonContent(attrs.fromPhoneContent)
+      ? attrs.fromPhoneContent
+      : undefined,
     fromWebsite: typeof attrs.fromWebsite === "string" ? attrs.fromWebsite : "",
+    fromWebsiteContent: isJsonContent(attrs.fromWebsiteContent)
+      ? attrs.fromWebsiteContent
+      : undefined,
     fromTaxId: typeof attrs.fromTaxId === "string" ? attrs.fromTaxId : "",
+    fromTaxIdContent: isJsonContent(attrs.fromTaxIdContent)
+      ? attrs.fromTaxIdContent
+      : undefined,
     fromCustomFields: getCustomFields(attrs.fromCustomFields),
     billToName: typeof attrs.billToName === "string" ? attrs.billToName : "",
+    billToNameContent: isJsonContent(attrs.billToNameContent)
+      ? attrs.billToNameContent
+      : undefined,
     billToEmail: typeof attrs.billToEmail === "string" ? attrs.billToEmail : "",
+    billToEmailContent: isJsonContent(attrs.billToEmailContent)
+      ? attrs.billToEmailContent
+      : undefined,
     billToAddress:
       typeof attrs.billToAddress === "string" ? attrs.billToAddress : "",
+    billToAddressContent: isJsonContent(attrs.billToAddressContent)
+      ? attrs.billToAddressContent
+      : undefined,
     billToPhone: typeof attrs.billToPhone === "string" ? attrs.billToPhone : "",
+    billToPhoneContent: isJsonContent(attrs.billToPhoneContent)
+      ? attrs.billToPhoneContent
+      : undefined,
     billToWebsite:
       typeof attrs.billToWebsite === "string" ? attrs.billToWebsite : "",
+    billToWebsiteContent: isJsonContent(attrs.billToWebsiteContent)
+      ? attrs.billToWebsiteContent
+      : undefined,
     billToTaxId: typeof attrs.billToTaxId === "string" ? attrs.billToTaxId : "",
+    billToTaxIdContent: isJsonContent(attrs.billToTaxIdContent)
+      ? attrs.billToTaxIdContent
+      : undefined,
     billToCustomFields: getCustomFields(attrs.billToCustomFields),
   }
 }
@@ -122,29 +172,43 @@ function DocumentHeaderView({ node, updateAttributes }: NodeViewProps) {
   const confirm = useConfirm()
   const {
     title,
+    titleContent,
     headerLayout,
     date,
     due,
     validUntil,
     fromName,
+    fromNameContent,
     fromEmail,
+    fromEmailContent,
     fromAddress,
+    fromAddressContent,
     fromPhone,
+    fromPhoneContent,
     fromWebsite,
+    fromWebsiteContent,
     fromTaxId,
+    fromTaxIdContent,
     fromCustomFields,
     billToName,
+    billToNameContent,
     billToEmail,
+    billToEmailContent,
     billToAddress,
+    billToAddressContent,
     billToPhone,
+    billToPhoneContent,
     billToWebsite,
+    billToWebsiteContent,
     billToTaxId,
+    billToTaxIdContent,
     billToCustomFields,
   } = getHeaderAttrs(node.attrs)
   const dueDate = due || validUntil
 
-  const handleChange = (key: string, value: string) => {
-    updateAttributes({ [key]: value })
+  const handleChange = (key: string, value: string, content?: JSONContent) => {
+    const contentKey = `${key}Content`
+    updateAttributes({ [key]: value, [contentKey]: content })
   }
 
   const handleDateChange = (key: DateFieldKey, value: string) => {
@@ -169,14 +233,26 @@ function DocumentHeaderView({ node, updateAttributes }: NodeViewProps) {
     key: "fromCustomFields" | "billToCustomFields",
     index: number,
     fieldKey: keyof DocumentHeaderCustomField,
-    value: string
+    value: string,
+    content?: JSONContent
   ) => {
     const fields =
       key === "fromCustomFields" ? fromCustomFields : billToCustomFields
 
     updateAttributes({
       [key]: fields.map((field, fieldIndex) =>
-        fieldIndex === index ? { ...field, [fieldKey]: value } : field
+        fieldIndex === index
+          ? {
+              ...field,
+              [fieldKey]: value,
+              ...(content && fieldKey === "label"
+                ? { labelContent: content }
+                : {}),
+              ...(content && fieldKey === "value"
+                ? { valueContent: content }
+                : {}),
+            }
+          : field
       ),
     })
   }
@@ -213,11 +289,14 @@ function DocumentHeaderView({ node, updateAttributes }: NodeViewProps) {
       <HeaderLayout
         layout={headerLayout}
         title={title}
+        titleContent={titleContent}
         date={date}
         dueDate={dueDate}
         onDateChange={(value) => handleDateChange("date", value)}
         onDueDateChange={(value) => handleDateChange("due", value)}
-        onTitleChange={(value) => handleChange("title", value)}
+        onTitleChange={(value, content) =>
+          handleChange("title", value, content)
+        }
       />
 
       <div className="grid grid-cols-2 gap-16 border-t border-[var(--document-border)] pt-8">
@@ -229,33 +308,39 @@ function DocumentHeaderView({ node, updateAttributes }: NodeViewProps) {
             <Field
               placeholder="Your business name"
               value={fromName}
-              onChange={(v) => handleChange("fromName", v)}
+              content={fromNameContent}
+              onChange={(v, content) => handleChange("fromName", v, content)}
               className="text-lg font-semibold"
             />
             <Field
               placeholder="email@company.com"
               value={fromEmail}
-              onChange={(v) => handleChange("fromEmail", v)}
+              content={fromEmailContent}
+              onChange={(v, content) => handleChange("fromEmail", v, content)}
             />
             <Field
               placeholder="Street address, City, State, ZIP"
               value={fromAddress}
-              onChange={(v) => handleChange("fromAddress", v)}
+              content={fromAddressContent}
+              onChange={(v, content) => handleChange("fromAddress", v, content)}
             />
             <Field
               placeholder="Phone"
               value={fromPhone}
-              onChange={(v) => handleChange("fromPhone", v)}
+              content={fromPhoneContent}
+              onChange={(v, content) => handleChange("fromPhone", v, content)}
             />
             <Field
               placeholder="Website"
               value={fromWebsite}
-              onChange={(v) => handleChange("fromWebsite", v)}
+              content={fromWebsiteContent}
+              onChange={(v, content) => handleChange("fromWebsite", v, content)}
             />
             <Field
               placeholder="Tax ID / VAT"
               value={fromTaxId}
-              onChange={(v) => handleChange("fromTaxId", v)}
+              content={fromTaxIdContent}
+              onChange={(v, content) => handleChange("fromTaxId", v, content)}
             />
 
             <CustomFields
@@ -289,33 +374,43 @@ function DocumentHeaderView({ node, updateAttributes }: NodeViewProps) {
             <Field
               placeholder="Search or type customer name"
               value={billToName}
-              onChange={(v) => handleChange("billToName", v)}
+              content={billToNameContent}
+              onChange={(v, content) => handleChange("billToName", v, content)}
               className="text-lg font-semibold"
             />
             <Field
               placeholder="client@email.com"
               value={billToEmail}
-              onChange={(v) => handleChange("billToEmail", v)}
+              content={billToEmailContent}
+              onChange={(v, content) => handleChange("billToEmail", v, content)}
             />
             <Field
               placeholder="Client address, City, State, ZIP"
               value={billToAddress}
-              onChange={(v) => handleChange("billToAddress", v)}
+              content={billToAddressContent}
+              onChange={(v, content) =>
+                handleChange("billToAddress", v, content)
+              }
             />
             <Field
               placeholder="Phone number"
               value={billToPhone}
-              onChange={(v) => handleChange("billToPhone", v)}
+              content={billToPhoneContent}
+              onChange={(v, content) => handleChange("billToPhone", v, content)}
             />
             <Field
               placeholder="Website"
               value={billToWebsite}
-              onChange={(v) => handleChange("billToWebsite", v)}
+              content={billToWebsiteContent}
+              onChange={(v, content) =>
+                handleChange("billToWebsite", v, content)
+              }
             />
             <Field
               placeholder="Tax ID / VAT Number"
               value={billToTaxId}
-              onChange={(v) => handleChange("billToTaxId", v)}
+              content={billToTaxIdContent}
+              onChange={(v, content) => handleChange("billToTaxId", v, content)}
             />
 
             <CustomFields
@@ -358,20 +453,31 @@ function HeaderLayout({
   onDueDateChange,
   onTitleChange,
   title,
+  titleContent,
 }: {
   date: string
   dueDate: string
   layout: DocumentHeaderLayoutId
   onDateChange: (value: string) => void
   onDueDateChange: (value: string) => void
-  onTitleChange: (value: string) => void
+  onTitleChange: (value: string, content: JSONContent) => void
   title: string
+  titleContent?: JSONContent
 }) {
   const titleField = (
-    <DocumentTitleField value={title} onChange={onTitleChange} />
+    <DocumentTitleField
+      value={title}
+      content={titleContent}
+      onChange={onTitleChange}
+    />
   )
   const centeredTitleField = (
-    <DocumentTitleField align="center" value={title} onChange={onTitleChange} />
+    <DocumentTitleField
+      align="center"
+      value={title}
+      content={titleContent}
+      onChange={onTitleChange}
+    />
   )
   const datesHorizontal = (
     <DateFields
@@ -516,37 +622,41 @@ function DateFields({
 
 function DocumentTitleField({
   align = "left",
+  content,
   value,
   onChange,
 }: {
   align?: "left" | "center"
+  content?: JSONContent
   value: string
-  onChange: (value: string) => void
+  onChange: (value: string, content: JSONContent) => void
 }) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const textarea = textareaRef.current
+    const container = containerRef.current
 
-    if (!textarea) return
+    if (!container) return
 
-    textarea.style.height = "auto"
-    textarea.style.height = `${textarea.scrollHeight}px`
+    container.style.minHeight = `${container.scrollHeight}px`
   }, [value])
 
   return (
-    <textarea
-      ref={textareaRef}
-      rows={1}
+    <div
+      ref={containerRef}
       className={[
-        "block w-full resize-none overflow-hidden bg-transparent [font-family:var(--document-heading-font-family)] text-4xl leading-tight font-bold tracking-tight wrap-break-word whitespace-pre-wrap text-[var(--document-foreground)] outline-none placeholder:text-[color-mix(in_oklab,var(--document-muted-foreground)_45%,transparent)]",
+        "block w-full bg-transparent [font-family:var(--document-heading-font-family)] text-4xl leading-tight font-bold tracking-tight wrap-break-word whitespace-pre-wrap text-[var(--document-foreground)] outline-none [&_.ProseMirror]:outline-none [&_p]:m-0 [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:h-0 [&_p.is-editor-empty:first-child::before]:text-[color-mix(in_oklab,var(--document-muted-foreground)_45%,transparent)] [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]",
         align === "center" ? "text-center" : "text-left",
       ].join(" ")}
-      placeholder="Document title..."
-      aria-label="Document title"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
+    >
+      <HeaderRichTextField
+        ariaLabel="Document title"
+        content={content}
+        fallbackText={value}
+        placeholder="Document title..."
+        onChange={onChange}
+      />
+    </div>
   )
 }
 
@@ -611,7 +721,8 @@ function CustomFields({
   onChange: (
     index: number,
     fieldKey: keyof DocumentHeaderCustomField,
-    value: string
+    value: string,
+    content?: JSONContent
   ) => void
   onRemove: (index: number) => void
 }) {
@@ -623,13 +734,15 @@ function CustomFields({
       <Field
         placeholder="Label"
         value={field.label}
-        onChange={(value) => onChange(index, "label", value)}
+        content={field.labelContent}
+        onChange={(value, content) => onChange(index, "label", value, content)}
         className="text-xs font-bold tracking-wider text-[var(--document-muted-foreground)]"
       />
       <Field
         placeholder="Value"
         value={field.value}
-        onChange={(value) => onChange(index, "value", value)}
+        content={field.valueContent}
+        onChange={(value, content) => onChange(index, "value", value, content)}
       />
       <Button
         type="button"
@@ -646,32 +759,104 @@ function CustomFields({
 }
 
 function Field({
+  content,
   placeholder,
   value,
   onChange,
   className,
 }: {
+  content?: JSONContent
   placeholder: string
   value: string
-  onChange: (v: string) => void
+  onChange: (value: string, content: JSONContent) => void
   className?: string
 }) {
   const fieldClassName = [
-    "min-h-6 w-full rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-0 py-0.5 text-sm text-[var(--document-foreground)] shadow-none transition-colors placeholder:text-[color-mix(in_oklab,var(--document-muted-foreground)_58%,transparent)] hover:border-[var(--document-border)] focus-visible:border-[var(--document-border)] focus-visible:outline-none focus-visible:ring-0 data-empty:text-[var(--document-muted-foreground)]",
+    "min-h-6 w-full rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-0 py-0.5 text-sm text-[var(--document-foreground)] shadow-none transition-colors hover:border-[var(--document-border)] focus-within:border-[var(--document-border)] [&_.ProseMirror]:outline-none [&_p]:m-0 [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:h-0 [&_p.is-editor-empty:first-child::before]:text-[color-mix(in_oklab,var(--document-muted-foreground)_58%,transparent)] [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]",
     className,
   ].join(" ")
 
   return (
-    <Editable
-      value={value}
-      onValueChange={onChange}
-      placeholder={placeholder}
-      className="gap-0"
-    >
-      <EditableArea className="block w-full">
-        <EditablePreview className={fieldClassName} />
-        <EditableInput className={fieldClassName} />
-      </EditableArea>
-    </Editable>
+    <div className={fieldClassName}>
+      <HeaderRichTextField
+        ariaLabel={placeholder}
+        content={content}
+        fallbackText={value}
+        placeholder={placeholder}
+        onChange={onChange}
+      />
+    </div>
   )
+}
+
+function HeaderRichTextField({
+  ariaLabel,
+  content,
+  fallbackText,
+  onChange,
+  placeholder,
+}: {
+  ariaLabel: string
+  content?: JSONContent
+  fallbackText: string
+  onChange: (value: string, content: JSONContent) => void
+  placeholder: string
+}) {
+  const editor = useEditor(
+    {
+      extensions: [
+        StarterKit.configure({
+          blockquote: false,
+          bulletList: false,
+          codeBlock: false,
+          heading: false,
+          horizontalRule: false,
+          listItem: false,
+          orderedList: false,
+        }),
+        Placeholder.configure({
+          placeholder,
+        }),
+      ],
+      content: getRichTextContent(content, fallbackText),
+      editorProps: {
+        attributes: {
+          "aria-label": ariaLabel,
+        },
+        handleKeyDown: (_view, event) => {
+          if (event.key !== "Enter" || event.shiftKey) return false
+
+          event.preventDefault()
+          return true
+        },
+      },
+      onUpdate: ({ editor: updatedEditor }) => {
+        const nextContent = updatedEditor.getJSON()
+        onChange(richTextToPlainText(nextContent), nextContent)
+      },
+      immediatelyRender: false,
+    },
+    []
+  )
+
+  useEffect(() => {
+    if (!editor) return
+
+    const nextContent = getRichTextContent(content, fallbackText)
+    const currentContent = editor.getJSON()
+
+    if (JSON.stringify(currentContent) !== JSON.stringify(nextContent)) {
+      editor.commands.setContent(nextContent, { emitUpdate: false })
+    }
+  }, [content, editor, fallbackText])
+
+  useEffect(() => {
+    if (!editor) return
+
+    editor.view.dom
+      .querySelectorAll("p")
+      .forEach((node) => node.setAttribute("data-placeholder", placeholder))
+  }, [editor, placeholder])
+
+  return <EditorContent editor={editor} />
 }

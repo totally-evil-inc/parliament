@@ -237,3 +237,48 @@
     cursor: grabbing;
   }
 }
+
+@layer utilities {
+  .document-print-root,
+  .document-print-root body {
+    overflow: auto;
+  }
+
+  .document-print-page,
+  .document-print-page * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .document-print-page table {
+    page-break-inside: auto;
+  }
+
+  .document-print-page tr,
+  .document-print-page .break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .document-print-page p {
+    overflow-wrap: anywhere;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 18mm;
+}
+
+@media print {
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  .document-print-canvas {
+    min-height: 0 !important;
+  }
+}

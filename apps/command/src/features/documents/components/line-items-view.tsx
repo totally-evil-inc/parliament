@@ -10,7 +10,6 @@ import {
 } from "@/features/documents/components/line-items-view/pricing"
 import { SignatureBillingNotes } from "@/features/documents/components/line-items-view/signature-billing-notes"
 import { TotalsAdjustments } from "@/features/documents/components/line-items-view/totals-adjustments"
-import { authClient } from "@/lib/auth-client"
 import { createId } from "@/lib/create-id"
 
 function LineItemsView({ node, updateAttributes }: NodeViewProps) {
@@ -20,10 +19,10 @@ function LineItemsView({ node, updateAttributes }: NodeViewProps) {
     taxRate = 0,
     discountEnabled = false,
     taxEnabled = false,
+    signerName = "",
+    signerTitle = "",
   } = node.attrs
-  const session = authClient.useSession()
   const confirm = useConfirm()
-  const signedInUserName = session.data?.user.name ?? ""
 
   const lineItems: Array<PricingItem> = Array.isArray(items) ? items : []
 
@@ -143,7 +142,8 @@ function LineItemsView({ node, updateAttributes }: NodeViewProps) {
             discountAmount={discountAmount}
             taxAmount={taxAmount}
             total={total}
-            signedInUserName={signedInUserName}
+            signerName={typeof signerName === "string" ? signerName : ""}
+            signerTitle={typeof signerTitle === "string" ? signerTitle : ""}
             updateAttributes={updateAttributes}
           />
         </div>

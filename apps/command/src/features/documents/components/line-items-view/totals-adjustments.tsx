@@ -15,7 +15,8 @@ type TotalsAdjustmentsProps = {
   discountAmount: number
   taxAmount: number
   total: number
-  signedInUserName: string
+  signerName: string
+  signerTitle: string
   updateAttributes: (attributes: Record<string, unknown>) => void
 }
 
@@ -28,7 +29,8 @@ export function TotalsAdjustments({
   discountAmount,
   taxAmount,
   total,
-  signedInUserName,
+  signerName,
+  signerTitle,
   updateAttributes,
 }: TotalsAdjustmentsProps) {
   return (
@@ -95,7 +97,16 @@ export function TotalsAdjustments({
       </div>
 
       <div className="pt-8">
-        <Signature signedInUserName={signedInUserName} />
+        <Signature
+          signerName={signerName}
+          signerTitle={signerTitle}
+          onSignerNameChange={(value) =>
+            updateAttributes({ signerName: value })
+          }
+          onSignerTitleChange={(value) =>
+            updateAttributes({ signerTitle: value })
+          }
+        />
       </div>
     </div>
   )
