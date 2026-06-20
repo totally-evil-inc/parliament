@@ -28,6 +28,22 @@ export type DocumentLayoutPreset = {
   preview: ReactNode
 }
 
+export type CustomizePreset = {
+  id: string
+  name: string
+  description?: string
+  preview?: ReactNode
+  attrs?: Record<string, unknown>
+}
+
+export type CustomizeGroup = {
+  id: string
+  label: string
+  description?: string
+  icon: EditorCommand["icon"]
+  presets: Array<CustomizePreset>
+}
+
 type DocumentBlockBase = {
   id: string
   label: string
