@@ -14,6 +14,11 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+} from "@workspace/ui/components/drawer"
 import { useSidebar } from "@workspace/ui/components/sidebar"
 import { cn } from "@workspace/ui/lib/utils"
 import { insertDocumentBlockFromDefinition } from "../core/definition"
@@ -58,23 +63,15 @@ export function DocumentBlockSidebar({
   onTemplateChange,
   onTemplateReset,
 }: DocumentBlockSidebarProps) {
-  const { isMobile, open, openMobile, setOpen, setOpenMobile } = useSidebar()
+  const { open, openMobile, setOpen, setOpenMobile } = useSidebar()
   const [activePanel, setActivePanel] =
     React.useState<SidebarPanel>("customize")
   const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(
     null
   )
-  const [headerLayoutState, setHeaderLayoutState] = React.useState<{
-    editor: Editor | null
-    override: DocumentHeaderLayoutId | null
-  }>({ editor, override: null })
-
-  let headerLayout = headerLayoutState.override ?? getHeaderLayout(editor)
-
-  if (headerLayoutState.editor !== editor) {
-    headerLayout = getHeaderLayout(editor)
-    setHeaderLayoutState({ editor, override: null })
-  }
+  const [headerLayoutOverride, setHeaderLayoutOverride] =
+    React.useState<DocumentHeaderLayoutId | null>(null)
+  const headerLayout = headerLayoutOverride ?? getHeaderLayout(editor)
 
   const blocks = React.useMemo(
     () =>
@@ -88,6 +85,21 @@ export function DocumentBlockSidebar({
     return blocks.find((block) => block.id === selectedBlockId)
   }, [blocks, selectedBlockId])
 
+  React.useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)")
+    const closeMobileDrawer = () => {
+      if (media.matches) setOpenMobile(false)
+    }
+
+    closeMobileDrawer()
+    media.addEventListener("change", closeMobileDrawer)
+    return () => media.removeEventListener("change", closeMobileDrawer)
+  }, [setOpenMobile])
+
+  React.useEffect(() => {
+    setHeaderLayoutOverride(null)
+  }, [editor])
+
   const handleInsertLayout = (
     block: InsertableDocumentBlockDefinition | SingletonDocumentBlockDefinition,
     layoutId?: string
@@ -96,6 +108,7 @@ export function DocumentBlockSidebar({
 
     const layout = block.layouts?.find((item) => item.id === layoutId)
     insertDocumentBlockFromDefinition({ editor, definition, block, layout })
+    closeSidebar()
   }
 
   const handleSelectBlock = (block: DocumentBlockDefinition) => {
@@ -122,48 +135,88 @@ export function DocumentBlockSidebar({
   }
 
   const updateHeaderLayout = (layout: DocumentHeaderLayoutId) => {
-    setHeaderLayoutState({ editor, override: layout })
+    setHeaderLayoutOverride(layout)
     updateDocumentHeaderLayout(editor, layout)
   }
 
-  const visible = isMobile ? openMobile : open
   const closeSidebar = () => {
-    if (isMobile) {
-      setOpenMobile(false)
-      return
-    }
-
     setOpen(false)
+    setOpenMobile(false)
   }
 
-  return (
-    <aside
-      aria-hidden={!visible}
-      className={cn(
-        "absolute inset-y-0 right-0 z-30 flex w-[min(var(--sidebar-width),calc(100%-1rem))] overflow-hidden p-3 text-foreground transition-[opacity,transform] duration-200 ease-linear md:relative md:z-auto md:w-(--sidebar-width) md:shrink-0 md:transition-[width,padding,opacity]",
-        visible
-          ? "translate-x-0 opacity-100"
-          : "pointer-events-none translate-x-full opacity-0 md:w-0 md:translate-x-0 md:p-0"
-      )}
-    >
-      <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-background/95 shadow-2xl backdrop-blur-xl">
-        {selectedBlock && selectedBlock.kind !== "action" ? (
-          <>
-            <div className="flex shrink-0 flex-row items-center justify-between gap-3 border-b border-border/70 px-4 py-4">
-              <button
-                type="button"
-                onClick={() => setSelectedBlockId(null)}
-                className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <HugeiconsIcon
-                  icon={ArrowLeft01Icon}
-                  className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
-                />
-                Back
-              </button>
-              <div className="absolute left-1/2 -translate-x-1/2">
-                <span className="text-sm font-semibold">
-                  {selectedBlock.label}
+  const sidebarContent = (
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-background/95 shadow-2xl backdrop-blur-xl">
+      {selectedBlock && selectedBlock.kind !== "action" ? (
+        <>
+          <div className="flex shrink-0 flex-row items-center justify-between gap-3 border-b border-border/70 px-4 py-4">
+            <button
+              type="button"
+              onClick={() => setSelectedBlockId(null)}
+              className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <HugeiconsIcon
+                icon={ArrowLeft01Icon}
+                className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
+              />
+              Back
+            </button>
+            <div className="absolute left-1/2 -translate-x-1/2">
+              <span className="text-sm font-semibold">
+                {selectedBlock.label}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={closeSidebar}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
+            >
+              <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden p-4">
+            <ScrollArea className="relative min-h-0 flex-1 overflow-hidden">
+              <div className="space-y-4">
+                <div className="px-1 text-xs text-muted-foreground/85">
+                  Select a layout structure to insert into your{" "}
+                  {definition.title.toLowerCase()}.
+                </div>
+                <div className="space-y-3">
+                  {selectedBlock.layouts?.map((layout) => (
+                    <button
+                      type="button"
+                      key={layout.id}
+                      onClick={() =>
+                        handleInsertLayout(selectedBlock, layout.id)
+                      }
+                      className="group w-full rounded-xl border border-border/60 bg-background/50 p-3.5 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
+                    >
+                      <div className="mb-3.5 rounded-lg border border-border/30 bg-muted/15 p-2 transition-all group-hover:bg-muted/25">
+                        {layout.preview}
+                      </div>
+                      <h4 className="text-sm leading-none font-bold">
+                        {layout.name}
+                      </h4>
+                      <p className="mt-1 text-xs leading-normal text-muted-foreground">
+                        {layout.description}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </ScrollArea>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex shrink-0 flex-col gap-3 border-b border-border/70 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-bold">
+                  {definition.title} Builder
                 </span>
               </div>
               <button
@@ -174,97 +227,187 @@ export function DocumentBlockSidebar({
                 <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
               </button>
             </div>
+            <div className="flex rounded-xl border border-border/15 bg-muted/65 p-1">
+              <SidebarTabButton
+                active={activePanel === "customize"}
+                onClick={() => openPanel("customize")}
+              >
+                Customize
+              </SidebarTabButton>
+              <SidebarTabButton
+                active={activePanel === "blocks"}
+                onClick={() => openPanel("blocks")}
+              >
+                Blocks
+              </SidebarTabButton>
+            </div>
+          </div>
 
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden p-4">
-              <ScrollArea className="relative min-h-0 flex-1 overflow-hidden">
-                <div className="space-y-4">
-                  <div className="px-1 text-xs text-muted-foreground/85">
-                    Select a layout structure to insert into your{" "}
-                    {definition.title.toLowerCase()}.
-                  </div>
-                  <div className="space-y-3">
-                    {selectedBlock.layouts?.map((layout) => (
-                      <button
-                        type="button"
-                        key={layout.id}
-                        onClick={() =>
-                          handleInsertLayout(selectedBlock, layout.id)
-                        }
-                        className="group w-full rounded-xl border border-border/60 bg-background/50 p-3.5 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
-                      >
-                        <div className="mb-3.5 rounded-lg border border-border/30 bg-muted/15 p-2 transition-all group-hover:bg-muted/25">
-                          {layout.preview}
-                        </div>
-                        <h4 className="text-sm leading-none font-bold">
-                          {layout.name}
-                        </h4>
-                        <p className="mt-1 text-xs leading-normal text-muted-foreground">
-                          {layout.description}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </ScrollArea>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex shrink-0 flex-col gap-3 border-b border-border/70 px-4 py-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-                    <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-bold">
-                    {definition.title} Builder
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={closeSidebar}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
-                >
-                  <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="flex rounded-xl border border-border/15 bg-muted/65 p-1">
-                <SidebarTabButton
-                  active={activePanel === "customize"}
-                  onClick={() => openPanel("customize")}
-                >
-                  Customize
-                </SidebarTabButton>
-                <SidebarTabButton
-                  active={activePanel === "blocks"}
-                  onClick={() => openPanel("blocks")}
-                >
-                  Blocks
-                </SidebarTabButton>
-              </div>
-            </div>
+          <div className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
+            {activePanel === "customize" ? (
+              <DesignPanel
+                defaultTemplate={defaultTemplate}
+                headerLayout={headerLayout}
+                template={template}
+                onHeaderLayoutChange={updateHeaderLayout}
+                onReset={onTemplateReset}
+                onTokenChange={updateToken}
+              />
+            ) : (
+              <BlocksPanel
+                blocks={blocks}
+                onSelectBlock={handleSelectBlock}
+              />
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
 
-            <div className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
-              {activePanel === "customize" ? (
-                <DesignPanel
-                  defaultTemplate={defaultTemplate}
-                  headerLayout={headerLayout}
-                  template={template}
-                  onHeaderLayoutChange={updateHeaderLayout}
-                  onReset={onTemplateReset}
-                  onTokenChange={updateToken}
-                />
-              ) : (
-                <BlocksPanel
-                  blocks={blocks}
-                  onSelectBlock={handleSelectBlock}
-                />
-              )}
+  const mobileSidebarContent = (
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-background/95 shadow-2xl backdrop-blur-xl">
+      {selectedBlock && selectedBlock.kind !== "action" ? (
+        <>
+          <div className="flex shrink-0 flex-row items-center justify-between gap-3 border-b border-border/70 px-4 py-4">
+            <button
+              type="button"
+              onClick={() => setSelectedBlockId(null)}
+              className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <HugeiconsIcon
+                icon={ArrowLeft01Icon}
+                className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
+              />
+              Back
+            </button>
+            <div className="absolute left-1/2 -translate-x-1/2">
+              <span className="text-sm font-semibold">
+                {selectedBlock.label}
+              </span>
             </div>
-          </>
+            <button
+              type="button"
+              onClick={closeSidebar}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
+            >
+              <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
+            <div className="space-y-4">
+              <div className="px-1 text-xs text-muted-foreground/85">
+                Select a layout structure to insert into your{" "}
+                {definition.title.toLowerCase()}.
+              </div>
+              <div className="space-y-3">
+                {selectedBlock.layouts?.map((layout) => (
+                  <button
+                    type="button"
+                    key={layout.id}
+                    onClick={() =>
+                      handleInsertLayout(selectedBlock, layout.id)
+                    }
+                    className="group w-full rounded-xl border border-border/60 bg-background/50 p-3.5 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
+                  >
+                    <div className="mb-3.5 rounded-lg border border-border/30 bg-muted/15 p-2 transition-all group-hover:bg-muted/25">
+                      {layout.preview}
+                    </div>
+                    <h4 className="text-sm leading-none font-bold">
+                      {layout.name}
+                    </h4>
+                    <p className="mt-1 text-xs leading-normal text-muted-foreground">
+                      {layout.description}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex shrink-0 flex-col gap-3 border-b border-border/70 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-bold">
+                  {definition.title} Builder
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={closeSidebar}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
+              >
+                <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex rounded-xl border border-border/15 bg-muted/65 p-1">
+              <SidebarTabButton
+                active={activePanel === "customize"}
+                onClick={() => openPanel("customize")}
+              >
+                Customize
+              </SidebarTabButton>
+              <SidebarTabButton
+                active={activePanel === "blocks"}
+                onClick={() => openPanel("blocks")}
+              >
+                Blocks
+              </SidebarTabButton>
+            </div>
+          </div>
+
+          <div className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+            {activePanel === "customize" ? (
+              <MobileDesignPanel
+                defaultTemplate={defaultTemplate}
+                headerLayout={headerLayout}
+                template={template}
+                onHeaderLayoutChange={updateHeaderLayout}
+                onReset={onTemplateReset}
+                onTokenChange={updateToken}
+              />
+            ) : (
+              <MobileBlocksPanel
+                blocks={blocks}
+                onSelectBlock={handleSelectBlock}
+              />
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+
+  return (
+    <>
+      <aside
+        aria-hidden={!open}
+        className={cn(
+          "absolute inset-y-0 right-0 z-30 hidden w-[min(var(--sidebar-width),calc(100%-1rem))] overflow-hidden p-3 text-foreground transition-[opacity,transform] duration-200 ease-linear md:relative md:z-auto md:flex md:w-(--sidebar-width) md:shrink-0 md:transition-[width,padding,opacity]",
+          open
+            ? "translate-x-0 opacity-100"
+            : "pointer-events-none translate-x-full opacity-0 md:w-0 md:translate-x-0 md:p-0"
         )}
-      </div>
-    </aside>
+      >
+        {sidebarContent}
+      </aside>
+      <Drawer
+        open={openMobile}
+        onOpenChange={setOpenMobile}
+        direction="bottom"
+      >
+        <DrawerContent className="h-[70vh] max-h-[70vh] overflow-hidden">
+          <DrawerTitle className="sr-only">Document builder</DrawerTitle>
+          {mobileSidebarContent}
+        </DrawerContent>
+      </Drawer>
+    </>
   )
 }
 
@@ -342,6 +485,58 @@ function BlocksPanel({
         ))}
       </div>
     </ScrollArea>
+  )
+}
+
+function MobileBlocksPanel({
+  blocks,
+  onSelectBlock,
+}: {
+  blocks: Array<DocumentBlockDefinition>
+  onSelectBlock: (block: DocumentBlockDefinition) => void
+}) {
+  return (
+    <div className="overflow-y-auto px-4">
+      <div className="grid grid-cols-1 gap-3 pb-4">
+        {blocks.map((block) => (
+          <button
+            type="button"
+            key={block.id}
+            onClick={() => onSelectBlock(block)}
+            className="group w-full rounded-xl border border-border/60 bg-background/50 p-3 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
+          >
+            <div className="flex w-full items-center justify-between">
+              <div className="flex items-center gap-2">
+                <HugeiconsIcon
+                  icon={block.icon}
+                  className="h-4 w-4 text-muted-foreground"
+                />
+                <span className="text-sm font-bold text-foreground">
+                  {block.label}
+                </span>
+              </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="2.5"
+                stroke="currentColor"
+                className="h-3.5 w-3.5 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-foreground"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                />
+              </svg>
+            </div>
+            <div className="mt-1.5 rounded-lg border border-border/30 bg-muted/15 p-2 transition-all group-hover:bg-muted/25">
+              {block.preview}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -462,6 +657,126 @@ function DesignPanel({
         </div>
       </div>
     </ScrollArea>
+  )
+}
+
+function MobileDesignPanel({
+  defaultTemplate,
+  headerLayout,
+  template,
+  onHeaderLayoutChange,
+  onReset,
+  onTokenChange,
+}: {
+  defaultTemplate: DocumentTemplate
+  headerLayout: DocumentHeaderLayoutId
+  template: DocumentTemplate
+  onHeaderLayoutChange: (layout: DocumentHeaderLayoutId) => void
+  onReset: () => void
+  onTokenChange: <TKey extends keyof DocumentTemplateTokens>(
+    key: TKey,
+    value: DocumentTemplateTokens[TKey]
+  ) => void
+}) {
+  return (
+    <div className="overflow-y-auto px-1">
+      <div className="space-y-6 pb-4">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Customize</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {template.name}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onReset}
+            className="rounded-md px-2 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            Reset
+          </button>
+        </div>
+
+        <DesignSection title="Colors">
+          <div className="space-y-3">
+            {documentColorTokenOptions.map((option) => (
+              <ColorTokenField
+                key={option.key}
+                colors={option.colors}
+                label={option.label}
+                value={template.tokens[option.key]}
+                onChange={(value) => onTokenChange(option.key, value)}
+              />
+            ))}
+          </div>
+        </DesignSection>
+
+        <DesignSection title="Header layout">
+          <div className="grid grid-cols-2 gap-2">
+            {documentHeaderLayouts.map((layout) => (
+              <button
+                key={layout.id}
+                type="button"
+                onClick={() => onHeaderLayoutChange(layout.id)}
+                className={cn(
+                  "rounded-lg border p-2 text-left transition-colors hover:bg-muted/50",
+                  headerLayout === layout.id
+                    ? "border-primary bg-primary/10"
+                    : "border-border/60 bg-background/50"
+                )}
+              >
+                <HeaderLayoutPreview layout={layout.id} />
+                <div className="mt-2 text-xs font-semibold text-foreground">
+                  {layout.name}
+                </div>
+                <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-muted-foreground">
+                  {layout.description}
+                </div>
+              </button>
+            ))}
+          </div>
+        </DesignSection>
+
+        <DesignSection title="Typography">
+          <SelectTokenField
+            label="Body font"
+            value={template.tokens.fontFamily}
+            onChange={(value) => onTokenChange("fontFamily", value)}
+            options={documentFontOptions}
+          />
+          <SelectTokenField
+            label="Heading font"
+            value={template.tokens.headingFontFamily}
+            onChange={(value) => onTokenChange("headingFontFamily", value)}
+            options={documentFontOptions}
+          />
+        </DesignSection>
+
+        <DesignSection title="Layout">
+          <SelectTokenField
+            label="Spacing"
+            value={template.tokens.spacingScale}
+            onChange={(value) => onTokenChange("spacingScale", value)}
+            options={documentSpacingOptions}
+          />
+          <SelectTokenField
+            label="Radius"
+            value={template.tokens.radius}
+            onChange={(value) => onTokenChange("radius", value)}
+            options={documentRadiusOptions}
+          />
+        </DesignSection>
+
+        <div className="rounded-xl border border-border/60 bg-background/50 p-3">
+          <div className="text-xs font-semibold text-foreground">
+            Default template
+          </div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            Reset restores {defaultTemplate.name}.
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

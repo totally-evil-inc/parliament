@@ -73,8 +73,8 @@ export function DocumentEditor({
 
   return (
     <DocumentEditorCanvas
-      className="min-h-full p-6 sm:p-10 lg:p-14"
-      contentClassName="relative mx-auto max-w-5xl pb-32"
+      className="min-h-full min-w-0 overflow-x-hidden px-2 py-4 sm:px-10 lg:px-14"
+      contentClassName="relative mx-auto w-full min-w-0 max-w-5xl overflow-x-hidden pb-32 md:pb-10"
       editor={editor}
       onContentChange={onContentChange}
       onRedo={onRedo}

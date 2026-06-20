@@ -24,7 +24,7 @@ export function DocumentToolbar({
   definition,
   onAction,
 }: DocumentToolbarProps) {
-  const { toggleSidebar } = useSidebar()
+  const { setOpenMobile, toggleSidebar } = useSidebar()
   const host = useDocumentEditorHost()
 
   const runBlock = (block: DocumentBlockDefinition) => {
@@ -71,7 +71,7 @@ export function DocumentToolbar({
 
   return (
     <TooltipProvider delay={0}>
-      <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2">
+      <div className="fixed bottom-6 left-1/2 z-50 hidden -translate-x-1/2 items-center gap-2 md:flex">
         <div className="flex items-center gap-1 rounded-2xl border bg-background/80 p-1.5 shadow-2xl backdrop-blur-xl transition-all hover:bg-background">
           {definition.toolbarActions.map((action) => (
             <Tooltip key={action.id}>
@@ -95,6 +95,58 @@ export function DocumentToolbar({
           ))}
         </div>
       </div>
+      <MobileCompactDock
+        definition={definition}
+        onAction={onAction ?? host.onAction}
+        openDrawer={() => setOpenMobile(true)}
+      />
     </TooltipProvider>
+  )
+}
+
+function MobileCompactDock({
+  definition,
+  openDrawer,
+  onAction,
+}: {
+  definition: DocumentDefinition
+  openDrawer: () => void
+  onAction?: (actionId: string) => void | Promise<void>
+}) {
+  const compactActions = definition.toolbarActions.filter(
+    (action) => action.togglesSidebar || action.id === "export"
+  )
+
+  const handleAction = (actionId: string) => {
+    const action = definition.toolbarActions.find((a) => a.id === actionId)
+    if (!action) return
+
+    if (action.togglesSidebar) {
+      openDrawer()
+      return
+    }
+
+    if (action.hostAction) {
+      void onAction?.(action.id)
+    }
+  }
+
+  return (
+    <div className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 md:hidden">
+      <div className="flex items-center gap-1 rounded-2xl border bg-background/80 p-1.5 shadow-2xl backdrop-blur-xl">
+        {compactActions.map((action) => (
+          <Button
+            key={action.id}
+            variant="ghost"
+            size="icon"
+            onClick={() => handleAction(action.id)}
+            className="h-9 w-9 rounded-xl hover:bg-accent hover:text-accent-foreground"
+          >
+            <HugeiconsIcon icon={action.icon} className="h-4 w-4" />
+            <span className="sr-only">{action.label}</span>
+          </Button>
+        ))}
+      </div>
+    </div>
   )
 }

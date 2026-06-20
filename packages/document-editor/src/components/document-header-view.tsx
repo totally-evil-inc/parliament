@@ -88,7 +88,7 @@ function DocumentHeaderView({ node }: NodeViewProps) {
         }
       />
 
-      <div className="grid grid-cols-2 gap-16 border-t border-[var(--document-border)] pt-8">
+      <div className="grid grid-cols-1 gap-8 border-t border-[var(--document-border)] pt-8 md:grid-cols-2 md:gap-16">
         <PartyFields
           label="From"
           party={data.seller}
@@ -160,7 +160,7 @@ function HeaderLayout({
   if (layout === "editorial-band") {
     return (
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-8">
+        <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:gap-8">
           <LogoPlaceholder />
           {dates}
         </div>
@@ -169,7 +169,7 @@ function HeaderLayout({
     )
   }
   return (
-    <div className="flex items-start justify-between gap-8">
+    <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:gap-8">
       <div className="max-w-4xl min-w-0 flex-1 space-y-6">
         <LogoPlaceholder />
         {titleField}
@@ -227,7 +227,7 @@ function DateFields({
   validUntil: string
 }) {
   return (
-    <div className="grid w-fit min-w-64 grid-cols-2 gap-6">
+    <div className="grid w-full min-w-0 grid-cols-2 gap-4 sm:w-fit sm:min-w-64 sm:gap-6">
       <DatePicker label="Date" value={date} onChange={onDateChange} />
       <DatePicker
         label="Valid Until"
@@ -338,7 +338,7 @@ function PartyFields({
         {party.customFields.map((field, index) => (
           <div
             key={field.id}
-            className="group grid grid-cols-[0.4fr_0.6fr_auto] items-center gap-2"
+            className="group grid grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)_auto] items-center gap-2"
           >
             <PartyInput
               placeholder="Label"

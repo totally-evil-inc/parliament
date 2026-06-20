@@ -25,7 +25,7 @@ export function EditorBubbleMenu({
   return (
     <BubbleMenu
       editor={editor}
-      className="flex items-center gap-1 rounded-md border bg-popover p-1 shadow-md"
+      className="flex items-center gap-1 rounded-md border bg-popover p-1 shadow-md max-w-[90vw] overflow-x-auto no-scrollbar"
     >
       {commands.map((command) => (
         <Toggle

@@ -25,6 +25,7 @@ export function DocumentDragHandle({
 }) {
   const activePosRef = React.useRef<number | null>(null)
   const [insertMenuOpen, setInsertMenuOpen] = React.useState(false)
+
   const rules = React.useMemo<Array<DragHandleRule>>(
     () => [
       { id: "topLevelOnly", evaluate: ({ depth }) => (depth > 1 ? 1000 : 0) },
@@ -90,7 +91,7 @@ export function DocumentDragHandle({
   return (
     <>
       <DragHandle
-        className="document-block-controls document-block-controls-left"
+        className="document-block-controls document-block-controls-left hidden md:flex"
         editor={editor}
         pluginKey="document-drag-handle"
         computePositionConfig={{
@@ -140,7 +141,7 @@ export function DocumentDragHandle({
         </Popover>
       </DragHandle>
       <DragHandle
-        className="document-block-controls document-block-controls-right"
+        className="document-block-controls document-block-controls-right hidden md:flex"
         editor={editor}
         pluginKey="document-delete-handle"
         computePositionConfig={{
