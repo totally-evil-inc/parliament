@@ -175,8 +175,8 @@ export function DocumentBlockSidebar({
               </button>
             </div>
 
-            <div className="relative flex min-h-0 flex-col overflow-scroll p-4">
-              <ScrollArea className="relative min-h-0 flex-1">
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden p-4">
+              <ScrollArea className="relative min-h-0 flex-1 overflow-hidden">
                 <div className="space-y-4">
                   <div className="px-1 text-xs text-muted-foreground/85">
                     Select a layout structure to insert into your{" "}
@@ -244,7 +244,7 @@ export function DocumentBlockSidebar({
               </div>
             </div>
 
-            <div className="relative flex min-h-0 flex-col gap-4 p-4">
+            <div className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
               {activePanel === "customize" ? (
                 <DesignPanel
                   defaultTemplate={defaultTemplate}

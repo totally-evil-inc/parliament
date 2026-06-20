@@ -2,12 +2,17 @@ import * as React from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { SidebarProvider } from "@workspace/ui/components/sidebar"
-import type { JSONContent } from "@tiptap/core"
+import { createProposalDraft } from "@workspace/document/proposal"
+import {
+  compositionToTiptap,
+  tiptapToComposition,
+} from "@workspace/document-editor/composition"
+import { ProposalDraftProvider } from "@workspace/document-editor/react"
+import { createProposalDraftStore } from "@workspace/document-editor/store"
 import type { DocumentTemplate } from "@/features/documents/editor/types"
 
 import { DocumentBlockSidebar } from "@/features/documents/editor/document-block-sidebar"
 import { DocumentEditor } from "@/features/documents/editor/document-editor"
-import { createDocumentSnapshot } from "@/features/documents/editor/snapshot"
 import { getDefaultDocumentTemplateForScheme } from "@/features/documents/editor/templates"
 import { DocumentToolbar } from "@/features/documents/editor/document-toolbar"
 import { useDocumentEditor } from "@/features/documents/editor/use-document-editor"
@@ -20,45 +25,110 @@ export const Route = createFileRoute("/_workspace/proposals/")({
 })
 
 function RouteComponent() {
+  const store = React.useMemo(
+    () =>
+      createProposalDraftStore(createProposalDraft({ id: "proposal-draft" })),
+    []
+  )
+
+  return (
+    <ProposalDraftProvider store={store}>
+      <ProposalEditorScreen store={store} />
+    </ProposalDraftProvider>
+  )
+}
+
+function ProposalEditorScreen({
+  store,
+}: {
+  store: ReturnType<typeof createProposalDraftStore>
+}) {
   const { resolved } = useTheme()
   const session = authClient.useSession()
   const resolvedDefaultTemplate = React.useMemo(
     () => getDefaultDocumentTemplateForScheme(resolved),
     [resolved]
   )
-  const [editorContent, setEditorContent] = React.useState<JSONContent>(
-    proposalDocumentDefinition.initialContent
+  const [customTemplate, setCustomTemplate] =
+    React.useState<DocumentTemplate | null>(null)
+  const template = customTemplate ?? resolvedDefaultTemplate
+  const compositionTimerRef = React.useRef<ReturnType<typeof setTimeout>>(null)
+  const initialContent = React.useMemo(
+    () => compositionToTiptap(store.getSnapshot().composition.blocks),
+    [store]
   )
-  const [template, setTemplate] = React.useState<DocumentTemplate>(
-    () => resolvedDefaultTemplate
-  )
-  const templateCustomizedRef = React.useRef(false)
 
   const editor = useDocumentEditor({
-    documentId: proposalDocumentDefinition.type,
-    content: editorContent,
-    onContentChange: setEditorContent,
+    documentId: store.getSnapshot().id,
+    content: initialContent,
     definition: proposalDocumentDefinition,
   })
 
   React.useEffect(() => {
-    if (templateCustomizedRef.current) return
+    const name = session.data?.user.name
+    if (!name || store.getSnapshot().data.seller.name) return
+    store.commands.updateParty("seller", { name })
+    store.commands.updatePricing((pricing) => ({
+      ...pricing,
+      signerName: pricing.signerName || name,
+    }))
+  }, [session.data?.user.name, store])
 
-    setTemplate(resolvedDefaultTemplate)
-  }, [resolvedDefaultTemplate])
+  React.useEffect(() => {
+    store.commands.setTemplate({
+      id: template.id,
+      version: 1,
+      overrides: template.tokens,
+    })
+  }, [store, template])
 
-  const handleTemplateChange = React.useCallback(
-    (nextTemplate: DocumentTemplate) => {
-      setTemplate(nextTemplate)
-      templateCustomizedRef.current = true
+  React.useEffect(
+    () => () => {
+      if (compositionTimerRef.current) clearTimeout(compositionTimerRef.current)
     },
     []
   )
 
-  const handleTemplateReset = React.useCallback(() => {
-    setTemplate(resolvedDefaultTemplate)
-    templateCustomizedRef.current = false
-  }, [resolvedDefaultTemplate])
+  const handleContentChange = React.useCallback(
+    (content: Parameters<typeof tiptapToComposition>[0]) => {
+      if (compositionTimerRef.current) clearTimeout(compositionTimerRef.current)
+      compositionTimerRef.current = setTimeout(() => {
+        store.commands.setComposition(tiptapToComposition(content))
+      }, 300)
+    },
+    [store]
+  )
+
+  const syncEditorFromStore = React.useCallback(() => {
+    if (!editor) return
+    editor.commands.setContent(
+      compositionToTiptap(store.getSnapshot().composition.blocks),
+      { emitUpdate: false }
+    )
+  }, [editor, store])
+
+  const commitPendingComposition = React.useCallback(() => {
+    if (!editor || !compositionTimerRef.current) return
+    clearTimeout(compositionTimerRef.current)
+    compositionTimerRef.current = null
+    store.commands.setComposition(tiptapToComposition(editor.getJSON()))
+  }, [editor, store])
+
+  React.useEffect(() => {
+    store.setBeforeStructuredChange(commitPendingComposition)
+    return () => store.setBeforeStructuredChange(null)
+  }, [commitPendingComposition, store])
+
+  const handleUndo = React.useCallback(() => {
+    commitPendingComposition()
+    store.commands.undo()
+    syncEditorFromStore()
+  }, [commitPendingComposition, store, syncEditorFromStore])
+
+  const handleRedo = React.useCallback(() => {
+    store.commands.redo()
+    syncEditorFromStore()
+  }, [store, syncEditorFromStore])
 
   const definition = React.useMemo(
     () => ({
@@ -69,25 +139,14 @@ function RouteComponent() {
               ...action,
               command: () => {
                 if (!editor) return
-
-                const snapshot = createDocumentSnapshot({
-                  content: editor.getJSON(),
-                  definition: proposalDocumentDefinition,
-                  documentId: "proposal-draft",
-                  renderData: {
-                    signerName: session.data?.user.name ?? "",
-                    signerTitle: "Signature",
-                  },
-                  template,
-                })
-                const snapshotKey = `document-snapshot:${snapshot.documentId}:${snapshot.createdAt}`
-
-                window.sessionStorage.setItem(
-                  snapshotKey,
-                  JSON.stringify(snapshot)
+                store.commands.setComposition(
+                  tiptapToComposition(editor.getJSON())
                 )
+                const draft = store.getSnapshot()
+                const key = `proposal-draft:${draft.id}:${draft.revision}`
+                window.sessionStorage.setItem(key, JSON.stringify(draft))
                 window.open(
-                  `/documents/print?snapshotKey=${encodeURIComponent(snapshotKey)}`,
+                  `/documents/print?draftKey=${encodeURIComponent(key)}`,
                   "_blank",
                   "noopener,noreferrer"
                 )
@@ -96,7 +155,7 @@ function RouteComponent() {
           : action
       ),
     }),
-    [editor, session.data?.user.name, template]
+    [editor, store]
   )
 
   return (
@@ -108,27 +167,30 @@ function RouteComponent() {
       >
         <div
           className="relative flex min-h-0 flex-1 overflow-hidden"
-          style={{
-            backgroundColor: template.tokens.canvasBackground,
-          }}
+          style={{ backgroundColor: template.tokens.canvasBackground }}
           data-document-template={template.id}
         >
           <ScrollArea className="relative min-h-0 flex-1">
             <DocumentEditor
               editor={editor}
-              onContentChange={setEditorContent}
+              onContentChange={handleContentChange}
               template={template}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
             />
             <DocumentToolbar editor={editor} definition={definition} />
           </ScrollArea>
-
           <DocumentBlockSidebar
             editor={editor}
             definition={proposalDocumentDefinition}
             defaultTemplate={resolvedDefaultTemplate}
             template={template}
-            onTemplateChange={handleTemplateChange}
-            onTemplateReset={handleTemplateReset}
+            onTemplateChange={(nextTemplate) => {
+              setCustomTemplate(nextTemplate)
+            }}
+            onTemplateReset={() => {
+              setCustomTemplate(null)
+            }}
           />
         </div>
       </SidebarProvider>

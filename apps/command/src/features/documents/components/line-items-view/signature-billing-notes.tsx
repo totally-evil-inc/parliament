@@ -1,4 +1,4 @@
-import { Input } from "@workspace/ui/components/input"
+import { CanvasTextField } from "@/features/documents/components/canvas-fields"
 
 export function SignatureBillingNotes() {
   return (
@@ -28,11 +28,12 @@ export function Signature({
   return (
     <div className="text-right">
       {onSignerNameChange ? (
-        <Input
-          className="ml-auto h-auto w-full rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-0 py-0 text-right font-[cursive] text-3xl leading-none text-[var(--document-foreground)] shadow-none hover:border-[var(--document-border)] focus-visible:border-[var(--document-border)] focus-visible:ring-0"
+        <CanvasTextField
+          aria-label="Signer name"
+          className="ml-auto h-10 text-right font-[cursive] text-3xl leading-10"
           placeholder="Signer name"
           value={signerName}
-          onChange={(event) => onSignerNameChange(event.target.value)}
+          onValueChange={onSignerNameChange}
         />
       ) : (
         <p className="font-[cursive] text-3xl leading-none text-[var(--document-foreground)]">
@@ -40,11 +41,12 @@ export function Signature({
         </p>
       )}
       {onSignerTitleChange ? (
-        <Input
-          className="mt-2 ml-auto h-auto w-full rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-0 py-0 text-right text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase shadow-none hover:border-[var(--document-border)] focus-visible:border-[var(--document-border)] focus-visible:ring-0"
+        <CanvasTextField
+          aria-label="Signer title"
+          className="mt-2 ml-auto h-5 text-right text-[10px] leading-5 font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase"
           placeholder="Signature"
           value={signerTitle || ""}
-          onChange={(event) => onSignerTitleChange(event.target.value)}
+          onValueChange={onSignerTitleChange}
         />
       ) : (
         <p className="mt-2 text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">

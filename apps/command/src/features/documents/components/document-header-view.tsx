@@ -5,9 +5,7 @@ import {
   PlusSignIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Placeholder } from "@tiptap/extensions"
-import { EditorContent, NodeViewWrapper, useEditor } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
+import { NodeViewWrapper } from "@tiptap/react"
 import { Button } from "@workspace/ui/components/button"
 import { Calendar } from "@workspace/ui/components/calendar"
 import {
@@ -15,270 +13,66 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
-import { useEffect, useRef, useState } from "react"
-import type { JSONContent } from "@tiptap/core"
-import type { NodeViewProps } from "@tiptap/react"
-import type {
-  DocumentHeaderAttrs,
-  DocumentHeaderCustomField,
-  DocumentHeaderLayoutId,
-} from "@/features/documents/editor/types"
 import {
-  getRichTextContent,
-  richTextToPlainText,
-} from "@/features/documents/editor/rich-text"
-import { isDocumentHeaderLayoutId } from "@/features/documents/editor/header-layouts"
+  useProposalDraftCommands,
+  useProposalDraftSelector,
+} from "@workspace/document-editor/react"
+import type { PartySnapshot } from "@workspace/document/schema"
+import type { NodeViewProps } from "@tiptap/react"
+import type { DocumentHeaderLayoutId } from "@/features/documents/editor/types"
+
 import { useConfirm } from "@/components/confirm-dialog-provider"
+import {
+  CanvasTextArea,
+  CanvasTextField,
+} from "@/features/documents/components/canvas-fields"
+import { isDocumentHeaderLayoutId } from "@/features/documents/editor/header-layouts"
 import { createId } from "@/lib/create-id"
 
-type DateFieldKey = "date" | "due" | "validUntil"
-
-const headerDateFormatter = new Intl.DateTimeFormat(undefined, {
+const dateFormatter = new Intl.DateTimeFormat("en-KE", {
   day: "numeric",
   month: "short",
   year: "numeric",
 })
 
-function getCustomFields(value: unknown): Array<DocumentHeaderCustomField> {
-  return Array.isArray(value)
-    ? value
-        .filter(
-          (field): field is DocumentHeaderCustomField =>
-            typeof field === "object" &&
-            field !== null &&
-            "label" in field &&
-            "value" in field
-        )
-        .map((field) => ({
-          id:
-            typeof field.id === "string" && field.id
-              ? field.id
-              : `custom-field-${field.label}-${field.value}`,
-          label: field.label,
-          value: field.value,
-          labelContent: isJsonContent(field.labelContent)
-            ? field.labelContent
-            : undefined,
-          valueContent: isJsonContent(field.valueContent)
-            ? field.valueContent
-            : undefined,
-        }))
-    : []
-}
-
-function isJsonContent(value: unknown): value is JSONContent {
-  return typeof value === "object" && value !== null && "type" in value
-}
-
-function parseDate(value: unknown) {
-  if (typeof value !== "string" || !value) {
-    return undefined
-  }
-
-  const isoDateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
-
-  if (isoDateMatch) {
-    const [, year, month, day] = isoDateMatch
-    return new Date(Number(year), Number(month) - 1, Number(day))
-  }
-
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? undefined : date
-}
-
-function formatDate(value: unknown) {
-  const date = parseDate(value)
-
-  return date ? headerDateFormatter.format(date) : "Select date"
-}
-
-function toDateValue(date: Date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-
-  return `${year}-${month}-${day}`
-}
-
-function getHeaderAttrs(attrs: Record<string, unknown>): DocumentHeaderAttrs {
-  return {
-    headerLayout: isDocumentHeaderLayoutId(attrs.headerLayout)
-      ? attrs.headerLayout
-      : "mark-left-dates-right",
-    title: typeof attrs.title === "string" ? attrs.title : "",
-    titleContent: isJsonContent(attrs.titleContent)
-      ? attrs.titleContent
-      : undefined,
-    date: typeof attrs.date === "string" ? attrs.date : "",
-    due: typeof attrs.due === "string" ? attrs.due : "",
-    validUntil: typeof attrs.validUntil === "string" ? attrs.validUntil : "",
-    fromName: typeof attrs.fromName === "string" ? attrs.fromName : "",
-    fromNameContent: isJsonContent(attrs.fromNameContent)
-      ? attrs.fromNameContent
-      : undefined,
-    fromEmail: typeof attrs.fromEmail === "string" ? attrs.fromEmail : "",
-    fromEmailContent: isJsonContent(attrs.fromEmailContent)
-      ? attrs.fromEmailContent
-      : undefined,
-    fromAddress: typeof attrs.fromAddress === "string" ? attrs.fromAddress : "",
-    fromAddressContent: isJsonContent(attrs.fromAddressContent)
-      ? attrs.fromAddressContent
-      : undefined,
-    fromPhone: typeof attrs.fromPhone === "string" ? attrs.fromPhone : "",
-    fromPhoneContent: isJsonContent(attrs.fromPhoneContent)
-      ? attrs.fromPhoneContent
-      : undefined,
-    fromWebsite: typeof attrs.fromWebsite === "string" ? attrs.fromWebsite : "",
-    fromWebsiteContent: isJsonContent(attrs.fromWebsiteContent)
-      ? attrs.fromWebsiteContent
-      : undefined,
-    fromTaxId: typeof attrs.fromTaxId === "string" ? attrs.fromTaxId : "",
-    fromTaxIdContent: isJsonContent(attrs.fromTaxIdContent)
-      ? attrs.fromTaxIdContent
-      : undefined,
-    fromCustomFields: getCustomFields(attrs.fromCustomFields),
-    billToName: typeof attrs.billToName === "string" ? attrs.billToName : "",
-    billToNameContent: isJsonContent(attrs.billToNameContent)
-      ? attrs.billToNameContent
-      : undefined,
-    billToEmail: typeof attrs.billToEmail === "string" ? attrs.billToEmail : "",
-    billToEmailContent: isJsonContent(attrs.billToEmailContent)
-      ? attrs.billToEmailContent
-      : undefined,
-    billToAddress:
-      typeof attrs.billToAddress === "string" ? attrs.billToAddress : "",
-    billToAddressContent: isJsonContent(attrs.billToAddressContent)
-      ? attrs.billToAddressContent
-      : undefined,
-    billToPhone: typeof attrs.billToPhone === "string" ? attrs.billToPhone : "",
-    billToPhoneContent: isJsonContent(attrs.billToPhoneContent)
-      ? attrs.billToPhoneContent
-      : undefined,
-    billToWebsite:
-      typeof attrs.billToWebsite === "string" ? attrs.billToWebsite : "",
-    billToWebsiteContent: isJsonContent(attrs.billToWebsiteContent)
-      ? attrs.billToWebsiteContent
-      : undefined,
-    billToTaxId: typeof attrs.billToTaxId === "string" ? attrs.billToTaxId : "",
-    billToTaxIdContent: isJsonContent(attrs.billToTaxIdContent)
-      ? attrs.billToTaxIdContent
-      : undefined,
-    billToCustomFields: getCustomFields(attrs.billToCustomFields),
-  }
-}
-
-function DocumentHeaderView({ node, updateAttributes }: NodeViewProps) {
+function DocumentHeaderView({ node }: NodeViewProps) {
   const confirm = useConfirm()
-  const {
-    title,
-    titleContent,
-    headerLayout,
-    date,
-    due,
-    validUntil,
-    fromName,
-    fromNameContent,
-    fromEmail,
-    fromEmailContent,
-    fromAddress,
-    fromAddressContent,
-    fromPhone,
-    fromPhoneContent,
-    fromWebsite,
-    fromWebsiteContent,
-    fromTaxId,
-    fromTaxIdContent,
-    fromCustomFields,
-    billToName,
-    billToNameContent,
-    billToEmail,
-    billToEmailContent,
-    billToAddress,
-    billToAddressContent,
-    billToPhone,
-    billToPhoneContent,
-    billToWebsite,
-    billToWebsiteContent,
-    billToTaxId,
-    billToTaxIdContent,
-    billToCustomFields,
-  } = getHeaderAttrs(node.attrs)
-  const dueDate = due || validUntil
+  const data = useProposalDraftSelector((document) => document.data)
+  const commands = useProposalDraftCommands()
+  const layout = isDocumentHeaderLayoutId(node.attrs.headerLayout)
+    ? node.attrs.headerLayout
+    : "mark-left-dates-right"
 
-  const handleChange = (key: string, value: string, content?: JSONContent) => {
-    const contentKey = `${key}Content`
-    updateAttributes({ [key]: value, [contentKey]: content })
-  }
+  const updateParty = (
+    party: "seller" | "customer",
+    field: keyof PartySnapshot,
+    value: PartySnapshot[keyof PartySnapshot]
+  ) => commands.updateParty(party, { [field]: value }, String(field))
 
-  const handleDateChange = (key: DateFieldKey, value: string) => {
-    updateAttributes(
-      key === "due" ? { due: value, validUntil: value } : { [key]: value }
-    )
-  }
-
-  const addCustomField = (key: "fromCustomFields" | "billToCustomFields") => {
-    const fields =
-      key === "fromCustomFields" ? fromCustomFields : billToCustomFields
-
-    updateAttributes({
-      [key]: [
-        ...fields,
-        { id: createId("custom-field"), label: "New Field", value: "" },
-      ],
-    })
-  }
-
-  const updateCustomField = (
-    key: "fromCustomFields" | "billToCustomFields",
-    index: number,
-    fieldKey: keyof DocumentHeaderCustomField,
-    value: string,
-    content?: JSONContent
-  ) => {
-    const fields =
-      key === "fromCustomFields" ? fromCustomFields : billToCustomFields
-
-    updateAttributes({
-      [key]: fields.map((field, fieldIndex) =>
-        fieldIndex === index
-          ? {
-              ...field,
-              [fieldKey]: value,
-              ...(content && fieldKey === "label"
-                ? { labelContent: content }
-                : {}),
-              ...(content && fieldKey === "value"
-                ? { valueContent: content }
-                : {}),
-            }
-          : field
-      ),
-    })
+  const addCustomField = (party: "seller" | "customer") => {
+    const fields = data[party].customFields
+    updateParty(party, "customFields", [
+      ...fields,
+      { id: createId("custom-field"), label: "New Field", value: "" },
+    ])
   }
 
   const removeCustomField = async (
-    key: "fromCustomFields" | "billToCustomFields",
+    party: "seller" | "customer",
     index: number
   ) => {
-    const fields =
-      key === "fromCustomFields" ? fromCustomFields : billToCustomFields
-
     const confirmed = await confirm({
       title: "Remove custom field?",
-      description:
-        key === "fromCustomFields"
-          ? "This will remove the selected sender field."
-          : "This will remove the selected recipient field.",
+      description: `This will remove the selected ${party === "seller" ? "sender" : "recipient"} field.`,
       confirmLabel: "Remove field",
       variant: "destructive",
     })
-
     if (!confirmed) return
-
-    updateAttributes({
-      [key]: fields.filter((_, fieldIndex) => fieldIndex !== index),
-    })
+    updateParty(
+      party,
+      "customFields",
+      data[party].customFields.filter((_, fieldIndex) => fieldIndex !== index)
+    )
   }
 
   return (
@@ -287,266 +81,124 @@ function DocumentHeaderView({ node, updateAttributes }: NodeViewProps) {
       contentEditable={false}
     >
       <HeaderLayout
-        layout={headerLayout}
-        title={title}
-        titleContent={titleContent}
-        date={date}
-        dueDate={dueDate}
-        onDateChange={(value) => handleDateChange("date", value)}
-        onDueDateChange={(value) => handleDateChange("due", value)}
-        onTitleChange={(value, content) =>
-          handleChange("title", value, content)
+        layout={layout}
+        title={data.title}
+        date={data.issueDate}
+        validUntil={data.validUntil ?? ""}
+        onTitleChange={commands.setTitle}
+        onDateChange={commands.setIssueDate}
+        onValidUntilChange={(value) =>
+          commands.setValidUntil(value || undefined)
         }
       />
 
       <div className="grid grid-cols-2 gap-16 border-t border-[var(--document-border)] pt-8">
-        <div className="space-y-6">
-          <div className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
-            From
-          </div>
-          <div className="space-y-3">
-            <Field
-              placeholder="Your business name"
-              value={fromName}
-              content={fromNameContent}
-              onChange={(v, content) => handleChange("fromName", v, content)}
-              className="text-lg font-semibold"
-            />
-            <Field
-              placeholder="email@company.com"
-              value={fromEmail}
-              content={fromEmailContent}
-              onChange={(v, content) => handleChange("fromEmail", v, content)}
-            />
-            <Field
-              placeholder="Street address, City, State, ZIP"
-              value={fromAddress}
-              content={fromAddressContent}
-              onChange={(v, content) => handleChange("fromAddress", v, content)}
-            />
-            <Field
-              placeholder="Phone"
-              value={fromPhone}
-              content={fromPhoneContent}
-              onChange={(v, content) => handleChange("fromPhone", v, content)}
-            />
-            <Field
-              placeholder="Website"
-              value={fromWebsite}
-              content={fromWebsiteContent}
-              onChange={(v, content) => handleChange("fromWebsite", v, content)}
-            />
-            <Field
-              placeholder="Tax ID / VAT"
-              value={fromTaxId}
-              content={fromTaxIdContent}
-              onChange={(v, content) => handleChange("fromTaxId", v, content)}
-            />
-
-            <CustomFields
-              fields={fromCustomFields}
-              onChange={(index, fieldKey, value) =>
-                updateCustomField("fromCustomFields", index, fieldKey, value)
-              }
-              onRemove={(index) =>
-                void removeCustomField("fromCustomFields", index)
-              }
-            />
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => addCustomField("fromCustomFields")}
-              className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider text-muted-foreground uppercase hover:bg-muted"
-            >
-              <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
-              Add Field
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
-            Bill To
-          </div>
-          <div className="space-y-3">
-            <Field
-              placeholder="Search or type customer name"
-              value={billToName}
-              content={billToNameContent}
-              onChange={(v, content) => handleChange("billToName", v, content)}
-              className="text-lg font-semibold"
-            />
-            <Field
-              placeholder="client@email.com"
-              value={billToEmail}
-              content={billToEmailContent}
-              onChange={(v, content) => handleChange("billToEmail", v, content)}
-            />
-            <Field
-              placeholder="Client address, City, State, ZIP"
-              value={billToAddress}
-              content={billToAddressContent}
-              onChange={(v, content) =>
-                handleChange("billToAddress", v, content)
-              }
-            />
-            <Field
-              placeholder="Phone number"
-              value={billToPhone}
-              content={billToPhoneContent}
-              onChange={(v, content) => handleChange("billToPhone", v, content)}
-            />
-            <Field
-              placeholder="Website"
-              value={billToWebsite}
-              content={billToWebsiteContent}
-              onChange={(v, content) =>
-                handleChange("billToWebsite", v, content)
-              }
-            />
-            <Field
-              placeholder="Tax ID / VAT Number"
-              value={billToTaxId}
-              content={billToTaxIdContent}
-              onChange={(v, content) => handleChange("billToTaxId", v, content)}
-            />
-
-            <CustomFields
-              fields={billToCustomFields}
-              onChange={(index, fieldKey, value) =>
-                updateCustomField("billToCustomFields", index, fieldKey, value)
-              }
-              onRemove={(index) =>
-                void removeCustomField("billToCustomFields", index)
-              }
-            />
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => addCustomField("billToCustomFields")}
-              className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider text-muted-foreground uppercase hover:bg-muted"
-            >
-              <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
-              Add Field
-            </Button>
-          </div>
-        </div>
+        <PartyFields
+          label="From"
+          party={data.seller}
+          onChange={(field, value) => updateParty("seller", field, value)}
+          onAddCustomField={() => addCustomField("seller")}
+          onRemoveCustomField={(index) =>
+            void removeCustomField("seller", index)
+          }
+        />
+        <PartyFields
+          label="Bill To"
+          party={data.customer}
+          onChange={(field, value) => updateParty("customer", field, value)}
+          onAddCustomField={() => addCustomField("customer")}
+          onRemoveCustomField={(index) =>
+            void removeCustomField("customer", index)
+          }
+        />
       </div>
     </NodeViewWrapper>
   )
 }
 
-export { DocumentHeaderView }
-export default DocumentHeaderView
-
-const HEADER_LOGO_PLACEHOLDER = <LogoPlaceholder />
-
 function HeaderLayout({
   date,
-  dueDate,
   layout,
   onDateChange,
-  onDueDateChange,
   onTitleChange,
+  onValidUntilChange,
   title,
-  titleContent,
+  validUntil,
 }: {
   date: string
-  dueDate: string
   layout: DocumentHeaderLayoutId
   onDateChange: (value: string) => void
-  onDueDateChange: (value: string) => void
-  onTitleChange: (value: string, content: JSONContent) => void
+  onTitleChange: (value: string) => void
+  onValidUntilChange: (value: string) => void
   title: string
-  titleContent?: JSONContent
+  validUntil: string
 }) {
-  const titleField = (
-    <DocumentTitleField
-      value={title}
-      content={titleContent}
-      onChange={onTitleChange}
-    />
-  )
-  const centeredTitleField = (
-    <DocumentTitleField
-      align="center"
-      value={title}
-      content={titleContent}
-      onChange={onTitleChange}
-    />
-  )
-  const datesHorizontal = (
+  const titleField = <TitleField value={title} onChange={onTitleChange} />
+  const dates = (
     <DateFields
-      align="left"
       date={date}
-      dueDate={dueDate}
+      validUntil={validUntil}
       onDateChange={onDateChange}
-      onDueDateChange={onDueDateChange}
-      orientation="horizontal"
-    />
-  )
-  const datesVertical = (
-    <DateFields
-      align="right"
-      date={date}
-      dueDate={dueDate}
-      onDateChange={onDateChange}
-      onDueDateChange={onDueDateChange}
-      orientation="vertical"
+      onValidUntilChange={onValidUntilChange}
     />
   )
 
   if (layout === "centered-stack") {
     return (
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
-        {HEADER_LOGO_PLACEHOLDER}
-        <DateFields
-          align="center"
-          date={date}
-          dueDate={dueDate}
-          onDateChange={onDateChange}
-          onDueDateChange={onDueDateChange}
-          orientation="horizontal"
-        />
-        <div className="w-full">{centeredTitleField}</div>
+        <LogoPlaceholder />
+        {dates}
+        <div className="w-full">{titleField}</div>
       </div>
     )
   }
-
   if (layout === "left-stack") {
     return (
       <div className="max-w-3xl space-y-5 text-left">
-        {HEADER_LOGO_PLACEHOLDER}
+        <LogoPlaceholder />
         {titleField}
-        {datesHorizontal}
+        {dates}
       </div>
     )
   }
-
   if (layout === "editorial-band") {
     return (
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-8">
-          {HEADER_LOGO_PLACEHOLDER}
-          {datesVertical}
+          <LogoPlaceholder />
+          {dates}
         </div>
-        <div className="mx-auto max-w-4xl">{centeredTitleField}</div>
+        <div className="mx-auto max-w-4xl">{titleField}</div>
       </div>
     )
   }
-
   return (
     <div className="flex items-start justify-between gap-8">
-      <div className="max-w-4xl min-w-0 flex-1 space-y-6 text-left">
-        {HEADER_LOGO_PLACEHOLDER}
+      <div className="max-w-4xl min-w-0 flex-1 space-y-6">
+        <LogoPlaceholder />
         {titleField}
       </div>
-      {datesVertical}
+      {dates}
     </div>
+  )
+}
+
+function TitleField({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <CanvasTextArea
+      aria-label="Proposal title"
+      className="min-h-12 [font-family:var(--document-heading-font-family)] text-4xl leading-[1.08] font-bold tracking-tight"
+      maxRows={3}
+      placeholder="Proposal title..."
+      value={value}
+      onValueChange={onChange}
+    />
   )
 }
 
@@ -554,7 +206,7 @@ function LogoPlaceholder() {
   return (
     <button
       type="button"
-      className="flex h-16 w-28 shrink-0 items-center justify-center rounded-[var(--document-radius)] border border-dashed border-[var(--document-border)] bg-[color-mix(in_oklab,var(--document-accent)_6%,transparent)] text-[var(--document-muted-foreground)] transition-colors hover:border-[var(--document-accent)] hover:text-[var(--document-accent)]"
+      className="flex h-16 w-28 shrink-0 items-center justify-center rounded-[var(--document-radius)] border border-dashed border-[var(--document-border)] bg-[color-mix(in_oklab,var(--document-accent)_6%,transparent)] text-[var(--document-muted-foreground)]"
       aria-label="Logo placeholder"
     >
       <div className="flex flex-col items-center gap-1">
@@ -568,113 +220,41 @@ function LogoPlaceholder() {
 }
 
 function DateFields({
-  align,
   date,
-  dueDate,
   onDateChange,
-  onDueDateChange,
-  orientation,
+  onValidUntilChange,
+  validUntil,
 }: {
-  align: "left" | "center" | "right"
   date: string
-  dueDate: string
   onDateChange: (value: string) => void
-  onDueDateChange: (value: string) => void
-  orientation: "horizontal" | "vertical"
+  onValidUntilChange: (value: string) => void
+  validUntil: string
 }) {
-  const textAlignClassName =
-    align === "center"
-      ? "text-center"
-      : align === "right"
-        ? "text-right"
-        : "text-left"
-  const justifyClassName =
-    align === "center"
-      ? "justify-center"
-      : align === "right"
-        ? "justify-end"
-        : "justify-start"
-
   return (
-    <div
-      className={[
-        orientation === "horizontal"
-          ? "grid w-fit min-w-64 grid-cols-2 gap-6"
-          : "grid w-fit min-w-32 gap-3",
-        textAlignClassName,
-      ].join(" ")}
-    >
-      <DatePickerField
-        justifyClassName={justifyClassName}
-        label="Date"
-        value={date}
-        onChange={onDateChange}
-      />
-      <DatePickerField
-        justifyClassName={justifyClassName}
-        label="Due"
-        value={dueDate}
-        onChange={onDueDateChange}
+    <div className="grid w-fit min-w-64 grid-cols-2 gap-6">
+      <DatePicker label="Date" value={date} onChange={onDateChange} />
+      <DatePicker
+        label="Valid Until"
+        value={validUntil}
+        onChange={onValidUntilChange}
       />
     </div>
   )
 }
 
-function DocumentTitleField({
-  align = "left",
-  content,
-  value,
-  onChange,
-}: {
-  align?: "left" | "center"
-  content?: JSONContent
-  value: string
-  onChange: (value: string, content: JSONContent) => void
-}) {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const container = containerRef.current
-
-    if (!container) return
-
-    container.style.minHeight = `${container.scrollHeight}px`
-  }, [value])
-
-  return (
-    <div
-      ref={containerRef}
-      className={[
-        "block min-h-12 w-full bg-transparent [font-family:var(--document-heading-font-family)] text-4xl leading-tight font-bold tracking-tight wrap-break-word whitespace-pre-wrap text-[var(--document-foreground)] outline-none [&_.ProseMirror]:min-h-12 [&_.ProseMirror]:outline-none [&_p]:m-0",
-        align === "center" ? "text-center" : "text-left",
-      ].join(" ")}
-    >
-      <HeaderRichTextField
-        ariaLabel="Document title"
-        content={content}
-        fallbackText={value}
-        placeholder="Document title..."
-        placeholderMode="overlay"
-        onChange={onChange}
-      />
-    </div>
-  )
-}
-
-function DatePickerField({
-  justifyClassName,
+function DatePicker({
   label,
   value,
   onChange,
 }: {
-  justifyClassName: string
   label: string
   value: string
   onChange: (value: string) => void
 }) {
+  const parsed = parseDate(value)
   return (
     <div className="space-y-1.5">
-      <div className="block text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+      <div className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
         {label}
       </div>
       <Popover>
@@ -683,11 +263,7 @@ function DatePickerField({
             <Button
               type="button"
               variant="ghost"
-              className={[
-                "h-auto w-full gap-2 px-0 py-0 text-sm font-medium text-[var(--document-foreground)] hover:bg-transparent",
-                justifyClassName,
-              ].join(" ")}
-              aria-label={`${label}: ${formatDate(value)}`}
+              className="h-auto w-full justify-start gap-2 px-0 py-0 text-sm font-medium hover:bg-transparent"
             />
           }
         >
@@ -695,17 +271,13 @@ function DatePickerField({
             icon={Calendar03Icon}
             className="h-4 w-4 text-[var(--document-muted-foreground)]"
           />
-          <span>{formatDate(value)}</span>
+          <span>{parsed ? dateFormatter.format(parsed) : "Select date"}</span>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-auto p-0">
           <Calendar
             mode="single"
-            selected={parseDate(value)}
-            onSelect={(selectedDate) => {
-              if (selectedDate) {
-                onChange(toDateValue(selectedDate))
-              }
-            }}
+            selected={parsed}
+            onSelect={(date) => date && onChange(toDateValue(date))}
           />
         </PopoverContent>
       </Popover>
@@ -713,173 +285,155 @@ function DatePickerField({
   )
 }
 
-function CustomFields({
-  fields,
+function PartyFields({
+  label,
+  onAddCustomField,
   onChange,
-  onRemove,
+  onRemoveCustomField,
+  party,
 }: {
-  fields: Array<DocumentHeaderCustomField>
+  label: string
+  onAddCustomField: () => void
   onChange: (
-    index: number,
-    fieldKey: keyof DocumentHeaderCustomField,
-    value: string,
-    content?: JSONContent
+    field: keyof PartySnapshot,
+    value: PartySnapshot[keyof PartySnapshot]
   ) => void
-  onRemove: (index: number) => void
+  onRemoveCustomField: (index: number) => void
+  party: PartySnapshot
 }) {
-  return fields.map((field, index) => (
-    <div
-      key={field.id || `custom-field-${field.label}-${field.value}`}
-      className="group grid grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)_auto] items-center gap-2"
-    >
-      <Field
-        placeholder="Label"
-        value={field.label}
-        content={field.labelContent}
-        onChange={(value, content) => onChange(index, "label", value, content)}
-        className="text-xs font-bold tracking-wider text-[var(--document-muted-foreground)]"
-      />
-      <Field
-        placeholder="Value"
-        value={field.value}
-        content={field.valueContent}
-        onChange={(value, content) => onChange(index, "value", value, content)}
-      />
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-xs"
-        onClick={() => onRemove(index)}
-        className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-        aria-label="Remove custom field"
-      >
-        <HugeiconsIcon icon={Delete02Icon} className="h-3 w-3" />
-      </Button>
-    </div>
-  ))
+  return (
+    <section className="space-y-6">
+      <div className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+        {label}
+      </div>
+      <div className="space-y-3">
+        <PartyInput
+          className="text-lg font-semibold"
+          placeholder="Name"
+          value={party.name}
+          onChange={(value) => onChange("name", value)}
+        />
+        <PartyInput
+          placeholder="Email"
+          value={party.email}
+          onChange={(value) => onChange("email", value)}
+        />
+        <PartyInput
+          multiline
+          placeholder="Address"
+          value={party.address}
+          onChange={(value) => onChange("address", value)}
+        />
+        <PartyInput
+          placeholder="Phone"
+          value={party.phone}
+          onChange={(value) => onChange("phone", value)}
+        />
+        <PartyInput
+          placeholder="Website"
+          value={party.website}
+          onChange={(value) => onChange("website", value)}
+        />
+        <PartyInput
+          placeholder="Tax ID / VAT"
+          value={party.taxId}
+          onChange={(value) => onChange("taxId", value)}
+        />
+        {party.customFields.map((field, index) => (
+          <div
+            key={field.id}
+            className="group grid grid-cols-[0.4fr_0.6fr_auto] items-center gap-2"
+          >
+            <PartyInput
+              placeholder="Label"
+              value={field.label}
+              onChange={(value) =>
+                onChange(
+                  "customFields",
+                  party.customFields.map((current, fieldIndex) =>
+                    fieldIndex === index
+                      ? { ...current, label: value }
+                      : current
+                  )
+                )
+              }
+            />
+            <PartyInput
+              placeholder="Value"
+              value={field.value}
+              onChange={(value) =>
+                onChange(
+                  "customFields",
+                  party.customFields.map((current, fieldIndex) =>
+                    fieldIndex === index ? { ...current, value } : current
+                  )
+                )
+              }
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => onRemoveCustomField(index)}
+              aria-label="Remove custom field"
+            >
+              <HugeiconsIcon icon={Delete02Icon} className="h-3 w-3" />
+            </Button>
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onAddCustomField}
+          className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider uppercase"
+        >
+          <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
+          Add Field
+        </Button>
+      </div>
+    </section>
+  )
 }
 
-function Field({
-  content,
+function PartyInput({
+  className = "",
+  multiline = false,
   placeholder,
   value,
   onChange,
-  className,
 }: {
-  content?: JSONContent
+  className?: string
+  multiline?: boolean
   placeholder: string
   value: string
-  onChange: (value: string, content: JSONContent) => void
-  className?: string
+  onChange: (value: string) => void
 }) {
-  const fieldClassName = [
-    "min-h-6 w-full rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-0 py-0.5 text-sm text-[var(--document-foreground)] shadow-none transition-colors hover:border-[var(--document-border)] focus-within:border-[var(--document-border)] [&_.ProseMirror]:outline-none [&_p]:m-0 [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:h-0 [&_p.is-editor-empty:first-child::before]:text-[color-mix(in_oklab,var(--document-muted-foreground)_58%,transparent)] [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]",
+  const props = {
+    "aria-label": placeholder,
     className,
-  ].join(" ")
+    placeholder,
+    value,
+    onValueChange: onChange,
+  }
 
-  return (
-    <div className={fieldClassName}>
-      <HeaderRichTextField
-        ariaLabel={placeholder}
-        content={content}
-        fallbackText={value}
-        placeholder={placeholder}
-        onChange={onChange}
-      />
-    </div>
+  return multiline ? (
+    <CanvasTextArea {...props} maxRows={3} />
+  ) : (
+    <CanvasTextField {...props} />
   )
 }
 
-function HeaderRichTextField({
-  ariaLabel,
-  content,
-  fallbackText,
-  onChange,
-  placeholder,
-  placeholderMode = "inline",
-}: {
-  ariaLabel: string
-  content?: JSONContent
-  fallbackText: string
-  onChange: (value: string, content: JSONContent) => void
-  placeholder: string
-  placeholderMode?: "inline" | "overlay"
-}) {
-  const initialContent = getRichTextContent(content, fallbackText)
-  const [isEmpty, setIsEmpty] = useState(
-    richTextToPlainText(initialContent).trim().length === 0
-  )
-  const editor = useEditor(
-    {
-      extensions: [
-        StarterKit.configure({
-          blockquote: false,
-          bulletList: false,
-          codeBlock: false,
-          heading: false,
-          horizontalRule: false,
-          listItem: false,
-          orderedList: false,
-        }),
-        ...(placeholderMode === "inline"
-          ? [
-              Placeholder.configure({
-                placeholder,
-              }),
-            ]
-          : []),
-      ],
-      content: initialContent,
-      editorProps: {
-        attributes: {
-          "aria-label": ariaLabel,
-        },
-        handleKeyDown: (_view, event) => {
-          if (event.key !== "Enter" || event.shiftKey) return false
-
-          event.preventDefault()
-          return true
-        },
-      },
-      onUpdate: ({ editor: updatedEditor }) => {
-        const nextContent = updatedEditor.getJSON()
-        setIsEmpty(updatedEditor.isEmpty)
-        onChange(richTextToPlainText(nextContent), nextContent)
-      },
-      immediatelyRender: false,
-    },
-    []
-  )
-
-  useEffect(() => {
-    if (!editor) return
-
-    const nextContent = getRichTextContent(content, fallbackText)
-    const currentContent = editor.getJSON()
-
-    if (JSON.stringify(currentContent) !== JSON.stringify(nextContent)) {
-      editor.commands.setContent(nextContent, { emitUpdate: false })
-    }
-
-    setIsEmpty(editor.isEmpty)
-  }, [content, editor, fallbackText])
-
-  useEffect(() => {
-    if (!editor) return
-
-    editor.view.dom
-      .querySelectorAll("p")
-      .forEach((node) => node.setAttribute("data-placeholder", placeholder))
-  }, [editor, placeholder])
-
-  return (
-    <div className="relative">
-      <EditorContent editor={editor} />
-      {placeholderMode === "overlay" && isEmpty ? (
-        <div className="pointer-events-none absolute inset-x-0 top-0 text-[color-mix(in_oklab,var(--document-muted-foreground)_45%,transparent)]">
-          {placeholder}
-        </div>
-      ) : null}
-    </div>
-  )
+function parseDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  return match
+    ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+    : undefined
 }
+
+function toDateValue(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+}
+
+export { DocumentHeaderView }
+export default DocumentHeaderView

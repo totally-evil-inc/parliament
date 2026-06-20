@@ -1,85 +1,87 @@
 import { NodeViewWrapper } from "@tiptap/react"
+import { calculateProposalPricing } from "@workspace/document/calculate"
+import {
+  useProposalDraftCommands,
+  useProposalDraftSelector,
+} from "@workspace/document-editor/react"
 import type { NodeViewProps } from "@tiptap/react"
-import type { PricingItem } from "@/features/documents/components/line-items-view/pricing"
+import type { PricingItem } from "./line-items-view/pricing"
+
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { LineItemsTable } from "@/features/documents/components/line-items-view/line-items-table"
-import {
-  getLineItemKey,
-  getLineTotal,
-  safeNumber,
-} from "@/features/documents/components/line-items-view/pricing"
 import { SignatureBillingNotes } from "@/features/documents/components/line-items-view/signature-billing-notes"
 import { TotalsAdjustments } from "@/features/documents/components/line-items-view/totals-adjustments"
 import { createId } from "@/lib/create-id"
 
-function LineItemsView({ node, updateAttributes }: NodeViewProps) {
-  const {
-    items = [],
-    discountRate = 0,
-    taxRate = 0,
-    discountEnabled = false,
-    taxEnabled = false,
-    signerName = "",
-    signerTitle = "",
-  } = node.attrs
+function LineItemsView(_props: NodeViewProps) {
   const confirm = useConfirm()
+  const { locale, pricing } = useProposalDraftSelector((document) => ({
+    locale: document.locale,
+    pricing: document.data.pricing,
+  }))
+  const commands = useProposalDraftCommands()
 
-  const lineItems: Array<PricingItem> = Array.isArray(items) ? items : []
+  if (!pricing) return null
+
+  const lineItems: Array<PricingItem> = pricing.items.map((item) => ({
+    id: item.id,
+    description: item.description,
+    details: item.details,
+    quantity: Number(item.quantity),
+    rate: item.unitPriceMinor / 100,
+    showDetails: item.showDetails,
+    showImage: item.showImage,
+  }))
+  const calculation = calculateProposalPricing(pricing)
+  const discountRate =
+    pricing.discount?.kind === "rate" ? pricing.discount.basisPoints / 100 : 0
+  const taxRate = pricing.tax ? pricing.tax.basisPoints / 100 : 0
 
   const updateItem = <TKey extends keyof PricingItem>(
     index: number,
     key: TKey,
     value: PricingItem[TKey]
   ) => {
-    const nextItems = lineItems.map((item, itemIndex) => {
-      if (itemIndex !== index) return item
-
-      const nextItem = { ...item, id: getLineItemKey(item), [key]: value }
-      return { ...nextItem, total: getLineTotal(nextItem) }
-    })
-
-    updateAttributes({ items: nextItems })
+    commands.updatePricing(
+      (current) => ({
+        ...current,
+        items: current.items.map((item, itemIndex) => {
+          if (itemIndex !== index) return item
+          if (key === "rate")
+            return { ...item, unitPriceMinor: Math.round(Number(value) * 100) }
+          if (key === "quantity")
+            return { ...item, quantity: String(value || 0) }
+          if (key === "total") return item
+          return { ...item, [key]: value }
+        }),
+      }),
+      `item.${pricing.items[index]?.id}.${String(key)}`
+    )
   }
 
-  const addItem = () => {
-    updateAttributes({
+  const addItem = (catalog = false) =>
+    commands.updatePricing((current) => ({
+      ...current,
       items: [
-        ...lineItems,
+        ...current.items,
         {
           id: createId("line-item"),
-          description: `Item ${lineItems.length + 1}`,
-          details: "",
-          quantity: 1,
-          rate: 0,
-          total: 0,
-          showDetails: false,
-          showImage: false,
+          description: catalog
+            ? "Catalog service"
+            : `Item ${current.items.length + 1}`,
+          details: catalog
+            ? "Describe the selected service scope, assumptions, and deliverables."
+            : "",
+          quantity: "1",
+          unitPriceMinor: 0,
+          showDetails: catalog,
+          showImage: catalog,
         },
       ],
-    })
-  }
-
-  const addCatalogItem = () => {
-    updateAttributes({
-      items: [
-        ...lineItems,
-        {
-          id: createId("line-item"),
-          description: "Catalog service",
-          details:
-            "Describe the selected service scope, assumptions, and deliverables.",
-          quantity: 1,
-          rate: 0,
-          total: 0,
-          showDetails: true,
-          showImage: true,
-        },
-      ],
-    })
-  }
+    }))
 
   const removeItem = async (index: number) => {
-    const item = lineItems[index]
+    const item = pricing.items[index]
     const confirmed = await confirm({
       title: "Remove line item?",
       description: item.description
@@ -88,63 +90,103 @@ function LineItemsView({ node, updateAttributes }: NodeViewProps) {
       confirmLabel: "Remove item",
       variant: "destructive",
     })
-
     if (!confirmed) return
+    commands.updatePricing((current) => ({
+      ...current,
+      items: current.items.filter((_, itemIndex) => itemIndex !== index),
+    }))
+  }
 
-    updateAttributes({
-      items: lineItems.filter((_, itemIndex) => itemIndex !== index),
+  const updateAdjustments = (attributes: Record<string, unknown>) => {
+    commands.updatePricing((current) => {
+      let next = current
+      if ("discountEnabled" in attributes) {
+        next = {
+          ...next,
+          discount: attributes.discountEnabled
+            ? {
+                kind: "rate",
+                basisPoints:
+                  current.discount?.kind === "rate"
+                    ? current.discount.basisPoints
+                    : 0,
+              }
+            : undefined,
+        }
+      }
+      if (typeof attributes.discountRate === "number") {
+        next = {
+          ...next,
+          discount: {
+            kind: "rate",
+            basisPoints: Math.round(attributes.discountRate * 100),
+          },
+        }
+      }
+      if ("taxEnabled" in attributes) {
+        next = {
+          ...next,
+          tax: attributes.taxEnabled
+            ? { kind: "rate", basisPoints: current.tax?.basisPoints ?? 0 }
+            : undefined,
+        }
+      }
+      if (typeof attributes.taxRate === "number") {
+        next = {
+          ...next,
+          tax: {
+            kind: "rate",
+            basisPoints: Math.round(attributes.taxRate * 100),
+          },
+        }
+      }
+      if (typeof attributes.signerName === "string")
+        next = { ...next, signerName: attributes.signerName }
+      if (typeof attributes.signerTitle === "string")
+        next = { ...next, signerTitle: attributes.signerTitle }
+      return next
     })
   }
 
-  const subtotal = lineItems.reduce((acc, item) => acc + getLineTotal(item), 0)
-  const discountAmount = discountEnabled
-    ? subtotal * (safeNumber(discountRate) / 100)
-    : 0
-  const taxableAmount = Math.max(subtotal - discountAmount, 0)
-  const taxAmount = taxEnabled ? taxableAmount * (safeNumber(taxRate) / 100) : 0
-  const total = taxableAmount + taxAmount
-
   return (
     <NodeViewWrapper
-      className="document-line-items my-[var(--document-section-spacing)] overflow-hidden rounded-[var(--document-radius)] border border-[var(--document-border)] bg-[var(--document-page-background)] text-[var(--document-foreground)] shadow-sm"
+      className="document-line-items my-[var(--document-section-spacing)] text-[var(--document-foreground)]"
       contentEditable={false}
     >
-      <div className="bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] px-6 py-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h3 className="text-sm font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
-              Services & Billing
-            </h3>
-            <p className="mt-1 text-xs text-[var(--document-muted-foreground)]">
-              Capture line items, discounts, tax, and signature.
-            </p>
-          </div>
-        </div>
+      <div className="border-b border-[var(--document-border)] pb-4">
+        <h3 className="text-xs font-bold tracking-[0.16em] text-[var(--document-foreground)] uppercase">
+          Services & Billing
+        </h3>
+        <p className="mt-1.5 text-xs text-[var(--document-muted-foreground)]">
+          Indicative proposal pricing
+        </p>
       </div>
-
-      <div className="p-6">
+      <div className="pt-5">
         <LineItemsTable
           lineItems={lineItems}
           updateItem={updateItem}
           removeItem={removeItem}
-          addItem={addItem}
-          addCatalogItem={addCatalogItem}
+          addItem={() => addItem(false)}
+          addCatalogItem={() => addItem(true)}
+          currency={pricing.currency}
+          locale={locale}
         />
-
-        <div className="mt-10 grid gap-8 border-t border-[var(--document-border)] pt-8 md:grid-cols-[1fr_28rem]">
+        <div className="mt-10 grid gap-10 border-t border-[var(--document-border)] pt-8 md:grid-cols-[1fr_26rem]">
           <SignatureBillingNotes />
           <TotalsAdjustments
-            subtotal={subtotal}
-            discountRate={safeNumber(discountRate)}
-            taxRate={safeNumber(taxRate)}
-            discountEnabled={discountEnabled}
-            taxEnabled={taxEnabled}
-            discountAmount={discountAmount}
-            taxAmount={taxAmount}
-            total={total}
-            signerName={typeof signerName === "string" ? signerName : ""}
-            signerTitle={typeof signerTitle === "string" ? signerTitle : ""}
-            updateAttributes={updateAttributes}
+            subtotal={calculation.subtotalMinor / 100}
+            discountRate={discountRate}
+            taxRate={taxRate}
+            discountEnabled={Boolean(pricing.discount)}
+            taxEnabled={Boolean(pricing.tax)}
+            discountAmount={calculation.discountMinor / 100}
+            taxAmount={calculation.taxMinor / 100}
+            total={calculation.totalMinor / 100}
+            signerName={pricing.signerName}
+            signerTitle={pricing.signerTitle}
+            updateAttributes={updateAdjustments}
+            currency={pricing.currency}
+            locale={locale}
           />
         </div>
       </div>

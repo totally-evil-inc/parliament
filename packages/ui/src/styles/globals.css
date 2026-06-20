@@ -239,6 +239,38 @@
 }
 
 @layer utilities {
+  .document-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(
+        in oklab,
+        var(--document-border) 88%,
+        transparent
+      )
+      transparent;
+  }
+
+  .document-scrollbar::-webkit-scrollbar {
+    width: 0.375rem;
+    height: 0.375rem;
+  }
+
+  .document-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .document-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--document-border) 88%, transparent);
+  }
+
+  .document-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: color-mix(
+      in oklab,
+      var(--document-accent) 52%,
+      var(--document-border)
+    );
+  }
+
   .document-print-root,
   .document-print-root body {
     overflow: auto;

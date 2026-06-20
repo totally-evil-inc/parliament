@@ -40,8 +40,8 @@ const TaskItem = BaseTaskItem.extend({
 export const documentEditorClassName = [
   "prose prose-sm dark:prose-invert",
   "max-w-4xl min-h-[1200px] w-full cursor-text focus:outline-none px-12 py-16",
-  "mx-auto border bg-[var(--document-page-background)] text-[var(--document-foreground)] shadow-sm",
-  "rounded-[var(--document-radius)] [font-family:var(--document-font-family)]",
+  "mx-auto border border-[var(--document-border)] bg-[var(--document-page-background)] text-[var(--document-foreground)] shadow-xl shadow-black/10",
+  "rounded-sm [font-family:var(--document-font-family)]",
   "prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground",
   "prose-headings:[font-family:var(--document-heading-font-family)]",
   "prose-code:text-foreground prose-blockquote:text-muted-foreground",

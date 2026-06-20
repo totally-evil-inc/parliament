@@ -1,102 +1,89 @@
 import * as React from "react"
 import { createFileRoute } from "@tanstack/react-router"
-import { DocumentPrintView } from "@/features/documents/print/document-print-view"
-import { createDocumentSnapshot } from "@/features/documents/editor/snapshot"
-import { proposalDocumentDefinition } from "@/features/proposals/document-definition"
-import type { DocumentSnapshot } from "@/features/documents/editor/types"
+import { buildProposalRenderModel } from "@workspace/document/render"
+import { createProposalDraft } from "@workspace/document/proposal"
+import { safeParseProposalDraft } from "@workspace/document/schema"
 
-declare global {
-  interface Window {
-    __DOCUMENT_SNAPSHOT__?: DocumentSnapshot
-  }
-}
+import { ProposalPrintView } from "@/features/documents/print/proposal-print-view"
+import { defaultDocumentTemplate } from "@/features/documents/editor/templates"
 
 export const Route = createFileRoute("/documents/print")({
   component: PrintRoute,
 })
 
 function PrintRoute() {
-  const [snapshot, setSnapshot] = React.useState<DocumentSnapshot | null>(null)
+  const [result, setResult] = React.useState<ReturnType<
+    typeof readDraft
+  > | null>(null)
 
+  React.useEffect(() => setResult(readDraft()), [])
   React.useEffect(() => {
-    setSnapshot(readSnapshot())
-  }, [])
-
-  React.useEffect(() => {
-    if (!snapshot) return
-
+    if (!result?.success) return
     document.documentElement.classList.add("document-print-root")
-    return () => {
+    return () =>
       document.documentElement.classList.remove("document-print-root")
-    }
-  }, [snapshot])
+  }, [result])
 
-  if (!snapshot) {
+  if (!result) return null
+  if (!result.success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-8 text-sm text-muted-foreground">
-        No document snapshot found.
+      <div className="flex min-h-screen items-center justify-center p-8 text-sm text-destructive">
+        {result.error}
       </div>
     )
   }
 
-  return <DocumentPrintView snapshot={snapshot} />
+  return (
+    <ProposalPrintView
+      model={buildProposalRenderModel(result.document)}
+      template={getTemplate(result.document.template)}
+    />
+  )
 }
 
-function readSnapshot(): DocumentSnapshot {
+function getTemplate(
+  reference: ReturnType<typeof createProposalDraft>["template"]
+) {
+  const overrides = reference.overrides ?? {}
+  const tokens = Object.fromEntries(
+    Object.entries(overrides).filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string"
+    )
+  )
+  return {
+    ...defaultDocumentTemplate,
+    id: reference.id,
+    tokens: { ...defaultDocumentTemplate.tokens, ...tokens },
+  }
+}
+
+function readDraft():
+  | { success: true; document: ReturnType<typeof createProposalDraft> }
+  | { success: false; error: string } {
   if (typeof window === "undefined") {
-    return createFallbackSnapshot()
+    return {
+      success: true,
+      document: createProposalDraft({ id: "proposal-print-preview" }),
+    }
   }
-
-  if (window.__DOCUMENT_SNAPSHOT__) return window.__DOCUMENT_SNAPSHOT__
-
-  const params = new URLSearchParams(window.location.search)
-  const snapshotParam = params.get("snapshot")
-  const snapshotKey = params.get("snapshotKey")
-
-  if (snapshotParam) {
-    const parsed = parseSnapshot(snapshotParam)
-    if (parsed) return parsed
-  }
-
-  if (snapshotKey) {
-    const stored =
-      window.sessionStorage.getItem(snapshotKey) ??
-      window.localStorage.getItem(snapshotKey)
-    const parsed = stored ? parseSnapshot(stored) : null
-    if (parsed) return parsed
-  }
-
-  const windowNameSnapshot = window.name ? parseSnapshot(window.name) : null
-  if (windowNameSnapshot) return windowNameSnapshot
-
-  return createFallbackSnapshot()
-}
-
-function parseSnapshot(value: string): DocumentSnapshot | null {
+  const key = new URLSearchParams(window.location.search).get("draftKey")
+  if (!key) return { success: false, error: "No proposal draft was provided." }
+  const raw = window.sessionStorage.getItem(key)
+  if (!raw)
+    return {
+      success: false,
+      error: "The proposal draft is unavailable or expired.",
+    }
   try {
-    const decoded = value.trim().startsWith("{")
-      ? value
-      : new TextDecoder().decode(
-          Uint8Array.from(atob(decodeURIComponent(value)), (char) =>
-            char.charCodeAt(0)
-          )
-        )
-
-    return JSON.parse(decoded) as DocumentSnapshot
+    const parsed = safeParseProposalDraft(JSON.parse(raw))
+    return parsed.success
+      ? { success: true, document: parsed.data }
+      : {
+          success: false,
+          error:
+            "The proposal draft is invalid or uses an unsupported version.",
+        }
   } catch {
-    return null
+    return { success: false, error: "The proposal draft could not be decoded." }
   }
-}
-
-function createFallbackSnapshot() {
-  return createDocumentSnapshot({
-    content: proposalDocumentDefinition.initialContent,
-    definition: proposalDocumentDefinition,
-    documentId: "proposal-print-preview",
-    renderData: {
-      signerName: "Signer name",
-      signerTitle: "Signature",
-    },
-    template: proposalDocumentDefinition.defaultTemplate,
-  })
 }

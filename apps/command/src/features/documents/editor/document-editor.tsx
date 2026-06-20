@@ -1,5 +1,5 @@
 import * as React from "react"
-import { EditorContent } from "@tiptap/react"
+import { DocumentEditorCanvas } from "@workspace/document-editor"
 import type { JSONContent } from "@tiptap/core"
 import type { Editor } from "@tiptap/react"
 import type { EditorCommand } from "@/lib/editor/commands"
@@ -19,62 +19,45 @@ type DocumentEditorProps = {
   onContentChange?: (content: JSONContent) => void
   bubbleCommands?: Array<EditorCommand>
   template?: DocumentTemplate
+  onUndo?: () => void
+  onRedo?: () => void
 }
 
 export function DocumentEditor({
+  bubbleCommands,
   editor,
   onContentChange,
-  bubbleCommands,
+  onRedo,
+  onUndo,
   template = defaultDocumentTemplate,
 }: DocumentEditorProps) {
-  const lastContentRef = React.useRef<string | null>(null)
   const templateStyle = React.useMemo(
     () => getDocumentTemplateStyle(template),
     [template]
   )
-
-  React.useEffect(() => {
-    if (!editor || !onContentChange) return
-
-    lastContentRef.current = JSON.stringify(editor.getJSON())
-
-    const handleUpdate = () => {
-      const content = editor.getJSON()
-      const serializedContent = JSON.stringify(content)
-
-      if (serializedContent === lastContentRef.current) return
-
-      lastContentRef.current = serializedContent
-      onContentChange(content)
-    }
-
-    editor.on("update", handleUpdate)
-
-    return () => {
-      editor.off("update", handleUpdate)
-    }
-  }, [editor, onContentChange])
+  const accessories = editor ? (
+    <>
+      <EditorBubbleMenu editor={editor} commands={bubbleCommands} />
+      <EditorFloatingMenu editor={editor} />
+      <EditorTableMenu editor={editor} />
+      <DocumentDragHandle editor={editor} />
+    </>
+  ) : null
 
   return (
-    <div
-      className="p-3"
+    <DocumentEditorCanvas
+      className="min-h-full p-6 sm:p-10 lg:p-14"
+      contentClassName="relative mx-auto max-w-5xl pb-32"
+      editor={editor}
+      onContentChange={onContentChange}
+      onRedo={onRedo}
+      onUndo={onUndo}
       style={{
         backgroundColor: "var(--document-canvas-background)",
         ...templateStyle,
       }}
-      data-document-template={template.id}
-    >
-      <div className="relative mx-auto max-w-5xl pb-32">
-        {editor ? (
-          <>
-            <EditorBubbleMenu editor={editor} commands={bubbleCommands} />
-            <EditorFloatingMenu editor={editor} />
-            <EditorTableMenu editor={editor} />
-            <DocumentDragHandle editor={editor} />
-          </>
-        ) : null}
-        <EditorContent editor={editor} />
-      </div>
-    </div>
+      templateId={template.id}
+      accessories={accessories}
+    />
   )
 }

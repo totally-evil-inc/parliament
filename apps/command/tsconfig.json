@@ -26,6 +26,10 @@
       "@workspace/ui/*": ["../../packages/ui/src/*"],
       "@workspace/database": ["../../packages/database/src/index.ts"],
       "@workspace/database/*": ["../../packages/database/src/*"],
+      "@workspace/document": ["../../packages/document/src/index.ts"],
+      "@workspace/document/*": ["../../packages/document/src/*"],
+      "@workspace/document-editor": ["../../packages/document-editor/src/index.ts"],
+      "@workspace/document-editor/*": ["../../packages/document-editor/src/*"],
     }
   }
 }

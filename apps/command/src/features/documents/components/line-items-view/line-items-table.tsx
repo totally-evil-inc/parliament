@@ -23,6 +23,8 @@ type LineItemsTableProps = {
   removeItem: (index: number) => Promise<void>
   addItem: () => void
   addCatalogItem: () => void
+  currency: string
+  locale: string
 }
 
 export function LineItemsTable({
@@ -31,25 +33,30 @@ export function LineItemsTable({
   removeItem,
   addItem,
   addCatalogItem,
+  currency,
+  locale,
 }: LineItemsTableProps) {
   return (
     <>
-      <Table className="min-w-180 text-left">
+      <Table
+        containerClassName="document-scrollbar pb-2"
+        className="min-w-180 border-collapse text-left"
+      >
         <TableHeader>
-          <TableRow className="bg-[color-mix(in_oklab,var(--document-accent)_5%,transparent)] text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase hover:bg-[color-mix(in_oklab,var(--document-accent)_5%,transparent)]">
-            <TableHead className="rounded-l-md px-4 py-3 text-[var(--document-muted-foreground)]">
+          <TableRow className="border-y border-[var(--document-border)] bg-transparent text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase hover:bg-transparent">
+            <TableHead className="h-auto px-0 py-3 pr-5 text-[var(--document-muted-foreground)]">
               Description
             </TableHead>
-            <TableHead className="px-4 py-3 text-center text-[var(--document-muted-foreground)]">
+            <TableHead className="h-auto px-3 py-3 text-center text-[var(--document-muted-foreground)]">
               Qty
             </TableHead>
-            <TableHead className="px-4 py-3 text-right text-[var(--document-muted-foreground)]">
+            <TableHead className="h-auto px-3 py-3 text-right text-[var(--document-muted-foreground)]">
               Price
             </TableHead>
-            <TableHead className="px-4 py-3 text-right text-[var(--document-muted-foreground)]">
+            <TableHead className="h-auto px-3 py-3 text-right text-[var(--document-muted-foreground)]">
               Amount
             </TableHead>
-            <TableHead className="w-10 rounded-r-md px-2 py-3" />
+            <TableHead className="h-auto w-10 py-3 pl-2" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -57,7 +64,7 @@ export function LineItemsTable({
             <TableRow>
               <TableCell
                 colSpan={5}
-                className="px-4 py-8 text-center text-sm text-[var(--document-muted-foreground)]"
+                className="border-b border-[var(--document-border)] px-0 py-10 text-center text-sm text-[var(--document-muted-foreground)]"
               >
                 No line items yet. Add a service to start building the total.
               </TableCell>
@@ -71,6 +78,8 @@ export function LineItemsTable({
               index={index}
               updateItem={updateItem}
               removeItem={removeItem}
+              currency={currency}
+              locale={locale}
             />
           ))}
         </TableBody>

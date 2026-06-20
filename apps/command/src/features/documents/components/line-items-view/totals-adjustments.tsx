@@ -1,10 +1,11 @@
 import { Cancel01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
 import { Separator } from "@workspace/ui/components/separator"
 import { money, safeNumber } from "./pricing"
 import { Signature } from "./signature-billing-notes"
+
+import { CanvasNumberField } from "@/features/documents/components/canvas-fields"
 
 type TotalsAdjustmentsProps = {
   subtotal: number
@@ -18,6 +19,8 @@ type TotalsAdjustmentsProps = {
   signerName: string
   signerTitle: string
   updateAttributes: (attributes: Record<string, unknown>) => void
+  currency: string
+  locale: string
 }
 
 export function TotalsAdjustments({
@@ -32,6 +35,8 @@ export function TotalsAdjustments({
   signerName,
   signerTitle,
   updateAttributes,
+  currency,
+  locale,
 }: TotalsAdjustmentsProps) {
   return (
     <div className="space-y-4">
@@ -39,7 +44,9 @@ export function TotalsAdjustments({
         <span className="text-[var(--document-muted-foreground)]">
           Subtotal
         </span>
-        <span className="font-semibold">{money(subtotal)}</span>
+        <span className="font-semibold">
+          {money(subtotal, currency, locale)}
+        </span>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -70,6 +77,8 @@ export function TotalsAdjustments({
           label="Discount"
           rate={safeNumber(discountRate)}
           amount={-discountAmount}
+          currency={currency}
+          locale={locale}
           onRateChange={(value) => updateAttributes({ discountRate: value })}
           onRemove={() =>
             updateAttributes({ discountEnabled: false, discountRate: 0 })
@@ -82,6 +91,8 @@ export function TotalsAdjustments({
           label="Tax"
           rate={safeNumber(taxRate)}
           amount={taxAmount}
+          currency={currency}
+          locale={locale}
           onRateChange={(value) => updateAttributes({ taxRate: value })}
           onRemove={() => updateAttributes({ taxEnabled: false, taxRate: 0 })}
         />
@@ -92,7 +103,7 @@ export function TotalsAdjustments({
       <div className="flex items-center justify-between">
         <span className="text-lg font-bold">Total</span>
         <span className="text-3xl font-bold tracking-tight">
-          {money(total)}
+          {money(total, currency, locale)}
         </span>
       </div>
 
@@ -118,12 +129,16 @@ function AdjustmentRow({
   amount,
   onRateChange,
   onRemove,
+  currency,
+  locale,
 }: {
   label: string
   rate: number
   amount: number
   onRateChange: (value: number) => void
   onRemove: () => void
+  currency: string
+  locale: string
 }) {
   return (
     <div className="flex items-center justify-between gap-4 text-sm">
@@ -141,14 +156,11 @@ function AdjustmentRow({
         <span>{label}</span>
       </div>
       <div className="ml-auto flex items-center gap-2 text-[var(--document-muted-foreground)]">
-        <Input
-          className="w-16 rounded-none border-x-0 border-t-0 border-b border-transparent text-right text-[var(--document-foreground)] shadow-none hover:border-[var(--document-border)] focus-visible:border-[var(--document-border)] focus-visible:ring-0"
-          type="number"
-          min={0}
-          step="0.01"
-          inputMode="decimal"
+        <CanvasNumberField
+          aria-label={`${label} percentage`}
+          className="w-16 text-right"
           value={rate}
-          onChange={(event) => onRateChange(safeNumber(event.target.value))}
+          onValueChange={onRateChange}
         />
         <span>%</span>
       </div>
@@ -159,7 +171,7 @@ function AdjustmentRow({
             : "min-w-20 text-right font-semibold"
         }
       >
-        {money(amount)}
+        {money(amount, currency, locale)}
       </span>
     </div>
   )

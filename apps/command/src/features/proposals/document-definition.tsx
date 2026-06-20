@@ -32,9 +32,22 @@ export const proposalDocumentDefinition: DocumentDefinition = {
   initialContent: {
     type: "doc",
     content: [
-      { type: "documentHeader" },
+      {
+        type: "documentHeader",
+        attrs: {
+          blockId: "proposal-header",
+          binding: "proposal.parties",
+          headerLayout: "mark-left-dates-right",
+        },
+      },
       { type: "paragraph" },
-      { type: "lineItems" },
+      {
+        type: "lineItems",
+        attrs: {
+          blockId: "proposal-pricing",
+          binding: "proposal.pricing",
+        },
+      },
     ],
   },
   toolbarActions: [

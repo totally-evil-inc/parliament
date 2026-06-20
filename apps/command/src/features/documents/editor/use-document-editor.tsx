@@ -1,26 +1,22 @@
 import * as React from "react"
-import { useEditor } from "@tiptap/react"
+import { useDocumentEditorAdapter } from "@workspace/document-editor"
 import { createDocumentCommands } from "./definition"
 import {
   businessDocumentPreset,
   createBaseRichTextPreset,
   documentEditorClassName,
 } from "./presets"
-import type { JSONContent } from "@tiptap/core"
 import type { DocumentEditorConfig } from "./types"
+import type { Editor } from "@tiptap/react"
 
 import { editorCommands } from "@/lib/editor/commands"
-
-function serializeContent(content: JSONContent) {
-  return JSON.stringify(content)
-}
 
 export function useDocumentEditor({
   documentId,
   content,
   definition,
 }: DocumentEditorConfig) {
-  const editorRef = React.useRef<ReturnType<typeof useEditor>>(null)
+  const editorRef = React.useRef<Editor | null>(null)
   const commands = React.useMemo(
     () => [...editorCommands, ...createDocumentCommands(definition)],
     [definition]
@@ -28,7 +24,9 @@ export function useDocumentEditor({
 
   const customExtensions = React.useMemo(
     () => [
-      ...(definition.presets?.includes("business") ? businessDocumentPreset : []),
+      ...(definition.presets?.includes("business")
+        ? businessDocumentPreset
+        : []),
       ...(definition.schemaExtensions ?? []),
       ...definition.blocks.flatMap((block) =>
         "extension" in block && block.extension ? [block.extension] : []
@@ -37,38 +35,19 @@ export function useDocumentEditor({
     [definition]
   )
 
-  const editor = useEditor(
-    {
-      extensions: [
-        ...createBaseRichTextPreset({
-          getEditor: () => editorRef.current,
-          placeholder: definition.placeholder,
-          commands,
-        }),
-        ...customExtensions,
-      ],
-      content,
-      immediatelyRender: false,
-      editorProps: {
-        attributes: {
-          class: documentEditorClassName,
-        },
-      },
-    },
-    [definition.type, documentId]
-  )
-
+  const editor = useDocumentEditorAdapter({
+    extensions: [
+      ...createBaseRichTextPreset({
+        getEditor: () => editorRef.current,
+        placeholder: definition.placeholder,
+        commands,
+      }),
+      ...customExtensions,
+    ],
+    content,
+    className: documentEditorClassName,
+    documentKey: `${definition.type}:${documentId ?? "new"}`,
+  })
   editorRef.current = editor
-
-  React.useEffect(() => {
-    if (!editor) return
-
-    if (serializeContent(editor.getJSON()) === serializeContent(content)) {
-      return
-    }
-
-    editor.commands.setContent(content, { emitUpdate: false })
-  }, [content, editor])
-
   return editor
 }

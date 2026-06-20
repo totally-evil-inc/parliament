@@ -9,13 +9,16 @@ export type PricingItem = {
   showImage?: boolean
 }
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-})
+const currencyFormatters = new Map<string, Intl.NumberFormat>()
 
-export function money(value: number) {
-  return currencyFormatter.format(Number.isFinite(value) ? value : 0)
+export function money(value: number, currency = "KES", locale = "en-KE") {
+  const key = `${locale}:${currency}`
+  let formatter = currencyFormatters.get(key)
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(locale, { style: "currency", currency })
+    currencyFormatters.set(key, formatter)
+  }
+  return formatter.format(Number.isFinite(value) ? value : 0)
 }
 
 export function safeNumber(value: unknown) {

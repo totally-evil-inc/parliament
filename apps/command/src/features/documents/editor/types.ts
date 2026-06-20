@@ -49,77 +49,11 @@ export type DocumentTemplateStyle = CSSProperties & {
   "--border": string
 }
 
-export type DocumentHeaderCustomField = {
-  id: string
-  label: string
-  value: string
-  labelContent?: JSONContent
-  valueContent?: JSONContent
-}
-
 export type DocumentHeaderLayoutId =
   | "mark-left-dates-right"
   | "centered-stack"
   | "left-stack"
   | "editorial-band"
-
-export type DocumentHeaderAttrs = {
-  headerLayout: DocumentHeaderLayoutId
-  title: string
-  titleContent?: JSONContent
-  date: string
-  due: string
-  validUntil: string
-  fromName: string
-  fromNameContent?: JSONContent
-  fromEmail: string
-  fromEmailContent?: JSONContent
-  fromAddress: string
-  fromAddressContent?: JSONContent
-  fromPhone: string
-  fromPhoneContent?: JSONContent
-  fromWebsite: string
-  fromWebsiteContent?: JSONContent
-  fromTaxId: string
-  fromTaxIdContent?: JSONContent
-  fromCustomFields: Array<DocumentHeaderCustomField>
-  billToName: string
-  billToNameContent?: JSONContent
-  billToEmail: string
-  billToEmailContent?: JSONContent
-  billToAddress: string
-  billToAddressContent?: JSONContent
-  billToPhone: string
-  billToPhoneContent?: JSONContent
-  billToWebsite: string
-  billToWebsiteContent?: JSONContent
-  billToTaxId: string
-  billToTaxIdContent?: JSONContent
-  billToCustomFields: Array<DocumentHeaderCustomField>
-}
-
-export type DocumentRenderData = {
-  issueDate?: string
-  dueDate?: string
-  validUntil?: string
-  signerName?: string
-  signerTitle?: string
-  organizationName?: string
-  organizationEmail?: string
-  clientName?: string
-  clientEmail?: string
-}
-
-export type DocumentSnapshot = {
-  schemaVersion: 1
-  rendererVersion: string
-  documentType: DocumentType
-  documentId: string
-  content: JSONContent
-  template: DocumentTemplate
-  renderData: DocumentRenderData
-  createdAt: string
-}
 
 export type DocumentLayoutPreset = {
   id: string
