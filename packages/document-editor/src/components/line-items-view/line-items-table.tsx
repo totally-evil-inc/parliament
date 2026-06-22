@@ -88,22 +88,22 @@ export function LineItemsTable({
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           onClick={addItem}
-          className="h-8 gap-1.5 rounded-full border-dashed border-[var(--document-border)] text-xs text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
+          className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider uppercase text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
         >
-          <HugeiconsIcon icon={PlusSignIcon} className="h-3.5 w-3.5" />
+          <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
           Add Line Item
         </Button>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           onClick={addCatalogItem}
-          className="h-8 gap-1.5 rounded-full border-dashed border-[var(--document-border)] text-xs text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
+          className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider uppercase text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
         >
-          <HugeiconsIcon icon={PlusSignIcon} className="h-3.5 w-3.5" />
+          <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
           From Catalog
         </Button>
       </div>

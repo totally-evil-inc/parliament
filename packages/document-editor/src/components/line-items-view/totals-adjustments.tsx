@@ -1,7 +1,8 @@
-import { Cancel01Icon } from "@hugeicons/core-free-icons"
+import { Cancel01Icon, PlusSignIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
+import { cn } from "@workspace/ui/lib/utils"
 import { money, safeNumber } from "./pricing"
 import { Signature } from "./signature-billing-notes"
 
@@ -40,11 +41,11 @@ export function TotalsAdjustments({
 }: TotalsAdjustmentsProps) {
   return (
     <div className="space-y-4">
-      <div className="flex justify-between text-sm">
-        <span className="text-[var(--document-muted-foreground)]">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
           Subtotal
         </span>
-        <span className="font-semibold">
+        <span className="text-sm font-bold tabular-nums text-[var(--document-foreground)]">
           {money(subtotal, currency, locale)}
         </span>
       </div>
@@ -52,22 +53,26 @@ export function TotalsAdjustments({
       <div className="flex flex-wrap gap-2">
         {!discountEnabled ? (
           <Button
-            variant="outline"
+            type="button"
+            variant="ghost"
             size="sm"
             onClick={() => updateAttributes({ discountEnabled: true })}
-            className="h-8 rounded-full border-dashed border-[var(--document-border)] text-xs text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
+            className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider uppercase text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
           >
-            + Discount
+            <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
+            Discount
           </Button>
         ) : null}
         {!taxEnabled ? (
           <Button
-            variant="outline"
+            type="button"
+            variant="ghost"
             size="sm"
             onClick={() => updateAttributes({ taxEnabled: true })}
-            className="h-8 rounded-full border-dashed border-[var(--document-border)] text-xs text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
+            className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider uppercase text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
           >
-            + Tax
+            <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
+            Tax
           </Button>
         ) : null}
       </div>
@@ -101,8 +106,10 @@ export function TotalsAdjustments({
       <Separator />
 
       <div className="flex items-center justify-between">
-        <span className="text-lg font-bold">Total</span>
-        <span className="text-3xl font-bold tracking-tight">
+        <span className="text-[10px] font-bold tracking-widest text-[var(--document-foreground)] uppercase">
+          Total
+        </span>
+        <span className="text-2xl font-black tracking-tight text-[var(--document-accent)] tabular-nums">
           {money(total, currency, locale)}
         </span>
       </div>
@@ -141,35 +148,34 @@ function AdjustmentRow({
   locale: string
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 text-sm">
-      <div className="flex items-center gap-3 text-[var(--document-muted-foreground)]">
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-2 text-[var(--document-muted-foreground)]">
         <Button
           type="button"
           variant="ghost"
           size="icon-xs"
           onClick={onRemove}
-          className="text-[var(--document-muted-foreground)] hover:text-destructive"
+          className="h-5 w-5 text-[var(--document-muted-foreground)] hover:text-destructive"
           aria-label={`Remove ${label.toLowerCase()}`}
         >
-          <HugeiconsIcon icon={Cancel01Icon} className="h-3.5 w-3.5" />
+          <HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
         </Button>
-        <span>{label}</span>
+        <span className="text-[10px] font-bold tracking-widest uppercase">{label}</span>
       </div>
-      <div className="ml-auto flex items-center gap-2 text-[var(--document-muted-foreground)]">
+      <div className="ml-auto flex items-center gap-1 text-[var(--document-muted-foreground)]">
         <CanvasNumberField
           aria-label={`${label} percentage`}
-          className="w-16 text-right"
+          className="w-12 text-right text-xs font-bold leading-5 tabular-nums"
           value={rate}
           onValueChange={onRateChange}
         />
-        <span>%</span>
+        <span className="text-xs font-bold">%</span>
       </div>
       <span
-        className={
-          amount < 0
-            ? "min-w-20 text-right font-semibold text-destructive"
-            : "min-w-20 text-right font-semibold"
-        }
+        className={cn(
+          "min-w-20 text-right text-sm font-bold tabular-nums",
+          amount < 0 ? "text-destructive" : "text-[var(--document-foreground)]"
+        )}
       >
         {money(amount, currency, locale)}
       </span>

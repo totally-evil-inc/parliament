@@ -2,11 +2,11 @@ import { CanvasTextField } from "../canvas-fields"
 
 export function SignatureBillingNotes() {
   return (
-    <div className="space-y-3 text-sm text-[var(--document-muted-foreground)]">
-      <p className="font-medium text-[var(--document-foreground)]">
+    <div className="space-y-2">
+      <h4 className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
         Billing notes
-      </p>
-      <p>
+      </h4>
+      <p className="text-xs leading-relaxed text-[var(--document-muted-foreground)]">
         Use this section to confirm the services, quantities, pricing,
         discounts, and taxes included in this document.
       </p>
