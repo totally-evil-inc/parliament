@@ -24,7 +24,7 @@ export function useDocumentEditorAdapter({
   )
 
   React.useEffect(() => {
-    if (!editor || equalContent(editor.getJSON(), content)) return
+    if (!editor || editor.isFocused || equalContent(editor.getJSON(), content)) return
     editor.commands.setContent(content, { emitUpdate: false })
   }, [content, editor])
 
@@ -55,22 +55,28 @@ export function DocumentEditorCanvas({
   templateId: string
 }) {
   const lastContentRef = React.useRef<string | null>(null)
+  const onContentChangeRef = React.useRef(onContentChange)
 
   React.useEffect(() => {
-    if (!editor || !onContentChange) return
+    onContentChangeRef.current = onContentChange
+  }, [onContentChange])
+
+  React.useEffect(() => {
+    if (!editor) return
     lastContentRef.current = JSON.stringify(editor.getJSON())
     const handleUpdate = () => {
+      if (!onContentChangeRef.current) return
       const content = editor.getJSON()
       const serialized = JSON.stringify(content)
       if (serialized === lastContentRef.current) return
       lastContentRef.current = serialized
-      onContentChange(content)
+      onContentChangeRef.current(content)
     }
     editor.on("update", handleUpdate)
     return () => {
       editor.off("update", handleUpdate)
     }
-  }, [editor, onContentChange])
+  }, [editor])
 
   return (
     <div
