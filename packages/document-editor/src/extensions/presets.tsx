@@ -39,9 +39,9 @@ const TaskItem = BaseTaskItem.extend({
 
 export const documentEditorClassName = [
   "prose prose-sm dark:prose-invert",
-  "max-w-full sm:max-w-4xl box-border w-full min-h-[1200px] cursor-text focus:outline-none px-2 py-6 sm:px-12 sm:py-16",
-  "mx-auto border border-[var(--document-border)] bg-[var(--document-page-background)] text-[var(--document-foreground)] shadow-xl shadow-black/10",
-  "rounded-sm [font-family:var(--document-font-family)]",
+  "max-w-full sm:max-w-4xl box-border w-full min-h-[1200px] cursor-text focus:outline-none px-4 py-6 sm:px-12 sm:py-16",
+  "mx-auto border-t border-b sm:border border-[var(--document-border)] bg-[var(--document-page-background)] text-[var(--document-foreground)] sm:shadow-xl sm:shadow-black/10 sm:rounded-sm",
+  "[font-family:var(--document-font-family)]",
   "prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground",
   "prose-headings:[font-family:var(--document-heading-font-family)]",
   "prose-code:text-foreground prose-blockquote:text-muted-foreground",

@@ -1,13 +1,13 @@
 import * as React from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
-import { SidebarProvider } from "@workspace/ui/components/sidebar"
 import { createProposalDraft } from "@workspace/document/proposal"
 import {
   DocumentBlockSidebar,
   DocumentEditor,
   DocumentEditorHostProvider,
   DocumentToolbar,
+  DocumentSidebarProvider,
   ProposalDraftProvider,
   proposalEditorRegistry,
   useProposalEditorRuntime,
@@ -104,17 +104,16 @@ function ProposalEditorScreen({
 
   return (
     <div className="flex h-[calc(100svh-3rem)] min-h-0 w-full flex-col overflow-hidden bg-muted/30">
-      <SidebarProvider
-        defaultOpen={true}
-        className="h-full min-h-0 overflow-hidden"
-        style={{ "--sidebar-width": "22rem" } as React.CSSProperties}
-      >
+      <DocumentSidebarProvider defaultOpen={true}>
         <div
-          className="relative flex min-h-0 flex-1 overflow-hidden"
-          style={{ backgroundColor: template.tokens.canvasBackground }}
+          className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden"
+          style={{
+            backgroundColor: template.tokens.canvasBackground,
+            "--sidebar-width": "22rem",
+          } as React.CSSProperties}
           data-document-template={template.id}
         >
-          <ScrollArea className="relative min-h-0 flex-1">
+          <ScrollArea className="relative min-h-0 min-w-0 flex-1">
             <DocumentEditor
               definition={proposalEditorRegistry}
               editor={runtime.editor}
@@ -142,7 +141,7 @@ function ProposalEditorScreen({
             }}
           />
         </div>
-      </SidebarProvider>
+      </DocumentSidebarProvider>
     </div>
   )
 }

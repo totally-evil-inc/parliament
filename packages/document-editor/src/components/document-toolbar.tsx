@@ -6,7 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
-import { useSidebar } from "@workspace/ui/components/sidebar"
+import { useDocumentSidebar } from "../runtime/sidebar-context"
 import { insertDocumentBlockFromDefinition } from "../core/definition"
 import type { DocumentBlockDefinition, DocumentDefinition } from "../core/types"
 import type { Editor } from "@tiptap/react"
@@ -24,7 +24,7 @@ export function DocumentToolbar({
   definition,
   onAction,
 }: DocumentToolbarProps) {
-  const { setOpenMobile, toggleSidebar } = useSidebar()
+  const { setOpenMobile, toggleSidebar } = useDocumentSidebar()
   const host = useDocumentEditorHost()
 
   const runBlock = (block: DocumentBlockDefinition) => {

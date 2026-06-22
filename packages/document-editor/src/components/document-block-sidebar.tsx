@@ -21,7 +21,7 @@ import {
   DrawerContent,
   DrawerTitle,
 } from "@workspace/ui/components/drawer"
-import { useSidebar } from "@workspace/ui/components/sidebar"
+import { useDocumentSidebar } from "../runtime/sidebar-context"
 import { cn } from "@workspace/ui/lib/utils"
 import { insertDocumentBlockFromDefinition } from "../core/definition"
 import {
@@ -67,7 +67,7 @@ export function DocumentBlockSidebar({
   onTemplateChange,
   onTemplateReset,
 }: DocumentBlockSidebarProps) {
-  const { open, openMobile, setOpen, setOpenMobile } = useSidebar()
+  const { open, openMobile, setOpen, setOpenMobile } = useDocumentSidebar()
   const [activePanel, setActivePanel] =
     React.useState<SidebarPanel>("customize")
   const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(
