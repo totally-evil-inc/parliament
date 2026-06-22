@@ -9,17 +9,32 @@ function richText(node: RichTextNode): string {
     .join(node.type === "paragraph" ? " " : "\n")
 }
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, "")
+}
+
 function blockText(block: DocumentBlock, model: ProposalRenderModel): string {
   switch (block.type) {
     case "partyHeader":
-      return [model.title, model.seller.name, model.customer.name]
+      return [
+        stripHtml(model.title),
+        model.seller.name,
+        stripHtml(model.seller.address),
+        model.customer.name,
+        stripHtml(model.customer.address),
+      ]
         .filter(Boolean)
         .join("\n")
     case "pricing":
       return (
         model.pricing?.items
           .map((item) =>
-            [item.description, item.details].filter(Boolean).join(" ")
+            [
+              stripHtml(item.description),
+              stripHtml(item.details),
+            ]
+              .filter(Boolean)
+              .join(" ")
           )
           .join("\n") ?? ""
       )

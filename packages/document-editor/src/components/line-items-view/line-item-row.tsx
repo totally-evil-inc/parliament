@@ -5,7 +5,7 @@ import { TableCell, TableRow } from "@workspace/ui/components/table"
 import { getLineItemKey, getLineTotal, money, safeNumber } from "./pricing"
 import type { PricingItem } from "./pricing"
 
-import { CanvasNumberField, CanvasTextArea } from "../canvas-fields"
+import { CanvasNumberField, CanvasRichTextArea } from "../canvas-fields"
 
 type LineItemRowProps = {
   item: PricingItem
@@ -33,7 +33,7 @@ export function LineItemRow({
   return (
     <TableRow
       key={getLineItemKey(item)}
-      className="group border-b border-[var(--document-border)] align-top hover:bg-transparent"
+      className="group align-top hover:bg-transparent"
     >
       <TableCell className="px-0 py-5 pr-5 whitespace-normal">
         <div className="flex gap-3">
@@ -49,20 +49,18 @@ export function LineItemRow({
             </Button>
           ) : null}
           <div className="min-w-0 flex-1 space-y-2">
-            <CanvasTextArea
+            <CanvasRichTextArea
               aria-label={`Description for line item ${index + 1}`}
               className="font-medium"
-              maxRows={2}
               placeholder="Item description..."
               value={item.description}
               onValueChange={(value) => updateItem(index, "description", value)}
             />
 
             {item.showDetails ? (
-              <CanvasTextArea
+              <CanvasRichTextArea
                 aria-label={`Details for ${item.description || `line item ${index + 1}`}`}
                 className="text-[var(--document-muted-foreground)]"
-                maxRows={4}
                 placeholder="Add service details, scope, or billing notes..."
                 value={item.details ?? ""}
                 onValueChange={(value) => updateItem(index, "details", value)}

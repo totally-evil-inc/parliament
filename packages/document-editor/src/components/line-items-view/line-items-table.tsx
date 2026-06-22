@@ -43,7 +43,7 @@ export function LineItemsTable({
         className="min-w-180 border-collapse text-left"
       >
         <TableHeader>
-          <TableRow className="border-y border-[var(--document-border)] bg-transparent text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase hover:bg-transparent">
+          <TableRow className="border-b border-[var(--document-border)] bg-transparent text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase hover:bg-transparent">
             <TableHead className="h-auto px-0 py-3 pr-5 text-[var(--document-muted-foreground)]">
               Description
             </TableHead>
@@ -64,7 +64,7 @@ export function LineItemsTable({
             <TableRow>
               <TableCell
                 colSpan={5}
-                className="border-b border-[var(--document-border)] px-0 py-10 text-center text-sm text-[var(--document-muted-foreground)]"
+                className="px-0 py-10 text-center text-sm text-[var(--document-muted-foreground)]"
               >
                 No line items yet. Add a service to start building the total.
               </TableCell>

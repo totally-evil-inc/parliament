@@ -21,7 +21,7 @@ import type { PartySnapshot } from "@workspace/document/schema"
 import type { NodeViewProps } from "@tiptap/react"
 import type { DocumentHeaderLayoutId } from "../core/types"
 
-import { CanvasTextArea, CanvasTextField } from "./canvas-fields"
+import { CanvasRichTextArea, CanvasTextField } from "./canvas-fields"
 import { isDocumentHeaderLayoutId } from "../core/header-layouts"
 import { useDocumentEditorHost } from "../runtime/react"
 
@@ -187,10 +187,9 @@ function TitleField({
   onChange: (value: string) => void
 }) {
   return (
-    <CanvasTextArea
+    <CanvasRichTextArea
       aria-label="Proposal title"
       className="min-h-12 [font-family:var(--document-heading-font-family)] text-4xl leading-[1.08] font-bold tracking-tight"
-      maxRows={3}
       placeholder="Proposal title..."
       value={value}
       onValueChange={onChange}
@@ -304,7 +303,6 @@ function PartyFields({
       </div>
       <div className="space-y-3">
         <PartyInput
-          className="text-lg font-semibold"
           placeholder="Name"
           value={party.name}
           onChange={(value) => onChange("name", value)}
@@ -414,7 +412,7 @@ function PartyInput({
   }
 
   return multiline ? (
-    <CanvasTextArea {...props} maxRows={3} />
+    <CanvasRichTextArea {...props} />
   ) : (
     <CanvasTextField {...props} />
   )

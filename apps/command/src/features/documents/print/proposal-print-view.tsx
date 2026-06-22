@@ -136,7 +136,14 @@ function Header({ model }: { model: ProposalRenderModel }) {
           <div className="flex h-16 w-28 items-center justify-center rounded-[var(--document-radius)] border border-[var(--document-border)] text-xs text-[var(--document-muted-foreground)]">
             Logo
           </div>
-          <h1 className="text-4xl font-bold">{model.title || "Proposal"}</h1>
+          {model.title ? (
+            <h1
+              className="text-4xl font-bold"
+              dangerouslySetInnerHTML={{ __html: model.title }}
+            />
+          ) : (
+            <h1 className="text-4xl font-bold">Proposal</h1>
+          )}
         </div>
         <div className="grid gap-3 text-right text-sm">
           <DateValue
@@ -201,9 +208,17 @@ function Party({
         ["taxId", party.taxId],
       ]
         .filter((field) => Boolean(field[1]))
-        .map(([key, value]) => (
-          <p key={key}>{value}</p>
-        ))}
+        .map(([key, value]) => {
+          if (key === "address") {
+            return (
+              <p
+                key={key}
+                dangerouslySetInnerHTML={{ __html: value }}
+              />
+            )
+          }
+          return <p key={key}>{value}</p>
+        })}
       {party.customFields.map((field) => (
         <p key={field.id}>
           <strong>{field.label}:</strong> {field.value}
@@ -231,7 +246,7 @@ function Pricing({ model }: { model: ProposalRenderModel }) {
       <div className="pt-5">
         <table className="w-full">
           <thead>
-            <tr className="border-y border-[var(--document-border)] text-left text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+            <tr className="border-b border-[var(--document-border)] text-left text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
               <th className="py-3 pr-5">Description</th>
               <th className="px-3 py-3 text-center">Qty</th>
               <th className="px-3 py-3 text-right">Price</th>
@@ -242,14 +257,18 @@ function Pricing({ model }: { model: ProposalRenderModel }) {
             {pricing.items.map((item, index) => (
               <tr
                 key={item.id}
-                className="break-inside-avoid border-b border-[var(--document-border)] align-top"
+                className="break-inside-avoid align-top"
               >
                 <td className="py-5 pr-5">
-                  <p className="font-medium">{item.description}</p>
+                  <p
+                    className="font-medium"
+                    dangerouslySetInnerHTML={{ __html: item.description || "" }}
+                  />
                   {item.details ? (
-                    <p className="text-sm text-[var(--document-muted-foreground)]">
-                      {item.details}
-                    </p>
+                    <p
+                      className="text-sm text-[var(--document-muted-foreground)]"
+                      dangerouslySetInnerHTML={{ __html: item.details }}
+                    />
                   ) : null}
                 </td>
                 <td className="px-3 py-5 text-center">{item.quantity}</td>
