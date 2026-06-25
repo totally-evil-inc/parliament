@@ -16,6 +16,36 @@ import { Toggle } from "@workspace/ui/components/toggle"
 import type { Editor } from "@tiptap/react"
 import type { EditorCommand } from "../../commands/types"
 
+type BubbleVisibilityState = Pick<Editor, "isEditable" | "isFocused"> & {
+  state: {
+    selection: {
+      empty: boolean
+      node?: unknown
+      $anchorCell?: unknown
+      $from?: { parent?: { inlineContent?: boolean } }
+      $to?: { parent?: { inlineContent?: boolean } }
+    }
+  }
+}
+
+export function shouldShowEditorBubbleMenu(editor: BubbleVisibilityState) {
+  const selection = editor.state.selection
+  const isNodeSelection = "node" in selection && Boolean(selection.node)
+  const isCellSelection = "$anchorCell" in selection
+  const isTextSelection =
+    selection.$from?.parent?.inlineContent === true ||
+    selection.$to?.parent?.inlineContent === true
+
+  return (
+    editor.isFocused &&
+    editor.isEditable &&
+    !selection.empty &&
+    !isNodeSelection &&
+    !isCellSelection &&
+    isTextSelection
+  )
+}
+
 export function EditorBubbleMenu({
   editor,
   commands,
@@ -38,9 +68,7 @@ export function EditorBubbleMenu({
   return (
     <BubbleMenu
       editor={editor}
-      shouldShow={({ editor: current }) =>
-        current.isFocused && current.isEditable
-      }
+      shouldShow={({ editor: current }) => shouldShowEditorBubbleMenu(current)}
       className="no-scrollbar flex max-w-[90vw] items-center gap-1 overflow-x-auto rounded-md border bg-popover p-1 shadow-md"
     >
       {commands.map((command) => (
