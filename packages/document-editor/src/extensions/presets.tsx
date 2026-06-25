@@ -48,6 +48,8 @@ import {
   TestimonialAuthor,
   TestimonialRole,
 } from "../proposal/extensions/testimonials"
+import { ProposalSection } from "../proposal/extensions/proposal-section"
+import { Faq } from "../proposal/extensions/faq"
 
 const TaskItem = BaseTaskItem.extend({
   addNodeView() {
@@ -213,6 +215,8 @@ export const businessDocumentPreset = [
   BusinessDocument,
   DocumentHeader,
   LineItems,
+  ProposalSection,
+  Faq,
   KeyNumbersItem,
   KeyNumbersValue,
   KeyNumbersLabel,

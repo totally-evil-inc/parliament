@@ -3,7 +3,10 @@ import { createFileRoute } from "@tanstack/react-router"
 import { buildProposalRenderModel } from "@workspace/document/render"
 import { createProposalDraft } from "@workspace/document/proposal"
 import { safeParseProposalDraft } from "@workspace/document/schema"
-import { defaultDocumentTemplate } from "@workspace/document/presentation"
+import {
+  defaultDocumentTemplate,
+  webStudioProposalTemplate,
+} from "@workspace/document/presentation"
 
 import { ProposalPrintView } from "@/features/documents/print/proposal-print-view"
 
@@ -44,6 +47,10 @@ function PrintRoute() {
 function getTemplate(
   reference: ReturnType<typeof createProposalDraft>["template"]
 ) {
+  const baseTemplate =
+    reference.id === webStudioProposalTemplate.id
+      ? webStudioProposalTemplate
+      : defaultDocumentTemplate
   const overrides = reference.overrides ?? {}
   const tokens = Object.fromEntries(
     Object.entries(overrides).filter(
@@ -51,9 +58,9 @@ function getTemplate(
     )
   )
   return {
-    ...defaultDocumentTemplate,
+    ...baseTemplate,
     id: reference.id,
-    tokens: { ...defaultDocumentTemplate.tokens, ...tokens },
+    tokens: { ...baseTemplate.tokens, ...tokens },
   }
 }
 

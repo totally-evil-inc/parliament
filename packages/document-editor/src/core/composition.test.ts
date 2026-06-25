@@ -232,3 +232,54 @@ test("legacy card arrays normalize into inline rich text items", () => {
     { type: "text", text: "Excellent" },
   ])
 })
+
+test("proposal sections and FAQ blocks survive the TipTap adapter", () => {
+  const content = {
+    type: "doc",
+    content: [
+      {
+        type: "proposalSection",
+        attrs: {
+          blockId: "section-1",
+          eyebrow: "Overview",
+          title: "Project direction",
+          lead: "A concise recommendation.",
+          variant: "accent",
+          content: {
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: "Build the right thing." }],
+              },
+            ],
+          },
+        },
+      },
+      {
+        type: "proposalFaq",
+        attrs: {
+          blockId: "faq-1",
+          variant: "list",
+          items: [
+            {
+              id: "faq-item-1",
+              question: "Can the scope change?",
+              answer: {
+                type: "doc",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "Yes, with approval." }],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    ],
+  }
+
+  expect(compositionToTiptap(tiptapToComposition(content))).toEqual(content)
+})

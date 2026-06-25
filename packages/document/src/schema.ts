@@ -113,6 +113,12 @@ export const proposalPricingSchema = z
   .strict()
 
 const columnsSchema = z.union([z.literal(1), z.literal(2), z.literal(3)])
+const sectionVariantSchema = z.union([
+  z.literal("default"),
+  z.literal("accent"),
+  z.literal("compact"),
+])
+const faqVariantSchema = z.literal("list")
 const blockBase = { id: idSchema, version: z.literal(1) } as const
 
 export const documentBlockSchema = z.discriminatedUnion("type", [
@@ -137,6 +143,17 @@ export const documentBlockSchema = z.discriminatedUnion("type", [
       type: z.literal("pricing"),
       binding: z.literal("proposal.pricing"),
       config: z.object({ title: z.string() }).strict(),
+    })
+    .strict(),
+  z
+    .object({
+      ...blockBase,
+      type: z.literal("section"),
+      eyebrow: z.string().default(""),
+      title: z.string(),
+      lead: z.string().default(""),
+      variant: sectionVariantSchema.default("default"),
+      content: richTextDocSchema,
     })
     .strict(),
   z
@@ -184,6 +201,22 @@ export const documentBlockSchema = z.discriminatedUnion("type", [
       ...blockBase,
       type: z.literal("timeline"),
       content: richTextDocSchema,
+    })
+    .strict(),
+  z
+    .object({
+      ...blockBase,
+      type: z.literal("faq"),
+      variant: faqVariantSchema.default("list"),
+      items: z.array(
+        z
+          .object({
+            id: idSchema,
+            question: z.string(),
+            answer: richTextDocSchema,
+          })
+          .strict()
+      ),
     })
     .strict(),
 ])

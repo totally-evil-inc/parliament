@@ -29,6 +29,20 @@ function blockToTiptap(block: DocumentBlock): Array<JSONContent> {
       ]
     case "richText":
       return block.content.content as Array<JSONContent>
+    case "section":
+      return [
+        {
+          type: "proposalSection",
+          attrs: {
+            blockId: block.id,
+            eyebrow: block.eyebrow,
+            title: block.title,
+            lead: block.lead,
+            variant: block.variant,
+            content: block.content,
+          },
+        },
+      ]
     case "metrics":
       return [
         {
@@ -81,6 +95,17 @@ function blockToTiptap(block: DocumentBlock): Array<JSONContent> {
           content: block.content.content as Array<JSONContent>,
         },
       ]
+    case "faq":
+      return [
+        {
+          type: "proposalFaq",
+          attrs: {
+            blockId: block.id,
+            variant: block.variant,
+            items: block.items,
+          },
+        },
+      ]
   }
 }
 
@@ -119,6 +144,18 @@ export function tiptapToComposition(
         version: 1,
         binding: "proposal.pricing",
         config: { title: "Services & Billing" },
+      }
+    }
+    if (node.type === "proposalSection") {
+      return {
+        id: id(node, index, "section"),
+        type: "section",
+        version: 1,
+        eyebrow: string(nodeAttrs.eyebrow),
+        title: string(nodeAttrs.title),
+        lead: string(nodeAttrs.lead),
+        variant: sectionVariant(nodeAttrs.variant),
+        content: docFromUnknown(nodeAttrs.content),
       }
     }
     if (node.type === "keyNumbers") {
@@ -185,6 +222,22 @@ export function tiptapToComposition(
         ),
       }
     }
+    if (node.type === "proposalFaq") {
+      const blockId = id(node, index, "faq")
+      return {
+        id: blockId,
+        type: "faq",
+        version: 1,
+        variant: "list",
+        items: array<Record<string, unknown>>(nodeAttrs.items).map(
+          (item, itemIndex) => ({
+            id: string(item.id) || `${blockId}-item-${itemIndex}`,
+            question: string(item.question),
+            answer: docFromUnknown(item.answer),
+          })
+        ),
+      }
+    }
     if (node.type === "timeline") {
       return {
         id: id(node, index, "timeline"),
@@ -216,6 +269,22 @@ function array<T>(value: unknown): Array<T> {
 
 function string(value: unknown) {
   return typeof value === "string" ? value : ""
+}
+
+function sectionVariant(value: unknown): "default" | "accent" | "compact" {
+  return value === "accent" || value === "compact" ? value : "default"
+}
+
+function docFromUnknown(value: unknown): RichTextDoc {
+  if (
+    value &&
+    typeof value === "object" &&
+    (value as { type?: unknown }).type === "doc" &&
+    Array.isArray((value as { content?: unknown }).content)
+  ) {
+    return value as RichTextDoc
+  }
+  return { type: "doc", content: [] }
 }
 
 // --- Card Blocks Normalizers & Canonicalizers ---

@@ -3,6 +3,7 @@ import {
   LayoutTableIcon,
   PlusSignIcon,
   QuillWrite02Icon,
+  TextFontIcon,
   Tick01Icon,
   UserIcon,
 } from "@hugeicons/core-free-icons"
@@ -12,13 +13,22 @@ import { TestimonialPreview } from "./testimonial-preview"
 import type { DocumentBlockDefinition } from "../../core/types"
 
 import { Gallery } from "../extensions/gallery"
+import { Faq } from "../extensions/faq"
 import { KeyNumbers } from "../extensions/key-numbers"
+import { ProposalSection } from "../extensions/proposal-section"
 import { TeamMembers } from "../extensions/team-members"
 import { Testimonials } from "../extensions/testimonials"
 
 const field = (text: string) => ({
   type: "doc",
   content: text ? [{ type: "text", text }] : [],
+})
+
+const paragraph = (text: string) => ({
+  type: "doc",
+  content: text
+    ? [{ type: "paragraph", content: [{ type: "text", text }] }]
+    : [],
 })
 
 const timelineContent = {
@@ -55,6 +65,103 @@ const timelineContent = {
 }
 
 export const proposalBlocks: Array<DocumentBlockDefinition> = [
+  {
+    kind: "insertable",
+    id: "proposal-section",
+    nodeType: "proposalSection",
+    label: "Section",
+    description: "Add a structured proposal narrative section.",
+    searchTerms: ["section", "summary", "scope", "deliverables", "content"],
+    icon: TextFontIcon,
+    extension: ProposalSection,
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    showInSidebar: true,
+    createContent: (layout) => ({
+      type: "proposalSection",
+      attrs: {
+        eyebrow: layout?.attrs?.eyebrow ?? "Section",
+        title: layout?.attrs?.title ?? "Section title",
+        lead: layout?.attrs?.lead ?? "Add a concise lead-in for this section.",
+        variant: layout?.attrs?.variant ?? "default",
+        content:
+          layout?.attrs?.content ??
+          paragraph("Explain the important details, outcomes, and decisions."),
+      },
+    }),
+    preview: (
+      <div className="mt-2 space-y-1.5">
+        <div className="h-1.5 w-14 rounded-full bg-primary/60" />
+        <div className="h-2.5 w-3/4 rounded-full bg-muted/70" />
+        <div className="h-1.5 w-full rounded-full bg-muted/50" />
+        <div className="h-1.5 w-2/3 rounded-full bg-muted/50" />
+      </div>
+    ),
+    layouts: [
+      {
+        id: "section-default",
+        name: "Narrative Section",
+        description: "Standard heading, lead, and body copy",
+        attrs: {
+          eyebrow: "Overview",
+          title: "What we will accomplish",
+          lead: "Summarize the client outcome in one confident sentence.",
+          variant: "default",
+          content: paragraph(
+            "Use this section to explain the recommendation, scope, assumptions, or next decision."
+          ),
+        },
+        preview: (
+          <div className="flex h-20 w-full flex-col justify-center gap-1.5">
+            <div className="h-1.5 w-12 rounded-full bg-primary/70" />
+            <div className="h-2.5 w-4/5 rounded-full bg-muted/60" />
+            <div className="h-1.5 w-full rounded-full bg-muted/40" />
+            <div className="h-1.5 w-2/3 rounded-full bg-muted/40" />
+          </div>
+        ),
+      },
+      {
+        id: "section-accent",
+        name: "Accent Section",
+        description: "Framed section for summaries and next steps",
+        attrs: {
+          eyebrow: "Recommendation",
+          title: "The clearest path forward",
+          lead: "Highlight the main proposal argument.",
+          variant: "accent",
+          content: paragraph(
+            "Use this section for executive summaries, recommendations, or approval steps."
+          ),
+        },
+        preview: (
+          <div className="flex h-20 w-full flex-col justify-center gap-1.5 rounded-xl border border-primary/20 bg-primary/10 p-3">
+            <div className="h-1.5 w-12 rounded-full bg-primary/70" />
+            <div className="h-2.5 w-4/5 rounded-full bg-muted/70" />
+            <div className="h-1.5 w-full rounded-full bg-muted/50" />
+          </div>
+        ),
+      },
+      {
+        id: "section-compact",
+        name: "Compact Section",
+        description: "Tighter section for deliverables and notes",
+        attrs: {
+          eyebrow: "Deliverables",
+          title: "What is included",
+          lead: "",
+          variant: "compact",
+          content: paragraph("List the concrete deliverables or constraints."),
+        },
+        preview: (
+          <div className="flex h-20 w-full flex-col justify-center gap-1.5 border-t border-border/60 pt-3">
+            <div className="h-1.5 w-16 rounded-full bg-primary/60" />
+            <div className="h-2.5 w-2/3 rounded-full bg-muted/60" />
+            <div className="h-1.5 w-4/5 rounded-full bg-muted/40" />
+          </div>
+        ),
+      },
+    ],
+  },
   {
     kind: "insertable",
     id: "key-numbers",
@@ -460,6 +567,89 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
             <TestimonialPreview />
             <TestimonialPreview />
             <TestimonialPreview />
+          </div>
+        ),
+      },
+    ],
+  },
+  {
+    kind: "insertable",
+    id: "faq",
+    nodeType: "proposalFaq",
+    label: "FAQ",
+    description: "Answer common client questions.",
+    searchTerms: ["faq", "questions", "answers", "objections"],
+    icon: QuillWrite02Icon,
+    extension: Faq,
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    showInSidebar: true,
+    createContent: (layout) => ({
+      type: "proposalFaq",
+      attrs: {
+        variant: "list",
+        items: layout?.attrs?.items ?? [
+          {
+            id: "faq-1",
+            question: "What happens after approval?",
+            answer: paragraph(
+              "We confirm stakeholders, collect access, and schedule the kickoff session."
+            ),
+          },
+          {
+            id: "faq-2",
+            question: "Can the scope change later?",
+            answer: paragraph(
+              "Yes. We will document any changes and confirm the impact before work continues."
+            ),
+          },
+        ],
+      },
+    }),
+    preview: (
+      <div className="mt-2 space-y-2">
+        <div className="h-2 w-4/5 rounded-full bg-muted/70" />
+        <div className="h-1.5 w-full rounded-full bg-muted/40" />
+        <div className="h-2 w-2/3 rounded-full bg-muted/70" />
+        <div className="h-1.5 w-5/6 rounded-full bg-muted/40" />
+      </div>
+    ),
+    layouts: [
+      {
+        id: "faq-list",
+        name: "Simple FAQ",
+        description: "A clean list of questions and answers",
+        attrs: {
+          items: [
+            {
+              id: "faq-1",
+              question: "What happens after approval?",
+              answer: paragraph(
+                "We confirm stakeholders, collect access, and schedule the kickoff session."
+              ),
+            },
+            {
+              id: "faq-2",
+              question: "Can the scope change later?",
+              answer: paragraph(
+                "Yes. We will document any changes and confirm the impact before work continues."
+              ),
+            },
+            {
+              id: "faq-3",
+              question: "How will updates be shared?",
+              answer: paragraph(
+                "You will receive weekly updates, milestone reviews, and a final handover."
+              ),
+            },
+          ],
+        },
+        preview: (
+          <div className="flex h-20 w-full flex-col justify-center gap-2">
+            <div className="h-2 w-4/5 rounded-full bg-muted/70" />
+            <div className="h-1.5 w-full rounded-full bg-muted/40" />
+            <div className="h-2 w-2/3 rounded-full bg-muted/70" />
+            <div className="h-1.5 w-5/6 rounded-full bg-muted/40" />
           </div>
         ),
       },

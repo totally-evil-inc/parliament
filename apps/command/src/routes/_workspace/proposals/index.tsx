@@ -1,7 +1,7 @@
 import * as React from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
-import { createProposalDraft } from "@workspace/document/proposal"
+import { createProposalDraftFromBlueprint } from "@workspace/document/proposal"
 import {
   DocumentBlockSidebar,
   DocumentEditor,
@@ -13,12 +13,11 @@ import {
   useProposalEditorRuntime,
 } from "@workspace/document-editor"
 import { createProposalDraftStore } from "@workspace/document-editor/store"
-import { getDefaultDocumentTemplateForScheme } from "@workspace/document/presentation"
+import { webStudioProposalTemplate } from "@workspace/document/presentation"
 import type { DocumentTemplate } from "@workspace/document/presentation"
 import type { DocumentEditorHostAdapter } from "@workspace/document-editor"
 
 import { useConfirm } from "@/components/confirm-dialog-provider"
-import { useTheme } from "@/components/theme-provider"
 import { authClient } from "@/lib/auth-client"
 import { createId } from "@/lib/create-id"
 
@@ -30,7 +29,12 @@ function RouteComponent() {
   const confirm = useConfirm()
   const store = React.useMemo(
     () =>
-      createProposalDraftStore(createProposalDraft({ id: "proposal-draft" })),
+      createProposalDraftStore(
+        createProposalDraftFromBlueprint({
+          id: "proposal-draft",
+          blueprint: "web-design",
+        })
+      ),
     []
   )
   const host = React.useMemo<DocumentEditorHostAdapter>(
@@ -57,15 +61,11 @@ function ProposalEditorScreen({
 }: {
   store: ReturnType<typeof createProposalDraftStore>
 }) {
-  const { resolved } = useTheme()
   const session = authClient.useSession()
-  const resolvedDefaultTemplate = React.useMemo(
-    () => getDefaultDocumentTemplateForScheme(resolved),
-    [resolved]
-  )
+  const defaultTemplate = webStudioProposalTemplate
   const [customTemplate, setCustomTemplate] =
     React.useState<DocumentTemplate | null>(null)
-  const template = customTemplate ?? resolvedDefaultTemplate
+  const template = customTemplate ?? defaultTemplate
   const runtime = useProposalEditorRuntime({ store })
 
   React.useEffect(() => {
@@ -107,10 +107,12 @@ function ProposalEditorScreen({
       <DocumentSidebarProvider defaultOpen={true}>
         <div
           className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden"
-          style={{
-            backgroundColor: template.tokens.canvasBackground,
-            "--sidebar-width": "22rem",
-          } as React.CSSProperties}
+          style={
+            {
+              backgroundColor: template.tokens.canvasBackground,
+              "--sidebar-width": "22rem",
+            } as React.CSSProperties
+          }
           data-document-template={template.id}
         >
           <ScrollArea className="relative min-h-0 min-w-0 flex-1">
@@ -131,7 +133,7 @@ function ProposalEditorScreen({
           <DocumentBlockSidebar
             editor={runtime.editor}
             definition={proposalEditorRegistry}
-            defaultTemplate={resolvedDefaultTemplate}
+            defaultTemplate={defaultTemplate}
             template={template}
             onTemplateChange={(nextTemplate) => {
               setCustomTemplate(nextTemplate)

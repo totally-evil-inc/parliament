@@ -171,6 +171,23 @@ export const defaultDocumentTemplate: DocumentTemplate = {
   },
 }
 
+export const webStudioProposalTemplate: DocumentTemplate = {
+  id: "proposal-web-studio",
+  name: "Web Studio",
+  tokens: {
+    canvasBackground: "#eef4f1",
+    pageBackground: "#fbfdfb",
+    foreground: "#17211d",
+    mutedForeground: "#66736d",
+    accent: "#0f766e",
+    border: "#d6e2dd",
+    fontFamily: "satoshi",
+    headingFontFamily: "cabinet",
+    radius: "0.75rem",
+    spacingScale: "spacious",
+  },
+}
+
 const darkDocumentTemplate: DocumentTemplate = {
   id: "classic-dark",
   name: "Classic Dark",

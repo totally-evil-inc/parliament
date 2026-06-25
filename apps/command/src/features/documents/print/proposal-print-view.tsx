@@ -17,7 +17,7 @@ const blockRenderers: Record<
   partyHeader: ({ block, model }) =>
     block.type === "partyHeader" ? <Header model={model} /> : null,
   pricing: ({ block, model }) =>
-    block.type === "pricing" ? <Pricing model={model} /> : null,
+    block.type === "pricing" ? <Pricing block={block} model={model} /> : null,
   richText: ({ block }) =>
     block.type === "richText" ? (
       <RichTextRenderer
@@ -25,38 +25,47 @@ const blockRenderers: Record<
         content={block.content}
       />
     ) : null,
+  section: ({ block }) =>
+    block.type === "section" ? <ProposalSection block={block} /> : null,
   timeline: ({ block }) =>
     block.type === "timeline" ? (
-      <section className="my-6 border-l border-[var(--document-border)] pl-4">
+      <section className="my-[var(--document-section-spacing)] border-l border-[var(--document-border)] pl-5">
+        <SectionHeading eyebrow="Project Plan" title="How the work unfolds" />
         <RichTextRenderer content={block.content} />
       </section>
     ) : null,
   metrics: ({ block }) =>
     block.type === "metrics" ? (
-      <div data-type="key-numbers" data-columns={block.columns}>
+      <section className="my-[var(--document-section-spacing)]">
+        <SectionHeading
+          eyebrow="Outcomes"
+          title="What success will look like"
+        />
         <RichTextRenderer
-          className="rich-text-content"
+          className={`mt-8 grid gap-8 ${columns(block.columns)}`}
           content={block.content}
         />
-      </div>
+      </section>
     ) : null,
   team: ({ block }) =>
     block.type === "team" ? (
-      <div data-type="team-members" data-columns={block.columns}>
+      <section className="my-[var(--document-section-spacing)]">
+        <SectionHeading eyebrow="Team" title="Who will lead the work" />
         <RichTextRenderer
-          className="rich-text-content"
+          className={`mt-8 grid gap-8 ${columns(block.columns)}`}
           content={block.content}
         />
-      </div>
+      </section>
     ) : null,
   testimonials: ({ block }) =>
     block.type === "testimonials" ? (
-      <div data-type="testimonials" data-columns={block.columns}>
+      <section className="my-[var(--document-section-spacing)]">
+        <SectionHeading eyebrow="Proof" title="Relevant client confidence" />
         <RichTextRenderer
-          className="rich-text-content"
+          className={`mt-8 grid gap-8 ${columns(block.columns)}`}
           content={block.content}
         />
-      </div>
+      </section>
     ) : null,
   gallery: ({ block }) =>
     block.type === "gallery" ? (
@@ -71,6 +80,7 @@ const blockRenderers: Record<
         ))}
       </section>
     ) : null,
+  faq: ({ block }) => (block.type === "faq" ? <Faq block={block} /> : null),
 }
 
 export function ProposalPrintView({
@@ -82,12 +92,12 @@ export function ProposalPrintView({
 }) {
   return (
     <main
-      className="min-h-screen bg-[var(--document-canvas-background)] text-[var(--document-foreground)] print:bg-transparent"
+      className="document-print-canvas min-h-screen bg-[var(--document-canvas-background)] text-[var(--document-foreground)] print:bg-transparent"
       style={getDocumentTemplateStyle(template)}
       data-document-template={`${model.template.id}@${model.template.version}`}
       data-document-type="proposal"
     >
-      <article className="mx-auto min-h-[297mm] w-[210mm] bg-[var(--document-page-background)] px-[18mm] py-[18mm] [font-family:var(--document-font-family)] print:min-h-0 print:w-auto print:px-0 print:py-0">
+      <article className="document-print-page mx-auto min-h-[297mm] w-[210mm] bg-[var(--document-page-background)] px-[18mm] py-[18mm] [font-family:var(--document-font-family)] shadow-2xl shadow-black/10 print:min-h-0 print:w-auto print:px-0 print:py-0 print:shadow-none">
         {model.blocks.map((block) => {
           const Renderer = blockRenderers[block.type]
           return <Renderer key={block.id} block={block} model={model} />
@@ -99,39 +109,52 @@ export function ProposalPrintView({
 
 function Header({ model }: { model: ProposalRenderModel }) {
   return (
-    <header className="break-inside-avoid space-y-8 pb-8">
-      <div className="flex items-start justify-between gap-8">
-        <div className="space-y-6">
-          <div className="flex h-16 w-28 items-center justify-center rounded-[var(--document-radius)] border border-[var(--document-border)] text-xs text-[var(--document-muted-foreground)]">
-            Logo
+    <header className="break-inside-avoid pb-[var(--document-section-spacing)]">
+      <div className="rounded-[calc(var(--document-radius)*1.5)] border border-[color-mix(in_oklab,var(--document-accent)_18%,var(--document-border))] bg-[color-mix(in_oklab,var(--document-accent)_7%,transparent)] p-10">
+        <div className="flex items-start justify-between gap-8">
+          <div className="space-y-8">
+            <div className="flex h-12 w-28 items-center justify-center rounded-[var(--document-radius)] border border-[color-mix(in_oklab,var(--document-accent)_28%,var(--document-border))] bg-[var(--document-page-background)] text-xs font-semibold text-[var(--document-accent)]">
+              {model.seller.name ? model.seller.name.slice(0, 2) : "PR"}
+            </div>
+            <div className="max-w-[29rem]">
+              <p className="mb-4 text-[10px] font-bold tracking-[0.22em] text-[var(--document-accent)] uppercase">
+                Proposal
+              </p>
+              {model.title ? (
+                <h1
+                  className="[font-family:var(--document-heading-font-family)] text-5xl leading-none font-bold tracking-normal"
+                  dangerouslySetInnerHTML={{ __html: model.title }}
+                />
+              ) : (
+                <h1 className="[font-family:var(--document-heading-font-family)] text-5xl leading-none font-bold tracking-normal">
+                  Proposal
+                </h1>
+              )}
+              <p className="mt-5 max-w-xl text-base leading-7 text-[var(--document-muted-foreground)]">
+                A focused plan for a clear, performant, and conversion-ready web
+                presence.
+              </p>
+            </div>
           </div>
-          {model.title ? (
-            <h1
-              className="text-4xl font-bold"
-              dangerouslySetInnerHTML={{ __html: model.title }}
-            />
-          ) : (
-            <h1 className="text-4xl font-bold">Proposal</h1>
-          )}
-        </div>
-        <div className="grid gap-3 text-right text-sm">
-          <DateValue
-            label="Date"
-            value={model.issueDate}
-            locale={model.locale}
-          />
-          {model.validUntil ? (
+          <div className="grid gap-4 text-right text-sm">
             <DateValue
-              label="Valid Until"
-              value={model.validUntil}
+              label="Date"
+              value={model.issueDate}
               locale={model.locale}
             />
-          ) : null}
+            {model.validUntil ? (
+              <DateValue
+                label="Valid Until"
+                value={model.validUntil}
+                locale={model.locale}
+              />
+            ) : null}
+          </div>
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-16 border-t border-[var(--document-border)] pt-8">
-        <Party label="From" party={model.seller} />
-        <Party label="Bill To" party={model.customer} />
+        <div className="mt-10 grid grid-cols-2 gap-16 border-t border-[color-mix(in_oklab,var(--document-accent)_18%,var(--document-border))] pt-8">
+          <Party label="Prepared By" party={model.seller} />
+          <Party label="Prepared For" party={model.customer} />
+        </div>
       </div>
     </header>
   )
@@ -179,12 +202,7 @@ function Party({
         .filter((field) => Boolean(field[1]))
         .map(([key, value]) => {
           if (key === "address") {
-            return (
-              <p
-                key={key}
-                dangerouslySetInnerHTML={{ __html: value }}
-              />
-            )
+            return <p key={key} dangerouslySetInnerHTML={{ __html: value }} />
           }
           return <p key={key}>{value}</p>
         })}
@@ -197,7 +215,94 @@ function Party({
   )
 }
 
-function Pricing({ model }: { model: ProposalRenderModel }) {
+function ProposalSection({
+  block,
+}: {
+  block: Extract<DocumentBlock, { type: "section" }>
+}) {
+  const variantClassName =
+    block.variant === "accent"
+      ? "rounded-[calc(var(--document-radius)*1.5)] border border-[color-mix(in_oklab,var(--document-accent)_18%,var(--document-border))] bg-[color-mix(in_oklab,var(--document-accent)_7%,transparent)] p-8"
+      : block.variant === "compact"
+        ? "border-t border-[var(--document-border)] pt-8"
+        : ""
+
+  return (
+    <section
+      className={`my-[var(--document-section-spacing)] break-inside-avoid ${variantClassName}`}
+    >
+      <SectionHeading
+        eyebrow={block.eyebrow}
+        lead={block.lead}
+        title={block.title}
+      />
+      <RichTextRenderer
+        className="prose prose-sm mt-5 max-w-none text-[var(--document-foreground)]"
+        content={block.content}
+      />
+    </section>
+  )
+}
+
+function SectionHeading({
+  eyebrow,
+  lead,
+  title,
+}: {
+  eyebrow?: string
+  lead?: string
+  title: string
+}) {
+  return (
+    <div className="max-w-2xl">
+      {eyebrow ? (
+        <p className="mb-2 text-[10px] font-bold tracking-[0.18em] text-[var(--document-accent)] uppercase">
+          {eyebrow}
+        </p>
+      ) : null}
+      <h2 className="[font-family:var(--document-heading-font-family)] text-3xl leading-tight font-bold tracking-normal">
+        {title}
+      </h2>
+      {lead ? (
+        <p className="mt-3 text-base leading-7 text-[var(--document-muted-foreground)]">
+          {lead}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+function Faq({ block }: { block: Extract<DocumentBlock, { type: "faq" }> }) {
+  return (
+    <section className="my-[var(--document-section-spacing)] break-inside-avoid">
+      <SectionHeading eyebrow="FAQ" title="Common Questions" />
+      <div className="mt-6 divide-y divide-[var(--document-border)] border-y border-[var(--document-border)]">
+        {block.items.map((item) => (
+          <div
+            key={item.id}
+            className="grid gap-4 py-5 md:grid-cols-[15rem_1fr]"
+          >
+            <h3 className="text-base leading-6 font-semibold">
+              {item.question}
+            </h3>
+            <RichTextRenderer
+              className="prose prose-sm max-w-none text-[var(--document-muted-foreground)]"
+              content={item.answer}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function Pricing({
+  block,
+  model,
+}: {
+  block: Extract<DocumentBlock, { type: "pricing" }>
+  model: ProposalRenderModel
+}) {
   const pricing = model.pricing
   if (!pricing) return null
   const money = (value: number) =>
@@ -206,7 +311,7 @@ function Pricing({ model }: { model: ProposalRenderModel }) {
     <section className="my-8">
       <div className="border-b border-[var(--document-border)] pb-4">
         <h2 className="text-xs font-bold tracking-[0.16em] uppercase">
-          Services & Billing
+          {block.config.title}
         </h2>
         <p className="mt-1.5 text-xs text-[var(--document-muted-foreground)]">
           Indicative proposal pricing
@@ -224,10 +329,7 @@ function Pricing({ model }: { model: ProposalRenderModel }) {
           </thead>
           <tbody>
             {pricing.items.map((item, index) => (
-              <tr
-                key={item.id}
-                className="break-inside-avoid align-top"
-              >
+              <tr key={item.id} className="break-inside-avoid align-top">
                 <td className="py-5 pr-5">
                   <p
                     className="font-medium"
@@ -270,6 +372,16 @@ function Pricing({ model }: { model: ProposalRenderModel }) {
             value={money(pricing.calculation.totalMinor)}
             strong
           />
+        </div>
+        <div className="mt-12 flex justify-end">
+          <div className="w-64 border-t border-[var(--document-border)] pt-4 text-right">
+            <p className="font-[cursive] text-3xl leading-none text-[var(--document-foreground)]">
+              {pricing.signerName || model.seller.name || "Signer name"}
+            </p>
+            <p className="mt-2 text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+              {pricing.signerTitle || "Signature"}
+            </p>
+          </div>
         </div>
       </div>
     </section>

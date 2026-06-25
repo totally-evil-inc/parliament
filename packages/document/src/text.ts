@@ -29,10 +29,7 @@ function blockText(block: DocumentBlock, model: ProposalRenderModel): string {
       return (
         model.pricing?.items
           .map((item) =>
-            [
-              stripHtml(item.description),
-              stripHtml(item.details),
-            ]
+            [stripHtml(item.description), stripHtml(item.details)]
               .filter(Boolean)
               .join(" ")
           )
@@ -44,6 +41,14 @@ function blockText(block: DocumentBlock, model: ProposalRenderModel): string {
     case "team":
     case "testimonials":
       return richText(block.content)
+    case "section":
+      return [block.eyebrow, block.title, block.lead, richText(block.content)]
+        .filter(Boolean)
+        .join("\n")
+    case "faq":
+      return block.items
+        .map((item) => [item.question, richText(item.answer)].join("\n"))
+        .join("\n")
     case "gallery":
       return block.images.map((image) => image.alt).join("\n")
   }
