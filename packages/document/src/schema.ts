@@ -144,16 +144,7 @@ export const documentBlockSchema = z.discriminatedUnion("type", [
       ...blockBase,
       type: z.literal("metrics"),
       columns: columnsSchema,
-      metrics: z.array(
-        z
-          .object({
-            id: idSchema,
-            value: z.string(),
-            label: z.string(),
-            detail: z.string().optional(),
-          })
-          .strict()
-      ),
+      content: richTextDocSchema,
     })
     .strict(),
   z
@@ -161,16 +152,7 @@ export const documentBlockSchema = z.discriminatedUnion("type", [
       ...blockBase,
       type: z.literal("team"),
       columns: columnsSchema,
-      members: z.array(
-        sourceSnapshotSchema
-          .extend({
-            id: idSchema,
-            name: z.string(),
-            role: z.string(),
-            bio: z.string().optional(),
-          })
-          .strict()
-      ),
+      content: richTextDocSchema,
     })
     .strict(),
   z
@@ -178,17 +160,7 @@ export const documentBlockSchema = z.discriminatedUnion("type", [
       ...blockBase,
       type: z.literal("testimonials"),
       columns: columnsSchema,
-      testimonials: z.array(
-        sourceSnapshotSchema
-          .extend({
-            id: idSchema,
-            content: z.string(),
-            author: z.string(),
-            role: z.string(),
-            avatarAssetId: idSchema.optional(),
-          })
-          .strict()
-      ),
+      content: richTextDocSchema,
     })
     .strict(),
   z

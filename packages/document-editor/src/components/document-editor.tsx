@@ -9,7 +9,7 @@ import type { DocumentDefinition, DocumentTemplate } from "../core/types"
 
 import { createDocumentCommands } from "../core/definition"
 import { createBaseEditorCommands } from "../commands/base"
-import { useDocumentEditorHost } from "../runtime/react"
+import { useDocumentEditorHost, ActiveEditorContext } from "../runtime/react"
 import {
   defaultDocumentTemplate,
   getDocumentTemplateStyle,
@@ -37,6 +37,21 @@ export function DocumentEditor({
   template = defaultDocumentTemplate,
 }: DocumentEditorProps) {
   const { confirm, requestTextInput } = useDocumentEditorHost()
+  const [activeEditor, setActiveEditor] = React.useState<Editor | null>(null)
+  const activeEditorContext = React.useMemo(
+    () => ({ activeEditor, setActiveEditor }),
+    [activeEditor]
+  )
+
+  React.useEffect(() => {
+    if (!editor) return
+    const resetActiveEditor = () => setActiveEditor(null)
+    editor.on("focus", resetActiveEditor)
+    return () => {
+      editor.off("focus", resetActiveEditor)
+    }
+  }, [editor])
+
   const editorCommands = React.useMemo(
     () => createBaseEditorCommands(requestTextInput),
     [requestTextInput]
@@ -59,7 +74,7 @@ export function DocumentEditor({
   const accessories = editor ? (
     <>
       <EditorBubbleMenu
-        editor={editor}
+        editor={activeEditor ?? editor}
         commands={bubbleCommands ?? bubbleMenuCommands}
       />
       <EditorTableMenu editor={editor} confirm={confirm} />
@@ -72,19 +87,21 @@ export function DocumentEditor({
   ) : null
 
   return (
-    <DocumentEditorCanvas
-      className="min-h-full min-w-0 overflow-x-hidden px-0 py-4 sm:px-10 lg:px-14"
-      contentClassName="relative mx-auto w-full min-w-0 max-w-5xl overflow-x-hidden pb-32 md:pb-10"
-      editor={editor}
-      onContentChange={onContentChange}
-      onRedo={onRedo}
-      onUndo={onUndo}
-      style={{
-        backgroundColor: "var(--document-canvas-background)",
-        ...templateStyle,
-      }}
-      templateId={template.id}
-      accessories={accessories}
-    />
+    <ActiveEditorContext.Provider value={activeEditorContext}>
+      <DocumentEditorCanvas
+        className="min-h-full min-w-0 overflow-x-hidden px-0 py-4 sm:px-10 lg:px-14"
+        contentClassName="relative mx-auto w-full min-w-0 max-w-5xl overflow-x-hidden pb-32 md:pb-10"
+        editor={editor}
+        onContentChange={onContentChange}
+        onRedo={onRedo}
+        onUndo={onUndo}
+        style={{
+          backgroundColor: "var(--document-canvas-background)",
+          ...templateStyle,
+        }}
+        templateId={template.id}
+        accessories={accessories}
+      />
+    </ActiveEditorContext.Provider>
   )
 }

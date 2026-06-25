@@ -30,6 +30,24 @@ import {
   TimelineItem,
   TimelineTitle,
 } from "./timeline"
+import {
+  KeyNumbersItem,
+  KeyNumbersValue,
+  KeyNumbersLabel,
+  KeyNumbersDetail,
+} from "../proposal/extensions/key-numbers"
+import {
+  TeamMemberItem,
+  TeamMemberName,
+  TeamMemberRole,
+  TeamMemberBio,
+} from "../proposal/extensions/team-members"
+import {
+  TestimonialItem,
+  TestimonialQuote,
+  TestimonialAuthor,
+  TestimonialRole,
+} from "../proposal/extensions/testimonials"
 
 const TaskItem = BaseTaskItem.extend({
   addNodeView() {
@@ -195,4 +213,16 @@ export const businessDocumentPreset = [
   BusinessDocument,
   DocumentHeader,
   LineItems,
+  KeyNumbersItem,
+  KeyNumbersValue,
+  KeyNumbersLabel,
+  KeyNumbersDetail,
+  TeamMemberItem,
+  TeamMemberName,
+  TeamMemberRole,
+  TeamMemberBio,
+  TestimonialItem,
+  TestimonialQuote,
+  TestimonialAuthor,
+  TestimonialRole,
 ] satisfies Array<AnyExtension>

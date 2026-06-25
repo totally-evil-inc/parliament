@@ -40,23 +40,10 @@ function blockText(block: DocumentBlock, model: ProposalRenderModel): string {
       )
     case "richText":
     case "timeline":
-      return richText(block.content)
     case "metrics":
-      return block.metrics
-        .map((metric) =>
-          [metric.value, metric.label, metric.detail].filter(Boolean).join(" ")
-        )
-        .join("\n")
     case "team":
-      return block.members
-        .map((member) =>
-          [member.name, member.role, member.bio].filter(Boolean).join(" ")
-        )
-        .join("\n")
     case "testimonials":
-      return block.testimonials
-        .map((item) => [item.content, item.author, item.role].join(" "))
-        .join("\n")
+      return richText(block.content)
     case "gallery":
       return block.images.map((image) => image.alt).join("\n")
   }

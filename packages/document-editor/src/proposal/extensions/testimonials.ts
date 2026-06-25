@@ -5,40 +5,15 @@ import { TestimonialsView } from "../components/testimonials-view"
 export const Testimonials = Node.create({
   name: "testimonials",
   group: "block",
-  content: "block*",
-  defining: true,
+  atom: true,
+  selectable: true,
+  draggable: true,
 
   addAttributes() {
     return {
-      testimonials: {
-        default: [
-          {
-            id: "testimonial-default-1",
-            content:
-              "The team brought clarity, speed, and care to every phase of the project.",
-            author: "Jane Doe",
-            role: "CEO, Tech Corp",
-            avatar: "",
-          },
-          {
-            id: "testimonial-default-2",
-            content:
-              "Their process helped us move faster without sacrificing quality or alignment.",
-            author: "Michael Smith",
-            role: "Founder, Northstar Labs",
-            avatar: "",
-          },
-          {
-            id: "testimonial-default-3",
-            content:
-              "We had confidence in the plan from kickoff through final delivery.",
-            author: "Priya Patel",
-            role: "COO, Atlas Studio",
-            avatar: "",
-          },
-        ],
-      },
+      blockId: { default: null },
       columns: { default: 3 },
+      items: { default: [] },
     }
   },
 
@@ -50,11 +25,129 @@ export const Testimonials = Node.create({
     return [
       "div",
       mergeAttributes(HTMLAttributes, { "data-type": "testimonials" }),
-      0,
     ]
   },
 
   addNodeView() {
     return ReactNodeViewRenderer(TestimonialsView)
+  },
+})
+
+export const TestimonialItem = Node.create({
+  name: "testimonialItem",
+  content: "testimonialQuote testimonialAuthor testimonialRole",
+  defining: true,
+  parseHTML() {
+    return [{ tag: 'div[data-type="testimonial-item"]' }]
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "blockquote",
+      mergeAttributes(HTMLAttributes, {
+        "data-type": "testimonial-item",
+        class:
+          "m-0 border-l-2 border-[var(--document-accent)] py-1 pl-5 text-left break-inside-avoid flex flex-col",
+      }),
+      0,
+    ]
+  },
+})
+
+export const TestimonialQuote = Node.create({
+  name: "testimonialQuote",
+  content: "inline*",
+  parseHTML() {
+    return [{ tag: 'div[data-type="testimonial-quote"]' }]
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, {
+        "data-type": "testimonial-quote",
+        class:
+          "text-base md:text-lg leading-relaxed font-medium text-[var(--document-muted-foreground)] italic mb-3 min-h-[1.5em] empty:before:content-['\\201c_Client_quote..._\\201d'] empty:before:text-muted-foreground/30 focus:outline-none",
+      }),
+      0,
+    ]
+  },
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => {
+        return this.editor.commands.focus(
+          this.editor.state.selection.$from.after() + 1
+        )
+      },
+      Tab: () => {
+        return this.editor.commands.focus(
+          this.editor.state.selection.$from.after() + 1
+        )
+      },
+    }
+  },
+})
+
+export const TestimonialAuthor = Node.create({
+  name: "testimonialAuthor",
+  content: "inline*",
+  parseHTML() {
+    return [{ tag: 'div[data-type="testimonial-author"]' }]
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, {
+        "data-type": "testimonial-author",
+        class:
+          "text-sm md:text-base font-bold tracking-tight text-[var(--document-foreground)] mb-0.5 min-h-[1.2em] empty:before:content-['Client_Name'] empty:before:text-muted-foreground/30 focus:outline-none",
+      }),
+      0,
+    ]
+  },
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => {
+        return this.editor.commands.focus(
+          this.editor.state.selection.$from.after() + 1
+        )
+      },
+      Tab: () => {
+        return this.editor.commands.focus(
+          this.editor.state.selection.$from.after() + 1
+        )
+      },
+      "Shift-Tab": () => {
+        return this.editor.commands.focus(
+          this.editor.state.selection.$from.before() - 1
+        )
+      },
+    }
+  },
+})
+
+export const TestimonialRole = Node.create({
+  name: "testimonialRole",
+  content: "inline*",
+  parseHTML() {
+    return [{ tag: 'div[data-type="testimonial-role"]' }]
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, {
+        "data-type": "testimonial-role",
+        class:
+          "text-xs md:text-sm font-medium text-[var(--document-muted-foreground)] min-h-[1.2em] empty:before:content-['Title,_Company'] empty:before:text-muted-foreground/30 focus:outline-none",
+      }),
+      0,
+    ]
+  },
+  addKeyboardShortcuts() {
+    return {
+      "Shift-Tab": () => {
+        return this.editor.commands.focus(
+          this.editor.state.selection.$from.before() - 1
+        )
+      },
+    }
   },
 })

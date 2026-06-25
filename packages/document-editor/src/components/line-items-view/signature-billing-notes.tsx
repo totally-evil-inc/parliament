@@ -44,13 +44,13 @@ export function Signature({
         <CanvasTextField
           aria-label="Signer title"
           className="mt-2 ml-auto h-5 text-right text-[10px] leading-5 font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase"
-          placeholder="Signature"
+          placeholder="Signer title"
           value={signerTitle || ""}
           onValueChange={onSignerTitleChange}
         />
       ) : (
         <p className="mt-2 text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
-          {signerTitle || "Signature"}
+          {signerTitle || "Signer title"}
         </p>
       )}
     </div>

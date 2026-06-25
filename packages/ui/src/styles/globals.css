@@ -4,6 +4,8 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/manrope";
 @import "@fontsource-variable/jetbrains-mono";
+@import url("https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&f[]=cabinet-grotesk@400,500,700,800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Mono:wght@400;700&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 @source "../../../../apps/**/*.{ts,tsx}";
@@ -165,6 +167,27 @@
     caret-color: var(--foreground);
     box-shadow: none;
     transition: background-color 999999s ease-in-out 0s;
+  }
+
+  /* Suppress ProseMirror selection outline on card-grid block wrappers */
+  .key-numbers,
+  .team-members,
+  .testimonials,
+  [data-node-view-wrapper]:has(.key-numbers),
+  [data-node-view-wrapper]:has(.team-members),
+  [data-node-view-wrapper]:has(.testimonials) {
+    outline: none !important;
+    border-color: transparent !important;
+  }
+
+  /* Suppress focus outline on embedded card tiptap editors */
+  .key-numbers .tiptap,
+  .team-members .tiptap,
+  .testimonials .tiptap,
+  .key-numbers .tiptap:focus,
+  .team-members .tiptap:focus,
+  .testimonials .tiptap:focus {
+    outline: none !important;
   }
 }
 

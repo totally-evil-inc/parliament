@@ -78,6 +78,99 @@ function renderNode(node: RichTextNode): React.ReactNode {
   if (node.type === "tableHeader") return <th>{children}</th>
   if (node.type === "tableCell") return <td>{children}</td>
 
+  // Custom blocks nested nodes
+  if (node.type === "keyNumbersItem") {
+    return (
+      <div className="flex flex-col items-center justify-start text-center break-inside-avoid">
+        {children}
+      </div>
+    )
+  }
+  if (node.type === "keyNumbersValue") {
+    return (
+      <div className="text-4xl md:text-5xl font-black tracking-tight text-[var(--document-accent)] mb-1.5">
+        {children}
+      </div>
+    )
+  }
+  if (node.type === "keyNumbersLabel") {
+    return (
+      <div className="text-base md:text-lg font-bold tracking-tight text-[var(--document-foreground)] mb-1">
+        {children}
+      </div>
+    )
+  }
+  if (node.type === "keyNumbersDetail") {
+    return (
+      <div className="text-sm md:text-base leading-relaxed text-[var(--document-muted-foreground)]">
+        {children}
+      </div>
+    )
+  }
+
+  if (node.type === "teamMemberItem") {
+    return (
+      <div className="flex flex-col items-center justify-start text-center break-inside-avoid">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--document-accent)_10%,transparent)] text-[var(--document-accent)] md:h-20 md:w-20">
+          <svg className="h-8 w-8 md:h-9 md:w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </div>
+        {children}
+      </div>
+    )
+  }
+  if (node.type === "teamMemberName") {
+    return (
+      <div className="text-base md:text-lg font-bold tracking-tight text-[var(--document-foreground)] mb-1">
+        {children}
+      </div>
+    )
+  }
+  if (node.type === "teamMemberRole") {
+    return (
+      <div className="text-sm md:text-base font-medium text-[var(--document-muted-foreground)] mb-3">
+        {children}
+      </div>
+    )
+  }
+  if (node.type === "teamMemberBio") {
+    return (
+      <div className="text-xs md:text-sm leading-normal text-[var(--document-muted-foreground)]">
+        {children}
+      </div>
+    )
+  }
+
+  if (node.type === "testimonialItem") {
+    return (
+      <blockquote className="m-0 border-l-2 border-[var(--document-accent)] py-1 pl-5 text-left break-inside-avoid">
+        {children}
+      </blockquote>
+    )
+  }
+  if (node.type === "testimonialQuote") {
+    return (
+      <div className="text-base md:text-lg leading-relaxed font-medium text-[var(--document-muted-foreground)] italic mb-3">
+        {children}
+      </div>
+    )
+  }
+  if (node.type === "testimonialAuthor") {
+    return (
+      <div className="text-sm md:text-base font-bold tracking-tight text-[var(--document-foreground)] mb-0.5">
+        {children}
+      </div>
+    )
+  }
+  if (node.type === "testimonialRole") {
+    return (
+      <div className="text-xs md:text-sm font-medium text-[var(--document-muted-foreground)]">
+        {children}
+      </div>
+    )
+  }
+
   return children
 }
 

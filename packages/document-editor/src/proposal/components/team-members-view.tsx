@@ -1,83 +1,132 @@
+import * as React from "react"
+import { useEditor, EditorContent } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
+import { Node } from "@tiptap/core"
 import { NodeViewWrapper } from "@tiptap/react"
-import { Input } from "@workspace/ui/components/input"
-import { Textarea } from "@workspace/ui/components/textarea"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { UserIcon } from "@hugeicons/core-free-icons"
 import type { NodeViewProps } from "@tiptap/react"
-import type { TeamMember } from "../types"
-import { getArrayAttr, getColumnCount } from "../types"
+import { useActiveEditorContext } from "../../runtime/react"
+import { TeamMemberName, TeamMemberRole, TeamMemberBio } from "../extensions/team-members"
 
-const inputClassName =
-  "h-auto rounded-none !border-0 !bg-transparent !p-0 text-center shadow-none !outline-none !ring-0 hover:!border-transparent focus-visible:!border-transparent focus-visible:!ring-0 dark:!bg-transparent"
-
-function getMemberKey(member: TeamMember) {
-  return member.id || `team-member-${member.name}-${member.role}-${member.bio}`
-}
+const CardDocument = Node.create({
+  name: "doc",
+  topNode: true,
+})
 
 export function TeamMembersView({ node, updateAttributes }: NodeViewProps) {
-  const members = getArrayAttr<TeamMember>(node.attrs.members)
-  const columns = getColumnCount(node.attrs.columns)
+  const context = useActiveEditorContext()
+  const columns = node.attrs.columns ?? 3
+  const items = node.attrs.items ?? []
 
-  const updateMember = (
-    index: number,
-    key: keyof TeamMember,
-    value: string
-  ) => {
-    const newMembers = [...members]
-    newMembers[index] = {
-      ...newMembers[index],
-      id: getMemberKey(newMembers[index]),
-      [key]: value,
-    }
-    updateAttributes({ members: newMembers })
+  const updateItem = (index: number, updatedItem: any) => {
+    const newItems = [...items]
+    newItems[index] = updatedItem
+    updateAttributes({ items: newItems })
   }
 
-  const gridColumns =
-    columns === 1
-      ? "grid-cols-1"
-      : columns === 2
-        ? "grid-cols-1 md:grid-cols-2"
-        : "grid-cols-1 md:grid-cols-3"
+  const gridStyles = {
+    display: "flex",
+    flexWrap: "wrap" as const,
+    justifyContent: "center",
+    gap: "3rem 2.5rem",
+    width: "100%",
+    margin: "2.5rem 0",
+  }
+
+  const cardWidth = columns === 1
+    ? "100%"
+    : columns === 2
+      ? "calc(50% - 1.25rem)"
+      : "calc(33.333% - 1.666rem)"
 
   return (
-    <NodeViewWrapper className="team-members my-[var(--document-section-spacing)]">
-      <div className={`grid gap-x-10 gap-y-10 ${gridColumns}`}>
-        {members.map((member, index) => (
+    <NodeViewWrapper className="team-members my-[var(--document-section-spacing)] outline-none" data-drag-handle="">
+      <div style={gridStyles}>
+        {items.map((item: any, index: number) => (
           <div
-            key={getMemberKey(member)}
-            className="flex flex-col items-center justify-start text-center"
+            key={item.id || index}
+            style={{ flex: `0 0 ${cardWidth}`, maxWidth: cardWidth }}
+            className="p-6 rounded-xl text-center"
           >
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--document-accent)_10%,transparent)] text-[var(--document-accent)] md:h-20 md:w-20">
-              <HugeiconsIcon
-                icon={UserIcon}
-                className="h-8 w-8 md:h-9 md:w-9"
-              />
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--document-accent)_10%,transparent)] text-[var(--document-accent)] md:h-20 md:w-20 mx-auto">
+              <svg className="h-8 w-8 md:h-9 md:w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
             </div>
-            <Input
-              aria-label="Team member name"
-              spellCheck={false}
-              className={`${inputClassName} text-base leading-tight font-bold tracking-normal text-[var(--document-foreground)] md:text-lg`}
-              value={member.name}
-              onChange={(e) => updateMember(index, "name", e.target.value)}
-            />
-            <Input
-              aria-label="Team member role"
-              spellCheck={false}
-              className={`${inputClassName} mt-1.5 text-sm leading-snug font-medium tracking-normal text-[var(--document-muted-foreground)] md:text-base`}
-              value={member.role}
-              onChange={(e) => updateMember(index, "role", e.target.value)}
-            />
-            <Textarea
-              aria-label="Team member bio"
-              rows={3}
-              spellCheck={false}
-              className={`${inputClassName} mt-3 min-h-0 resize-none overflow-hidden text-sm leading-normal text-[var(--document-muted-foreground)] md:text-base`}
-              value={member.bio ?? ""}
-              onChange={(e) => updateMember(index, "bio", e.target.value)}
+            <TeamMemberCardEditor
+              item={item}
+              onUpdate={(updated) => updateItem(index, updated)}
+              setActiveEditor={context?.setActiveEditor ?? (() => {})}
             />
           </div>
         ))}
       </div>
     </NodeViewWrapper>
   )
+}
+
+type CardEditorProps = {
+  item: any
+  onUpdate: (item: any) => void
+  setActiveEditor: (editor: any) => void
+}
+
+function TeamMemberCardEditor({ item, onUpdate, setActiveEditor }: CardEditorProps) {
+  const onUpdateRef = React.useRef(onUpdate)
+  onUpdateRef.current = onUpdate
+
+  const editor = useEditor({
+    extensions: [
+      CardDocument.extend({
+        content: "teamMemberName teamMemberRole teamMemberBio",
+      }),
+      StarterKit.configure({
+        document: false,
+      }),
+      TeamMemberName,
+      TeamMemberRole,
+      TeamMemberBio,
+    ],
+    content: {
+      type: "doc",
+      content: [
+        { type: "teamMemberName", content: item.name?.content ?? [] },
+        { type: "teamMemberRole", content: item.role?.content ?? [] },
+        { type: "teamMemberBio", content: item.bio?.content ?? [] },
+      ],
+    },
+    immediatelyRender: false,
+    onUpdate({ editor }) {
+      const json = editor.getJSON()
+      const name = json.content?.find((c: any) => c.type === "teamMemberName") ?? { type: "teamMemberName" }
+      const role = json.content?.find((c: any) => c.type === "teamMemberRole") ?? { type: "teamMemberRole" }
+      const bio = json.content?.find((c: any) => c.type === "teamMemberBio") ?? { type: "teamMemberBio" }
+      onUpdateRef.current({
+        ...item,
+        name: { type: "doc", content: name.content ?? [] },
+        role: { type: "doc", content: role.content ?? [] },
+        bio: { type: "doc", content: bio.content ?? [] },
+      })
+    },
+    onFocus({ editor }) {
+      setActiveEditor(editor)
+    },
+  }, [])
+
+  React.useEffect(() => {
+    if (!editor || editor.isDestroyed) return
+    const expected = {
+      type: "doc",
+      content: [
+        { type: "teamMemberName", content: item.name?.content ?? [] },
+        { type: "teamMemberRole", content: item.role?.content ?? [] },
+        { type: "teamMemberBio", content: item.bio?.content ?? [] },
+      ],
+    }
+    const current = editor.getJSON()
+    if (JSON.stringify(current.content) !== JSON.stringify(expected.content)) {
+      editor.commands.setContent(expected, false)
+    }
+  }, [editor, item])
+
+  return <EditorContent editor={editor} className="outline-none [&_.tiptap]:outline-none" />
 }

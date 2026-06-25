@@ -16,6 +16,11 @@ import { KeyNumbers } from "../extensions/key-numbers"
 import { TeamMembers } from "../extensions/team-members"
 import { Testimonials } from "../extensions/testimonials"
 
+const field = (text: string) => ({
+  type: "doc",
+  content: text ? [{ type: "text", text }] : [],
+})
+
 const timelineContent = {
   type: "timeline",
   content: [
@@ -62,10 +67,38 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
     showInSlashMenu: true,
     showInFloatingMenu: true,
     showInSidebar: true,
-    createContent: (layout) => ({
-      type: "keyNumbers",
-      attrs: layout?.attrs,
-    }),
+    createContent: (layout) => {
+      const columns = layout?.attrs?.columns ?? 3
+      const metrics = layout?.attrs?.metrics ?? [
+        {
+          value: "150+",
+          label: "Projects Delivered",
+          detail: "Successfully completed across multiple industries",
+        },
+        {
+          value: "$10M",
+          label: "Managed budget",
+          detail: "Add muted context that supports this metric.",
+        },
+        {
+          value: "24/7",
+          label: "Support coverage",
+          detail: "Describe the promise, impact, or scope behind it.",
+        },
+      ]
+      return {
+        type: "keyNumbers",
+        attrs: {
+          columns,
+          items: metrics.map((metric: any, index: number) => ({
+            id: metric.id ?? `metric-${index + 1}`,
+            value: field(metric.value ?? ""),
+            label: field(metric.label ?? ""),
+            detail: field(metric.detail ?? ""),
+          })),
+        },
+      }
+    },
     preview: (
       <div className="mt-2 flex h-12 w-full gap-1.5">
         <MetricPreview value="99%" label="Stat" />
@@ -166,10 +199,38 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
     showInSlashMenu: true,
     showInFloatingMenu: true,
     showInSidebar: true,
-    createContent: (layout) => ({
-      type: "teamMembers",
-      attrs: layout?.attrs,
-    }),
+    createContent: (layout) => {
+      const columns = layout?.attrs?.columns ?? 3
+      const members = layout?.attrs?.members ?? [
+        {
+          name: "Alex Morgan",
+          role: "Project Lead",
+          bio: "Guides delivery strategy and keeps every milestone aligned.",
+        },
+        {
+          name: "Jamie Chen",
+          role: "Design Director",
+          bio: "Shapes the customer experience across every touchpoint.",
+        },
+        {
+          name: "Taylor Brooks",
+          role: "Technical Lead",
+          bio: "Owns the implementation plan from architecture to launch.",
+        },
+      ]
+      return {
+        type: "teamMembers",
+        attrs: {
+          columns,
+          items: members.map((member: any, index: number) => ({
+            id: member.id ?? `member-${index + 1}`,
+            name: field(member.name ?? ""),
+            role: field(member.role ?? ""),
+            bio: field(member.bio ?? ""),
+          })),
+        },
+      }
+    },
     preview: (
       <div className="mt-2 flex h-12 w-full items-center justify-center gap-4">
         <TeamPreview />
@@ -270,10 +331,41 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
     showInSlashMenu: true,
     showInFloatingMenu: true,
     showInSidebar: true,
-    createContent: (layout) => ({
-      type: "testimonials",
-      attrs: layout?.attrs,
-    }),
+    createContent: (layout) => {
+      const columns = layout?.attrs?.columns ?? 3
+      const testimonials = layout?.attrs?.testimonials ?? [
+        {
+          content:
+            "The team brought clarity, speed, and care to every phase of the project.",
+          author: "Jane Doe",
+          role: "CEO, Tech Corp",
+        },
+        {
+          content:
+            "Their process helped us move faster without sacrificing quality or alignment.",
+          author: "Michael Smith",
+          role: "Founder, Northstar Labs",
+        },
+        {
+          content:
+            "We had confidence in the plan from kickoff through final delivery.",
+          author: "Priya Patel",
+          role: "COO, Atlas Studio",
+        },
+      ]
+      return {
+        type: "testimonials",
+        attrs: {
+          columns,
+          items: testimonials.map((testimonial: any, index: number) => ({
+            id: testimonial.id ?? `testimonial-${index + 1}`,
+            quote: field(testimonial.content ?? testimonial.quote ?? ""),
+            author: field(testimonial.author ?? ""),
+            role: field(testimonial.role ?? ""),
+          })),
+        },
+      }
+    },
     preview: (
       <div className="mt-2 flex h-12 w-full items-center gap-2">
         <TestimonialPreview />

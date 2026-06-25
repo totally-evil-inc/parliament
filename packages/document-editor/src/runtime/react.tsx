@@ -1,6 +1,7 @@
 import * as React from "react"
 import type { ProposalDraft } from "@workspace/document/schema"
 import type { ProposalDraftCommands, ProposalDraftStore } from "./store"
+import type { Editor } from "@tiptap/react"
 
 const StoreContext = React.createContext<ProposalDraftStore | null>(null)
 
@@ -61,6 +62,19 @@ export function useProposalDraftStore() {
       "useProposalDraftStore must be used within ProposalDraftProvider"
     )
   return store
+}
+
+export type ActiveEditorContextType = {
+  activeEditor: Editor | null
+  setActiveEditor: React.Dispatch<React.SetStateAction<Editor | null>>
+}
+
+export const ActiveEditorContext =
+  React.createContext<ActiveEditorContextType | null>(null)
+
+export function useActiveEditorContext() {
+  const context = React.use(ActiveEditorContext)
+  return context
 }
 
 export function useProposalDraft(): ProposalDraft {

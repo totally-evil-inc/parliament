@@ -33,61 +33,30 @@ const blockRenderers: Record<
     ) : null,
   metrics: ({ block }) =>
     block.type === "metrics" ? (
-      <section className={`my-8 grid gap-8 ${columns(block.columns)}`}>
-        {block.metrics.map((metric) => (
-          <div key={metric.id} className="break-inside-avoid text-center">
-            <p className="text-5xl font-black text-[var(--document-accent)]">
-              {metric.value}
-            </p>
-            <p className="mt-1 text-lg font-bold">{metric.label}</p>
-            {metric.detail ? (
-              <p className="mt-2 text-[var(--document-muted-foreground)]">
-                {metric.detail}
-              </p>
-            ) : null}
-          </div>
-        ))}
-      </section>
+      <div data-type="key-numbers" data-columns={block.columns}>
+        <RichTextRenderer
+          className="rich-text-content"
+          content={block.content}
+        />
+      </div>
     ) : null,
   team: ({ block }) =>
     block.type === "team" ? (
-      <section className={`my-8 grid gap-8 ${columns(block.columns)}`}>
-        {block.members.map((member) => (
-          <div key={member.id} className="break-inside-avoid text-center">
-            <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--document-accent)_10%,transparent)] text-2xl font-bold text-[var(--document-accent)]">
-              {member.name.slice(0, 1)}
-            </div>
-            <p className="text-lg font-bold">{member.name}</p>
-            <p className="text-[var(--document-muted-foreground)]">
-              {member.role}
-            </p>
-            {member.bio ? (
-              <p className="mt-3 text-sm text-[var(--document-muted-foreground)]">
-                {member.bio}
-              </p>
-            ) : null}
-          </div>
-        ))}
-      </section>
+      <div data-type="team-members" data-columns={block.columns}>
+        <RichTextRenderer
+          className="rich-text-content"
+          content={block.content}
+        />
+      </div>
     ) : null,
   testimonials: ({ block }) =>
     block.type === "testimonials" ? (
-      <section className={`my-8 grid gap-8 ${columns(block.columns)}`}>
-        {block.testimonials.map((item) => (
-          <blockquote
-            key={item.id}
-            className="break-inside-avoid border-l-2 border-[var(--document-accent)] pl-5"
-          >
-            <p className="text-lg text-[var(--document-muted-foreground)] italic">
-              {item.content}
-            </p>
-            <footer className="mt-4 font-bold">{item.author}</footer>
-            <p className="text-sm text-[var(--document-muted-foreground)]">
-              {item.role}
-            </p>
-          </blockquote>
-        ))}
-      </section>
+      <div data-type="testimonials" data-columns={block.columns}>
+        <RichTextRenderer
+          className="rich-text-content"
+          content={block.content}
+        />
+      </div>
     ) : null,
   gallery: ({ block }) =>
     block.type === "gallery" ? (

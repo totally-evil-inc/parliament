@@ -1,75 +1,127 @@
+import * as React from "react"
+import { useEditor, EditorContent } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
+import { Node } from "@tiptap/core"
 import { NodeViewWrapper } from "@tiptap/react"
-import { Input } from "@workspace/ui/components/input"
-import { Textarea } from "@workspace/ui/components/textarea"
 import type { NodeViewProps } from "@tiptap/react"
-import type { KeyNumberMetric } from "../types"
-import { getArrayAttr, getColumnCount } from "../types"
+import { useActiveEditorContext } from "../../runtime/react"
+import { KeyNumbersValue, KeyNumbersLabel, KeyNumbersDetail } from "../extensions/key-numbers"
 
-const inputClassName =
-  "h-auto rounded-none !border-0 !bg-transparent !p-0 text-center shadow-none !outline-none !ring-0 hover:!border-transparent focus-visible:!border-transparent focus-visible:!ring-0 dark:!bg-transparent"
-
-function getMetricKey(metric: KeyNumberMetric) {
-  return metric.id || `metric-${metric.value}-${metric.label}-${metric.detail}`
-}
+const CardDocument = Node.create({
+  name: "doc",
+  topNode: true,
+})
 
 export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
-  const metrics = getArrayAttr<KeyNumberMetric>(node.attrs.metrics)
-  const columns = getColumnCount(node.attrs.columns)
+  const context = useActiveEditorContext()
+  const columns = node.attrs.columns ?? 3
+  const items = node.attrs.items ?? []
 
-  const updateMetric = (
-    index: number,
-    key: keyof KeyNumberMetric,
-    value: string
-  ) => {
-    const newMetrics = [...metrics]
-    newMetrics[index] = {
-      ...newMetrics[index],
-      id: getMetricKey(newMetrics[index]),
-      [key]: value,
-    }
-    updateAttributes({ metrics: newMetrics })
+  const updateItem = (index: number, updatedItem: any) => {
+    const newItems = [...items]
+    newItems[index] = updatedItem
+    updateAttributes({ items: newItems })
   }
 
-  const gridColumns =
-    columns === 1
-      ? "grid-cols-1"
-      : columns === 2
-        ? "grid-cols-1 md:grid-cols-2"
-        : "grid-cols-1 md:grid-cols-3"
+  const gridStyles = {
+    display: "flex",
+    flexWrap: "wrap" as const,
+    justifyContent: "center",
+    gap: "3rem 2.5rem",
+    width: "100%",
+    margin: "2.5rem 0",
+  }
+
+  const cardWidth = columns === 1
+    ? "100%"
+    : columns === 2
+      ? "calc(50% - 1.25rem)"
+      : "calc(33.333% - 1.666rem)"
 
   return (
-    <NodeViewWrapper className="key-numbers my-[var(--document-section-spacing)]">
-      <div className={`grid gap-x-16 gap-y-14 ${gridColumns}`}>
-        {metrics.map((metric, index) => (
+    <NodeViewWrapper className="key-numbers my-[var(--document-section-spacing)] outline-none" data-drag-handle="">
+      <div style={gridStyles}>
+        {items.map((item: any, index: number) => (
           <div
-            key={getMetricKey(metric)}
-            className="flex flex-col items-center justify-start text-center"
+            key={item.id || index}
+            style={{ flex: `0 0 ${cardWidth}`, maxWidth: cardWidth }}
+            className="p-6 rounded-xl"
           >
-            <Input
-              aria-label="Metric value"
-              spellCheck={false}
-              className={`${inputClassName} text-3xl font-black tracking-tight text-[var(--document-accent)] md:text-5xl`}
-              value={metric.value}
-              onChange={(e) => updateMetric(index, "value", e.target.value)}
-            />
-            <Input
-              aria-label="Metric summary"
-              spellCheck={false}
-              className={`${inputClassName} text-base font-bold tracking-tight text-[var(--document-foreground)] md:text-lg`}
-              value={metric.label}
-              onChange={(e) => updateMetric(index, "label", e.target.value)}
-            />
-            <Textarea
-              aria-label="Metric description"
-              rows={2}
-              spellCheck={false}
-              className={`${inputClassName} min-h-0 resize-none overflow-hidden text-base leading-relaxed text-[var(--document-muted-foreground)] md:text-lg`}
-              value={metric.detail ?? ""}
-              onChange={(e) => updateMetric(index, "detail", e.target.value)}
+            <KeyNumberCardEditor
+              item={item}
+              onUpdate={(updated) => updateItem(index, updated)}
+              setActiveEditor={context?.setActiveEditor ?? (() => {})}
             />
           </div>
         ))}
       </div>
     </NodeViewWrapper>
   )
+}
+
+type CardEditorProps = {
+  item: any
+  onUpdate: (item: any) => void
+  setActiveEditor: (editor: any) => void
+}
+
+function KeyNumberCardEditor({ item, onUpdate, setActiveEditor }: CardEditorProps) {
+  const onUpdateRef = React.useRef(onUpdate)
+  onUpdateRef.current = onUpdate
+
+  const editor = useEditor({
+    extensions: [
+      CardDocument.extend({
+        content: "keyNumbersValue keyNumbersLabel keyNumbersDetail",
+      }),
+      StarterKit.configure({
+        document: false,
+      }),
+      KeyNumbersValue,
+      KeyNumbersLabel,
+      KeyNumbersDetail,
+    ],
+    content: {
+      type: "doc",
+      content: [
+        { type: "keyNumbersValue", content: item.value?.content ?? [] },
+        { type: "keyNumbersLabel", content: item.label?.content ?? [] },
+        { type: "keyNumbersDetail", content: item.detail?.content ?? [] },
+      ],
+    },
+    immediatelyRender: false,
+    onUpdate({ editor }) {
+      const json = editor.getJSON()
+      const value = json.content?.find((c: any) => c.type === "keyNumbersValue") ?? { type: "keyNumbersValue" }
+      const label = json.content?.find((c: any) => c.type === "keyNumbersLabel") ?? { type: "keyNumbersLabel" }
+      const detail = json.content?.find((c: any) => c.type === "keyNumbersDetail") ?? { type: "keyNumbersDetail" }
+      onUpdateRef.current({
+        ...item,
+        value: { type: "doc", content: value.content ?? [] },
+        label: { type: "doc", content: label.content ?? [] },
+        detail: { type: "doc", content: detail.content ?? [] },
+      })
+    },
+    onFocus({ editor }) {
+      setActiveEditor(editor)
+    },
+  }, [])
+
+  React.useEffect(() => {
+    if (!editor || editor.isDestroyed) return
+    const expected = {
+      type: "doc",
+      content: [
+        { type: "keyNumbersValue", content: item.value?.content ?? [] },
+        { type: "keyNumbersLabel", content: item.label?.content ?? [] },
+        { type: "keyNumbersDetail", content: item.detail?.content ?? [] },
+      ],
+    }
+    const current = editor.getJSON()
+    if (JSON.stringify(current.content) !== JSON.stringify(expected.content)) {
+      editor.commands.setContent(expected, false)
+    }
+  }, [editor, item])
+
+  return <EditorContent editor={editor} className="outline-none [&_.tiptap]:outline-none" />
 }

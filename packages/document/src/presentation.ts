@@ -1,4 +1,11 @@
-export type DocumentFontToken = "sans" | "serif" | "mono"
+export type DocumentFontToken =
+  | "sans"
+  | "serif"
+  | "mono"
+  | "satoshi"
+  | "cabinet"
+  | "playfair"
+  | "spacemono"
 
 export type DocumentTemplateTokens = {
   canvasBackground: string
@@ -30,6 +37,10 @@ const fontFamilies: Record<DocumentFontToken, string> = {
   sans: "var(--font-sans)",
   serif: "Georgia, Cambria, 'Times New Roman', Times, serif",
   mono: "var(--font-heading)",
+  satoshi: "Satoshi, var(--font-sans)",
+  cabinet: "'Cabinet Grotesk', var(--font-sans)",
+  playfair: "'Playfair Display', Georgia, serif",
+  spacemono: "'Space Mono', var(--font-heading)",
 }
 
 const sectionSpacing: Record<
@@ -45,6 +56,10 @@ export const documentFontOptions = [
   { value: "sans", label: "Sans" },
   { value: "serif", label: "Serif" },
   { value: "mono", label: "Mono" },
+  { value: "satoshi", label: "Satoshi" },
+  { value: "cabinet", label: "Cabinet" },
+  { value: "playfair", label: "Playfair" },
+  { value: "spacemono", label: "Space Mono" },
 ] satisfies Array<TemplateTokenOption<DocumentFontToken>>
 
 export const documentSpacingOptions = [
