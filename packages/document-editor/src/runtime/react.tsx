@@ -64,17 +64,18 @@ export function useProposalDraftStore() {
   return store
 }
 
-export type ActiveEditorContextType = {
-  activeEditor: Editor | null
-  setActiveEditor: React.Dispatch<React.SetStateAction<Editor | null>>
+export type DocumentEditorChromeContextType = {
+  rootEditor: Editor | null
+  activeTextEditor: Editor | null
+  activateTextEditor: (editor: Editor) => void
+  clearTextEditor: (editor: Editor) => void
 }
 
-export const ActiveEditorContext =
-  React.createContext<ActiveEditorContextType | null>(null)
+export const DocumentEditorChromeContext =
+  React.createContext<DocumentEditorChromeContextType | null>(null)
 
-export function useActiveEditorContext() {
-  const context = React.use(ActiveEditorContext)
-  return context
+export function useDocumentEditorChrome() {
+  return React.use(DocumentEditorChromeContext)
 }
 
 export function useProposalDraft(): ProposalDraft {

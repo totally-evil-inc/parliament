@@ -1,23 +1,13 @@
-import * as React from "react"
-import { useEditor, EditorContent } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import { Node } from "@tiptap/core"
 import { NodeViewWrapper } from "@tiptap/react"
 import type { NodeViewProps } from "@tiptap/react"
-import { useActiveEditorContext } from "../../runtime/react"
+import { EmbeddedCardEditor } from "./embedded-card-editor"
 import {
   KeyNumbersValue,
   KeyNumbersLabel,
   KeyNumbersDetail,
 } from "../extensions/key-numbers"
 
-const CardDocument = Node.create({
-  name: "doc",
-  topNode: true,
-})
-
 export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
-  const context = useActiveEditorContext()
   const columns = node.attrs.columns ?? 3
   const items = node.attrs.items ?? []
 
@@ -55,99 +45,19 @@ export function KeyNumbersView({ node, updateAttributes }: NodeViewProps) {
             style={{ flex: `0 0 ${cardWidth}`, maxWidth: cardWidth }}
             className="rounded-xl p-6"
           >
-            <KeyNumberCardEditor
+            <EmbeddedCardEditor
+              extensions={[KeyNumbersValue, KeyNumbersLabel, KeyNumbersDetail]}
+              fields={[
+                { key: "value", nodeType: "keyNumbersValue" },
+                { key: "label", nodeType: "keyNumbersLabel" },
+                { key: "detail", nodeType: "keyNumbersDetail" },
+              ]}
               item={item}
               onUpdate={(updated) => updateItem(index, updated)}
-              setActiveEditor={context?.setActiveEditor ?? (() => {})}
             />
           </div>
         ))}
       </div>
     </NodeViewWrapper>
-  )
-}
-
-type CardEditorProps = {
-  item: any
-  onUpdate: (item: any) => void
-  setActiveEditor: (editor: any) => void
-}
-
-function KeyNumberCardEditor({
-  item,
-  onUpdate,
-  setActiveEditor,
-}: CardEditorProps) {
-  const onUpdateRef = React.useRef(onUpdate)
-  onUpdateRef.current = onUpdate
-
-  const editor = useEditor(
-    {
-      extensions: [
-        CardDocument.extend({
-          content: "keyNumbersValue keyNumbersLabel keyNumbersDetail",
-        }),
-        StarterKit.configure({
-          document: false,
-        }),
-        KeyNumbersValue,
-        KeyNumbersLabel,
-        KeyNumbersDetail,
-      ],
-      content: {
-        type: "doc",
-        content: [
-          { type: "keyNumbersValue", content: item.value?.content ?? [] },
-          { type: "keyNumbersLabel", content: item.label?.content ?? [] },
-          { type: "keyNumbersDetail", content: item.detail?.content ?? [] },
-        ],
-      },
-      immediatelyRender: false,
-      onUpdate({ editor }) {
-        const json = editor.getJSON() as any
-        const value = json.content?.find(
-          (c: any) => c.type === "keyNumbersValue"
-        ) ?? { type: "keyNumbersValue" }
-        const label = json.content?.find(
-          (c: any) => c.type === "keyNumbersLabel"
-        ) ?? { type: "keyNumbersLabel" }
-        const detail = json.content?.find(
-          (c: any) => c.type === "keyNumbersDetail"
-        ) ?? { type: "keyNumbersDetail" }
-        onUpdateRef.current({
-          ...item,
-          value: { type: "doc", content: value.content ?? [] },
-          label: { type: "doc", content: label.content ?? [] },
-          detail: { type: "doc", content: detail.content ?? [] },
-        })
-      },
-      onFocus({ editor }) {
-        setActiveEditor(editor)
-      },
-    },
-    []
-  )
-
-  React.useEffect(() => {
-    if (!editor || editor.isDestroyed) return
-    const expected = {
-      type: "doc",
-      content: [
-        { type: "keyNumbersValue", content: item.value?.content ?? [] },
-        { type: "keyNumbersLabel", content: item.label?.content ?? [] },
-        { type: "keyNumbersDetail", content: item.detail?.content ?? [] },
-      ],
-    }
-    const current = editor.getJSON()
-    if (JSON.stringify(current.content) !== JSON.stringify(expected.content)) {
-      editor.commands.setContent(expected, { emitUpdate: false })
-    }
-  }, [editor, item])
-
-  return (
-    <EditorContent
-      editor={editor}
-      className="outline-none [&_.tiptap]:outline-none"
-    />
   )
 }

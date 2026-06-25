@@ -11,7 +11,10 @@ import type { DragHandleRule } from "@tiptap/extension-drag-handle"
 import type { Editor } from "@tiptap/react"
 import type { EditorCommand } from "../../commands/types"
 
-import { filterEditorCommands } from "../../commands/types"
+import {
+  editorCommandsForSurface,
+  filterEditorCommands,
+} from "../../commands/types"
 import { SlashCommandList } from "./slash-command"
 
 export function DocumentDragHandle({
@@ -135,7 +138,10 @@ export function DocumentDragHandle({
           >
             <SlashCommandList
               command={insertAfterActive}
-              items={filterEditorCommands("", commands)}
+              items={filterEditorCommands(
+                "",
+                editorCommandsForSurface(commands, "floating")
+              )}
             />
           </PopoverContent>
         </Popover>

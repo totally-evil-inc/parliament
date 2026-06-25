@@ -92,6 +92,7 @@ export function createDocumentCommands(
 
     commands.push({
       id: block.id,
+      kind: "documentInsert",
       title: block.label,
       description: block.description,
       searchTerms: block.searchTerms,

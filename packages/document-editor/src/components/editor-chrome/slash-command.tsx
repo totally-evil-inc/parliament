@@ -1,4 +1,4 @@
-import { useImperativeHandle, useState } from "react"
+import { useEffect, useImperativeHandle, useRef, useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Extension } from "@tiptap/core"
 import { ReactRenderer } from "@tiptap/react"
@@ -17,7 +17,10 @@ import type { Ref } from "react"
 import type { Instance, Props as TippyProps } from "tippy.js"
 import type { EditorCommand } from "../../commands/types"
 
-import { filterEditorCommands } from "../../commands/types"
+import {
+  editorCommandsForSurface,
+  filterEditorCommands,
+} from "../../commands/types"
 
 type SlashCommandListProps = {
   items: Array<EditorCommand>
@@ -35,12 +38,17 @@ export function SlashCommandList({
   ref,
 }: SlashCommandListProps) {
   const [selection, setSelection] = useState({ items, index: 0 })
-  let selectedIndex = selection.index
+  const selectedIndex =
+    selection.items === items
+      ? Math.min(selection.index, Math.max(items.length - 1, 0))
+      : 0
+  const selectedIndexRef = useRef(selectedIndex)
 
-  if (selection.items !== items) {
-    selectedIndex = 0
+  selectedIndexRef.current = selectedIndex
+
+  useEffect(() => {
     setSelection({ items, index: 0 })
-  }
+  }, [items])
 
   const selectItem = (index: number) => {
     const item = items[index]
@@ -64,7 +72,7 @@ export function SlashCommandList({
         return true
       }
       if (event.key === "Enter") {
-        selectItem(selectedIndex)
+        selectItem(selectedIndexRef.current)
         return true
       }
       return false
@@ -172,8 +180,19 @@ export const SlashCommand = Extension.create<{
         editor: this.editor,
         char: "/",
         startOfLine: true,
+        allow: ({ editor, range }) => {
+          const $from = editor.state.doc.resolve(range.from)
+          return (
+            editor.isEditable &&
+            $from.parent.isTextblock &&
+            range.from === $from.start()
+          )
+        },
         items: ({ query }) =>
-          filterEditorCommands(query, this.options.commands),
+          filterEditorCommands(
+            query,
+            editorCommandsForSurface(this.options.commands, "slash")
+          ),
         render: renderSlashCommandItems,
         command: ({ editor, range, props }) => props.command({ editor, range }),
       }),

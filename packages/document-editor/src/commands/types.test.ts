@@ -2,25 +2,56 @@ import { expect, test } from "bun:test"
 import { Text } from "@hugeicons/core-free-icons"
 import type { EditorCommand } from "./types"
 
-import { filterEditorCommands } from "./types"
+import { editorCommandsForSurface, filterEditorCommands } from "./types"
 
 const commands: Array<EditorCommand> = [
   {
     id: "paragraph",
+    kind: "blockTransform",
     title: "Text",
     description: "Start writing plain text.",
     searchTerms: ["paragraph"],
     icon: Text,
     group: "block",
+    showInBubbleMenu: true,
+    showInSlashMenu: true,
     command: () => undefined,
   },
   {
     id: "heading",
+    kind: "blockTransform",
     title: "Heading",
     description: "Add a section heading.",
     searchTerms: ["title", "h1"],
     icon: Text,
     group: "block",
+    showInBubbleMenu: true,
+    showInSlashMenu: true,
+    command: () => undefined,
+  },
+  {
+    id: "bold",
+    kind: "format",
+    title: "Bold",
+    description: "Make text bold.",
+    searchTerms: ["strong"],
+    icon: Text,
+    group: "mark",
+    showInBubbleMenu: true,
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
+    command: () => undefined,
+  },
+  {
+    id: "proposal-section",
+    kind: "documentInsert",
+    title: "Section",
+    description: "Insert a proposal section.",
+    searchTerms: ["proposal"],
+    icon: Text,
+    group: "block",
+    showInSlashMenu: true,
+    showInFloatingMenu: true,
     command: () => undefined,
   },
 ]
@@ -38,4 +69,16 @@ test("editor command filtering preserves catalog order and respects limits", () 
   expect(filterEditorCommands("", commands, 1).map(({ id }) => id)).toEqual([
     "paragraph",
   ])
+})
+
+test("editor command surfaces exclude commands that are unsafe for that surface", () => {
+  expect(
+    editorCommandsForSurface(commands, "bubble").map(({ id }) => id)
+  ).toEqual(["paragraph", "heading", "bold"])
+  expect(
+    editorCommandsForSurface(commands, "slash").map(({ id }) => id)
+  ).toEqual(["paragraph", "heading", "proposal-section"])
+  expect(
+    editorCommandsForSurface(commands, "floating").map(({ id }) => id)
+  ).toEqual(["proposal-section"])
 })

@@ -1,23 +1,13 @@
-import * as React from "react"
-import { useEditor, EditorContent } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import { Node } from "@tiptap/core"
 import { NodeViewWrapper } from "@tiptap/react"
 import type { NodeViewProps } from "@tiptap/react"
-import { useActiveEditorContext } from "../../runtime/react"
+import { EmbeddedCardEditor } from "./embedded-card-editor"
 import {
   TestimonialQuote,
   TestimonialAuthor,
   TestimonialRole,
 } from "../extensions/testimonials"
 
-const CardDocument = Node.create({
-  name: "doc",
-  topNode: true,
-})
-
 export function TestimonialsView({ node, updateAttributes }: NodeViewProps) {
-  const context = useActiveEditorContext()
   const columns = node.attrs.columns ?? 3
   const items = node.attrs.items ?? []
 
@@ -55,100 +45,24 @@ export function TestimonialsView({ node, updateAttributes }: NodeViewProps) {
             style={{ flex: `0 0 ${cardWidth}`, maxWidth: cardWidth }}
           >
             <blockquote className="m-0 flex h-full flex-col rounded-r-md border-l-2 border-[var(--document-accent)] bg-card/30 py-1 pl-5 text-left">
-              <TestimonialCardEditor
+              <EmbeddedCardEditor
+                extensions={[
+                  TestimonialQuote,
+                  TestimonialAuthor,
+                  TestimonialRole,
+                ]}
+                fields={[
+                  { key: "quote", nodeType: "testimonialQuote" },
+                  { key: "author", nodeType: "testimonialAuthor" },
+                  { key: "role", nodeType: "testimonialRole" },
+                ]}
                 item={item}
                 onUpdate={(updated) => updateItem(index, updated)}
-                setActiveEditor={context?.setActiveEditor ?? (() => {})}
               />
             </blockquote>
           </div>
         ))}
       </div>
     </NodeViewWrapper>
-  )
-}
-
-type CardEditorProps = {
-  item: any
-  onUpdate: (item: any) => void
-  setActiveEditor: (editor: any) => void
-}
-
-function TestimonialCardEditor({
-  item,
-  onUpdate,
-  setActiveEditor,
-}: CardEditorProps) {
-  const onUpdateRef = React.useRef(onUpdate)
-  onUpdateRef.current = onUpdate
-
-  const editor = useEditor(
-    {
-      extensions: [
-        CardDocument.extend({
-          content: "testimonialQuote testimonialAuthor testimonialRole",
-        }),
-        StarterKit.configure({
-          document: false,
-        }),
-        TestimonialQuote,
-        TestimonialAuthor,
-        TestimonialRole,
-      ],
-      content: {
-        type: "doc",
-        content: [
-          { type: "testimonialQuote", content: item.quote?.content ?? [] },
-          { type: "testimonialAuthor", content: item.author?.content ?? [] },
-          { type: "testimonialRole", content: item.role?.content ?? [] },
-        ],
-      },
-      immediatelyRender: false,
-      onUpdate({ editor }) {
-        const json = editor.getJSON() as any
-        const quote = json.content?.find(
-          (c: any) => c.type === "testimonialQuote"
-        ) ?? { type: "testimonialQuote" }
-        const author = json.content?.find(
-          (c: any) => c.type === "testimonialAuthor"
-        ) ?? { type: "testimonialAuthor" }
-        const role = json.content?.find(
-          (c: any) => c.type === "testimonialRole"
-        ) ?? { type: "testimonialRole" }
-        onUpdateRef.current({
-          ...item,
-          quote: { type: "doc", content: quote.content ?? [] },
-          author: { type: "doc", content: author.content ?? [] },
-          role: { type: "doc", content: role.content ?? [] },
-        })
-      },
-      onFocus({ editor }) {
-        setActiveEditor(editor)
-      },
-    },
-    []
-  )
-
-  React.useEffect(() => {
-    if (!editor || editor.isDestroyed) return
-    const expected = {
-      type: "doc",
-      content: [
-        { type: "testimonialQuote", content: item.quote?.content ?? [] },
-        { type: "testimonialAuthor", content: item.author?.content ?? [] },
-        { type: "testimonialRole", content: item.role?.content ?? [] },
-      ],
-    }
-    const current = editor.getJSON()
-    if (JSON.stringify(current.content) !== JSON.stringify(expected.content)) {
-      editor.commands.setContent(expected, { emitUpdate: false })
-    }
-  }, [editor, item])
-
-  return (
-    <EditorContent
-      editor={editor}
-      className="outline-none [&_.tiptap]:outline-none"
-    />
   )
 }

@@ -3,9 +3,8 @@ import { Node } from "@tiptap/core"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import type { JSONContent } from "@tiptap/core"
-import type { Editor } from "@tiptap/react"
 import type { RichTextDoc } from "@workspace/document/schema"
-import { useActiveEditorContext } from "../../runtime/react"
+import { useDocumentEditorChrome } from "../../runtime/react"
 
 const EmbeddedDocument = Node.create({
   name: "doc",
@@ -22,9 +21,11 @@ export function RichTextDocEditor({
   content: RichTextDoc
   onChange: (content: RichTextDoc) => void
 }) {
-  const activeEditorContext = useActiveEditorContext()
+  const chrome = useDocumentEditorChrome()
   const onChangeRef = React.useRef(onChange)
+  const chromeRef = React.useRef(chrome)
   onChangeRef.current = onChange
+  chromeRef.current = chrome
 
   const editor = useEditor(
     {
@@ -41,7 +42,7 @@ export function RichTextDocEditor({
         onChangeRef.current(currentEditor.getJSON() as RichTextDoc)
       },
       onFocus: ({ editor: currentEditor }) => {
-        activeEditorContext?.setActiveEditor(currentEditor)
+        chromeRef.current?.activateTextEditor(currentEditor)
       },
     },
     []
@@ -55,13 +56,11 @@ export function RichTextDocEditor({
   }, [content, editor])
 
   React.useEffect(() => {
-    if (!editor || !activeEditorContext?.setActiveEditor) return
+    if (!editor || !chrome) return
     return () => {
-      activeEditorContext.setActiveEditor((current: Editor | null) =>
-        current === editor ? null : current
-      )
+      chrome.clearTextEditor(editor)
     }
-  }, [activeEditorContext, editor])
+  }, [chrome, editor])
 
   return (
     <EditorContent

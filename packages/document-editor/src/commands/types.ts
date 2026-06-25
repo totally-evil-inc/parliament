@@ -7,8 +7,17 @@ export type EditorCommandContext = {
   range?: Range
 }
 
+export type EditorCommandKind =
+  | "format"
+  | "blockTransform"
+  | "slashInsert"
+  | "documentInsert"
+
+export type EditorCommandSurface = "bubble" | "slash" | "floating"
+
 export type EditorCommand = {
   id: string
+  kind: EditorCommandKind
   title: string
   description: string
   searchTerms: Array<string>
@@ -41,4 +50,31 @@ export function filterEditorCommands(
         .includes(normalizedQuery)
     )
     .slice(0, limit)
+}
+
+export function editorCommandsForSurface(
+  commands: Array<EditorCommand>,
+  surface: EditorCommandSurface
+) {
+  if (surface === "bubble") {
+    return commands.filter(
+      (command) =>
+        command.showInBubbleMenu &&
+        (command.kind === "format" || command.kind === "blockTransform")
+    )
+  }
+
+  if (surface === "slash") {
+    return commands.filter(
+      (command) =>
+        command.showInSlashMenu &&
+        (command.kind === "blockTransform" ||
+          command.kind === "slashInsert" ||
+          command.kind === "documentInsert")
+    )
+  }
+
+  return commands.filter(
+    (command) => command.showInFloatingMenu && command.kind === "documentInsert"
+  )
 }

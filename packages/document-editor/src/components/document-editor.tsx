@@ -9,7 +9,11 @@ import type { DocumentDefinition, DocumentTemplate } from "../core/types"
 
 import { createDocumentCommands } from "../core/definition"
 import { createBaseEditorCommands } from "../commands/base"
-import { useDocumentEditorHost, ActiveEditorContext } from "../runtime/react"
+import { editorCommandsForSurface } from "../commands/types"
+import {
+  DocumentEditorChromeContext,
+  useDocumentEditorHost,
+} from "../runtime/react"
 import {
   defaultDocumentTemplate,
   getDocumentTemplateStyle,
@@ -37,15 +41,30 @@ export function DocumentEditor({
   template = defaultDocumentTemplate,
 }: DocumentEditorProps) {
   const { confirm, requestTextInput } = useDocumentEditorHost()
-  const [activeEditor, setActiveEditor] = React.useState<Editor | null>(null)
-  const activeEditorContext = React.useMemo(
-    () => ({ activeEditor, setActiveEditor }),
-    [activeEditor]
+  const [activeTextEditor, setActiveTextEditor] = React.useState<Editor | null>(
+    null
+  )
+  const activateTextEditor = React.useCallback((nextEditor: Editor) => {
+    setActiveTextEditor(nextEditor)
+  }, [])
+  const clearTextEditor = React.useCallback((targetEditor: Editor) => {
+    setActiveTextEditor((current) =>
+      current === targetEditor ? null : current
+    )
+  }, [])
+  const chromeContext = React.useMemo(
+    () => ({
+      rootEditor: editor,
+      activeTextEditor,
+      activateTextEditor,
+      clearTextEditor,
+    }),
+    [activateTextEditor, activeTextEditor, clearTextEditor, editor]
   )
 
   React.useEffect(() => {
     if (!editor) return
-    const resetActiveEditor = () => setActiveEditor(null)
+    const resetActiveEditor = () => setActiveTextEditor(null)
     editor.on("focus", resetActiveEditor)
     return () => {
       editor.off("focus", resetActiveEditor)
@@ -57,7 +76,7 @@ export function DocumentEditor({
     [requestTextInput]
   )
   const bubbleMenuCommands = React.useMemo(
-    () => editorCommands.filter((command) => command.showInBubbleMenu),
+    () => editorCommandsForSurface(editorCommands, "bubble"),
     [editorCommands]
   )
   const templateStyle = React.useMemo(
@@ -66,17 +85,21 @@ export function DocumentEditor({
   )
   const blockCommands = React.useMemo(
     () =>
-      [...editorCommands, ...createDocumentCommands(definition)].filter(
-        (command) => command.showInFloatingMenu
+      editorCommandsForSurface(
+        [...editorCommands, ...createDocumentCommands(definition)],
+        "floating"
       ),
-    [definition]
+    [definition, editorCommands]
   )
+  const bubbleEditor = activeTextEditor ?? editor
   const accessories = editor ? (
     <>
-      <EditorBubbleMenu
-        editor={activeEditor ?? editor}
-        commands={bubbleCommands ?? bubbleMenuCommands}
-      />
+      {bubbleEditor ? (
+        <EditorBubbleMenu
+          editor={bubbleEditor}
+          commands={bubbleCommands ?? bubbleMenuCommands}
+        />
+      ) : null}
       <EditorTableMenu editor={editor} confirm={confirm} />
       <DocumentDragHandle
         commands={blockCommands}
@@ -87,7 +110,7 @@ export function DocumentEditor({
   ) : null
 
   return (
-    <ActiveEditorContext.Provider value={activeEditorContext}>
+    <DocumentEditorChromeContext.Provider value={chromeContext}>
       <DocumentEditorCanvas
         className="min-h-full min-w-0 overflow-x-hidden px-0 py-4 sm:px-10 lg:px-14"
         contentClassName="relative mx-auto w-full min-w-0 max-w-5xl overflow-x-hidden pb-32 md:pb-10"
@@ -102,6 +125,6 @@ export function DocumentEditor({
         templateId={template.id}
         accessories={accessories}
       />
-    </ActiveEditorContext.Provider>
+    </DocumentEditorChromeContext.Provider>
   )
 }

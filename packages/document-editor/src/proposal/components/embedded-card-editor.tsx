@@ -3,9 +3,8 @@ import { Node } from "@tiptap/core"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import type { AnyExtension, JSONContent } from "@tiptap/core"
-import type { Editor } from "@tiptap/react"
 import type { RichTextDoc } from "@workspace/document/schema"
-import { useActiveEditorContext } from "../../runtime/react"
+import { useDocumentEditorChrome } from "../../runtime/react"
 
 export type CardFieldDocument = RichTextDoc
 
@@ -43,10 +42,11 @@ export function EmbeddedCardEditor({
   item: CardItem
   onUpdate: (item: CardItem) => void
 }) {
-  const activeEditorContext = useActiveEditorContext()
-  const setActiveEditor = activeEditorContext?.setActiveEditor
+  const chrome = useDocumentEditorChrome()
+  const chromeRef = React.useRef(chrome)
   const itemRef = React.useRef(item)
   const onUpdateRef = React.useRef(onUpdate)
+  chromeRef.current = chrome
   itemRef.current = item
   onUpdateRef.current = onUpdate
 
@@ -76,14 +76,14 @@ export function EmbeddedCardEditor({
         onUpdateRef.current(updatedItem)
       },
       onFocus: ({ editor: currentEditor }) => {
-        setActiveEditor?.(currentEditor)
+        chromeRef.current?.activateTextEditor(currentEditor)
       },
     },
     []
   )
 
   React.useEffect(() => {
-    if (!editor || editor.isDestroyed) return
+    if (!editor || editor.isDestroyed || editor.isFocused) return
 
     const expected = cardEditorContent(item, fields)
     if (JSON.stringify(editor.getJSON()) !== JSON.stringify(expected)) {
@@ -92,14 +92,12 @@ export function EmbeddedCardEditor({
   }, [editor, fields, item])
 
   React.useEffect(() => {
-    if (!editor || !setActiveEditor) return
+    if (!editor || !chrome) return
 
     return () => {
-      setActiveEditor((current: Editor | null) =>
-        current === editor ? null : current
-      )
+      chrome.clearTextEditor(editor)
     }
-  }, [editor, setActiveEditor])
+  }, [chrome, editor])
 
   return <EditorContent editor={editor} />
 }

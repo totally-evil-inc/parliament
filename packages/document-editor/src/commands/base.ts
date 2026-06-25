@@ -34,6 +34,7 @@ export function createBaseEditorCommands(
   return [
     {
       id: "paragraph",
+      kind: "blockTransform",
       title: "Text",
       description: "Just start typing with plain text.",
       searchTerms: ["p", "paragraph", "text"],
@@ -49,6 +50,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "heading-1",
+      kind: "blockTransform",
       title: "Heading 1",
       description: "Big section heading.",
       searchTerms: ["h1", "heading", "title"],
@@ -66,6 +68,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "heading-2",
+      kind: "blockTransform",
       title: "Heading 2",
       description: "Medium section heading.",
       searchTerms: ["h2", "heading", "subtitle"],
@@ -83,6 +86,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "heading-3",
+      kind: "blockTransform",
       title: "Heading 3",
       description: "Small section heading.",
       searchTerms: ["h3", "heading", "subheading"],
@@ -100,6 +104,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "bullet-list",
+      kind: "blockTransform",
       title: "Bullet List",
       description: "Create a simple bullet list.",
       searchTerms: ["ul", "unordered", "bullet", "list"],
@@ -115,6 +120,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "ordered-list",
+      kind: "blockTransform",
       title: "Ordered List",
       description: "Create a numbered list.",
       searchTerms: ["ol", "ordered", "numbered", "list"],
@@ -130,6 +136,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "blockquote",
+      kind: "blockTransform",
       title: "Quote",
       description: "Capture a quote or callout.",
       searchTerms: ["blockquote", "quote", "callout"],
@@ -145,6 +152,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "details",
+      kind: "slashInsert",
       title: "Details",
       description: "Create a collapsible details block.",
       searchTerms: ["details", "summary", "toggle", "collapse", "accordion"],
@@ -160,6 +168,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "task-list",
+      kind: "blockTransform",
       title: "Task List",
       description: "Track todos with checkboxes.",
       searchTerms: ["task", "todo", "checkbox", "checklist", "list"],
@@ -175,6 +184,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "table",
+      kind: "slashInsert",
       title: "Table",
       description: "Create a table with rows and columns.",
       searchTerms: ["table", "grid", "rows", "columns", "cells"],
@@ -190,6 +200,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "horizontal-rule",
+      kind: "slashInsert",
       title: "Divider",
       description: "Separate sections with a horizontal rule.",
       searchTerms: ["horizontal rule", "hr", "divider", "separator", "line"],
@@ -204,6 +215,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "hard-break",
+      kind: "slashInsert",
       title: "Line Break",
       description: "Insert a hard line break.",
       searchTerms: ["hard break", "line break", "br", "newline"],
@@ -218,6 +230,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "inline-math",
+      kind: "slashInsert",
       title: "Inline Math",
       description: "Insert an inline LaTeX formula.",
       searchTerms: ["math", "mathematics", "latex", "formula", "inline"],
@@ -240,6 +253,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "block-math",
+      kind: "slashInsert",
       title: "Block Math",
       description: "Insert a display LaTeX formula.",
       searchTerms: [
@@ -269,6 +283,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "bold",
+      kind: "format",
       title: "Bold",
       description: "Make selected text bold.",
       searchTerms: ["bold", "strong", "b"],
@@ -282,6 +297,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "italic",
+      kind: "format",
       title: "Italic",
       description: "Make selected text italic.",
       searchTerms: ["italic", "emphasis", "i"],
@@ -295,6 +311,7 @@ export function createBaseEditorCommands(
     },
     {
       id: "code",
+      kind: "format",
       title: "Code",
       description: "Format selected text as inline code.",
       searchTerms: ["code", "inline code", "monospace"],

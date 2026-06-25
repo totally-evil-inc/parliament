@@ -1,6 +1,7 @@
 import { HugeiconsIcon } from "@hugeicons/react"
 import "@tiptap/extension-table/table"
 import { BubbleMenu } from "@tiptap/react/menus"
+import { useEditorState } from "@tiptap/react"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -22,16 +23,31 @@ export function EditorBubbleMenu({
   editor: Editor
   commands: Array<EditorCommand>
 }) {
+  const state = useEditorState({
+    editor,
+    selector: ({ editor: current }) => ({
+      active: Object.fromEntries(
+        commands.map((command) => [
+          command.id,
+          command.isActive?.(current) ?? false,
+        ])
+      ),
+    }),
+  })
+
   return (
     <BubbleMenu
       editor={editor}
-      className="flex items-center gap-1 rounded-md border bg-popover p-1 shadow-md max-w-[90vw] overflow-x-auto no-scrollbar"
+      shouldShow={({ editor: current }) =>
+        current.isFocused && current.isEditable
+      }
+      className="no-scrollbar flex max-w-[90vw] items-center gap-1 overflow-x-auto rounded-md border bg-popover p-1 shadow-md"
     >
       {commands.map((command) => (
         <Toggle
           key={command.id}
           size="sm"
-          pressed={command.isActive?.(editor) ?? false}
+          pressed={Boolean(state.active[command.id])}
           onPressedChange={() => command.command({ editor })}
         >
           <HugeiconsIcon icon={command.icon} className="h-4 w-4" />
@@ -170,7 +186,9 @@ export function EditorTableMenu({
   return (
     <BubbleMenu
       editor={editor}
-      shouldShow={({ editor: current }) => current.isActive("table")}
+      shouldShow={({ editor: current }) =>
+        current.isFocused && current.isActive("table")
+      }
       className="flex items-center gap-1 rounded-md border bg-popover p-1 shadow-md"
     >
       <DropdownMenu>
