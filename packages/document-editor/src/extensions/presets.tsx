@@ -50,6 +50,13 @@ import {
 } from "../proposal/extensions/testimonials"
 import { ProposalSection } from "../proposal/extensions/proposal-section"
 import { Faq } from "../proposal/extensions/faq"
+import {
+  ProposalColumns,
+  ProposalCover,
+  ProposalImageCards,
+  ProposalImageText,
+  ProposalSignature,
+} from "../proposal/extensions/visual-blocks"
 
 const TaskItem = BaseTaskItem.extend({
   addNodeView() {
@@ -216,6 +223,11 @@ export const businessDocumentPreset = [
   DocumentHeader,
   LineItems,
   ProposalSection,
+  ProposalCover,
+  ProposalColumns,
+  ProposalImageText,
+  ProposalImageCards,
+  ProposalSignature,
   Faq,
   KeyNumbersItem,
   KeyNumbersValue,

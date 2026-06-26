@@ -43,6 +43,70 @@ function blockToTiptap(block: DocumentBlock): Array<JSONContent> {
           },
         },
       ]
+    case "cover":
+      return [
+        {
+          type: "proposalCover",
+          attrs: {
+            blockId: block.id,
+            eyebrow: block.eyebrow,
+            title: block.title,
+            subtitle: block.subtitle,
+            media: block.media,
+            variant: block.variant,
+          },
+        },
+      ]
+    case "columns":
+      return [
+        {
+          type: "proposalColumns",
+          attrs: {
+            blockId: block.id,
+            columns: block.columns,
+            title: block.title,
+            items: block.items,
+          },
+        },
+      ]
+    case "imageText":
+      return [
+        {
+          type: "proposalImageText",
+          attrs: {
+            blockId: block.id,
+            image: block.image,
+            eyebrow: block.eyebrow,
+            title: block.title,
+            content: block.content,
+            reverse: block.reverse,
+          },
+        },
+      ]
+    case "imageCards":
+      return [
+        {
+          type: "proposalImageCards",
+          attrs: {
+            blockId: block.id,
+            columns: block.columns,
+            variant: block.variant,
+            items: block.items,
+          },
+        },
+      ]
+    case "signature":
+      return [
+        {
+          type: "proposalSignature",
+          attrs: {
+            blockId: block.id,
+            binding: block.binding,
+            title: block.title,
+            terms: block.terms,
+          },
+        },
+      ]
     case "metrics":
       return [
         {
@@ -158,6 +222,64 @@ export function tiptapToComposition(
         content: docFromUnknown(nodeAttrs.content),
       }
     }
+    if (node.type === "proposalCover") {
+      const media = assetReference(nodeAttrs.media)
+      return {
+        id: id(node, index, "cover"),
+        type: "cover",
+        version: 1,
+        eyebrow: inlineDocFromUnknown(nodeAttrs.eyebrow),
+        title: inlineDocFromUnknown(nodeAttrs.title),
+        subtitle: inlineDocFromUnknown(nodeAttrs.subtitle),
+        ...(media ? { media } : {}),
+        variant: coverVariant(nodeAttrs.variant),
+      }
+    }
+    if (node.type === "proposalColumns") {
+      const blockId = id(node, index, "columns")
+      return {
+        id: blockId,
+        type: "columns",
+        version: 1,
+        columns: narrativeColumns(nodeAttrs.columns),
+        title: inlineDocFromUnknown(nodeAttrs.title),
+        items: normalizeRichTextItems(nodeAttrs.items, blockId),
+      }
+    }
+    if (node.type === "proposalImageText") {
+      const image = assetReference(nodeAttrs.image)
+      return {
+        id: id(node, index, "image-text"),
+        type: "imageText",
+        version: 1,
+        ...(image ? { image } : {}),
+        eyebrow: inlineDocFromUnknown(nodeAttrs.eyebrow),
+        title: inlineDocFromUnknown(nodeAttrs.title),
+        content: docFromUnknown(nodeAttrs.content),
+        reverse: nodeAttrs.reverse === true,
+      }
+    }
+    if (node.type === "proposalImageCards") {
+      const blockId = id(node, index, "image-cards")
+      return {
+        id: blockId,
+        type: "imageCards",
+        version: 1,
+        columns: columns(nodeAttrs.columns),
+        variant: imageCardsVariant(nodeAttrs.variant),
+        items: normalizeImageCardItems(nodeAttrs.items, blockId),
+      }
+    }
+    if (node.type === "proposalSignature") {
+      return {
+        id: id(node, index, "signature"),
+        type: "signature",
+        version: 1,
+        binding: "proposal.pricing.signer",
+        title: inlineDocFromUnknown(nodeAttrs.title),
+        terms: docFromUnknown(nodeAttrs.terms),
+      }
+    }
     if (node.type === "keyNumbers") {
       const blockId = id(node, index, "metrics")
       return {
@@ -263,6 +385,10 @@ function columns(value: unknown): 1 | 2 | 3 {
   return value === 1 || value === 2 ? value : 3
 }
 
+function narrativeColumns(value: unknown): 2 | 3 {
+  return value === 2 ? 2 : 3
+}
+
 function array<T>(value: unknown): Array<T> {
   return Array.isArray(value) ? (value as Array<T>) : []
 }
@@ -273,6 +399,25 @@ function string(value: unknown) {
 
 function sectionVariant(value: unknown): "default" | "accent" | "compact" {
   return value === "accent" || value === "compact" ? value : "default"
+}
+
+function coverVariant(value: unknown): "split" | "band" | "minimal" {
+  if (value === "band" || value === "minimal") return value
+  return "split"
+}
+
+function imageCardsVariant(value: unknown): "vertical" | "horizontal" {
+  return value === "horizontal" ? "horizontal" : "vertical"
+}
+
+function assetReference(value: unknown) {
+  if (!value || typeof value !== "object") return null
+  const assetId = string((value as Record<string, unknown>).assetId)
+  if (!assetId) return null
+  return {
+    assetId,
+    alt: string((value as Record<string, unknown>).alt),
+  }
 }
 
 function docFromUnknown(value: unknown): RichTextDoc {
@@ -301,6 +446,26 @@ function textToDoc(text: unknown): RichTextDoc {
     type: "doc",
     content: [{ type: "text", text: str }],
   }
+}
+
+function normalizeRichTextItems(value: unknown, blockId: string) {
+  return array<Record<string, unknown>>(value).map((item, index) => ({
+    id: string(item.id) || `${blockId}-item-${index}`,
+    heading: inlineDocFromUnknown(item.heading),
+    body: docFromUnknown(item.body),
+  }))
+}
+
+function normalizeImageCardItems(value: unknown, blockId: string) {
+  return array<Record<string, unknown>>(value).map((item, index) => {
+    const image = assetReference(item.image)
+    return {
+      id: string(item.id) || `${blockId}-item-${index}`,
+      ...(image ? { image } : {}),
+      title: inlineDocFromUnknown(item.title),
+      body: docFromUnknown(item.body),
+    }
+  })
 }
 
 function normalizeKeyNumbers(block: any): Array<any> {

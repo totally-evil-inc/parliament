@@ -125,13 +125,44 @@ export const proposalPricingSchema = z
   .strict()
 
 const columnsSchema = z.union([z.literal(1), z.literal(2), z.literal(3)])
+const narrativeColumnsSchema = z.union([z.literal(2), z.literal(3)])
 const sectionVariantSchema = z.union([
   z.literal("default"),
   z.literal("accent"),
   z.literal("compact"),
 ])
 const faqVariantSchema = z.literal("list")
+const coverVariantSchema = z.union([
+  z.literal("split"),
+  z.literal("band"),
+  z.literal("minimal"),
+])
+const imageCardsVariantSchema = z.union([
+  z.literal("vertical"),
+  z.literal("horizontal"),
+])
 const blockBase = { id: idSchema, version: z.literal(1) } as const
+const blockAssetReferenceSchema = z
+  .object({
+    assetId: idSchema,
+    alt: z.string(),
+  })
+  .strict()
+const richTextItemSchema = z
+  .object({
+    id: idSchema,
+    heading: inlineRichTextDocSchema,
+    body: richTextDocSchema,
+  })
+  .strict()
+const imageCardItemSchema = z
+  .object({
+    id: idSchema,
+    image: blockAssetReferenceSchema.optional(),
+    title: inlineRichTextDocSchema,
+    body: richTextDocSchema,
+  })
+  .strict()
 
 export const documentBlockSchema = z.discriminatedUnion("type", [
   z
@@ -166,6 +197,55 @@ export const documentBlockSchema = z.discriminatedUnion("type", [
       lead: inlineRichTextDocSchema.default({ type: "doc", content: [] }),
       variant: sectionVariantSchema.default("default"),
       content: richTextDocSchema,
+    })
+    .strict(),
+  z
+    .object({
+      ...blockBase,
+      type: z.literal("cover"),
+      eyebrow: inlineRichTextDocSchema.default({ type: "doc", content: [] }),
+      title: inlineRichTextDocSchema,
+      subtitle: inlineRichTextDocSchema.default({ type: "doc", content: [] }),
+      media: blockAssetReferenceSchema.optional(),
+      variant: coverVariantSchema.default("split"),
+    })
+    .strict(),
+  z
+    .object({
+      ...blockBase,
+      type: z.literal("columns"),
+      columns: narrativeColumnsSchema,
+      title: inlineRichTextDocSchema,
+      items: z.array(richTextItemSchema),
+    })
+    .strict(),
+  z
+    .object({
+      ...blockBase,
+      type: z.literal("imageText"),
+      image: blockAssetReferenceSchema.optional(),
+      eyebrow: inlineRichTextDocSchema.default({ type: "doc", content: [] }),
+      title: inlineRichTextDocSchema,
+      content: richTextDocSchema,
+      reverse: z.boolean().default(false),
+    })
+    .strict(),
+  z
+    .object({
+      ...blockBase,
+      type: z.literal("imageCards"),
+      columns: columnsSchema,
+      variant: imageCardsVariantSchema.default("vertical"),
+      items: z.array(imageCardItemSchema),
+    })
+    .strict(),
+  z
+    .object({
+      ...blockBase,
+      type: z.literal("signature"),
+      binding: z.literal("proposal.pricing.signer"),
+      title: inlineRichTextDocSchema,
+      terms: richTextDocSchema,
     })
     .strict(),
   z

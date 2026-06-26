@@ -288,3 +288,153 @@ test("proposal sections and FAQ blocks survive the TipTap adapter", () => {
 
   expect(compositionToTiptap(tiptapToComposition(content))).toEqual(content)
 })
+
+test("phase 2 proposal blocks survive the TipTap adapter", () => {
+  const content = {
+    type: "doc",
+    content: [
+      {
+        type: "proposalCover",
+        attrs: {
+          blockId: "cover-1",
+          eyebrow: field("Proposal"),
+          title: field("Growth platform"),
+          subtitle: field("A focused launch plan."),
+          media: { assetId: "asset-1", alt: "Website mockup" },
+          variant: "band",
+        },
+      },
+      {
+        type: "proposalColumns",
+        attrs: {
+          blockId: "columns-1",
+          columns: 2,
+          title: field("Workstreams"),
+          items: [
+            {
+              id: "column-1",
+              heading: field("Strategy"),
+              body: {
+                type: "doc",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "Clarify priorities." }],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      {
+        type: "proposalImageText",
+        attrs: {
+          blockId: "image-text-1",
+          image: { assetId: "asset-1", alt: "Journey map" },
+          eyebrow: field("Proof"),
+          title: field("Evidence-led design"),
+          content: {
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: "Show the rationale." }],
+              },
+            ],
+          },
+          reverse: true,
+        },
+      },
+      {
+        type: "proposalImageCards",
+        attrs: {
+          blockId: "image-cards-1",
+          columns: 3,
+          variant: "horizontal",
+          items: [
+            {
+              id: "card-1",
+              image: { assetId: "asset-1", alt: "Service card" },
+              title: field("Launch"),
+              body: {
+                type: "doc",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "Ship confidently." }],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      {
+        type: "proposalSignature",
+        attrs: {
+          blockId: "signature-1",
+          binding: "proposal.pricing.signer",
+          title: field("Ready to approve"),
+          terms: {
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: "Confirm the scope." }],
+              },
+            ],
+          },
+        },
+      },
+    ],
+  }
+
+  expect(compositionToTiptap(tiptapToComposition(content))).toEqual(content)
+})
+
+test("phase 2 proposal blocks normalize unsafe attrs", () => {
+  const blocks = tiptapToComposition({
+    type: "doc",
+    content: [
+      {
+        type: "proposalCover",
+        attrs: {
+          blockId: "cover-1",
+          title: "Growth platform",
+          media: { url: "https://example.test/image.png", alt: "Image" },
+          variant: "unknown",
+        },
+      },
+      {
+        type: "proposalImageCards",
+        attrs: {
+          blockId: "image-cards-1",
+          columns: 9,
+          variant: "stacked",
+          items: [{ title: "Launch", body: "Ship." }],
+        },
+      },
+    ],
+  })
+
+  expect(blocks[0]).toMatchObject({
+    id: "cover-1",
+    type: "cover",
+    variant: "split",
+  })
+  expect(blocks[0]).not.toHaveProperty("media")
+  expect(blocks[1]).toMatchObject({
+    id: "image-cards-1",
+    type: "imageCards",
+    columns: 3,
+    variant: "vertical",
+    items: [
+      {
+        id: "image-cards-1-item-0",
+        title: { content: [{ type: "text", text: "Launch" }] },
+        body: { content: [] },
+      },
+    ],
+  })
+})

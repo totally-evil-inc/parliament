@@ -50,6 +50,47 @@ function blockText(block: DocumentBlock, model: ProposalRenderModel): string {
       ]
         .filter(Boolean)
         .join("\n")
+    case "cover":
+      return [
+        richText(block.eyebrow),
+        richText(block.title),
+        richText(block.subtitle),
+        block.media?.alt,
+      ]
+        .filter(Boolean)
+        .join("\n")
+    case "columns":
+      return [
+        richText(block.title),
+        ...block.items.flatMap((item) => [
+          richText(item.heading),
+          richText(item.body),
+        ]),
+      ]
+        .filter(Boolean)
+        .join("\n")
+    case "imageText":
+      return [
+        block.image?.alt,
+        richText(block.eyebrow),
+        richText(block.title),
+        richText(block.content),
+      ]
+        .filter(Boolean)
+        .join("\n")
+    case "imageCards":
+      return block.items
+        .flatMap((item) => [
+          item.image?.alt,
+          richText(item.title),
+          richText(item.body),
+        ])
+        .filter(Boolean)
+        .join("\n")
+    case "signature":
+      return [richText(block.title), richText(block.terms)]
+        .filter(Boolean)
+        .join("\n")
     case "faq":
       return block.items
         .map((item) =>

@@ -24,10 +24,7 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
 
   const addImage = () => {
     updateAttributes({
-      images: [
-        ...images,
-        { id: createId("gallery-image"), url: "", alt: "New Image" },
-      ],
+      images: [...images, { id: createId("gallery-image"), alt: "New Image" }],
     })
   }
 
@@ -66,7 +63,7 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
       <div className={`grid gap-4 ${gridColumnClassNames[columns]}`}>
         {images.map((image, index) => (
           <div
-            key={image.id || `${image.url}-${image.alt}`}
+            key={image.id || `${image.assetId}-${image.alt}`}
             className="group relative aspect-square overflow-hidden rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)]"
           >
             <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[color-mix(in_oklab,var(--document-muted-foreground)_50%,transparent)]">

@@ -1,8 +1,7 @@
 import { formatDateOnly, formatMoneyMinor } from "@workspace/document/calculate"
 import { getDocumentTemplateStyle } from "@workspace/document/presentation"
 import { RichTextInlineRenderer, RichTextRenderer } from "./rich-text-renderer"
-import type { DocumentBlock } from "@workspace/document/schema"
-import type { RichTextNode } from "@workspace/document/schema"
+import type { DocumentBlock, RichTextNode } from "@workspace/document/schema"
 import type { ProposalRenderModel } from "@workspace/document/render"
 import type { DocumentTemplate } from "@workspace/document/presentation"
 
@@ -28,6 +27,18 @@ const blockRenderers: Record<
     ) : null,
   section: ({ block }) =>
     block.type === "section" ? <ProposalSection block={block} /> : null,
+  cover: ({ block, model }) =>
+    block.type === "cover" ? <Cover block={block} model={model} /> : null,
+  columns: ({ block }) =>
+    block.type === "columns" ? <Columns block={block} /> : null,
+  imageText: ({ block }) =>
+    block.type === "imageText" ? <ImageText block={block} /> : null,
+  imageCards: ({ block }) =>
+    block.type === "imageCards" ? <ImageCards block={block} /> : null,
+  signature: ({ block, model }) =>
+    block.type === "signature" ? (
+      <Signature block={block} model={model} />
+    ) : null,
   timeline: ({ block }) =>
     block.type === "timeline" ? (
       <section className="my-[var(--document-section-spacing)] border-l border-[var(--document-border)] pl-5">
@@ -245,6 +256,166 @@ function ProposalSection({
   )
 }
 
+function Cover({
+  block,
+  model,
+}: {
+  block: Extract<DocumentBlock, { type: "cover" }>
+  model: ProposalRenderModel
+}) {
+  const minimal = block.variant === "minimal"
+  return (
+    <section className="break-inside-avoid pb-[var(--document-section-spacing)]">
+      <div
+        className={[
+          "rounded-[calc(var(--document-radius)*1.5)] border border-[color-mix(in_oklab,var(--document-accent)_18%,var(--document-border))] bg-[color-mix(in_oklab,var(--document-accent)_7%,transparent)] p-10",
+          minimal ? "" : "grid gap-10 md:grid-cols-[1.15fr_0.85fr]",
+        ].join(" ")}
+      >
+        <div>
+          <SectionHeading
+            eyebrow={block.eyebrow}
+            lead={block.subtitle}
+            title={block.title}
+          />
+          <div className="mt-8 grid gap-8 border-t border-[color-mix(in_oklab,var(--document-accent)_18%,var(--document-border))] pt-6 text-sm md:grid-cols-2">
+            <Party label="Prepared By" party={model.seller} />
+            <Party label="Prepared For" party={model.customer} />
+          </div>
+        </div>
+        {minimal ? null : (
+          <ImagePlaceholder
+            alt={block.media?.alt}
+            className={block.variant === "band" ? "min-h-72" : "min-h-96"}
+          />
+        )}
+      </div>
+    </section>
+  )
+}
+
+function Columns({
+  block,
+}: {
+  block: Extract<DocumentBlock, { type: "columns" }>
+}) {
+  return (
+    <section className="my-[var(--document-section-spacing)] break-inside-avoid">
+      <SectionHeading title={block.title} />
+      <div className={`mt-7 grid gap-6 ${columns(block.columns)}`}>
+        {block.items.map((item) => (
+          <section
+            key={item.id}
+            className="border-t border-[var(--document-border)] pt-5"
+          >
+            <h3 className="text-base leading-6 font-semibold">
+              <RichTextInlineRenderer content={item.heading} />
+            </h3>
+            <RichTextRenderer
+              className="prose prose-sm mt-2 max-w-none text-[var(--document-muted-foreground)]"
+              content={item.body}
+            />
+          </section>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function ImageText({
+  block,
+}: {
+  block: Extract<DocumentBlock, { type: "imageText" }>
+}) {
+  return (
+    <section className="my-[var(--document-section-spacing)] break-inside-avoid">
+      <div
+        className={[
+          "grid gap-10 md:grid-cols-2 md:items-center",
+          block.reverse ? "md:[&>*:first-child]:order-2" : "",
+        ].join(" ")}
+      >
+        <ImagePlaceholder alt={block.image?.alt} className="min-h-72" />
+        <div>
+          <SectionHeading eyebrow={block.eyebrow} title={block.title} />
+          <RichTextRenderer
+            className="prose prose-sm mt-5 max-w-none text-[var(--document-foreground)]"
+            content={block.content}
+          />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function ImageCards({
+  block,
+}: {
+  block: Extract<DocumentBlock, { type: "imageCards" }>
+}) {
+  const horizontal = block.variant === "horizontal"
+  return (
+    <section className={`my-8 grid gap-4 ${columns(block.columns)}`}>
+      {block.items.map((item) => (
+        <section
+          key={item.id}
+          className={[
+            "break-inside-avoid rounded-[var(--document-radius)] border border-[var(--document-border)] p-4",
+            horizontal ? "grid gap-4 md:grid-cols-[7rem_1fr]" : "space-y-4",
+          ].join(" ")}
+        >
+          <ImagePlaceholder
+            alt={item.image?.alt}
+            className={horizontal ? "min-h-28" : "min-h-40"}
+          />
+          <div>
+            <h3 className="text-base leading-6 font-semibold">
+              <RichTextInlineRenderer content={item.title} />
+            </h3>
+            <RichTextRenderer
+              className="prose prose-sm mt-2 max-w-none text-[var(--document-muted-foreground)]"
+              content={item.body}
+            />
+          </div>
+        </section>
+      ))}
+    </section>
+  )
+}
+
+function Signature({
+  block,
+  model,
+}: {
+  block: Extract<DocumentBlock, { type: "signature" }>
+  model: ProposalRenderModel
+}) {
+  const signerName =
+    model.pricing?.signerName || model.seller.name || "Signer name"
+  const signerTitle = model.pricing?.signerTitle || "Signature"
+  return (
+    <section className="my-[var(--document-section-spacing)] break-inside-avoid border-t border-[var(--document-border)] pt-8">
+      <div className="grid gap-8 md:grid-cols-[1fr_16rem]">
+        <div>
+          <SectionHeading title={block.title} />
+          <RichTextRenderer
+            className="prose prose-sm mt-3 max-w-none text-[var(--document-muted-foreground)]"
+            content={block.terms}
+          />
+        </div>
+        <div className="flex min-h-32 flex-col justify-end border-t border-[var(--document-border)] pt-4 text-right">
+          <p className="font-[cursive] text-3xl leading-none text-[var(--document-foreground)]">
+            {signerName}
+          </p>
+          <p className="mt-2 text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+            {signerTitle}
+          </p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function SectionHeading({
   eyebrow,
   lead,
@@ -294,6 +465,27 @@ function Faq({ block }: { block: Extract<DocumentBlock, { type: "faq" }> }) {
         ))}
       </div>
     </section>
+  )
+}
+
+function ImagePlaceholder({
+  alt,
+  className,
+}: {
+  alt?: string
+  className?: string
+}) {
+  return (
+    <div
+      className={[
+        "flex items-center justify-center rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] px-4 text-center text-xs text-[var(--document-muted-foreground)]",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {alt || "Image"}
+    </div>
   )
 }
 

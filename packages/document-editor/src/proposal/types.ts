@@ -14,7 +14,7 @@ export type TeamMember = {
 
 export type GalleryImage = {
   id: string
-  url: string
+  assetId?: string
   alt: string
 }
 

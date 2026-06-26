@@ -121,3 +121,143 @@ test("the web-design blueprint extracts proposal text", () => {
   expect(text).toContain("Discovery, strategy, and content architecture")
   expect(text).toContain("The process gave our team clarity")
 })
+
+test("phase 2 proposal blocks parse and extract text", () => {
+  const draft = createProposalDraft({ id: "proposal-1" })
+  const parsed = parseProposalDraft({
+    ...draft,
+    assets: [
+      {
+        id: "asset-1",
+        kind: "image",
+        storageKey: "images/asset-1",
+        mimeType: "image/png",
+      },
+    ],
+    composition: {
+      version: 1,
+      blocks: [
+        {
+          id: "cover-1",
+          type: "cover",
+          version: 1,
+          eyebrow: "Proposal",
+          title: "Growth platform",
+          subtitle: "A focused launch plan.",
+          media: { assetId: "asset-1", alt: "Website mockup" },
+          variant: "split",
+        },
+        {
+          id: "columns-1",
+          type: "columns",
+          version: 1,
+          columns: 2,
+          title: "Workstreams",
+          items: [
+            {
+              id: "column-1",
+              heading: "Strategy",
+              body: {
+                type: "doc",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "Clarify priorities." }],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        {
+          id: "image-text-1",
+          type: "imageText",
+          version: 1,
+          image: { assetId: "asset-1", alt: "Journey map" },
+          eyebrow: "Proof",
+          title: "Evidence-led design",
+          content: {
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: "Show the rationale." }],
+              },
+            ],
+          },
+          reverse: true,
+        },
+        {
+          id: "image-cards-1",
+          type: "imageCards",
+          version: 1,
+          columns: 3,
+          variant: "vertical",
+          items: [
+            {
+              id: "card-1",
+              image: { assetId: "asset-1", alt: "Service card" },
+              title: "Launch",
+              body: {
+                type: "doc",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "Ship confidently." }],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        {
+          id: "signature-1",
+          type: "signature",
+          version: 1,
+          binding: "proposal.pricing.signer",
+          title: "Ready to approve",
+          terms: {
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: "Confirm the scope." }],
+              },
+            ],
+          },
+        },
+      ],
+    },
+  })
+
+  const text = extractProposalText(buildProposalRenderModel(parsed))
+
+  expect(text).toContain("Growth platform")
+  expect(text).toContain("Website mockup")
+  expect(text).toContain("Clarify priorities.")
+  expect(text).toContain("Journey map")
+  expect(text).toContain("Service card")
+  expect(text).toContain("Ready to approve")
+})
+
+test("phase 2 asset references must be canonical asset ids", () => {
+  const draft = createProposalDraft({ id: "proposal-1" })
+
+  expect(
+    safeParseProposalDraft({
+      ...draft,
+      composition: {
+        version: 1,
+        blocks: [
+          {
+            id: "cover-1",
+            type: "cover",
+            version: 1,
+            title: "Growth platform",
+            media: { url: "https://example.test/image.png", alt: "Image" },
+          },
+        ],
+      },
+    }).success
+  ).toBe(false)
+})
