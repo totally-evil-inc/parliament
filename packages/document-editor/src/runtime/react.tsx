@@ -67,7 +67,11 @@ export function useProposalDraftStore() {
 export type DocumentEditorChromeContextType = {
   rootEditor: Editor | null
   activeTextEditor: Editor | null
-  activateTextEditor: (editor: Editor) => void
+  activeTextEditorMode: "rich" | "inline" | null
+  activateTextEditor: (
+    editor: Editor,
+    options?: { mode?: "rich" | "inline" }
+  ) => void
   clearTextEditor: (editor: Editor) => void
 }
 

@@ -31,6 +31,57 @@ test("unknown blocks and future schema versions are rejected", () => {
   ).toBe(false)
 })
 
+test("legacy string section and FAQ fields parse as inline rich text", () => {
+  const draft = createProposalDraft({ id: "proposal-1" })
+  const parsed = parseProposalDraft({
+    ...draft,
+    composition: {
+      version: 1,
+      blocks: [
+        {
+          id: "section-1",
+          type: "section",
+          version: 1,
+          eyebrow: "Overview",
+          title: "Project direction",
+          lead: "A concise recommendation.",
+          variant: "default",
+          content: { type: "doc", content: [] },
+        },
+        {
+          id: "faq-1",
+          type: "faq",
+          version: 1,
+          variant: "list",
+          items: [
+            {
+              id: "faq-item-1",
+              question: "Can the scope change?",
+              answer: { type: "doc", content: [] },
+            },
+          ],
+        },
+      ],
+    },
+  })
+
+  const [section, faq] = parsed.composition.blocks
+  expect(section).toMatchObject({
+    type: "section",
+    title: { content: [{ type: "text", text: "Project direction" }] },
+  })
+  expect(faq).toMatchObject({
+    type: "faq",
+    items: [
+      {
+        question: {
+          content: [{ type: "text", text: "Can the scope change?" }],
+        },
+      },
+    ],
+  })
+})
+
 test("the web-design blueprint produces a complete valid proposal", () => {
   const draft = createProposalDraftFromBlueprint({
     id: "proposal-1",

@@ -3,6 +3,11 @@ import { createProposalDraft } from "@workspace/document/proposal"
 import { parseProposalDraft } from "@workspace/document/schema"
 import { compositionToTiptap, tiptapToComposition } from "./composition"
 
+const field = (text: string, marks?: Array<{ type: string }>) => ({
+  type: "doc",
+  content: text ? [{ type: "text", text, ...(marks ? { marks } : {}) }] : [],
+})
+
 test("bound and authored blocks survive the TipTap adapter", () => {
   const draft = createProposalDraft({ id: "proposal-1" })
   const content = compositionToTiptap([
@@ -241,9 +246,9 @@ test("proposal sections and FAQ blocks survive the TipTap adapter", () => {
         type: "proposalSection",
         attrs: {
           blockId: "section-1",
-          eyebrow: "Overview",
-          title: "Project direction",
-          lead: "A concise recommendation.",
+          eyebrow: field("Overview"),
+          title: field("Project direction", [{ type: "bold" }]),
+          lead: field("A concise recommendation.", [{ type: "italic" }]),
           variant: "accent",
           content: {
             type: "doc",
@@ -264,7 +269,7 @@ test("proposal sections and FAQ blocks survive the TipTap adapter", () => {
           items: [
             {
               id: "faq-item-1",
-              question: "Can the scope change?",
+              question: field("Can the scope change?", [{ type: "bold" }]),
               answer: {
                 type: "doc",
                 content: [

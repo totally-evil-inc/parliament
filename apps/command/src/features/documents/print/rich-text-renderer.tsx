@@ -16,21 +16,45 @@ export function RichTextRenderer({
   const richContent =
     typeof content === "object" && content !== null
       ? content
+      : typeof content === "string" && content
+        ? ({
+            type: "doc",
+            content: [{ type: "text", text: content }],
+          } satisfies RichTextNode)
+        : fallback
+          ? ({
+              type: "doc",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [{ type: "text", text: fallback }],
+                },
+              ],
+            } satisfies RichTextNode)
+          : null
+
+  if (!richContent) return null
+
+  return <div className={className}>{renderNode(richContent)}</div>
+}
+
+export function RichTextInlineRenderer({
+  content,
+  fallback = "",
+}: Omit<RichTextRendererProps, "className">) {
+  const richContent =
+    typeof content === "object" && content !== null
+      ? content
       : fallback
         ? ({
             type: "doc",
-            content: [
-              {
-                type: "paragraph",
-                content: [{ type: "text", text: fallback }],
-              },
-            ],
+            content: [{ type: "text", text: fallback }],
           } satisfies RichTextNode)
         : null
 
   if (!richContent) return null
 
-  return <div className={className}>{renderNode(richContent)}</div>
+  return <>{renderNode(richContent)}</>
 }
 
 function renderNode(node: RichTextNode): React.ReactNode {
@@ -81,28 +105,28 @@ function renderNode(node: RichTextNode): React.ReactNode {
   // Custom blocks nested nodes
   if (node.type === "keyNumbersItem") {
     return (
-      <div className="flex flex-col items-center justify-start text-center break-inside-avoid">
+      <div className="flex break-inside-avoid flex-col items-center justify-start text-center">
         {children}
       </div>
     )
   }
   if (node.type === "keyNumbersValue") {
     return (
-      <div className="text-4xl md:text-5xl font-black tracking-tight text-[var(--document-accent)] mb-1.5">
+      <div className="mb-1.5 text-4xl font-black tracking-tight text-[var(--document-accent)] md:text-5xl">
         {children}
       </div>
     )
   }
   if (node.type === "keyNumbersLabel") {
     return (
-      <div className="text-base md:text-lg font-bold tracking-tight text-[var(--document-foreground)] mb-1">
+      <div className="mb-1 text-base font-bold tracking-tight text-[var(--document-foreground)] md:text-lg">
         {children}
       </div>
     )
   }
   if (node.type === "keyNumbersDetail") {
     return (
-      <div className="text-sm md:text-base leading-relaxed text-[var(--document-muted-foreground)]">
+      <div className="text-sm leading-relaxed text-[var(--document-muted-foreground)] md:text-base">
         {children}
       </div>
     )
@@ -110,10 +134,20 @@ function renderNode(node: RichTextNode): React.ReactNode {
 
   if (node.type === "teamMemberItem") {
     return (
-      <div className="flex flex-col items-center justify-start text-center break-inside-avoid">
+      <div className="flex break-inside-avoid flex-col items-center justify-start text-center">
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--document-accent)_10%,transparent)] text-[var(--document-accent)] md:h-20 md:w-20">
-          <svg className="h-8 w-8 md:h-9 md:w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          <svg
+            className="h-8 w-8 md:h-9 md:w-9"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
           </svg>
         </div>
         {children}
@@ -122,21 +156,21 @@ function renderNode(node: RichTextNode): React.ReactNode {
   }
   if (node.type === "teamMemberName") {
     return (
-      <div className="text-base md:text-lg font-bold tracking-tight text-[var(--document-foreground)] mb-1">
+      <div className="mb-1 text-base font-bold tracking-tight text-[var(--document-foreground)] md:text-lg">
         {children}
       </div>
     )
   }
   if (node.type === "teamMemberRole") {
     return (
-      <div className="text-sm md:text-base font-medium text-[var(--document-muted-foreground)] mb-3">
+      <div className="mb-3 text-sm font-medium text-[var(--document-muted-foreground)] md:text-base">
         {children}
       </div>
     )
   }
   if (node.type === "teamMemberBio") {
     return (
-      <div className="text-xs md:text-sm leading-normal text-[var(--document-muted-foreground)]">
+      <div className="text-xs leading-normal text-[var(--document-muted-foreground)] md:text-sm">
         {children}
       </div>
     )
@@ -144,28 +178,28 @@ function renderNode(node: RichTextNode): React.ReactNode {
 
   if (node.type === "testimonialItem") {
     return (
-      <blockquote className="m-0 border-l-2 border-[var(--document-accent)] py-1 pl-5 text-left break-inside-avoid">
+      <blockquote className="m-0 break-inside-avoid border-l-2 border-[var(--document-accent)] py-1 pl-5 text-left">
         {children}
       </blockquote>
     )
   }
   if (node.type === "testimonialQuote") {
     return (
-      <div className="text-base md:text-lg leading-relaxed font-medium text-[var(--document-muted-foreground)] italic mb-3">
+      <div className="mb-3 text-base leading-relaxed font-medium text-[var(--document-muted-foreground)] italic md:text-lg">
         {children}
       </div>
     )
   }
   if (node.type === "testimonialAuthor") {
     return (
-      <div className="text-sm md:text-base font-bold tracking-tight text-[var(--document-foreground)] mb-0.5">
+      <div className="mb-0.5 text-sm font-bold tracking-tight text-[var(--document-foreground)] md:text-base">
         {children}
       </div>
     )
   }
   if (node.type === "testimonialRole") {
     return (
-      <div className="text-xs md:text-sm font-medium text-[var(--document-muted-foreground)]">
+      <div className="text-xs font-medium text-[var(--document-muted-foreground)] md:text-sm">
         {children}
       </div>
     )

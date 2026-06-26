@@ -14,6 +14,7 @@ export type EditorCommandKind =
   | "documentInsert"
 
 export type EditorCommandSurface = "bubble" | "slash" | "floating"
+export type EditorBubbleMode = "rich" | "inline" | null
 
 export type EditorCommand = {
   id: string
@@ -76,5 +77,15 @@ export function editorCommandsForSurface(
 
   return commands.filter(
     (command) => command.showInFloatingMenu && command.kind === "documentInsert"
+  )
+}
+
+export function editorCommandsForBubbleMode(
+  commands: Array<EditorCommand>,
+  mode: EditorBubbleMode
+) {
+  if (mode !== "inline") return commands
+  return commands.filter(
+    (command) => command.kind === "format" && command.group === "mark"
   )
 }

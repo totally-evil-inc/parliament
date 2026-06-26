@@ -1,7 +1,8 @@
 import { formatDateOnly, formatMoneyMinor } from "@workspace/document/calculate"
 import { getDocumentTemplateStyle } from "@workspace/document/presentation"
-import { RichTextRenderer } from "./rich-text-renderer"
+import { RichTextInlineRenderer, RichTextRenderer } from "./rich-text-renderer"
 import type { DocumentBlock } from "@workspace/document/schema"
+import type { RichTextNode } from "@workspace/document/schema"
 import type { ProposalRenderModel } from "@workspace/document/render"
 import type { DocumentTemplate } from "@workspace/document/presentation"
 
@@ -249,23 +250,23 @@ function SectionHeading({
   lead,
   title,
 }: {
-  eyebrow?: string
-  lead?: string
-  title: string
+  eyebrow?: RichTextNode | string
+  lead?: RichTextNode | string
+  title: RichTextNode | string
 }) {
   return (
     <div className="max-w-2xl">
-      {eyebrow ? (
+      {hasRichTextContent(eyebrow) ? (
         <p className="mb-2 text-[10px] font-bold tracking-[0.18em] text-[var(--document-accent)] uppercase">
-          {eyebrow}
+          <RichTextInlineRenderer content={eyebrow} />
         </p>
       ) : null}
       <h2 className="[font-family:var(--document-heading-font-family)] text-3xl leading-tight font-bold tracking-normal">
-        {title}
+        <RichTextInlineRenderer content={title} />
       </h2>
-      {lead ? (
+      {hasRichTextContent(lead) ? (
         <p className="mt-3 text-base leading-7 text-[var(--document-muted-foreground)]">
-          {lead}
+          <RichTextInlineRenderer content={lead} />
         </p>
       ) : null}
     </div>
@@ -283,7 +284,7 @@ function Faq({ block }: { block: Extract<DocumentBlock, { type: "faq" }> }) {
             className="grid gap-4 py-5 md:grid-cols-[15rem_1fr]"
           >
             <h3 className="text-base leading-6 font-semibold">
-              {item.question}
+              <RichTextInlineRenderer content={item.question} />
             </h3>
             <RichTextRenderer
               className="prose prose-sm max-w-none text-[var(--document-muted-foreground)]"
@@ -413,4 +414,11 @@ function columns(value: 1 | 2 | 3) {
     : value === 2
       ? "grid-cols-2"
       : "grid-cols-3"
+}
+
+function hasRichTextContent(value: RichTextNode | string | undefined) {
+  if (typeof value === "string") return value.length > 0
+  if (!value) return false
+  if (value.text) return true
+  return (value.content ?? []).some(hasRichTextContent)
 }

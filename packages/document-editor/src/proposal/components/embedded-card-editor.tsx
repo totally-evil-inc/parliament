@@ -76,7 +76,13 @@ export function EmbeddedCardEditor({
         onUpdateRef.current(updatedItem)
       },
       onFocus: ({ editor: currentEditor }) => {
-        chromeRef.current?.activateTextEditor(currentEditor)
+        chromeRef.current?.activateTextEditor(currentEditor, { mode: "inline" })
+      },
+      onBlur: ({ editor: currentEditor }) => {
+        window.setTimeout(() => {
+          if (currentEditor.isFocused || currentEditor.isDestroyed) return
+          chromeRef.current?.clearTextEditor(currentEditor)
+        }, 150)
       },
     },
     []

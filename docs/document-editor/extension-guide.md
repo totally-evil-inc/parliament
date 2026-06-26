@@ -17,7 +17,7 @@ z.object({
     z
       .object({
         id: idSchema,
-        question: z.string(),
+        question: richTextDocSchema,
         answer: richTextDocSchema,
       })
       .strict()

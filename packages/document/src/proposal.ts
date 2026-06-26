@@ -50,9 +50,9 @@ function section({
     id,
     type: "section",
     version: 1,
-    eyebrow,
-    title,
-    lead,
+    eyebrow: inlineDoc(eyebrow),
+    title: inlineDoc(title),
+    lead: inlineDoc(lead),
     variant,
     content: textDoc(content),
   }
@@ -477,21 +477,21 @@ export function createProposalDraftFromBlueprint({
           items: [
             {
               id: "faq-content",
-              question: "Who provides the final website copy?",
+              question: inlineDoc("Who provides the final website copy?"),
               answer: textDoc(
                 "We shape the content structure and provide editing guidance. Your team supplies source material, and we refine it into launch-ready pages together."
               ),
             },
             {
               id: "faq-cms",
-              question: "Can our team update the site after launch?",
+              question: inlineDoc("Can our team update the site after launch?"),
               answer: textDoc(
                 "Yes. The CMS is configured around practical content types, and handover includes a recorded training session."
               ),
             },
             {
               id: "faq-support",
-              question: "What happens after launch?",
+              question: inlineDoc("What happens after launch?"),
               answer: textDoc(
                 "The proposal includes 30 days of launch support for bug fixes, analytics checks, and minor content adjustments."
               ),

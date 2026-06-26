@@ -4,17 +4,22 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { Delete02Icon, PlusSignIcon } from "@hugeicons/core-free-icons"
 import type { NodeViewProps } from "@tiptap/react"
 import type { RichTextDoc } from "@workspace/document/schema"
-import { CanvasTextArea } from "../../components/canvas-fields"
 import { useDocumentEditorHost } from "../../runtime/react"
 import { RichTextDocEditor } from "./rich-text-doc-editor"
 
 type FaqItem = {
   id: string
-  question: string
+  question: RichTextDoc
   answer: RichTextDoc
 }
 
 function richDoc(value: unknown): RichTextDoc {
+  if (typeof value === "string") {
+    return {
+      type: "doc",
+      content: value ? [{ type: "text", text: value }] : [],
+    }
+  }
   if (
     value &&
     typeof value === "object" &&
@@ -33,7 +38,7 @@ function items(value: unknown): Array<FaqItem> {
       item && typeof item.id === "string" && item.id
         ? item.id
         : `faq-item-${index}`,
-    question: item && typeof item.question === "string" ? item.question : "",
+    question: richDoc(item && typeof item === "object" ? item.question : null),
     answer: richDoc(item && typeof item === "object" ? item.answer : null),
   }))
 }
@@ -56,7 +61,7 @@ export function FaqView({ node, updateAttributes }: NodeViewProps) {
         ...faqItems,
         {
           id: createId("faq-item"),
-          question: "New question",
+          question: richDoc("New question"),
           answer: {
             type: "doc",
             content: [
@@ -113,14 +118,11 @@ export function FaqView({ node, updateAttributes }: NodeViewProps) {
         {faqItems.map((item, index) => (
           <div key={item.id} className="group py-5 first:pt-0">
             <div className="flex items-start gap-3">
-              <CanvasTextArea
-                aria-label="FAQ question"
+              <RichTextDocEditor
                 className="text-base leading-6 font-semibold"
-                minRows={1}
-                maxRows={3}
-                placeholder="Question"
-                value={item.question}
-                onValueChange={(question) => updateItem(index, { question })}
+                content={item.question}
+                inline
+                onChange={(question) => updateItem(index, { question })}
               />
               <Button
                 type="button"

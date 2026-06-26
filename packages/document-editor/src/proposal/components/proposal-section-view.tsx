@@ -1,7 +1,6 @@
 import { NodeViewWrapper } from "@tiptap/react"
 import type { NodeViewProps } from "@tiptap/react"
 import type { RichTextDoc } from "@workspace/document/schema"
-import { CanvasTextArea, CanvasTextField } from "../../components/canvas-fields"
 import { RichTextDocEditor } from "./rich-text-doc-editor"
 
 const variantClassNames = {
@@ -16,6 +15,12 @@ function sectionVariant(value: unknown): keyof typeof variantClassNames {
 }
 
 function richDoc(value: unknown): RichTextDoc {
+  if (typeof value === "string") {
+    return {
+      type: "doc",
+      content: value ? [{ type: "text", text: value }] : [],
+    }
+  }
   if (
     value &&
     typeof value === "object" &&
@@ -29,6 +34,9 @@ function richDoc(value: unknown): RichTextDoc {
 
 export function ProposalSectionView({ node, updateAttributes }: NodeViewProps) {
   const variant = sectionVariant(node.attrs.variant)
+  const eyebrow = richDoc(node.attrs.eyebrow)
+  const title = richDoc(node.attrs.title)
+  const lead = richDoc(node.attrs.lead)
   const content = richDoc(node.attrs.content)
 
   return (
@@ -40,30 +48,23 @@ export function ProposalSectionView({ node, updateAttributes }: NodeViewProps) {
       data-drag-handle=""
     >
       <div className="space-y-3">
-        <CanvasTextField
-          aria-label="Section eyebrow"
+        <RichTextDocEditor
           className="h-5 text-[10px] font-bold tracking-[0.18em] text-[var(--document-accent)] uppercase"
-          placeholder="Eyebrow"
-          value={String(node.attrs.eyebrow ?? "")}
-          onValueChange={(eyebrow) => updateAttributes({ eyebrow })}
+          content={eyebrow}
+          inline
+          onChange={(nextEyebrow) => updateAttributes({ eyebrow: nextEyebrow })}
         />
-        <CanvasTextArea
-          aria-label="Section title"
+        <RichTextDocEditor
           className="[font-family:var(--document-heading-font-family)] text-3xl leading-tight font-bold tracking-normal"
-          minRows={1}
-          maxRows={3}
-          placeholder="Section title"
-          value={String(node.attrs.title ?? "")}
-          onValueChange={(title) => updateAttributes({ title })}
+          content={title}
+          inline
+          onChange={(nextTitle) => updateAttributes({ title: nextTitle })}
         />
-        <CanvasTextArea
-          aria-label="Section lead"
+        <RichTextDocEditor
           className="text-base leading-7 text-[var(--document-muted-foreground)]"
-          minRows={1}
-          maxRows={4}
-          placeholder="Lead"
-          value={String(node.attrs.lead ?? "")}
-          onValueChange={(lead) => updateAttributes({ lead })}
+          content={lead}
+          inline
+          onChange={(nextLead) => updateAttributes({ lead: nextLead })}
         />
       </div>
       <RichTextDocEditor

@@ -65,11 +65,22 @@ export function EditorBubbleMenu({
     }),
   })
 
+  if (commands.length === 0) return null
+
   return (
     <BubbleMenu
       editor={editor}
+      appendTo={() => document.body}
+      options={{
+        strategy: "fixed",
+        placement: "top",
+        offset: 8,
+        flip: true,
+        shift: true,
+        inline: true,
+      }}
       shouldShow={({ editor: current }) => shouldShowEditorBubbleMenu(current)}
-      className="no-scrollbar flex max-w-[90vw] items-center gap-1 overflow-x-auto rounded-md border bg-popover p-1 shadow-md"
+      className="z-50 no-scrollbar flex max-w-[90vw] items-center gap-1 overflow-x-auto rounded-md border bg-popover p-1 shadow-md"
     >
       {commands.map((command) => (
         <Toggle
@@ -214,10 +225,19 @@ export function EditorTableMenu({
   return (
     <BubbleMenu
       editor={editor}
+      appendTo={() => document.body}
+      options={{
+        strategy: "fixed",
+        placement: "top",
+        offset: 8,
+        flip: true,
+        shift: true,
+        inline: true,
+      }}
       shouldShow={({ editor: current }) =>
         current.isFocused && current.isActive("table")
       }
-      className="flex items-center gap-1 rounded-md border bg-popover p-1 shadow-md"
+      className="z-50 flex items-center gap-1 rounded-md border bg-popover p-1 shadow-md"
     >
       <DropdownMenu>
         <DropdownMenuTrigger

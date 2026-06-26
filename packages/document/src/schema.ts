@@ -41,6 +41,18 @@ export const richTextDocSchema = z
 
 export type RichTextDoc = z.infer<typeof richTextDocSchema>
 
+function inlineRichTextDoc(value: string): RichTextDoc {
+  return {
+    type: "doc",
+    content: value ? [{ type: "text", text: value }] : [],
+  }
+}
+
+const inlineRichTextDocSchema = z.preprocess(
+  (value) => (typeof value === "string" ? inlineRichTextDoc(value) : value),
+  richTextDocSchema
+)
+
 export const sourceSnapshotSchema = z
   .object({
     sourceId: idSchema.optional(),
@@ -149,9 +161,9 @@ export const documentBlockSchema = z.discriminatedUnion("type", [
     .object({
       ...blockBase,
       type: z.literal("section"),
-      eyebrow: z.string().default(""),
-      title: z.string(),
-      lead: z.string().default(""),
+      eyebrow: inlineRichTextDocSchema.default({ type: "doc", content: [] }),
+      title: inlineRichTextDocSchema,
+      lead: inlineRichTextDocSchema.default({ type: "doc", content: [] }),
       variant: sectionVariantSchema.default("default"),
       content: richTextDocSchema,
     })
@@ -212,7 +224,7 @@ export const documentBlockSchema = z.discriminatedUnion("type", [
         z
           .object({
             id: idSchema,
-            question: z.string(),
+            question: inlineRichTextDocSchema,
             answer: richTextDocSchema,
           })
           .strict()

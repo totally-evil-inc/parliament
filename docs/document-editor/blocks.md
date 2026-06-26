@@ -28,22 +28,26 @@ still snapshots, not live external records.
 ### Authored rich blocks
 
 - `richText`
+- `section`
+- `faq`
 - `timeline`
 
 These contain an owned `RichTextDoc` tree.
 
 ## Current block contract
 
-| Canonical type | TipTap node      | Canonical payload                 | Required read output |
-| -------------- | ---------------- | --------------------------------- | -------------------- |
-| `partyHeader`  | `documentHeader` | Binding and layout                | HTML and text        |
-| `pricing`      | `lineItems`      | Binding and title config          | HTML and text        |
-| `richText`     | Standard nodes   | `RichTextDoc`                     | HTML and text        |
-| `metrics`      | `keyNumbers`     | Columns and metrics               | HTML and text        |
-| `team`         | `teamMembers`    | Columns and member snapshots      | HTML and text        |
-| `testimonials` | `testimonials`   | Columns and testimonial snapshots | HTML and text        |
-| `gallery`      | `gallery`        | Columns and asset references      | HTML and alt text    |
-| `timeline`     | `timeline`       | `RichTextDoc`                     | HTML and text        |
+| Canonical type | TipTap node       | Canonical payload                 | Required read output |
+| -------------- | ----------------- | --------------------------------- | -------------------- |
+| `partyHeader`  | `documentHeader`  | Binding and layout                | HTML and text        |
+| `pricing`      | `lineItems`       | Binding and title config          | HTML and text        |
+| `richText`     | Standard nodes    | `RichTextDoc`                     | HTML and text        |
+| `section`      | `proposalSection` | Rich heading fields and body      | HTML and text        |
+| `metrics`      | `keyNumbers`      | Columns and metrics               | HTML and text        |
+| `team`         | `teamMembers`     | Columns and member snapshots      | HTML and text        |
+| `testimonials` | `testimonials`    | Columns and testimonial snapshots | HTML and text        |
+| `gallery`      | `gallery`         | Columns and asset references      | HTML and alt text    |
+| `timeline`     | `timeline`        | `RichTextDoc`                     | HTML and text        |
+| `faq`          | `proposalFaq`     | Rich questions and answers        | HTML and text        |
 
 ## Canonical-to-editor conversion
 

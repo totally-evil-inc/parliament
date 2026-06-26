@@ -80,9 +80,11 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
     createContent: (layout) => ({
       type: "proposalSection",
       attrs: {
-        eyebrow: layout?.attrs?.eyebrow ?? "Section",
-        title: layout?.attrs?.title ?? "Section title",
-        lead: layout?.attrs?.lead ?? "Add a concise lead-in for this section.",
+        eyebrow: layout?.attrs?.eyebrow ?? field("Section"),
+        title: layout?.attrs?.title ?? field("Section title"),
+        lead:
+          layout?.attrs?.lead ??
+          field("Add a concise lead-in for this section."),
         variant: layout?.attrs?.variant ?? "default",
         content:
           layout?.attrs?.content ??
@@ -103,9 +105,11 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         name: "Narrative Section",
         description: "Standard heading, lead, and body copy",
         attrs: {
-          eyebrow: "Overview",
-          title: "What we will accomplish",
-          lead: "Summarize the client outcome in one confident sentence.",
+          eyebrow: field("Overview"),
+          title: field("What we will accomplish"),
+          lead: field(
+            "Summarize the client outcome in one confident sentence."
+          ),
           variant: "default",
           content: paragraph(
             "Use this section to explain the recommendation, scope, assumptions, or next decision."
@@ -125,9 +129,9 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         name: "Accent Section",
         description: "Framed section for summaries and next steps",
         attrs: {
-          eyebrow: "Recommendation",
-          title: "The clearest path forward",
-          lead: "Highlight the main proposal argument.",
+          eyebrow: field("Recommendation"),
+          title: field("The clearest path forward"),
+          lead: field("Highlight the main proposal argument."),
           variant: "accent",
           content: paragraph(
             "Use this section for executive summaries, recommendations, or approval steps."
@@ -146,9 +150,9 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         name: "Compact Section",
         description: "Tighter section for deliverables and notes",
         attrs: {
-          eyebrow: "Deliverables",
-          title: "What is included",
-          lead: "",
+          eyebrow: field("Deliverables"),
+          title: field("What is included"),
+          lead: field(""),
           variant: "compact",
           content: paragraph("List the concrete deliverables or constraints."),
         },
@@ -591,14 +595,14 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         items: layout?.attrs?.items ?? [
           {
             id: "faq-1",
-            question: "What happens after approval?",
+            question: field("What happens after approval?"),
             answer: paragraph(
               "We confirm stakeholders, collect access, and schedule the kickoff session."
             ),
           },
           {
             id: "faq-2",
-            question: "Can the scope change later?",
+            question: field("Can the scope change later?"),
             answer: paragraph(
               "Yes. We will document any changes and confirm the impact before work continues."
             ),
@@ -623,21 +627,21 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
           items: [
             {
               id: "faq-1",
-              question: "What happens after approval?",
+              question: field("What happens after approval?"),
               answer: paragraph(
                 "We confirm stakeholders, collect access, and schedule the kickoff session."
               ),
             },
             {
               id: "faq-2",
-              question: "Can the scope change later?",
+              question: field("Can the scope change later?"),
               answer: paragraph(
                 "Yes. We will document any changes and confirm the impact before work continues."
               ),
             },
             {
               id: "faq-3",
-              question: "How will updates be shared?",
+              question: field("How will updates be shared?"),
               answer: paragraph(
                 "You will receive weekly updates, milestone reviews, and a final handover."
               ),

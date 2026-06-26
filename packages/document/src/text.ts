@@ -42,12 +42,19 @@ function blockText(block: DocumentBlock, model: ProposalRenderModel): string {
     case "testimonials":
       return richText(block.content)
     case "section":
-      return [block.eyebrow, block.title, block.lead, richText(block.content)]
+      return [
+        richText(block.eyebrow),
+        richText(block.title),
+        richText(block.lead),
+        richText(block.content),
+      ]
         .filter(Boolean)
         .join("\n")
     case "faq":
       return block.items
-        .map((item) => [item.question, richText(item.answer)].join("\n"))
+        .map((item) =>
+          [richText(item.question), richText(item.answer)].join("\n")
+        )
         .join("\n")
     case "gallery":
       return block.images.map((image) => image.alt).join("\n")

@@ -9,7 +9,10 @@ import type { DocumentDefinition, DocumentTemplate } from "../core/types"
 
 import { createDocumentCommands } from "../core/definition"
 import { createBaseEditorCommands } from "../commands/base"
-import { editorCommandsForSurface } from "../commands/types"
+import {
+  editorCommandsForBubbleMode,
+  editorCommandsForSurface,
+} from "../commands/types"
 import {
   DocumentEditorChromeContext,
   useDocumentEditorHost,
@@ -20,6 +23,15 @@ import {
 } from "@workspace/document/presentation"
 
 const protectedNodeTypes = ["documentHeader", "lineItems"]
+
+function canUseBubbleEditor(editor: Editor | null) {
+  if (!editor || editor.isDestroyed) return false
+  try {
+    return Boolean(editor.view)
+  } catch {
+    return false
+  }
+}
 
 type DocumentEditorProps = {
   editor: Editor | null
@@ -44,32 +56,53 @@ export function DocumentEditor({
   const [activeTextEditor, setActiveTextEditor] = React.useState<Editor | null>(
     null
   )
-  const activateTextEditor = React.useCallback((nextEditor: Editor) => {
-    setActiveTextEditor(nextEditor)
-  }, [])
+  const [activeTextEditorMode, setActiveTextEditorMode] = React.useState<
+    "rich" | "inline" | null
+  >(null)
+  const [bubbleEditorKey, setBubbleEditorKey] = React.useState(0)
+  const activeTextEditorRef = React.useRef<Editor | null>(null)
+  const activeTextEditorModeRef = React.useRef<"rich" | "inline" | null>(null)
+  const activateTextEditor = React.useCallback(
+    (nextEditor: Editor, options?: { mode?: "rich" | "inline" }) => {
+      const nextMode = options?.mode ?? "rich"
+      const editorChanged = activeTextEditorRef.current !== nextEditor
+      const modeChanged = activeTextEditorModeRef.current !== nextMode
+      activeTextEditorRef.current = nextEditor
+      activeTextEditorModeRef.current = nextMode
+      setActiveTextEditor(nextEditor)
+      setActiveTextEditorMode(nextMode)
+      if (editorChanged || modeChanged) {
+        setBubbleEditorKey((current) => current + 1)
+      }
+    },
+    []
+  )
   const clearTextEditor = React.useCallback((targetEditor: Editor) => {
-    setActiveTextEditor((current) =>
-      current === targetEditor ? null : current
-    )
+    if (activeTextEditorRef.current !== targetEditor) return
+    activeTextEditorRef.current = null
+    activeTextEditorModeRef.current = null
+    setActiveTextEditorMode(null)
+    setBubbleEditorKey((key) => key + 1)
+    setActiveTextEditor((current) => {
+      return current === targetEditor ? null : current
+    })
   }, [])
   const chromeContext = React.useMemo(
     () => ({
       rootEditor: editor,
       activeTextEditor,
+      activeTextEditorMode,
       activateTextEditor,
       clearTextEditor,
     }),
-    [activateTextEditor, activeTextEditor, clearTextEditor, editor]
+    [
+      activateTextEditor,
+      activeTextEditor,
+      activeTextEditorMode,
+      clearTextEditor,
+      editor,
+    ]
   )
-
-  React.useEffect(() => {
-    if (!editor) return
-    const resetActiveEditor = () => setActiveTextEditor(null)
-    editor.on("focus", resetActiveEditor)
-    return () => {
-      editor.off("focus", resetActiveEditor)
-    }
-  }, [editor])
 
   const editorCommands = React.useMemo(
     () => createBaseEditorCommands(requestTextInput),
@@ -92,12 +125,20 @@ export function DocumentEditor({
     [definition, editorCommands]
   )
   const bubbleEditor = activeTextEditor ?? editor
+  const activeBubbleCommands = editorCommandsForBubbleMode(
+    activeTextEditor
+      ? bubbleMenuCommands
+      : (bubbleCommands ?? bubbleMenuCommands),
+    activeTextEditorMode
+  )
+  const canRenderBubbleMenu = canUseBubbleEditor(bubbleEditor)
   const accessories = editor ? (
     <>
-      {bubbleEditor ? (
+      {canRenderBubbleMenu && bubbleEditor ? (
         <EditorBubbleMenu
+          key={`${activeTextEditor ? "embedded" : "root"}-${bubbleEditorKey}`}
           editor={bubbleEditor}
-          commands={bubbleCommands ?? bubbleMenuCommands}
+          commands={activeBubbleCommands}
         />
       ) : null}
       <EditorTableMenu editor={editor} confirm={confirm} />

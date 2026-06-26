@@ -151,9 +151,9 @@ export function tiptapToComposition(
         id: id(node, index, "section"),
         type: "section",
         version: 1,
-        eyebrow: string(nodeAttrs.eyebrow),
-        title: string(nodeAttrs.title),
-        lead: string(nodeAttrs.lead),
+        eyebrow: inlineDocFromUnknown(nodeAttrs.eyebrow),
+        title: inlineDocFromUnknown(nodeAttrs.title),
+        lead: inlineDocFromUnknown(nodeAttrs.lead),
         variant: sectionVariant(nodeAttrs.variant),
         content: docFromUnknown(nodeAttrs.content),
       }
@@ -232,7 +232,7 @@ export function tiptapToComposition(
         items: array<Record<string, unknown>>(nodeAttrs.items).map(
           (item, itemIndex) => ({
             id: string(item.id) || `${blockId}-item-${itemIndex}`,
-            question: string(item.question),
+            question: inlineDocFromUnknown(item.question),
             answer: docFromUnknown(item.answer),
           })
         ),
@@ -285,6 +285,11 @@ function docFromUnknown(value: unknown): RichTextDoc {
     return value as RichTextDoc
   }
   return { type: "doc", content: [] }
+}
+
+function inlineDocFromUnknown(value: unknown): RichTextDoc {
+  if (typeof value === "string") return textToDoc(value)
+  return docFromUnknown(value)
 }
 
 // --- Card Blocks Normalizers & Canonicalizers ---
