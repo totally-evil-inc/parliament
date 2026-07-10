@@ -5,15 +5,13 @@ import { TestimonialsView } from "../components/testimonials-view"
 export const Testimonials = Node.create({
   name: "testimonials",
   group: "block",
-  atom: true,
+  content: "testimonialItem+",
   selectable: true,
-  draggable: true,
 
   addAttributes() {
     return {
       blockId: { default: null },
       columns: { default: 3 },
-      items: { default: [] },
     }
   },
 
@@ -37,6 +35,14 @@ export const TestimonialItem = Node.create({
   name: "testimonialItem",
   content: "testimonialQuote testimonialAuthor testimonialRole",
   defining: true,
+
+  addAttributes() {
+    return {
+      id: { default: null },
+      sourceId: { default: null },
+    }
+  },
+
   parseHTML() {
     return [{ tag: 'div[data-type="testimonial-item"]' }]
   },
@@ -55,7 +61,7 @@ export const TestimonialItem = Node.create({
 
 export const TestimonialQuote = Node.create({
   name: "testimonialQuote",
-  content: "inline*",
+  content: "block+",
   parseHTML() {
     return [{ tag: 'div[data-type="testimonial-quote"]' }]
   },

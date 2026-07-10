@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
+import { Route as ProposalPublicTokenRouteImport } from './routes/proposal/$publicToken'
 import { Route as DocumentsPrintRouteImport } from './routes/documents/print'
 import { Route as WorkspaceSettingsRouteRouteImport } from './routes/_workspace/settings/route'
 import { Route as AuthSignInIndexRouteImport } from './routes/auth/sign-in/index'
@@ -20,6 +21,7 @@ import { Route as WorkspaceSettingsIndexRouteImport } from './routes/_workspace/
 import { Route as WorkspaceProposalsIndexRouteImport } from './routes/_workspace/proposals/index'
 import { Route as WorkspaceIntegrationsIndexRouteImport } from './routes/_workspace/integrations/index'
 import { Route as WorkspaceSettingsTabRouteImport } from './routes/_workspace/settings/$tab'
+import { Route as WorkspaceProposalsProposalIdRouteImport } from './routes/_workspace/proposals/$proposalId'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/auth',
@@ -34,6 +36,11 @@ const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => WorkspaceRouteRoute,
+} as any)
+const ProposalPublicTokenRoute = ProposalPublicTokenRouteImport.update({
+  id: '/proposal/$publicToken',
+  path: '/proposal/$publicToken',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DocumentsPrintRoute = DocumentsPrintRouteImport.update({
   id: '/documents/print',
@@ -76,12 +83,20 @@ const WorkspaceSettingsTabRoute = WorkspaceSettingsTabRouteImport.update({
   path: '/$tab',
   getParentRoute: () => WorkspaceSettingsRouteRoute,
 } as any)
+const WorkspaceProposalsProposalIdRoute =
+  WorkspaceProposalsProposalIdRouteImport.update({
+    id: '/proposals/$proposalId',
+    path: '/proposals/$proposalId',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof WorkspaceIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
   '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/documents/print': typeof DocumentsPrintRoute
+  '/proposal/$publicToken': typeof ProposalPublicTokenRoute
+  '/proposals/$proposalId': typeof WorkspaceProposalsProposalIdRoute
   '/settings/$tab': typeof WorkspaceSettingsTabRoute
   '/integrations/': typeof WorkspaceIntegrationsIndexRoute
   '/proposals/': typeof WorkspaceProposalsIndexRoute
@@ -92,7 +107,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteRouteWithChildren
   '/documents/print': typeof DocumentsPrintRoute
+  '/proposal/$publicToken': typeof ProposalPublicTokenRoute
   '/': typeof WorkspaceIndexRoute
+  '/proposals/$proposalId': typeof WorkspaceProposalsProposalIdRoute
   '/settings/$tab': typeof WorkspaceSettingsTabRoute
   '/integrations': typeof WorkspaceIntegrationsIndexRoute
   '/proposals': typeof WorkspaceProposalsIndexRoute
@@ -106,7 +123,9 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteRouteWithChildren
   '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/documents/print': typeof DocumentsPrintRoute
+  '/proposal/$publicToken': typeof ProposalPublicTokenRoute
   '/_workspace/': typeof WorkspaceIndexRoute
+  '/_workspace/proposals/$proposalId': typeof WorkspaceProposalsProposalIdRoute
   '/_workspace/settings/$tab': typeof WorkspaceSettingsTabRoute
   '/_workspace/integrations/': typeof WorkspaceIntegrationsIndexRoute
   '/_workspace/proposals/': typeof WorkspaceProposalsIndexRoute
@@ -121,6 +140,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/settings'
     | '/documents/print'
+    | '/proposal/$publicToken'
+    | '/proposals/$proposalId'
     | '/settings/$tab'
     | '/integrations/'
     | '/proposals/'
@@ -131,7 +152,9 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/documents/print'
+    | '/proposal/$publicToken'
     | '/'
+    | '/proposals/$proposalId'
     | '/settings/$tab'
     | '/integrations'
     | '/proposals'
@@ -144,7 +167,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_workspace/settings'
     | '/documents/print'
+    | '/proposal/$publicToken'
     | '/_workspace/'
+    | '/_workspace/proposals/$proposalId'
     | '/_workspace/settings/$tab'
     | '/_workspace/integrations/'
     | '/_workspace/proposals/'
@@ -157,6 +182,7 @@ export interface RootRouteChildren {
   WorkspaceRouteRoute: typeof WorkspaceRouteRouteWithChildren
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
   DocumentsPrintRoute: typeof DocumentsPrintRoute
+  ProposalPublicTokenRoute: typeof ProposalPublicTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -181,6 +207,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof WorkspaceIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/proposal/$publicToken': {
+      id: '/proposal/$publicToken'
+      path: '/proposal/$publicToken'
+      fullPath: '/proposal/$publicToken'
+      preLoaderRoute: typeof ProposalPublicTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/documents/print': {
       id: '/documents/print'
@@ -238,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceSettingsTabRouteImport
       parentRoute: typeof WorkspaceSettingsRouteRoute
     }
+    '/_workspace/proposals/$proposalId': {
+      id: '/_workspace/proposals/$proposalId'
+      path: '/proposals/$proposalId'
+      fullPath: '/proposals/$proposalId'
+      preLoaderRoute: typeof WorkspaceProposalsProposalIdRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
   }
 }
 
@@ -260,6 +300,7 @@ const WorkspaceSettingsRouteRouteWithChildren =
 interface WorkspaceRouteRouteChildren {
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
+  WorkspaceProposalsProposalIdRoute: typeof WorkspaceProposalsProposalIdRoute
   WorkspaceIntegrationsIndexRoute: typeof WorkspaceIntegrationsIndexRoute
   WorkspaceProposalsIndexRoute: typeof WorkspaceProposalsIndexRoute
 }
@@ -267,6 +308,7 @@ interface WorkspaceRouteRouteChildren {
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
+  WorkspaceProposalsProposalIdRoute: WorkspaceProposalsProposalIdRoute,
   WorkspaceIntegrationsIndexRoute: WorkspaceIntegrationsIndexRoute,
   WorkspaceProposalsIndexRoute: WorkspaceProposalsIndexRoute,
 }
@@ -293,6 +335,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkspaceRouteRoute: WorkspaceRouteRouteWithChildren,
   AuthRouteRoute: AuthRouteRouteWithChildren,
   DocumentsPrintRoute: DocumentsPrintRoute,
+  ProposalPublicTokenRoute: ProposalPublicTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

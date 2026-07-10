@@ -1,149 +1,134 @@
-import * as React from "react"
-import { createFileRoute } from "@tanstack/react-router"
-import { ScrollArea } from "@workspace/ui/components/scroll-area"
-import { createProposalDraftFromBlueprint } from "@workspace/document/proposal"
 import {
-  DocumentBlockSidebar,
-  DocumentEditor,
-  DocumentEditorHostProvider,
-  DocumentToolbar,
-  DocumentSidebarProvider,
-  ProposalDraftProvider,
-  proposalEditorRegistry,
-  useProposalEditorRuntime,
-} from "@workspace/document-editor"
-import { createProposalDraftStore } from "@workspace/document-editor/store"
-import { webStudioProposalTemplate } from "@workspace/document/presentation"
-import type { DocumentTemplate } from "@workspace/document/presentation"
-import type { DocumentEditorHostAdapter } from "@workspace/document-editor"
-
-import { useConfirm } from "@/components/confirm-dialog-provider"
-import { authClient } from "@/lib/auth-client"
-import { createId } from "@/lib/create-id"
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query"
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router"
+import { Badge } from "@workspace/ui/components/badge"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card"
+import { PageHeader } from "@/components/page-header"
+import { proposalDraftsQuery } from "@/api/proposals"
+import { createProposalDraft } from "@/server/proposals"
+import type { PersistedProposalDraft } from "@/server/proposals"
 
 export const Route = createFileRoute("/_workspace/proposals/")({
-  component: RouteComponent,
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(proposalDraftsQuery)
+  },
+  component: ProposalsRoute,
 })
 
-function RouteComponent() {
-  const confirm = useConfirm()
-  const store = React.useMemo(
-    () =>
-      createProposalDraftStore(
-        createProposalDraftFromBlueprint({
-          id: "proposal-draft",
-          blueprint: "web-design",
-        })
-      ),
-    []
-  )
-  const host = React.useMemo<DocumentEditorHostAdapter>(
-    () => ({
-      confirm,
-      createId,
-      requestTextInput: ({ initialValue, title }) =>
-        window.prompt(title, initialValue),
-    }),
-    [confirm]
-  )
+function ProposalsRoute() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { data: proposals } = useSuspenseQuery(proposalDraftsQuery)
+  const createDraft = useMutation({
+    mutationFn: () =>
+      createProposalDraft({ data: { blueprint: "web-design" } }),
+    onSuccess: async (draftResult) => {
+      const draft = draftResult as PersistedProposalDraft
+      await queryClient.invalidateQueries({ queryKey: ["proposals"] })
+      await navigate({
+        to: "/proposals/$proposalId",
+        params: { proposalId: draft.id },
+      })
+    },
+  })
 
   return (
-    <DocumentEditorHostProvider adapter={host}>
-      <ProposalDraftProvider store={store}>
-        <ProposalEditorScreen store={store} />
-      </ProposalDraftProvider>
-    </DocumentEditorHostProvider>
+    <>
+      <PageHeader
+        title="Proposals"
+        description="Create, send, and track durable proposal drafts for this workspace."
+        action={
+          <Button
+            type="button"
+            onClick={() => createDraft.mutate()}
+            disabled={createDraft.isPending}
+          >
+            {createDraft.isPending ? "Creating..." : "Create proposal"}
+          </Button>
+        }
+      />
+
+      <div className="grid gap-4 p-6 md:p-8">
+        {proposals.length === 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>No proposals yet</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Create a proposal draft to start editing and sharing a public
+              client link.
+            </CardContent>
+          </Card>
+        ) : (
+          proposals.map((proposal) => (
+            <Card key={proposal.id}>
+              <CardContent className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      to="/proposals/$proposalId"
+                      params={{ proposalId: proposal.id }}
+                      className="truncate text-sm font-medium hover:underline"
+                    >
+                      {proposal.title || "Untitled proposal"}
+                    </Link>
+                    <Badge variant="outline">{proposal.status}</Badge>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+                    <span>Updated {formatDateTime(proposal.updatedAt)}</span>
+                    <span>{proposal.viewCount} views</span>
+                    {proposal.lastViewedAt ? (
+                      <span>
+                        Last viewed {formatDateTime(proposal.lastViewedAt)}
+                      </span>
+                    ) : null}
+                    {proposal.acceptedAt ? (
+                      <span>
+                        Accepted {formatDateTime(proposal.acceptedAt)}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {proposal.publicToken ? (
+                    <Link
+                      to="/proposal/$publicToken"
+                      params={{ publicToken: proposal.publicToken }}
+                      target="_blank"
+                      className={buttonVariants({ variant: "outline" })}
+                    >
+                      Public link
+                    </Link>
+                  ) : null}
+                  <Link
+                    to="/proposals/$proposalId"
+                    params={{ proposalId: proposal.id }}
+                    className={buttonVariants()}
+                  >
+                    Edit
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    </>
   )
 }
 
-function ProposalEditorScreen({
-  store,
-}: {
-  store: ReturnType<typeof createProposalDraftStore>
-}) {
-  const session = authClient.useSession()
-  const defaultTemplate = webStudioProposalTemplate
-  const [customTemplate, setCustomTemplate] =
-    React.useState<DocumentTemplate | null>(null)
-  const template = customTemplate ?? defaultTemplate
-  const runtime = useProposalEditorRuntime({ store })
-
-  React.useEffect(() => {
-    const name = session.data?.user.name
-    if (!name || store.getSnapshot().data.seller.name) return
-    store.commands.updateParty("seller", { name })
-    store.commands.updatePricing((pricing) => ({
-      ...pricing,
-      signerName: pricing.signerName || name,
-    }))
-  }, [session.data?.user.name, store])
-
-  React.useEffect(() => {
-    store.commands.setTemplate({
-      id: template.id,
-      version: 1,
-      overrides: template.tokens,
-    })
-  }, [store, template])
-
-  const handleAction = React.useCallback(
-    (actionId: string) => {
-      if (actionId !== "export") return
-      runtime.flush()
-      const draft = store.getSnapshot()
-      const key = `proposal-draft:${draft.id}:${draft.revision}`
-      window.sessionStorage.setItem(key, JSON.stringify(draft))
-      window.open(
-        `/documents/print?draftKey=${encodeURIComponent(key)}`,
-        "_blank",
-        "noopener,noreferrer"
-      )
-    },
-    [runtime, store]
-  )
-
-  return (
-    <div className="flex h-[calc(100svh-3rem)] min-h-0 w-full flex-col overflow-hidden bg-muted/30">
-      <DocumentSidebarProvider defaultOpen={true}>
-        <div
-          className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden"
-          style={
-            {
-              backgroundColor: template.tokens.canvasBackground,
-              "--sidebar-width": "22rem",
-            } as React.CSSProperties
-          }
-          data-document-template={template.id}
-        >
-          <ScrollArea className="relative min-h-0 min-w-0 flex-1">
-            <DocumentEditor
-              definition={proposalEditorRegistry}
-              editor={runtime.editor}
-              onContentChange={runtime.onContentChange}
-              template={template}
-              onUndo={runtime.undo}
-              onRedo={runtime.redo}
-            />
-            <DocumentToolbar
-              editor={runtime.editor}
-              definition={proposalEditorRegistry}
-              onAction={handleAction}
-            />
-          </ScrollArea>
-          <DocumentBlockSidebar
-            editor={runtime.editor}
-            definition={proposalEditorRegistry}
-            defaultTemplate={defaultTemplate}
-            template={template}
-            onTemplateChange={(nextTemplate) => {
-              setCustomTemplate(nextTemplate)
-            }}
-            onTemplateReset={() => {
-              setCustomTemplate(null)
-            }}
-          />
-        </div>
-      </DocumentSidebarProvider>
-    </div>
-  )
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value))
 }

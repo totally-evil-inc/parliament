@@ -5,15 +5,13 @@ import { KeyNumbersView } from "../components/key-numbers-view"
 export const KeyNumbers = Node.create({
   name: "keyNumbers",
   group: "block",
-  atom: true,
+  content: "keyNumbersItem+",
   selectable: true,
-  draggable: true,
 
   addAttributes() {
     return {
       blockId: { default: null },
       columns: { default: 3 },
-      items: { default: [] },
     }
   },
 
@@ -37,6 +35,13 @@ export const KeyNumbersItem = Node.create({
   name: "keyNumbersItem",
   content: "keyNumbersValue keyNumbersLabel keyNumbersDetail",
   defining: true,
+
+  addAttributes() {
+    return {
+      id: { default: null },
+    }
+  },
+
   parseHTML() {
     return [{ tag: 'div[data-type="key-numbers-item"]' }]
   },
@@ -46,7 +51,7 @@ export const KeyNumbersItem = Node.create({
       mergeAttributes(HTMLAttributes, {
         "data-type": "key-numbers-item",
         class:
-          "flex flex-col items-center justify-start text-center break-inside-avoid",
+          "flex flex-col items-center justify-start rounded-xl p-6 text-center break-inside-avoid",
       }),
       0,
     ]
@@ -126,7 +131,7 @@ export const KeyNumbersLabel = Node.create({
 
 export const KeyNumbersDetail = Node.create({
   name: "keyNumbersDetail",
-  content: "inline*",
+  content: "block+",
   parseHTML() {
     return [{ tag: 'div[data-type="key-numbers-detail"]' }]
   },

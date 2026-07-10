@@ -2,10 +2,31 @@ import { expect, test } from "bun:test"
 import { createProposalDraft } from "@workspace/document/proposal"
 import { parseProposalDraft } from "@workspace/document/schema"
 import { compositionToTiptap, tiptapToComposition } from "./composition"
+import { richTextDocToEditorContent } from "./rich-text"
 
 const field = (text: string, marks?: Array<{ type: string }>) => ({
   type: "doc",
   content: text ? [{ type: "text", text, ...(marks ? { marks } : {}) }] : [],
+})
+
+const paragraph = (text: string) => ({
+  type: "doc",
+  content: text
+    ? [{ type: "paragraph", content: [{ type: "text", text }] }]
+    : [],
+})
+
+const inlineNode = (type: string, value: ReturnType<typeof field>) => ({
+  type,
+  content: value.content,
+})
+
+const blockNode = (
+  type: string,
+  value: ReturnType<typeof field> | ReturnType<typeof paragraph>
+) => ({
+  type,
+  content: value.content.length ? value.content : [{ type: "paragraph" }],
 })
 
 test("bound and authored blocks survive the TipTap adapter", () => {
@@ -17,28 +38,14 @@ test("bound and authored blocks survive the TipTap adapter", () => {
       type: "metrics",
       version: 1,
       columns: 2,
-      content: {
-        type: "doc",
-        content: [
-          {
-            type: "keyNumbersItem",
-            content: [
-              {
-                type: "keyNumbersValue",
-                content: [{ type: "text", text: "50%" }],
-              },
-              {
-                type: "keyNumbersLabel",
-                content: [{ type: "text", text: "Faster" }],
-              },
-              {
-                type: "keyNumbersDetail",
-                content: [],
-              },
-            ],
-          },
-        ],
-      },
+      items: [
+        {
+          id: "metric-1",
+          value: { type: "doc", content: [{ type: "text", text: "50%" }] },
+          label: { type: "doc", content: [{ type: "text", text: "Faster" }] },
+          detail: { type: "doc", content: [] },
+        },
+      ],
     },
   ])
   const blocks = tiptapToComposition(content)
@@ -83,72 +90,54 @@ test("legacy media attributes are normalized instead of entering the model", () 
   })
 })
 
-test("card item attributes round-trip rich text marks and empty fields", () => {
+test("card item child content round-trips rich text marks and empty fields", () => {
   const content = {
     type: "doc",
     content: [
       {
         type: "keyNumbers",
-        attrs: {
-          blockId: "metrics-1",
-          columns: 2,
-          items: [
-            {
-              id: "metric-1",
-              value: {
-                type: "doc",
-                content: [
-                  { type: "text", text: "50%", marks: [{ type: "bold" }] },
-                ],
-              },
-              label: { type: "doc", content: [] },
-              detail: {
-                type: "doc",
-                content: [{ type: "text", text: "Faster" }],
-              },
-            },
-          ],
-        },
+        attrs: { blockId: "metrics-1", columns: 2 },
+        content: [
+          {
+            type: "keyNumbersItem",
+            attrs: { id: "metric-1" },
+            content: [
+              inlineNode("keyNumbersValue", field("50%", [{ type: "bold" }])),
+              inlineNode("keyNumbersLabel", field("")),
+              blockNode("keyNumbersDetail", paragraph("Faster")),
+            ],
+          },
+        ],
       },
       {
         type: "teamMembers",
-        attrs: {
-          blockId: "team-1",
-          columns: 3,
-          items: [
-            {
-              id: "member-1",
-              sourceId: "contact-1",
-              name: { type: "doc", content: [{ type: "text", text: "Alex" }] },
-              role: { type: "doc", content: [] },
-              bio: { type: "doc", content: [{ type: "text", text: "Lead" }] },
-            },
-          ],
-        },
+        attrs: { blockId: "team-1", columns: 3 },
+        content: [
+          {
+            type: "teamMemberItem",
+            attrs: { id: "member-1", sourceId: "contact-1" },
+            content: [
+              inlineNode("teamMemberName", field("Alex")),
+              inlineNode("teamMemberRole", field("")),
+              blockNode("teamMemberBio", paragraph("Lead")),
+            ],
+          },
+        ],
       },
       {
         type: "testimonials",
-        attrs: {
-          blockId: "testimonials-1",
-          columns: 2,
-          items: [
-            {
-              id: "testimonial-1",
-              quote: {
-                type: "doc",
-                content: [
-                  {
-                    type: "text",
-                    text: "Excellent",
-                    marks: [{ type: "italic" }],
-                  },
-                ],
-              },
-              author: { type: "doc", content: [{ type: "text", text: "Sam" }] },
-              role: { type: "doc", content: [] },
-            },
-          ],
-        },
+        attrs: { blockId: "testimonials-1", columns: 2 },
+        content: [
+          {
+            type: "testimonialItem",
+            attrs: { id: "testimonial-1" },
+            content: [
+              blockNode("testimonialQuote", paragraph("Excellent")),
+              inlineNode("testimonialAuthor", field("Sam")),
+              inlineNode("testimonialRole", field("")),
+            ],
+          },
+        ],
       },
     ],
   }
@@ -156,7 +145,7 @@ test("card item attributes round-trip rich text marks and empty fields", () => {
   expect(compositionToTiptap(tiptapToComposition(content))).toEqual(content)
 })
 
-test("current nested card nodes normalize into item attributes", () => {
+test("custom block text is stored in child content instead of attrs", () => {
   const blocks = tiptapToComposition({
     type: "doc",
     content: [
@@ -184,23 +173,17 @@ test("current nested card nodes normalize into item attributes", () => {
     ],
   })
 
-  expect(compositionToTiptap(blocks).content?.[0].attrs).toEqual({
-    blockId: "team-1",
-    columns: 2,
-    items: [
-      {
-        id: "member-1",
-        sourceId: "contact-1",
-        name: { type: "doc", content: [{ type: "text", text: "Alex" }] },
-        role: { type: "doc", content: [{ type: "text", text: "Lead" }] },
-        bio: { type: "doc", content: [] },
-      },
-    ],
+  const tiptapNode = compositionToTiptap(blocks).content?.[0]
+  expect(tiptapNode?.attrs).toEqual({ blockId: "team-1", columns: 2 })
+  expect(tiptapNode?.content?.[0]).toMatchObject({
+    type: "teamMemberItem",
+    attrs: { id: "member-1", sourceId: "contact-1" },
   })
+  expect(JSON.stringify(tiptapNode?.attrs)).not.toContain("Alex")
 })
 
-test("legacy card arrays normalize into inline rich text items", () => {
-  const blocks = tiptapToComposition({
+test("attr-backed custom block text is ignored", () => {
+  const [block] = tiptapToComposition({
     type: "doc",
     content: [
       {
@@ -208,34 +191,33 @@ test("legacy card arrays normalize into inline rich text items", () => {
         attrs: {
           blockId: "metrics-1",
           columns: 2,
-          metrics: [{ id: "metric-1", value: "50%", label: "Faster" }],
-        },
-      },
-      {
-        type: "testimonials",
-        attrs: {
-          blockId: "testimonials-1",
-          columns: 3,
-          testimonials: [
-            {
-              id: "testimonial-1",
-              content: "Excellent",
-              author: "Sam",
-              role: "CEO",
-            },
-          ],
+          items: [{ id: "metric-1", value: field("50%") }],
         },
       },
     ],
   })
 
-  const normalized = compositionToTiptap(blocks).content ?? []
-  expect(normalized[0].attrs?.items[0].value.content).toEqual([
-    { type: "text", text: "50%" },
-  ])
-  expect(normalized[1].attrs?.items[0].quote.content).toEqual([
-    { type: "text", text: "Excellent" },
-  ])
+  expect(block).toMatchObject({
+    type: "metrics",
+    items: [],
+  })
+})
+
+test("block rich text editor content wraps legacy inline documents", () => {
+  expect(
+    richTextDocToEditorContent(
+      { type: "doc", content: [{ type: "text", text: "Inline only" }] },
+      false
+    )
+  ).toEqual({
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "Inline only" }],
+      },
+    ],
+  })
 })
 
 test("proposal sections and FAQ blocks survive the TipTap adapter", () => {
@@ -244,44 +226,36 @@ test("proposal sections and FAQ blocks survive the TipTap adapter", () => {
     content: [
       {
         type: "proposalSection",
-        attrs: {
-          blockId: "section-1",
-          eyebrow: field("Overview"),
-          title: field("Project direction", [{ type: "bold" }]),
-          lead: field("A concise recommendation.", [{ type: "italic" }]),
-          variant: "accent",
-          content: {
-            type: "doc",
-            content: [
-              {
-                type: "paragraph",
-                content: [{ type: "text", text: "Build the right thing." }],
-              },
-            ],
-          },
-        },
+        attrs: { blockId: "section-1", variant: "accent" },
+        content: [
+          inlineNode("proposalSectionEyebrow", field("Overview")),
+          inlineNode(
+            "proposalSectionTitle",
+            field("Project direction", [{ type: "bold" }])
+          ),
+          inlineNode(
+            "proposalSectionLead",
+            field("A concise recommendation.", [{ type: "italic" }])
+          ),
+          blockNode("proposalSectionBody", paragraph("Build the right thing.")),
+        ],
       },
       {
         type: "proposalFaq",
-        attrs: {
-          blockId: "faq-1",
-          variant: "list",
-          items: [
-            {
-              id: "faq-item-1",
-              question: field("Can the scope change?", [{ type: "bold" }]),
-              answer: {
-                type: "doc",
-                content: [
-                  {
-                    type: "paragraph",
-                    content: [{ type: "text", text: "Yes, with approval." }],
-                  },
-                ],
-              },
-            },
-          ],
-        },
+        attrs: { blockId: "faq-1", variant: "list" },
+        content: [
+          {
+            type: "proposalFaqItem",
+            attrs: { id: "faq-item-1" },
+            content: [
+              inlineNode(
+                "proposalFaqQuestion",
+                field("Can the scope change?", [{ type: "bold" }])
+              ),
+              blockNode("proposalFaqAnswer", paragraph("Yes, with approval.")),
+            ],
+          },
+        ],
       },
     ],
   }
@@ -297,95 +271,67 @@ test("phase 2 proposal blocks survive the TipTap adapter", () => {
         type: "proposalCover",
         attrs: {
           blockId: "cover-1",
-          eyebrow: field("Proposal"),
-          title: field("Growth platform"),
-          subtitle: field("A focused launch plan."),
           media: { assetId: "asset-1", alt: "Website mockup" },
           variant: "band",
         },
+        content: [
+          inlineNode("proposalCoverEyebrow", field("Proposal")),
+          inlineNode("proposalCoverTitle", field("Growth platform")),
+          inlineNode("proposalCoverSubtitle", field("A focused launch plan.")),
+        ],
       },
       {
         type: "proposalColumns",
-        attrs: {
-          blockId: "columns-1",
-          columns: 2,
-          title: field("Workstreams"),
-          items: [
-            {
-              id: "column-1",
-              heading: field("Strategy"),
-              body: {
-                type: "doc",
-                content: [
-                  {
-                    type: "paragraph",
-                    content: [{ type: "text", text: "Clarify priorities." }],
-                  },
-                ],
-              },
-            },
-          ],
-        },
+        attrs: { blockId: "columns-1", columns: 2 },
+        content: [
+          inlineNode("proposalColumnsTitle", field("Workstreams")),
+          {
+            type: "proposalColumnItem",
+            attrs: { id: "column-1" },
+            content: [
+              inlineNode("proposalColumnHeading", field("Strategy")),
+              blockNode("proposalColumnBody", paragraph("Clarify priorities.")),
+            ],
+          },
+        ],
       },
       {
         type: "proposalImageText",
         attrs: {
           blockId: "image-text-1",
           image: { assetId: "asset-1", alt: "Journey map" },
-          eyebrow: field("Proof"),
-          title: field("Evidence-led design"),
-          content: {
-            type: "doc",
-            content: [
-              {
-                type: "paragraph",
-                content: [{ type: "text", text: "Show the rationale." }],
-              },
-            ],
-          },
           reverse: true,
         },
+        content: [
+          inlineNode("proposalImageTextEyebrow", field("Proof")),
+          inlineNode("proposalImageTextTitle", field("Evidence-led design")),
+          blockNode("proposalImageTextBody", paragraph("Show the rationale.")),
+        ],
       },
       {
         type: "proposalImageCards",
-        attrs: {
-          blockId: "image-cards-1",
-          columns: 3,
-          variant: "horizontal",
-          items: [
-            {
+        attrs: { blockId: "image-cards-1", columns: 3, variant: "horizontal" },
+        content: [
+          {
+            type: "proposalImageCardItem",
+            attrs: {
               id: "card-1",
               image: { assetId: "asset-1", alt: "Service card" },
-              title: field("Launch"),
-              body: {
-                type: "doc",
-                content: [
-                  {
-                    type: "paragraph",
-                    content: [{ type: "text", text: "Ship confidently." }],
-                  },
-                ],
-              },
             },
-          ],
-        },
+            content: [
+              inlineNode("proposalImageCardTitle", field("Launch")),
+              blockNode("proposalImageCardBody", paragraph("Ship confidently.")),
+            ],
+          },
+        ],
       },
       {
         type: "proposalSignature",
-        attrs: {
-          blockId: "signature-1",
-          binding: "proposal.pricing.signer",
-          title: field("Ready to approve"),
-          terms: {
-            type: "doc",
-            content: [
-              {
-                type: "paragraph",
-                content: [{ type: "text", text: "Confirm the scope." }],
-              },
-            ],
-          },
-        },
+        attrs: { blockId: "signature-1", binding: "proposal.pricing.signer" },
+        content: [
+          inlineNode("proposalSignatureTitle", field("Ready to approve")),
+          blockNode("proposalSignatureTerms", paragraph("Confirm the scope.")),
+        ],
       },
     ],
   }
@@ -401,10 +347,14 @@ test("phase 2 proposal blocks normalize unsafe attrs", () => {
         type: "proposalCover",
         attrs: {
           blockId: "cover-1",
-          title: "Growth platform",
           media: { url: "https://example.test/image.png", alt: "Image" },
           variant: "unknown",
         },
+        content: [
+          inlineNode("proposalCoverEyebrow", field("Proposal")),
+          inlineNode("proposalCoverTitle", field("Growth platform")),
+          inlineNode("proposalCoverSubtitle", field("")),
+        ],
       },
       {
         type: "proposalImageCards",
@@ -412,8 +362,16 @@ test("phase 2 proposal blocks normalize unsafe attrs", () => {
           blockId: "image-cards-1",
           columns: 9,
           variant: "stacked",
-          items: [{ title: "Launch", body: "Ship." }],
         },
+        content: [
+          {
+            type: "proposalImageCardItem",
+            content: [
+              inlineNode("proposalImageCardTitle", field("Launch")),
+              blockNode("proposalImageCardBody", paragraph("Ship.")),
+            ],
+          },
+        ],
       },
     ],
   })
@@ -433,7 +391,14 @@ test("phase 2 proposal blocks normalize unsafe attrs", () => {
       {
         id: "image-cards-1-item-0",
         title: { content: [{ type: "text", text: "Launch" }] },
-        body: { content: [] },
+        body: {
+          content: [
+            {
+              type: "paragraph",
+              content: [{ type: "text", text: "Ship." }],
+            },
+          ],
+        },
       },
     ],
   })

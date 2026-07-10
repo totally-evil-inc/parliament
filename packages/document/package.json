@@ -13,6 +13,7 @@
     "./proposal": "./src/proposal.ts",
     "./presentation": "./src/presentation.ts",
     "./calculate": "./src/calculate.ts",
+    "./finalize": "./src/finalize.ts",
     "./render": "./src/render.ts",
     "./text": "./src/text.ts"
   },

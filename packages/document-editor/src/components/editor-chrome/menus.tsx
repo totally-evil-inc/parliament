@@ -48,9 +48,11 @@ export function shouldShowEditorBubbleMenu(editor: BubbleVisibilityState) {
 
 export function EditorBubbleMenu({
   editor,
+  pluginKey,
   commands,
 }: {
   editor: Editor
+  pluginKey: string
   commands: Array<EditorCommand>
 }) {
   const state = useEditorState({
@@ -70,6 +72,7 @@ export function EditorBubbleMenu({
   return (
     <BubbleMenu
       editor={editor}
+      pluginKey={pluginKey}
       appendTo={() => document.body}
       options={{
         strategy: "fixed",

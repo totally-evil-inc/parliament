@@ -38,6 +38,18 @@ test("bubble menu shows for a focused editable text range", () => {
   ).toBe(true)
 })
 
+test("bubble menu shows for selected text inside custom block fields", () => {
+  expect(
+    shouldShowEditorBubbleMenu(
+      editor({
+        empty: false,
+        $from: { parent: textParent },
+        $to: { parent: textParent },
+      })
+    )
+  ).toBe(true)
+})
+
 test("bubble menu hides when the editor cannot accept formatting", () => {
   const selection = {
     empty: false,

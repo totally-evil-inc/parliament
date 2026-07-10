@@ -31,114 +31,154 @@ function blockToTiptap(block: DocumentBlock): Array<JSONContent> {
       return block.content.content as Array<JSONContent>
     case "section":
       return [
-        {
-          type: "proposalSection",
-          attrs: {
-            blockId: block.id,
-            eyebrow: block.eyebrow,
-            title: block.title,
-            lead: block.lead,
-            variant: block.variant,
-            content: block.content,
-          },
-        },
+        node(
+          "proposalSection",
+          { blockId: block.id, variant: block.variant },
+          [
+            inlineField("proposalSectionEyebrow", block.eyebrow),
+            inlineField("proposalSectionTitle", block.title),
+            inlineField("proposalSectionLead", block.lead),
+            blockField("proposalSectionBody", block.content),
+          ]
+        ),
       ]
     case "cover":
       return [
-        {
-          type: "proposalCover",
-          attrs: {
+        node(
+          "proposalCover",
+          {
             blockId: block.id,
-            eyebrow: block.eyebrow,
-            title: block.title,
-            subtitle: block.subtitle,
             media: block.media,
             variant: block.variant,
           },
-        },
+          [
+            inlineField("proposalCoverEyebrow", block.eyebrow),
+            inlineField("proposalCoverTitle", block.title),
+            inlineField("proposalCoverSubtitle", block.subtitle),
+          ]
+        ),
       ]
     case "columns":
       return [
-        {
-          type: "proposalColumns",
-          attrs: {
-            blockId: block.id,
-            columns: block.columns,
-            title: block.title,
-            items: block.items,
-          },
-        },
+        node(
+          "proposalColumns",
+          { blockId: block.id, columns: block.columns },
+          [
+            inlineField("proposalColumnsTitle", block.title),
+            ...block.items.map((item) =>
+              node(
+                "proposalColumnItem",
+                { id: item.id },
+                [
+                  inlineField("proposalColumnHeading", item.heading),
+                  blockField("proposalColumnBody", item.body),
+                ]
+              )
+            ),
+          ]
+        ),
       ]
     case "imageText":
       return [
-        {
-          type: "proposalImageText",
-          attrs: {
+        node(
+          "proposalImageText",
+          {
             blockId: block.id,
             image: block.image,
-            eyebrow: block.eyebrow,
-            title: block.title,
-            content: block.content,
             reverse: block.reverse,
           },
-        },
+          [
+            inlineField("proposalImageTextEyebrow", block.eyebrow),
+            inlineField("proposalImageTextTitle", block.title),
+            blockField("proposalImageTextBody", block.content),
+          ]
+        ),
       ]
     case "imageCards":
       return [
-        {
-          type: "proposalImageCards",
-          attrs: {
+        node(
+          "proposalImageCards",
+          {
             blockId: block.id,
             columns: block.columns,
             variant: block.variant,
-            items: block.items,
           },
-        },
+          block.items.map((item) =>
+            node(
+              "proposalImageCardItem",
+              { id: item.id, image: item.image },
+              [
+                inlineField("proposalImageCardTitle", item.title),
+                blockField("proposalImageCardBody", item.body),
+              ]
+            )
+          )
+        ),
       ]
     case "signature":
       return [
-        {
-          type: "proposalSignature",
-          attrs: {
-            blockId: block.id,
-            binding: block.binding,
-            title: block.title,
-            terms: block.terms,
-          },
-        },
+        node(
+          "proposalSignature",
+          { blockId: block.id, binding: block.binding },
+          [
+            inlineField("proposalSignatureTitle", block.title),
+            blockField("proposalSignatureTerms", block.terms),
+          ]
+        ),
       ]
     case "metrics":
       return [
-        {
-          type: "keyNumbers",
-          attrs: {
-            blockId: block.id,
-            columns: block.columns,
-            items: normalizeKeyNumbers(block),
-          },
-        },
+        node(
+          "keyNumbers",
+          { blockId: block.id, columns: block.columns },
+          block.items.map((item) =>
+            node(
+              "keyNumbersItem",
+              { id: item.id },
+              [
+                inlineField("keyNumbersValue", item.value),
+                inlineField("keyNumbersLabel", item.label),
+                blockField("keyNumbersDetail", item.detail),
+              ]
+            )
+          )
+        ),
       ]
     case "team":
       return [
-        {
-          type: "teamMembers",
-          attrs: {
-            blockId: block.id,
-            columns: block.columns,
-            items: normalizeTeamMembers(block),
-          },
-        },
+        node(
+          "teamMembers",
+          { blockId: block.id, columns: block.columns },
+          block.items.map((item) =>
+            node(
+              "teamMemberItem",
+              { id: item.id, sourceId: item.sourceId },
+              [
+                inlineField("teamMemberName", item.name),
+                inlineField("teamMemberRole", item.role),
+                blockField("teamMemberBio", item.bio),
+              ]
+            )
+          )
+        ),
       ]
     case "testimonials":
       return [
-        {
-          type: "testimonials",
-          attrs: {
-            blockId: block.id,
-            columns: block.columns,
-            items: normalizeTestimonials(block),
-          },
-        },
+        node(
+          "testimonials",
+          { blockId: block.id, columns: block.columns },
+          block.items.map((item) =>
+            node(
+              "testimonialItem",
+              { id: item.id, sourceId: item.sourceId },
+              [
+                blockField("testimonialQuote", item.quote),
+                inlineField("testimonialAuthor", item.author),
+                inlineField("testimonialRole", item.role),
+              ]
+            )
+          )
+        ),
       ]
     case "gallery":
       return [
@@ -161,16 +201,49 @@ function blockToTiptap(block: DocumentBlock): Array<JSONContent> {
       ]
     case "faq":
       return [
-        {
-          type: "proposalFaq",
-          attrs: {
-            blockId: block.id,
-            variant: block.variant,
-            items: block.items,
-          },
-        },
+        node(
+          "proposalFaq",
+          { blockId: block.id, variant: block.variant },
+          block.items.map((item) =>
+            node(
+              "proposalFaqItem",
+              { id: item.id },
+              [
+                inlineField("proposalFaqQuestion", item.question),
+                blockField("proposalFaqAnswer", item.answer),
+              ]
+            )
+          )
+        ),
       ]
   }
+}
+
+function node(
+  type: string,
+  attrs: Attrs,
+  content: Array<JSONContent>
+): JSONContent {
+  return { type, attrs: compactAttrs(attrs), content }
+}
+
+function compactAttrs(attrs: Attrs): Attrs {
+  return Object.fromEntries(
+    Object.entries(attrs).filter(([, value]) => value !== undefined)
+  )
+}
+
+function inlineField(type: string, value: RichTextDoc): JSONContent {
+  return { type, content: value.content as Array<JSONContent> }
+}
+
+function blockField(type: string, value: RichTextDoc): JSONContent {
+  return { type, content: blockContent(value) }
+}
+
+function blockContent(value: RichTextDoc): Array<JSONContent> {
+  const content = value.content as Array<JSONContent>
+  return content.length > 0 ? content : [{ type: "paragraph" }]
 }
 
 function attrs(node: JSONContent): Attrs {
@@ -215,11 +288,11 @@ export function tiptapToComposition(
         id: id(node, index, "section"),
         type: "section",
         version: 1,
-        eyebrow: inlineDocFromUnknown(nodeAttrs.eyebrow),
-        title: inlineDocFromUnknown(nodeAttrs.title),
-        lead: inlineDocFromUnknown(nodeAttrs.lead),
+        eyebrow: inlineDoc(node, "proposalSectionEyebrow"),
+        title: inlineDoc(node, "proposalSectionTitle"),
+        lead: inlineDoc(node, "proposalSectionLead"),
         variant: sectionVariant(nodeAttrs.variant),
-        content: docFromUnknown(nodeAttrs.content),
+        content: blockDoc(node, "proposalSectionBody"),
       }
     }
     if (node.type === "proposalCover") {
@@ -228,9 +301,9 @@ export function tiptapToComposition(
         id: id(node, index, "cover"),
         type: "cover",
         version: 1,
-        eyebrow: inlineDocFromUnknown(nodeAttrs.eyebrow),
-        title: inlineDocFromUnknown(nodeAttrs.title),
-        subtitle: inlineDocFromUnknown(nodeAttrs.subtitle),
+        eyebrow: inlineDoc(node, "proposalCoverEyebrow"),
+        title: inlineDoc(node, "proposalCoverTitle"),
+        subtitle: inlineDoc(node, "proposalCoverSubtitle"),
         ...(media ? { media } : {}),
         variant: coverVariant(nodeAttrs.variant),
       }
@@ -242,8 +315,12 @@ export function tiptapToComposition(
         type: "columns",
         version: 1,
         columns: narrativeColumns(nodeAttrs.columns),
-        title: inlineDocFromUnknown(nodeAttrs.title),
-        items: normalizeRichTextItems(nodeAttrs.items, blockId),
+        title: inlineDoc(node, "proposalColumnsTitle"),
+        items: children(node, "proposalColumnItem").map((item, itemIndex) => ({
+          id: itemId(item, blockId, itemIndex),
+          heading: inlineDoc(item, "proposalColumnHeading"),
+          body: blockDoc(item, "proposalColumnBody"),
+        })),
       }
     }
     if (node.type === "proposalImageText") {
@@ -253,9 +330,9 @@ export function tiptapToComposition(
         type: "imageText",
         version: 1,
         ...(image ? { image } : {}),
-        eyebrow: inlineDocFromUnknown(nodeAttrs.eyebrow),
-        title: inlineDocFromUnknown(nodeAttrs.title),
-        content: docFromUnknown(nodeAttrs.content),
+        eyebrow: inlineDoc(node, "proposalImageTextEyebrow"),
+        title: inlineDoc(node, "proposalImageTextTitle"),
+        content: blockDoc(node, "proposalImageTextBody"),
         reverse: nodeAttrs.reverse === true,
       }
     }
@@ -267,7 +344,17 @@ export function tiptapToComposition(
         version: 1,
         columns: columns(nodeAttrs.columns),
         variant: imageCardsVariant(nodeAttrs.variant),
-        items: normalizeImageCardItems(nodeAttrs.items, blockId),
+        items: children(node, "proposalImageCardItem").map(
+          (item, itemIndex) => {
+            const image = assetReference(attrs(item).image)
+            return {
+              id: itemId(item, blockId, itemIndex),
+              ...(image ? { image } : {}),
+              title: inlineDoc(item, "proposalImageCardTitle"),
+              body: blockDoc(item, "proposalImageCardBody"),
+            }
+          }
+        ),
       }
     }
     if (node.type === "proposalSignature") {
@@ -276,8 +363,8 @@ export function tiptapToComposition(
         type: "signature",
         version: 1,
         binding: "proposal.pricing.signer",
-        title: inlineDocFromUnknown(nodeAttrs.title),
-        terms: docFromUnknown(nodeAttrs.terms),
+        title: inlineDoc(node, "proposalSignatureTitle"),
+        terms: blockDoc(node, "proposalSignatureTerms"),
       }
     }
     if (node.type === "keyNumbers") {
@@ -287,13 +374,12 @@ export function tiptapToComposition(
         type: "metrics",
         version: 1,
         columns: columns(nodeAttrs.columns),
-        content: itemsToCanonicalMetrics(
-          normalizeKeyNumbers({
-            id: blockId,
-            attrs: nodeAttrs,
-            content: node.content,
-          })
-        ),
+        items: children(node, "keyNumbersItem").map((item, itemIndex) => ({
+          id: itemId(item, blockId, itemIndex),
+          value: inlineDoc(item, "keyNumbersValue"),
+          label: inlineDoc(item, "keyNumbersLabel"),
+          detail: blockDoc(item, "keyNumbersDetail"),
+        })),
       }
     }
     if (node.type === "teamMembers") {
@@ -303,13 +389,15 @@ export function tiptapToComposition(
         type: "team",
         version: 1,
         columns: columns(nodeAttrs.columns),
-        content: itemsToCanonicalTeam(
-          normalizeTeamMembers({
-            id: blockId,
-            attrs: nodeAttrs,
-            content: node.content,
-          })
-        ),
+        items: children(node, "teamMemberItem").map((item, itemIndex) => ({
+          id: itemId(item, blockId, itemIndex),
+          ...(string(attrs(item).sourceId)
+            ? { sourceId: string(attrs(item).sourceId) }
+            : {}),
+          name: inlineDoc(item, "teamMemberName"),
+          role: inlineDoc(item, "teamMemberRole"),
+          bio: blockDoc(item, "teamMemberBio"),
+        })),
       }
     }
     if (node.type === "testimonials") {
@@ -319,13 +407,15 @@ export function tiptapToComposition(
         type: "testimonials",
         version: 1,
         columns: columns(nodeAttrs.columns),
-        content: itemsToCanonicalTestimonials(
-          normalizeTestimonials({
-            id: blockId,
-            attrs: nodeAttrs,
-            content: node.content,
-          })
-        ),
+        items: children(node, "testimonialItem").map((item, itemIndex) => ({
+          id: itemId(item, blockId, itemIndex),
+          ...(string(attrs(item).sourceId)
+            ? { sourceId: string(attrs(item).sourceId) }
+            : {}),
+          quote: blockDoc(item, "testimonialQuote"),
+          author: inlineDoc(item, "testimonialAuthor"),
+          role: inlineDoc(item, "testimonialRole"),
+        })),
       }
     }
     if (node.type === "gallery") {
@@ -351,13 +441,11 @@ export function tiptapToComposition(
         type: "faq",
         version: 1,
         variant: "list",
-        items: array<Record<string, unknown>>(nodeAttrs.items).map(
-          (item, itemIndex) => ({
-            id: string(item.id) || `${blockId}-item-${itemIndex}`,
-            question: inlineDocFromUnknown(item.question),
-            answer: docFromUnknown(item.answer),
-          })
-        ),
+        items: children(node, "proposalFaqItem").map((item, itemIndex) => ({
+          id: itemId(item, blockId, itemIndex),
+          question: inlineDoc(item, "proposalFaqQuestion"),
+          answer: blockDoc(item, "proposalFaqAnswer"),
+        })),
       }
     }
     if (node.type === "timeline") {
@@ -379,6 +467,27 @@ export function tiptapToComposition(
 
 function doc(content: JSONContent["content"]): RichTextDoc {
   return { type: "doc", content: (content ?? []) as RichTextDoc["content"] }
+}
+
+function children(node: JSONContent, type: string): Array<JSONContent> {
+  return (node.content ?? []).filter((child) => child.type === type)
+}
+
+function child(node: JSONContent, type: string): JSONContent | undefined {
+  return children(node, type)[0]
+}
+
+function inlineDoc(node: JSONContent, type: string): RichTextDoc {
+  return doc(child(node, type)?.content)
+}
+
+function blockDoc(node: JSONContent, type: string): RichTextDoc {
+  return doc(child(node, type)?.content)
+}
+
+function itemId(node: JSONContent, blockId: string, index: number) {
+  const value = attrs(node).id
+  return typeof value === "string" && value ? value : `${blockId}-item-${index}`
 }
 
 function columns(value: unknown): 1 | 2 | 3 {
@@ -417,236 +526,5 @@ function assetReference(value: unknown) {
   return {
     assetId,
     alt: string((value as Record<string, unknown>).alt),
-  }
-}
-
-function docFromUnknown(value: unknown): RichTextDoc {
-  if (
-    value &&
-    typeof value === "object" &&
-    (value as { type?: unknown }).type === "doc" &&
-    Array.isArray((value as { content?: unknown }).content)
-  ) {
-    return value as RichTextDoc
-  }
-  return { type: "doc", content: [] }
-}
-
-function inlineDocFromUnknown(value: unknown): RichTextDoc {
-  if (typeof value === "string") return textToDoc(value)
-  return docFromUnknown(value)
-}
-
-// --- Card Blocks Normalizers & Canonicalizers ---
-
-function textToDoc(text: unknown): RichTextDoc {
-  const str = typeof text === "string" ? text : ""
-  if (!str) return { type: "doc", content: [] }
-  return {
-    type: "doc",
-    content: [{ type: "text", text: str }],
-  }
-}
-
-function normalizeRichTextItems(value: unknown, blockId: string) {
-  return array<Record<string, unknown>>(value).map((item, index) => ({
-    id: string(item.id) || `${blockId}-item-${index}`,
-    heading: inlineDocFromUnknown(item.heading),
-    body: docFromUnknown(item.body),
-  }))
-}
-
-function normalizeImageCardItems(value: unknown, blockId: string) {
-  return array<Record<string, unknown>>(value).map((item, index) => {
-    const image = assetReference(item.image)
-    return {
-      id: string(item.id) || `${blockId}-item-${index}`,
-      ...(image ? { image } : {}),
-      title: inlineDocFromUnknown(item.title),
-      body: docFromUnknown(item.body),
-    }
-  })
-}
-
-function normalizeKeyNumbers(block: any): Array<any> {
-  const existingItems = block.attrs?.items ?? block.items
-  if (Array.isArray(existingItems)) {
-    return existingItems.map((item, index) => ({
-      ...item,
-      id: item.id ?? `${block.id || "metrics"}-item-${index}`,
-    }))
-  }
-
-  const content = block.content?.content ?? block.content ?? []
-  const itemsFromContent = content.filter(
-    (n: any) => n.type === "keyNumbersItem"
-  )
-  if (itemsFromContent.length > 0) {
-    return itemsFromContent.map((item: any, idx: number) => {
-      const children = item.content ?? []
-      const valueNode = children.find((c: any) => c.type === "keyNumbersValue")
-      const labelNode = children.find((c: any) => c.type === "keyNumbersLabel")
-      const detailNode = children.find(
-        (c: any) => c.type === "keyNumbersDetail"
-      )
-      return {
-        id: item.attrs?.id ?? `${block.id || "metrics"}-item-${idx}`,
-        value: { type: "doc", content: valueNode?.content ?? [] },
-        label: { type: "doc", content: labelNode?.content ?? [] },
-        detail: { type: "doc", content: detailNode?.content ?? [] },
-      }
-    })
-  }
-
-  const legacyMetrics = block.attrs?.metrics ?? block.metrics ?? []
-  if (legacyMetrics.length > 0) {
-    return legacyMetrics.map((m: any, idx: number) => ({
-      id: m.id ?? `${block.id || "metrics"}-item-${idx}`,
-      value: textToDoc(m.value),
-      label: textToDoc(m.label),
-      detail: textToDoc(m.detail),
-    }))
-  }
-
-  return []
-}
-
-function normalizeTeamMembers(block: any): Array<any> {
-  const existingItems = block.attrs?.items ?? block.items
-  if (Array.isArray(existingItems)) {
-    return existingItems.map((item, index) => ({
-      ...item,
-      id: item.id ?? `${block.id || "team"}-item-${index}`,
-    }))
-  }
-
-  const content = block.content?.content ?? block.content ?? []
-  const itemsFromContent = content.filter(
-    (n: any) => n.type === "teamMemberItem"
-  )
-  if (itemsFromContent.length > 0) {
-    return itemsFromContent.map((item: any, idx: number) => {
-      const children = item.content ?? []
-      const nameNode = children.find((c: any) => c.type === "teamMemberName")
-      const roleNode = children.find((c: any) => c.type === "teamMemberRole")
-      const bioNode = children.find((c: any) => c.type === "teamMemberBio")
-      return {
-        id: item.attrs?.id ?? `${block.id || "team"}-item-${idx}`,
-        ...(item.attrs?.sourceId ? { sourceId: item.attrs.sourceId } : {}),
-        name: { type: "doc", content: nameNode?.content ?? [] },
-        role: { type: "doc", content: roleNode?.content ?? [] },
-        bio: { type: "doc", content: bioNode?.content ?? [] },
-      }
-    })
-  }
-
-  const legacyMembers = block.attrs?.members ?? block.members ?? []
-  if (legacyMembers.length > 0) {
-    return legacyMembers.map((m: any, idx: number) => ({
-      id: m.id ?? `${block.id || "team"}-item-${idx}`,
-      name: textToDoc(m.name),
-      role: textToDoc(m.role),
-      bio: textToDoc(m.bio),
-      ...(m.sourceId ? { sourceId: m.sourceId } : {}),
-    }))
-  }
-
-  return []
-}
-
-function normalizeTestimonials(block: any): Array<any> {
-  const existingItems = block.attrs?.items ?? block.items
-  if (Array.isArray(existingItems)) {
-    return existingItems.map((item, index) => ({
-      ...item,
-      id: item.id ?? `${block.id || "testimonials"}-item-${index}`,
-    }))
-  }
-
-  const content = block.content?.content ?? block.content ?? []
-  const itemsFromContent = content.filter(
-    (n: any) => n.type === "testimonialItem"
-  )
-  if (itemsFromContent.length > 0) {
-    return itemsFromContent.map((item: any, idx: number) => {
-      const children = item.content ?? []
-      const quoteNode = children.find((c: any) => c.type === "testimonialQuote")
-      const authorNode = children.find(
-        (c: any) => c.type === "testimonialAuthor"
-      )
-      const roleNode = children.find((c: any) => c.type === "testimonialRole")
-      return {
-        id: item.attrs?.id ?? `${block.id || "testimonials"}-item-${idx}`,
-        ...(item.attrs?.sourceId ? { sourceId: item.attrs.sourceId } : {}),
-        quote: { type: "doc", content: quoteNode?.content ?? [] },
-        author: { type: "doc", content: authorNode?.content ?? [] },
-        role: { type: "doc", content: roleNode?.content ?? [] },
-      }
-    })
-  }
-
-  const legacyTestimonials =
-    block.attrs?.testimonials ?? block.testimonials ?? []
-  if (legacyTestimonials.length > 0) {
-    return legacyTestimonials.map((t: any, idx: number) => ({
-      id: t.id ?? `${block.id || "testimonials"}-item-${idx}`,
-      quote: textToDoc(t.content ?? t.quote),
-      author: textToDoc(t.author),
-      role: textToDoc(t.role),
-      ...(t.sourceId ? { sourceId: t.sourceId } : {}),
-    }))
-  }
-
-  return []
-}
-
-function itemsToCanonicalMetrics(items: Array<any>): RichTextDoc {
-  return {
-    type: "doc",
-    content: (items ?? []).map((item) => ({
-      type: "keyNumbersItem",
-      attrs: { id: item.id },
-      content: [
-        { type: "keyNumbersValue", content: item.value?.content ?? [] },
-        { type: "keyNumbersLabel", content: item.label?.content ?? [] },
-        { type: "keyNumbersDetail", content: item.detail?.content ?? [] },
-      ],
-    })),
-  }
-}
-
-function itemsToCanonicalTeam(items: Array<any>): RichTextDoc {
-  return {
-    type: "doc",
-    content: (items ?? []).map((item) => ({
-      type: "teamMemberItem",
-      attrs: {
-        id: item.id,
-        ...(item.sourceId ? { sourceId: item.sourceId } : {}),
-      },
-      content: [
-        { type: "teamMemberName", content: item.name?.content ?? [] },
-        { type: "teamMemberRole", content: item.role?.content ?? [] },
-        { type: "teamMemberBio", content: item.bio?.content ?? [] },
-      ],
-    })),
-  }
-}
-
-function itemsToCanonicalTestimonials(items: Array<any>): RichTextDoc {
-  return {
-    type: "doc",
-    content: (items ?? []).map((item) => ({
-      type: "testimonialItem",
-      attrs: {
-        id: item.id,
-        ...(item.sourceId ? { sourceId: item.sourceId } : {}),
-      },
-      content: [
-        { type: "testimonialQuote", content: item.quote?.content ?? [] },
-        { type: "testimonialAuthor", content: item.author?.content ?? [] },
-        { type: "testimonialRole", content: item.role?.content ?? [] },
-      ],
-    })),
   }
 }

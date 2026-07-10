@@ -37,10 +37,34 @@ function blockText(block: DocumentBlock, model: ProposalRenderModel): string {
       )
     case "richText":
     case "timeline":
-    case "metrics":
-    case "team":
-    case "testimonials":
       return richText(block.content)
+    case "metrics":
+      return block.items
+        .flatMap((item) => [
+          richText(item.value),
+          richText(item.label),
+          richText(item.detail),
+        ])
+        .filter(Boolean)
+        .join("\n")
+    case "team":
+      return block.items
+        .flatMap((item) => [
+          richText(item.name),
+          richText(item.role),
+          richText(item.bio),
+        ])
+        .filter(Boolean)
+        .join("\n")
+    case "testimonials":
+      return block.items
+        .flatMap((item) => [
+          richText(item.quote),
+          richText(item.author),
+          richText(item.role),
+        ])
+        .filter(Boolean)
+        .join("\n")
     case "section":
       return [
         richText(block.eyebrow),

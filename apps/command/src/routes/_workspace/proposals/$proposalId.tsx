@@ -1,0 +1,299 @@
+import * as React from "react"
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query"
+import { createFileRoute } from "@tanstack/react-router"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
+import { Button } from "@workspace/ui/components/button"
+import { createProposalDraftStore } from "@workspace/document-editor/store"
+import {
+  DocumentBlockSidebar,
+  DocumentEditor,
+  DocumentEditorHostProvider,
+  DocumentSidebarProvider,
+  DocumentToolbar,
+  ProposalDraftProvider,
+  proposalEditorRegistry,
+  useProposalEditorRuntime,
+} from "@workspace/document-editor"
+import {
+  defaultDocumentTemplate,
+  webStudioProposalTemplate,
+} from "@workspace/document/presentation"
+import { parseProposalDraft } from "@workspace/document/schema"
+import type { DocumentTemplate } from "@workspace/document/presentation"
+import type { ProposalDraft } from "@workspace/document/schema"
+import type { DocumentEditorHostAdapter } from "@workspace/document-editor"
+import { useConfirm } from "@/components/confirm-dialog-provider"
+import { createId } from "@/lib/create-id"
+import { proposalDraftQuery } from "@/api/proposals"
+import { finalizeProposalDraft, saveProposalDraft } from "@/server/proposals"
+import type {
+  FinalizeProposalDraftResult,
+  PersistedProposalDraft,
+  SaveProposalDraftResult,
+} from "@/server/proposals"
+
+export const Route = createFileRoute("/_workspace/proposals/$proposalId")({
+  loader: async ({ context, params }) => {
+    await context.queryClient.ensureQueryData(
+      proposalDraftQuery(params.proposalId)
+    )
+  },
+  component: ProposalEditRoute,
+})
+
+function ProposalEditRoute() {
+  const { proposalId } = Route.useParams()
+  const { data } = useSuspenseQuery(proposalDraftQuery(proposalId))
+  const persisted = data as PersistedProposalDraft
+  const document = React.useMemo(
+    () => parseProposalDraft(persisted.document),
+    [persisted.document]
+  )
+  const confirm = useConfirm()
+  const store = React.useMemo(
+    () => createProposalDraftStore(document),
+    [document, persisted.id]
+  )
+  const host = React.useMemo<DocumentEditorHostAdapter>(
+    () => ({
+      confirm,
+      createId,
+      requestTextInput: ({ initialValue, title }) =>
+        window.prompt(title, initialValue),
+    }),
+    [confirm]
+  )
+
+  return (
+    <DocumentEditorHostProvider adapter={host}>
+      <ProposalDraftProvider store={store}>
+        <ProposalEditorScreen
+          initialRevision={persisted.revision}
+          initialStatus={persisted.status}
+          store={store}
+        />
+      </ProposalDraftProvider>
+    </DocumentEditorHostProvider>
+  )
+}
+
+function ProposalEditorScreen({
+  initialRevision,
+  initialStatus,
+  store,
+}: {
+  initialRevision: number
+  initialStatus: string
+  store: ReturnType<typeof createProposalDraftStore>
+}) {
+  const queryClient = useQueryClient()
+  const runtime = useProposalEditorRuntime({ store })
+  const defaultTemplate = webStudioProposalTemplate
+  const [serverRevision, setServerRevision] = React.useState(initialRevision)
+  const [status, setStatus] = React.useState(initialStatus)
+  const [customTemplate, setCustomTemplate] =
+    React.useState<DocumentTemplate | null>(null)
+  const [message, setMessage] = React.useState<string | null>(null)
+  const [shareUrl, setShareUrl] = React.useState<string | null>(null)
+  const template = customTemplate ?? getTemplate(store.getSnapshot().template)
+
+  const saveDraft = useMutation({
+    mutationFn: async () => {
+      runtime.flush()
+      return await saveProposalDraft({
+        data: {
+          id: store.getSnapshot().id,
+          revision: serverRevision,
+          document: store.getSnapshot(),
+        },
+      })
+    },
+    onSuccess: async (result) => {
+      const saveResult = result as SaveProposalDraftResult
+      if (saveResult.status === "conflict") {
+        store.commands.replace(parseProposalDraft(saveResult.draft.document))
+        setServerRevision(saveResult.draft.revision)
+        setStatus(saveResult.draft.status)
+        setMessage("The server copy changed. The latest version was loaded.")
+        return
+      }
+      store.commands.replace(parseProposalDraft(saveResult.draft.document))
+      setServerRevision(saveResult.draft.revision)
+      setStatus(saveResult.draft.status)
+      setMessage("Saved")
+      await queryClient.invalidateQueries({ queryKey: ["proposals"] })
+    },
+  })
+
+  const sendDraft = useMutation({
+    mutationFn: async () => {
+      runtime.flush()
+      const saved = await saveProposalDraft({
+        data: {
+          id: store.getSnapshot().id,
+          revision: serverRevision,
+          document: store.getSnapshot(),
+        },
+      })
+      const savedResult = saved as SaveProposalDraftResult
+      if (savedResult.status === "conflict") {
+        return { status: "conflict" as const, draft: savedResult.draft }
+      }
+      const finalized = await finalizeProposalDraft({
+        data: {
+          id: savedResult.draft.id,
+          revision: savedResult.draft.revision,
+        },
+      })
+      return {
+        status: "sent" as const,
+        finalized: finalized as FinalizeProposalDraftResult,
+      }
+    },
+    onSuccess: async (result) => {
+      if (result.status === "conflict") {
+        store.commands.replace(parseProposalDraft(result.draft.document))
+        setServerRevision(result.draft.revision)
+        setStatus(result.draft.status)
+        setMessage("The server copy changed. Review it before sending.")
+        return
+      }
+      store.commands.replace(
+        parseProposalDraft(result.finalized.draft.document)
+      )
+      setServerRevision(result.finalized.draft.revision)
+      setStatus(result.finalized.draft.status)
+      setShareUrl(
+        `${window.location.origin}/proposal/${result.finalized.token}`
+      )
+      setMessage("Sent")
+      await queryClient.invalidateQueries({ queryKey: ["proposals"] })
+    },
+  })
+
+  const handleAction = React.useCallback(
+    (actionId: string) => {
+      if (actionId !== "export") return
+      runtime.flush()
+      const draft = store.getSnapshot()
+      const key = `proposal-draft:${draft.id}:${draft.revision}`
+      window.sessionStorage.setItem(key, JSON.stringify(draft))
+      window.open(
+        `/documents/print?draftKey=${encodeURIComponent(key)}`,
+        "_blank",
+        "noopener,noreferrer"
+      )
+    },
+    [runtime, store]
+  )
+
+  return (
+    <div className="flex h-[calc(100svh-3rem)] min-h-0 w-full flex-col overflow-hidden bg-muted/30">
+      <div className="flex min-h-12 items-center justify-between gap-3 border-b bg-background px-4">
+        <div className="min-w-0 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">{status}</span>
+          {message ? <span className="ml-3">{message}</span> : null}
+          {shareUrl ? (
+            <a
+              className="ml-3 text-primary underline underline-offset-4"
+              href={shareUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {shareUrl}
+            </a>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => saveDraft.mutate()}
+            disabled={saveDraft.isPending || sendDraft.isPending}
+          >
+            {saveDraft.isPending ? "Saving..." : "Save"}
+          </Button>
+          <Button
+            type="button"
+            onClick={() => sendDraft.mutate()}
+            disabled={saveDraft.isPending || sendDraft.isPending}
+          >
+            {sendDraft.isPending ? "Sending..." : "Send"}
+          </Button>
+        </div>
+      </div>
+      <DocumentSidebarProvider defaultOpen={true}>
+        <div
+          className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden"
+          style={
+            {
+              backgroundColor: template.tokens.canvasBackground,
+              "--sidebar-width": "22rem",
+            } as React.CSSProperties
+          }
+          data-document-template={template.id}
+        >
+          <ScrollArea className="relative min-h-0 min-w-0 flex-1">
+            <DocumentEditor
+              definition={proposalEditorRegistry}
+              editor={runtime.editor}
+              onContentChange={runtime.onContentChange}
+              template={template}
+              onUndo={runtime.undo}
+              onRedo={runtime.redo}
+            />
+            <DocumentToolbar
+              editor={runtime.editor}
+              definition={proposalEditorRegistry}
+              onAction={handleAction}
+            />
+          </ScrollArea>
+          <DocumentBlockSidebar
+            editor={runtime.editor}
+            definition={proposalEditorRegistry}
+            defaultTemplate={defaultTemplate}
+            template={template}
+            onTemplateChange={(nextTemplate) => {
+              setCustomTemplate(nextTemplate)
+              store.commands.setTemplate({
+                id: nextTemplate.id,
+                version: 1,
+                overrides: nextTemplate.tokens,
+              })
+            }}
+            onTemplateReset={() => {
+              setCustomTemplate(null)
+              store.commands.setTemplate({
+                id: defaultTemplate.id,
+                version: 1,
+                overrides: defaultTemplate.tokens,
+              })
+            }}
+          />
+        </div>
+      </DocumentSidebarProvider>
+    </div>
+  )
+}
+
+function getTemplate(reference: ProposalDraft["template"]) {
+  const baseTemplate =
+    reference.id === webStudioProposalTemplate.id
+      ? webStudioProposalTemplate
+      : defaultDocumentTemplate
+  const overrides = reference.overrides ?? {}
+  const tokens = Object.fromEntries(
+    Object.entries(overrides).filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string"
+    )
+  )
+  return {
+    ...baseTemplate,
+    id: reference.id,
+    tokens: { ...baseTemplate.tokens, ...tokens },
+  }
+}

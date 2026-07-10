@@ -60,25 +60,19 @@ function section({
 
 function metricItem(id: string, value: string, label: string, detail: string) {
   return {
-    type: "keyNumbersItem",
-    attrs: { id },
-    content: [
-      { type: "keyNumbersValue", content: inlineDoc(value).content },
-      { type: "keyNumbersLabel", content: inlineDoc(label).content },
-      { type: "keyNumbersDetail", content: inlineDoc(detail).content },
-    ],
+    id,
+    value: inlineDoc(value),
+    label: inlineDoc(label),
+    detail: textDoc(detail),
   }
 }
 
 function teamItem(id: string, name: string, role: string, bio: string) {
   return {
-    type: "teamMemberItem",
-    attrs: { id },
-    content: [
-      { type: "teamMemberName", content: inlineDoc(name).content },
-      { type: "teamMemberRole", content: inlineDoc(role).content },
-      { type: "teamMemberBio", content: inlineDoc(bio).content },
-    ],
+    id,
+    name: inlineDoc(name),
+    role: inlineDoc(role),
+    bio: textDoc(bio),
   }
 }
 
@@ -89,13 +83,10 @@ function testimonialItem(
   role: string
 ) {
   return {
-    type: "testimonialItem",
-    attrs: { id },
-    content: [
-      { type: "testimonialQuote", content: inlineDoc(quote).content },
-      { type: "testimonialAuthor", content: inlineDoc(author).content },
-      { type: "testimonialRole", content: inlineDoc(role).content },
-    ],
+    id,
+    quote: textDoc(quote),
+    author: inlineDoc(author),
+    role: inlineDoc(role),
   }
 }
 
@@ -277,29 +268,26 @@ export function createProposalDraftFromBlueprint({
           type: "metrics",
           version: 1,
           columns: 3,
-          content: {
-            type: "doc",
-            content: [
-              metricItem(
-                "metric-speed",
-                "3.5s",
-                "Target load time",
-                "Lean pages, optimized media, and performance budgets for core journeys."
-              ),
-              metricItem(
-                "metric-conversion",
-                "+28%",
-                "Enquiry lift",
-                "Clearer offers, stronger proof, and fewer steps to start a conversation."
-              ),
-              metricItem(
-                "metric-launch",
-                "8 weeks",
-                "Launch window",
-                "A focused plan from discovery through QA, handover, and launch support."
-              ),
-            ],
-          },
+          items: [
+            metricItem(
+              "metric-speed",
+              "3.5s",
+              "Target load time",
+              "Lean pages, optimized media, and performance budgets for core journeys."
+            ),
+            metricItem(
+              "metric-conversion",
+              "+28%",
+              "Enquiry lift",
+              "Clearer offers, stronger proof, and fewer steps to start a conversation."
+            ),
+            metricItem(
+              "metric-launch",
+              "8 weeks",
+              "Launch window",
+              "A focused plan from discovery through QA, handover, and launch support."
+            ),
+          ],
         },
         section({
           id: "section-scope",
@@ -415,52 +403,46 @@ export function createProposalDraftFromBlueprint({
           type: "team",
           version: 1,
           columns: 3,
-          content: {
-            type: "doc",
-            content: [
-              teamItem(
-                "member-strategy",
-                "Alex Morgan",
-                "Strategy Lead",
-                "Runs discovery, messaging, and conversion planning."
-              ),
-              teamItem(
-                "member-design",
-                "Jamie Chen",
-                "Design Director",
-                "Owns the visual system and key customer journeys."
-              ),
-              teamItem(
-                "member-engineering",
-                "Taylor Brooks",
-                "Technical Lead",
-                "Builds the production site, CMS, and launch workflow."
-              ),
-            ],
-          },
+          items: [
+            teamItem(
+              "member-strategy",
+              "Alex Morgan",
+              "Strategy Lead",
+              "Runs discovery, messaging, and conversion planning."
+            ),
+            teamItem(
+              "member-design",
+              "Jamie Chen",
+              "Design Director",
+              "Owns the visual system and key customer journeys."
+            ),
+            teamItem(
+              "member-engineering",
+              "Taylor Brooks",
+              "Technical Lead",
+              "Builds the production site, CMS, and launch workflow."
+            ),
+          ],
         },
         {
           id: "testimonials-proof",
           type: "testimonials",
           version: 1,
           columns: 2,
-          content: {
-            type: "doc",
-            content: [
-              testimonialItem(
-                "testimonial-clarity",
-                "The process gave our team clarity from the first workshop through launch.",
-                "Maya Patel",
-                "Founder, Atlas Tours"
-              ),
-              testimonialItem(
-                "testimonial-speed",
-                "We launched faster than expected and finally had pages our sales team trusted.",
-                "Daniel Mwangi",
-                "Managing Director, Horizon Travel"
-              ),
-            ],
-          },
+          items: [
+            testimonialItem(
+              "testimonial-clarity",
+              "The process gave our team clarity from the first workshop through launch.",
+              "Maya Patel",
+              "Founder, Atlas Tours"
+            ),
+            testimonialItem(
+              "testimonial-speed",
+              "We launched faster than expected and finally had pages our sales team trusted.",
+              "Daniel Mwangi",
+              "Managing Director, Horizon Travel"
+            ),
+          ],
         },
         {
           id: "proposal-pricing",

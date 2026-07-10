@@ -1,4 +1,5 @@
 export * from "./calculate"
+export * from "./finalize"
 export * from "./proposal"
 export * from "./presentation"
 export * from "./render"

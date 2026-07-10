@@ -38,6 +38,18 @@ const paragraph = (text: string) => ({
     : [],
 })
 
+type RichDoc = ReturnType<typeof field> | ReturnType<typeof paragraph>
+
+const inlineField = (type: string, value: RichDoc) => ({
+  type,
+  content: value.content,
+})
+
+const blockField = (type: string, value: RichDoc) => ({
+  type,
+  content: value.content.length ? value.content : [{ type: "paragraph" }],
+})
+
 const timelineContent = {
   type: "timeline",
   content: [
@@ -140,16 +152,28 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
     createContent: (layout) => ({
       type: "proposalSection",
       attrs: {
-        eyebrow: layout?.attrs?.eyebrow ?? field("Section"),
-        title: layout?.attrs?.title ?? field("Section title"),
-        lead:
-          layout?.attrs?.lead ??
-          field("Add a concise lead-in for this section."),
         variant: layout?.attrs?.variant ?? "default",
-        content:
-          layout?.attrs?.content ??
-          paragraph("Explain the important details, outcomes, and decisions."),
       },
+      content: [
+        inlineField(
+          "proposalSectionEyebrow",
+          layout?.attrs?.eyebrow ?? field("Section")
+        ),
+        inlineField(
+          "proposalSectionTitle",
+          layout?.attrs?.title ?? field("Section title")
+        ),
+        inlineField(
+          "proposalSectionLead",
+          layout?.attrs?.lead ??
+            field("Add a concise lead-in for this section.")
+        ),
+        blockField(
+          "proposalSectionBody",
+          layout?.attrs?.content ??
+            paragraph("Explain the important details, outcomes, and decisions.")
+        ),
+      ],
     }),
     preview: (
       <div className="mt-2 space-y-1.5">
@@ -347,13 +371,23 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
     createContent: (layout) => ({
       type: "proposalCover",
       attrs: {
-        eyebrow: layout?.attrs?.eyebrow ?? field("Proposal"),
-        title: layout?.attrs?.title ?? field("Project proposal"),
-        subtitle:
-          layout?.attrs?.subtitle ??
-          field("A focused plan for the next phase of work."),
         variant: layout?.attrs?.variant ?? "split",
       },
+      content: [
+        inlineField(
+          "proposalCoverEyebrow",
+          layout?.attrs?.eyebrow ?? field("Proposal")
+        ),
+        inlineField(
+          "proposalCoverTitle",
+          layout?.attrs?.title ?? field("Project proposal")
+        ),
+        inlineField(
+          "proposalCoverSubtitle",
+          layout?.attrs?.subtitle ??
+            field("A focused plan for the next phase of work.")
+        ),
+      ],
     }),
     preview: (
       <div className="mt-2 grid h-12 w-full grid-cols-[1fr_2.5rem] gap-2">
@@ -439,9 +473,21 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         type: "proposalColumns",
         attrs: {
           columns,
-          title: layout?.attrs?.title ?? field("How we will approach the work"),
-          items,
         },
+        content: [
+          inlineField(
+            "proposalColumnsTitle",
+            layout?.attrs?.title ?? field("How we will approach the work")
+          ),
+          ...items.map((item: any) => ({
+            type: "proposalColumnItem",
+            attrs: { id: item.id },
+            content: [
+              inlineField("proposalColumnHeading", item.heading),
+              blockField("proposalColumnBody", item.body),
+            ],
+          })),
+        ],
       }
     },
     preview: (
@@ -520,13 +566,23 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
     createContent: (layout) => ({
       type: "proposalImageText",
       attrs: {
-        eyebrow: layout?.attrs?.eyebrow ?? field("Approach"),
-        title: layout?.attrs?.title ?? field("A clear visual direction"),
-        content:
-          layout?.attrs?.content ??
-          paragraph("Explain the idea, proof point, or recommended approach."),
         reverse: layout?.attrs?.reverse ?? false,
       },
+      content: [
+        inlineField(
+          "proposalImageTextEyebrow",
+          layout?.attrs?.eyebrow ?? field("Approach")
+        ),
+        inlineField(
+          "proposalImageTextTitle",
+          layout?.attrs?.title ?? field("A clear visual direction")
+        ),
+        blockField(
+          "proposalImageTextBody",
+          layout?.attrs?.content ??
+            paragraph("Explain the idea, proof point, or recommended approach.")
+        ),
+      ],
     }),
     preview: (
       <div className="mt-2 grid h-12 w-full grid-cols-2 gap-2">
@@ -582,24 +638,31 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
       attrs: {
         columns: layout?.attrs?.columns ?? 3,
         variant: layout?.attrs?.variant ?? "vertical",
-        items: layout?.attrs?.items ?? [
-          {
-            id: "image-card-1",
-            title: field("Strategy"),
-            body: paragraph("Define the right direction before production."),
-          },
-          {
-            id: "image-card-2",
-            title: field("Design"),
-            body: paragraph("Create a polished system for key journeys."),
-          },
-          {
-            id: "image-card-3",
-            title: field("Launch"),
-            body: paragraph("Ship with QA, analytics, and handover."),
-          },
-        ],
       },
+      content: (layout?.attrs?.items ?? [
+        {
+          id: "image-card-1",
+          title: field("Strategy"),
+          body: paragraph("Define the right direction before production."),
+        },
+        {
+          id: "image-card-2",
+          title: field("Design"),
+          body: paragraph("Create a polished system for key journeys."),
+        },
+        {
+          id: "image-card-3",
+          title: field("Launch"),
+          body: paragraph("Ship with QA, analytics, and handover."),
+        },
+      ]).map((item: any) => ({
+        type: "proposalImageCardItem",
+        attrs: { id: item.id, image: item.image },
+        content: [
+          inlineField("proposalImageCardTitle", item.title),
+          blockField("proposalImageCardBody", item.body),
+        ],
+      })),
     }),
     preview: (
       <div className="mt-2 grid h-12 w-full grid-cols-3 gap-1.5">
@@ -659,11 +722,16 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
       type: "proposalSignature",
       attrs: {
         binding: "proposal.pricing.signer",
-        title: field("Ready to move forward?"),
-        terms: paragraph(
-          "Approval confirms the proposed scope, timeline, and pricing so kickoff can be scheduled."
-        ),
       },
+      content: [
+        inlineField("proposalSignatureTitle", field("Ready to move forward?")),
+        blockField(
+          "proposalSignatureTerms",
+          paragraph(
+            "Approval confirms the proposed scope, timeline, and pricing so kickoff can be scheduled."
+          )
+        ),
+      ],
     }),
     preview: (
       <div className="mt-2 flex h-12 w-full items-end justify-end border-t border-border pt-2">
@@ -709,13 +777,16 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         type: "keyNumbers",
         attrs: {
           columns,
-          items: metrics.map((metric: any, index: number) => ({
-            id: metric.id ?? `metric-${index + 1}`,
-            value: field(metric.value ?? ""),
-            label: field(metric.label ?? ""),
-            detail: field(metric.detail ?? ""),
-          })),
         },
+        content: metrics.map((metric: any, index: number) => ({
+          type: "keyNumbersItem",
+          attrs: { id: metric.id ?? `metric-${index + 1}` },
+          content: [
+            inlineField("keyNumbersValue", field(metric.value ?? "")),
+            inlineField("keyNumbersLabel", field(metric.label ?? "")),
+            blockField("keyNumbersDetail", paragraph(metric.detail ?? "")),
+          ],
+        })),
       }
     },
     preview: (
@@ -841,13 +912,19 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         type: "teamMembers",
         attrs: {
           columns,
-          items: members.map((member: any, index: number) => ({
-            id: member.id ?? `member-${index + 1}`,
-            name: field(member.name ?? ""),
-            role: field(member.role ?? ""),
-            bio: field(member.bio ?? ""),
-          })),
         },
+        content: members.map((member: any, index: number) => ({
+          type: "teamMemberItem",
+          attrs: {
+            id: member.id ?? `member-${index + 1}`,
+            sourceId: member.sourceId,
+          },
+          content: [
+            inlineField("teamMemberName", field(member.name ?? "")),
+            inlineField("teamMemberRole", field(member.role ?? "")),
+            blockField("teamMemberBio", paragraph(member.bio ?? "")),
+          ],
+        })),
       }
     },
     preview: (
@@ -976,13 +1053,22 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         type: "testimonials",
         attrs: {
           columns,
-          items: testimonials.map((testimonial: any, index: number) => ({
-            id: testimonial.id ?? `testimonial-${index + 1}`,
-            quote: field(testimonial.content ?? testimonial.quote ?? ""),
-            author: field(testimonial.author ?? ""),
-            role: field(testimonial.role ?? ""),
-          })),
         },
+        content: testimonials.map((testimonial: any, index: number) => ({
+          type: "testimonialItem",
+          attrs: {
+            id: testimonial.id ?? `testimonial-${index + 1}`,
+            sourceId: testimonial.sourceId,
+          },
+          content: [
+            blockField(
+              "testimonialQuote",
+              paragraph(testimonial.content ?? testimonial.quote ?? "")
+            ),
+            inlineField("testimonialAuthor", field(testimonial.author ?? "")),
+            inlineField("testimonialRole", field(testimonial.role ?? "")),
+          ],
+        })),
       }
     },
     preview: (
@@ -1100,23 +1186,30 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
       type: "proposalFaq",
       attrs: {
         variant: "list",
-        items: layout?.attrs?.items ?? [
-          {
-            id: "faq-1",
-            question: field("What happens after approval?"),
-            answer: paragraph(
-              "We confirm stakeholders, collect access, and schedule the kickoff session."
-            ),
-          },
-          {
-            id: "faq-2",
-            question: field("Can the scope change later?"),
-            answer: paragraph(
-              "Yes. We will document any changes and confirm the impact before work continues."
-            ),
-          },
-        ],
       },
+      content: (layout?.attrs?.items ?? [
+        {
+          id: "faq-1",
+          question: field("What happens after approval?"),
+          answer: paragraph(
+            "We confirm stakeholders, collect access, and schedule the kickoff session."
+          ),
+        },
+        {
+          id: "faq-2",
+          question: field("Can the scope change later?"),
+          answer: paragraph(
+            "Yes. We will document any changes and confirm the impact before work continues."
+          ),
+        },
+      ]).map((item: any) => ({
+        type: "proposalFaqItem",
+        attrs: { id: item.id },
+        content: [
+          inlineField("proposalFaqQuestion", item.question),
+          blockField("proposalFaqAnswer", item.answer),
+        ],
+      })),
     }),
     preview: (
       <div className="mt-2 space-y-2">

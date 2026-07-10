@@ -5,15 +5,13 @@ import { TeamMembersView } from "../components/team-members-view"
 export const TeamMembers = Node.create({
   name: "teamMembers",
   group: "block",
-  atom: true,
+  content: "teamMemberItem+",
   selectable: true,
-  draggable: true,
 
   addAttributes() {
     return {
       blockId: { default: null },
       columns: { default: 3 },
-      items: { default: [] },
     }
   },
 
@@ -37,6 +35,14 @@ export const TeamMemberItem = Node.create({
   name: "teamMemberItem",
   content: "teamMemberName teamMemberRole teamMemberBio",
   defining: true,
+
+  addAttributes() {
+    return {
+      id: { default: null },
+      sourceId: { default: null },
+    }
+  },
+
   parseHTML() {
     return [{ tag: 'div[data-type="team-member-item"]' }]
   },
@@ -46,7 +52,7 @@ export const TeamMemberItem = Node.create({
       mergeAttributes(HTMLAttributes, {
         "data-type": "team-member-item",
         class:
-          "flex flex-col items-center justify-start text-center break-inside-avoid",
+          "flex flex-col items-center justify-start rounded-xl p-6 text-center break-inside-avoid",
       }),
       [
         "div",
@@ -155,7 +161,7 @@ export const TeamMemberRole = Node.create({
 
 export const TeamMemberBio = Node.create({
   name: "teamMemberBio",
-  content: "inline*",
+  content: "block+",
   parseHTML() {
     return [{ tag: 'div[data-type="team-member-bio"]' }]
   },

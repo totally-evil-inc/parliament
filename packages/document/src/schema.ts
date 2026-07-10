@@ -155,6 +155,32 @@ const richTextItemSchema = z
     body: richTextDocSchema,
   })
   .strict()
+const metricItemSchema = z
+  .object({
+    id: idSchema,
+    value: inlineRichTextDocSchema,
+    label: inlineRichTextDocSchema,
+    detail: richTextDocSchema,
+  })
+  .strict()
+const teamMemberItemSchema = z
+  .object({
+    id: idSchema,
+    sourceId: idSchema.optional(),
+    name: inlineRichTextDocSchema,
+    role: inlineRichTextDocSchema,
+    bio: richTextDocSchema,
+  })
+  .strict()
+const testimonialItemSchema = z
+  .object({
+    id: idSchema,
+    sourceId: idSchema.optional(),
+    quote: richTextDocSchema,
+    author: inlineRichTextDocSchema,
+    role: inlineRichTextDocSchema,
+  })
+  .strict()
 const imageCardItemSchema = z
   .object({
     id: idSchema,
@@ -164,7 +190,7 @@ const imageCardItemSchema = z
   })
   .strict()
 
-export const documentBlockSchema = z.discriminatedUnion("type", [
+export const documentBlockSchema = z.union([
   z
     .object({
       ...blockBase,
@@ -253,7 +279,7 @@ export const documentBlockSchema = z.discriminatedUnion("type", [
       ...blockBase,
       type: z.literal("metrics"),
       columns: columnsSchema,
-      content: richTextDocSchema,
+      items: z.array(metricItemSchema),
     })
     .strict(),
   z
@@ -261,7 +287,7 @@ export const documentBlockSchema = z.discriminatedUnion("type", [
       ...blockBase,
       type: z.literal("team"),
       columns: columnsSchema,
-      content: richTextDocSchema,
+      items: z.array(teamMemberItemSchema),
     })
     .strict(),
   z
@@ -269,7 +295,7 @@ export const documentBlockSchema = z.discriminatedUnion("type", [
       ...blockBase,
       type: z.literal("testimonials"),
       columns: columnsSchema,
-      content: richTextDocSchema,
+      items: z.array(testimonialItemSchema),
     })
     .strict(),
   z

@@ -22,6 +22,13 @@
       "when": 1778880293005,
       "tag": "0002_rich_saracen",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782460322541,
+      "tag": "0003_whole_sprite",
+      "breakpoints": true
     }
   ]
 }

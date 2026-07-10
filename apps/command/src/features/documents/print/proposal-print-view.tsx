@@ -47,38 +47,10 @@ const blockRenderers: Record<
       </section>
     ) : null,
   metrics: ({ block }) =>
-    block.type === "metrics" ? (
-      <section className="my-[var(--document-section-spacing)]">
-        <SectionHeading
-          eyebrow="Outcomes"
-          title="What success will look like"
-        />
-        <RichTextRenderer
-          className={`mt-8 grid gap-8 ${columns(block.columns)}`}
-          content={block.content}
-        />
-      </section>
-    ) : null,
-  team: ({ block }) =>
-    block.type === "team" ? (
-      <section className="my-[var(--document-section-spacing)]">
-        <SectionHeading eyebrow="Team" title="Who will lead the work" />
-        <RichTextRenderer
-          className={`mt-8 grid gap-8 ${columns(block.columns)}`}
-          content={block.content}
-        />
-      </section>
-    ) : null,
+    block.type === "metrics" ? <Metrics block={block} /> : null,
+  team: ({ block }) => (block.type === "team" ? <Team block={block} /> : null),
   testimonials: ({ block }) =>
-    block.type === "testimonials" ? (
-      <section className="my-[var(--document-section-spacing)]">
-        <SectionHeading eyebrow="Proof" title="Relevant client confidence" />
-        <RichTextRenderer
-          className={`mt-8 grid gap-8 ${columns(block.columns)}`}
-          content={block.content}
-        />
-      </section>
-    ) : null,
+    block.type === "testimonials" ? <Testimonials block={block} /> : null,
   gallery: ({ block }) =>
     block.type === "gallery" ? (
       <section className={`my-8 grid gap-4 ${columns(block.columns)}`}>
@@ -379,6 +351,107 @@ function ImageCards({
           </div>
         </section>
       ))}
+    </section>
+  )
+}
+
+function Metrics({
+  block,
+}: {
+  block: Extract<DocumentBlock, { type: "metrics" }>
+}) {
+  return (
+    <section className="my-[var(--document-section-spacing)]">
+      <SectionHeading eyebrow="Outcomes" title="What success will look like" />
+      <div className={`mt-8 grid gap-8 ${columns(block.columns)}`}>
+        {block.items.map((item) => (
+          <section key={item.id} className="break-inside-avoid text-center">
+            <div className="mb-1.5 text-4xl font-black tracking-tight text-[var(--document-accent)] md:text-5xl">
+              <RichTextInlineRenderer content={item.value} />
+            </div>
+            <div className="mb-1 text-base font-bold tracking-tight text-[var(--document-foreground)] md:text-lg">
+              <RichTextInlineRenderer content={item.label} />
+            </div>
+            <RichTextRenderer
+              className="text-sm leading-relaxed text-[var(--document-muted-foreground)] md:text-base"
+              content={item.detail}
+            />
+          </section>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function Team({ block }: { block: Extract<DocumentBlock, { type: "team" }> }) {
+  return (
+    <section className="my-[var(--document-section-spacing)]">
+      <SectionHeading eyebrow="Team" title="Who will lead the work" />
+      <div className={`mt-8 grid gap-8 ${columns(block.columns)}`}>
+        {block.items.map((item) => (
+          <section
+            key={item.id}
+            className="flex break-inside-avoid flex-col items-center justify-start text-center"
+          >
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--document-accent)_10%,transparent)] text-[var(--document-accent)] md:h-20 md:w-20">
+              <svg
+                className="h-8 w-8 md:h-9 md:w-9"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </div>
+            <div className="mb-1 text-base font-bold tracking-tight text-[var(--document-foreground)] md:text-lg">
+              <RichTextInlineRenderer content={item.name} />
+            </div>
+            <div className="mb-3 text-sm font-medium text-[var(--document-muted-foreground)] md:text-base">
+              <RichTextInlineRenderer content={item.role} />
+            </div>
+            <RichTextRenderer
+              className="text-xs leading-normal text-[var(--document-muted-foreground)] md:text-sm"
+              content={item.bio}
+            />
+          </section>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function Testimonials({
+  block,
+}: {
+  block: Extract<DocumentBlock, { type: "testimonials" }>
+}) {
+  return (
+    <section className="my-[var(--document-section-spacing)]">
+      <SectionHeading eyebrow="Proof" title="Relevant client confidence" />
+      <div className={`mt-8 grid gap-8 ${columns(block.columns)}`}>
+        {block.items.map((item) => (
+          <blockquote
+            key={item.id}
+            className="m-0 break-inside-avoid border-l-2 border-[var(--document-accent)] py-1 pl-5 text-left"
+          >
+            <RichTextRenderer
+              className="mb-3 text-base leading-relaxed font-medium text-[var(--document-muted-foreground)] italic md:text-lg"
+              content={item.quote}
+            />
+            <div className="mb-0.5 text-sm font-bold tracking-tight text-[var(--document-foreground)] md:text-base">
+              <RichTextInlineRenderer content={item.author} />
+            </div>
+            <div className="text-xs font-medium text-[var(--document-muted-foreground)] md:text-sm">
+              <RichTextInlineRenderer content={item.role} />
+            </div>
+          </blockquote>
+        ))}
+      </div>
     </section>
   )
 }

@@ -82,6 +82,41 @@ test("legacy string section and FAQ fields parse as inline rich text", () => {
   })
 })
 
+test("TipTap-shaped card block content is rejected by the canonical schema", () => {
+  const draft = createProposalDraft({ id: "proposal-1" })
+  expect(
+    safeParseProposalDraft({
+      ...draft,
+      composition: {
+        version: 1,
+        blocks: [
+          {
+            id: "metrics-1",
+            type: "metrics",
+            version: 1,
+            columns: 3,
+            content: {
+              type: "doc",
+              content: [
+                {
+                  type: "keyNumbersItem",
+                  attrs: { id: "metric-1" },
+                  content: [
+                    {
+                      type: "keyNumbersValue",
+                      content: [{ type: "text", text: "99%" }],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    }).success
+  ).toBe(false)
+})
+
 test("the web-design blueprint produces a complete valid proposal", () => {
   const draft = createProposalDraftFromBlueprint({
     id: "proposal-1",
