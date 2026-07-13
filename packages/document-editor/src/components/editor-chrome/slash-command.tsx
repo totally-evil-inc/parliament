@@ -1,5 +1,4 @@
 import { useEffect, useImperativeHandle, useRef, useState } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
 import { Extension } from "@tiptap/core"
 import { ReactRenderer } from "@tiptap/react"
 import Suggestion from "@tiptap/suggestion"
@@ -98,10 +97,7 @@ export function SlashCommandList({
                 className={`flex cursor-pointer items-center gap-2 px-2 py-1 ${index === selectedIndex ? "bg-accent text-accent-foreground" : ""}`}
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-background">
-                  <HugeiconsIcon
-                    icon={item.icon as never}
-                    className="h-4 w-4"
-                  />
+                  <item.icon className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{item.title}</p>

@@ -8,12 +8,7 @@ import {
 
 import { cn } from "@workspace/ui/lib/utils"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  ArrowDownIcon,
-} from "@hugeicons/core-free-icons"
+import { IconArrowBoldLeft, IconArrowBoldRight, IconArrowBoldDown } from "nucleo-glass"
 
 function Calendar({
   className,
@@ -150,9 +145,7 @@ function Calendar({
         Chevron: ({ className, orientation, ...props }) => {
           if (orientation === "left") {
             return (
-              <HugeiconsIcon
-                icon={ArrowLeftIcon}
-                strokeWidth={2}
+              <IconArrowBoldLeft
                 className={cn("size-4", className)}
                 {...props}
               />
@@ -161,9 +154,7 @@ function Calendar({
 
           if (orientation === "right") {
             return (
-              <HugeiconsIcon
-                icon={ArrowRightIcon}
-                strokeWidth={2}
+              <IconArrowBoldRight
                 className={cn("size-4", className)}
                 {...props}
               />
@@ -171,9 +162,7 @@ function Calendar({
           }
 
           return (
-            <HugeiconsIcon
-              icon={ArrowDownIcon}
-              strokeWidth={2}
+            <IconArrowBoldDown
               className={cn("size-4", className)}
               {...props}
             />

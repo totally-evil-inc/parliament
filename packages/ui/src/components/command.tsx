@@ -15,8 +15,7 @@ import {
   InputGroup,
   InputGroupAddon,
 } from "@workspace/ui/components/input-group"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { SearchIcon, Tick02Icon } from "@hugeicons/core-free-icons"
+import { IconMagnifier, IconCircleCheck } from "nucleo-glass"
 
 function Command({
   className,
@@ -83,9 +82,7 @@ function CommandInput({
           {...props}
         />
         <InputGroupAddon>
-          <HugeiconsIcon
-            icon={SearchIcon}
-            strokeWidth={2}
+          <IconMagnifier
             className="size-3.5 shrink-0 opacity-50"
           />
         </InputGroupAddon>
@@ -167,9 +164,7 @@ function CommandItem({
       {...props}
     >
       {children}
-      <HugeiconsIcon
-        icon={Tick02Icon}
-        strokeWidth={2}
+      <IconCircleCheck
         className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100"
       />
     </CommandPrimitive.Item>

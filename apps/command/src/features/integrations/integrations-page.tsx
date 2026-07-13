@@ -1,9 +1,5 @@
 import * as React from "react"
-import {
-  ArrowUpRightIcon,
-  CheckmarkCircle01Icon,
-} from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { IconArrowBoldRight, IconCircleCheck } from "nucleo-glass"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -124,15 +120,12 @@ function IntegrationCard({ integration }: { integration: Integration }) {
           {connected ? (
             <>
               Manage
-              <HugeiconsIcon
-                icon={CheckmarkCircle01Icon}
-                data-icon="inline-end"
-              />
+              <IconCircleCheck data-icon="inline-end" />
             </>
           ) : (
             <>
               Connect
-              <HugeiconsIcon icon={ArrowUpRightIcon} data-icon="inline-end" />
+              <IconArrowBoldRight data-icon="inline-end" />
             </>
           )}
         </Button>

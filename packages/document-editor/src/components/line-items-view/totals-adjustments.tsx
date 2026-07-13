@@ -1,5 +1,4 @@
-import { Cancel01Icon, PlusSignIcon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { IconDeleteX, IconDuplicatePlus } from "nucleo-glass"
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
 import { cn } from "@workspace/ui/lib/utils"
@@ -86,7 +85,7 @@ export function TotalsAdjustments({
               onClick={() => updateAttributes({ discountEnabled: true })}
               className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider uppercase text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
             >
-              <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
+              <IconDuplicatePlus className="h-3 w-3" />
               Discount
             </Button>
           ) : null}
@@ -98,7 +97,7 @@ export function TotalsAdjustments({
               onClick={() => updateAttributes({ taxEnabled: true })}
               className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider uppercase text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
             >
-              <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
+              <IconDuplicatePlus className="h-3 w-3" />
               Tax
             </Button>
           ) : null}
@@ -161,7 +160,7 @@ function AdjustmentRow({
           className="h-5 w-5 text-[var(--document-muted-foreground)] hover:text-destructive"
           aria-label={`Remove ${label.toLowerCase()}`}
         >
-          <HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
+          <IconDeleteX className="h-3 w-3" />
         </Button>
       </div>
       <div className="ml-auto flex items-center gap-1 text-[var(--document-muted-foreground)]">

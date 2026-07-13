@@ -20,20 +20,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { Calendar } from "@workspace/ui/components/calendar"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  FilterIcon,
-  SearchIcon,
-  MoreHorizontalIcon,
-  GridViewIcon,
-  ListViewIcon,
-  DollarCircleIcon,
-  CheckmarkCircle01Icon,
-  CancelCircleIcon,
-  PlusSignIcon,
-  FileDollarIcon,
-  Calendar01Icon,
-} from "@hugeicons/core-free-icons"
+import { IconBan, IconBulletList, IconCalendar, IconCircleCheck, IconCircleCoin, IconCircleCopyPlus, IconDots, IconGrid, IconMagnifier, IconMoneyBill, IconSlidersVertical } from "nucleo-glass"
 import { PageHeader } from "@/components/page-header"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { useProposalsFilter } from "@/hooks/use-proposals-filter"
@@ -195,7 +182,7 @@ function ProposalsRoute() {
                   />
                 }
               >
-                <HugeiconsIcon icon={Calendar01Icon} className="w-3.5 h-3.5" />
+                <IconCalendar className="w-3.5 h-3.5" />
                 {dateRange?.from ? (
                   dateRange.to ? (
                     <>
@@ -226,7 +213,7 @@ function ProposalsRoute() {
               onClick={() => createDraft.mutate()}
               disabled={createDraft.isPending}
             >
-              <HugeiconsIcon icon={PlusSignIcon} className="w-3.5 h-3.5" />
+              <IconCircleCopyPlus className="w-3.5 h-3.5" />
               {createDraft.isPending ? "Creating..." : "New Proposal"}
             </Button>
           </div>
@@ -241,7 +228,7 @@ function ProposalsRoute() {
             <div className="flex justify-between items-start">
               <span className="text-xs font-medium text-neutral-400">Total Proposed</span>
               <div className="p-1.5 rounded-lg bg-neutral-800/40 text-neutral-400 border border-neutral-800">
-                <HugeiconsIcon icon={FileDollarIcon} className="w-4 h-4" />
+                <IconMoneyBill className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3">
@@ -260,7 +247,7 @@ function ProposalsRoute() {
             <div className="flex justify-between items-start">
               <span className="text-xs font-medium text-neutral-400">Accepted</span>
               <div className="p-1.5 rounded-lg bg-neutral-800/40 text-neutral-400 border border-neutral-800">
-                <HugeiconsIcon icon={CheckmarkCircle01Icon} className="w-4 h-4" />
+                <IconCircleCheck className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3">
@@ -279,7 +266,7 @@ function ProposalsRoute() {
             <div className="flex justify-between items-start">
               <span className="text-xs font-medium text-neutral-400">Pending</span>
               <div className="p-1.5 rounded-lg bg-neutral-800/40 text-neutral-400 border border-neutral-800">
-                <HugeiconsIcon icon={DollarCircleIcon} className="w-4 h-4" />
+                <IconCircleCoin className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3">
@@ -298,7 +285,7 @@ function ProposalsRoute() {
             <div className="flex justify-between items-start">
               <span className="text-xs font-medium text-neutral-400">Rejected</span>
               <div className="p-1.5 rounded-lg bg-neutral-800/40 text-neutral-400 border border-neutral-800">
-                <HugeiconsIcon icon={CancelCircleIcon} className="w-4 h-4" />
+                <IconBan className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3">
@@ -327,10 +314,10 @@ function ProposalsRoute() {
               {/* Layout Switcher */}
               <div className="flex items-center bg-neutral-900/60 border border-neutral-800/80 rounded-lg p-0.5">
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-white bg-neutral-800 rounded">
-                  <HugeiconsIcon icon={ListViewIcon} className="w-3.5 h-3.5" />
+                  <IconBulletList className="w-3.5 h-3.5" />
                 </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-neutral-500 hover:text-neutral-300">
-                  <HugeiconsIcon icon={GridViewIcon} className="w-3.5 h-3.5" />
+                  <IconGrid className="w-3.5 h-3.5" />
                 </Button>
               </div>
 
@@ -339,14 +326,13 @@ function ProposalsRoute() {
                 variant="outline"
                 className="bg-neutral-900/60 border-neutral-800/80 hover:bg-neutral-800/50 text-xs gap-1.5 h-8 rounded-lg cursor-pointer"
               >
-                <HugeiconsIcon icon={FilterIcon} className="w-3.5 h-3.5" />
+                <IconSlidersVertical className="w-3.5 h-3.5" />
                 Filters
               </Button>
 
               {/* Search bar */}
               <div className="relative w-full sm:w-[220px]">
-                <HugeiconsIcon
-                  icon={SearchIcon}
+                <IconMagnifier
                   className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-neutral-500"
                 />
                 <Input
@@ -465,8 +451,7 @@ function ProposalsRoute() {
                                 />
                               }
                             >
-                              <HugeiconsIcon
-                                icon={MoreHorizontalIcon}
+                              <IconDots
                                 className="w-3.5 h-3.5"
                               />
                             </DropdownMenuTrigger>

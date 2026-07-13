@@ -13,6 +13,9 @@
 @source "../**/*.{ts,tsx}";
 
 :root {
+  --nc-gradient-1-color-1: var(--foreground);
+  --nc-gradient-1-color-2: color-mix(in oklch, var(--foreground) 60%, black);
+  --nc-light: transparent;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -55,6 +58,9 @@
 }
 
 .dark {
+  --nc-gradient-1-color-1: var(--foreground);
+  --nc-gradient-1-color-2: color-mix(in oklch, var(--foreground) 70%, white);
+  --nc-light: transparent;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

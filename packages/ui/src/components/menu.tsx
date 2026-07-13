@@ -2,8 +2,7 @@
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import type * as React from "react"
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { IconArrowBoldRight } from "nucleo-glass"
 import { cn } from "@workspace/ui/lib/utils"
 
 export const MenuCreateHandle: typeof MenuPrimitive.createHandle =
@@ -276,9 +275,7 @@ export function MenuSubTrigger({
       {...props}
     >
       {children}
-      <HugeiconsIcon
-        icon={ArrowRight01Icon}
-        strokeWidth={2}
+      <IconArrowBoldRight
         className="ms-auto -me-0.5 opacity-80"
       />
     </MenuPrimitive.SubmenuTrigger>

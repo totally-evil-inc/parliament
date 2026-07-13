@@ -11,15 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { SidebarMenuButton } from "@workspace/ui/components/sidebar"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  ComputerIcon,
-  CreditCardIcon,
-  Logout01Icon,
-  Moon02Icon,
-  Sun02Icon,
-  UserIcon,
-} from "@hugeicons/core-free-icons"
+import { IconBrightnessIncrease, IconCloudMoon, IconCreditCards, IconExpandWindow, IconMonitor, IconUser } from "nucleo-glass"
 import type { WorkspaceUserProfile } from "@/features/workspace/config"
 import type { ThemePreference } from "@/components/theme-provider"
 import { authClient } from "@/lib/auth-client"
@@ -29,11 +21,11 @@ import { useTheme } from "@/components/theme-provider"
 function ThemeIcon({ preference }: { preference: ThemePreference }) {
   switch (preference) {
     case "light":
-      return <HugeiconsIcon icon={Sun02Icon} />
+      return <IconBrightnessIncrease />
     case "dark":
-      return <HugeiconsIcon icon={Moon02Icon} />
+      return <IconCloudMoon />
     default:
-      return <HugeiconsIcon icon={ComputerIcon} />
+      return <IconMonitor />
   }
 }
 
@@ -103,11 +95,11 @@ export function AccountMenu({ user }: { user: WorkspaceUserProfile }) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <HugeiconsIcon icon={UserIcon} />
+            <IconUser />
             Profile
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <HugeiconsIcon icon={CreditCardIcon} />
+            <IconCreditCards />
             Billing
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -136,7 +128,7 @@ export function AccountMenu({ user }: { user: WorkspaceUserProfile }) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={handleSignOut} variant="destructive">
-            <HugeiconsIcon icon={Logout01Icon} />
+            <IconExpandWindow />
             Sign out
           </DropdownMenuItem>
         </DropdownMenuGroup>

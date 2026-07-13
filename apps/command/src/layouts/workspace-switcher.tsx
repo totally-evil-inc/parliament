@@ -8,12 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  Add01Icon,
-  ArrowDown01Icon,
-  Tick01Icon,
-} from "@hugeicons/core-free-icons"
+import { IconArrowBoldDown, IconCircleCheck, IconCircleCopyPlus } from "nucleo-glass"
 import { useWorkspace } from "./workspace-provider"
 import type { CreatedOrg } from "@/features/workspace/components/create-workspace-form"
 import { CreateWorkspaceModal } from "@/features/workspace/components/create-workspace-modal"
@@ -61,11 +56,7 @@ export function WorkspaceSwitcher() {
               {displaySlug}
             </span>
           </span>
-          <HugeiconsIcon
-            icon={ArrowDown01Icon}
-            strokeWidth={2}
-            className="size-3.5 opacity-60 group-data-[collapsible=icon]:hidden"
-          />
+          <IconArrowBoldDown className="size-3.5 opacity-60 group-data-[collapsible=icon]:hidden" />
         </DropdownMenuTrigger>
 
         <DropdownMenuContent
@@ -95,11 +86,7 @@ export function WorkspaceSwitcher() {
                     </span>
                   </span>
                   {isActive ? (
-                    <HugeiconsIcon
-                      icon={Tick01Icon}
-                      strokeWidth={2}
-                      className="size-3.5 text-muted-foreground"
-                    />
+                    <IconCircleCheck className="size-3.5 text-muted-foreground" />
                   ) : null}
                 </DropdownMenuItem>
               )
@@ -107,7 +94,7 @@ export function WorkspaceSwitcher() {
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setCreateOpen(true)}>
-            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
+            <IconCircleCopyPlus />
             Create workspace
           </DropdownMenuItem>
         </DropdownMenuContent>

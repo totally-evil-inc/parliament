@@ -1,5 +1,4 @@
-import { SearchIcon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { IconMagnifier } from "nucleo-glass"
 import {
   Tooltip,
   TooltipContent,
@@ -18,7 +17,7 @@ export function SidebarSearch() {
           />
         }
       >
-        <HugeiconsIcon icon={SearchIcon} strokeWidth={2} className="size-3.5" />
+        <IconMagnifier className="size-3.5" />
         <span className="min-w-0 flex-1 truncate group-data-[collapsible=icon]:hidden">
           Quick find...
         </span>

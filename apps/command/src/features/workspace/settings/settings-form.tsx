@@ -1,6 +1,5 @@
 import { useId } from "react"
-import { ImageUpload01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { IconFileUpload } from "nucleo-glass"
 import { Button } from "@workspace/ui/components/button"
 import {
   Field,
@@ -57,7 +56,7 @@ export function SettingsForm({ values, onChange }: SettingsFormProps) {
           <div className="size-14 rounded-lg bg-gradient-to-br from-primary/40 to-primary/10 ring-1 ring-border/60" />
           <div className="min-w-0 flex-1">
             <Button size="sm" variant="outline" type="button">
-              <HugeiconsIcon icon={ImageUpload01Icon} strokeWidth={2} />
+              <IconFileUpload />
               Upload avatar
             </Button>
             <p className="mt-1.5 text-xs text-muted-foreground">

@@ -8,12 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { cn } from "@workspace/ui/lib/utils"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  ArrowRight01Icon,
-  Cancel01Icon,
-  Tick01Icon,
-} from "@hugeicons/core-free-icons"
+import { IconArrowBoldRight, IconCircleCheck, IconDeleteX } from "nucleo-glass"
 import type { ClipboardEvent, KeyboardEvent } from "react"
 import { authClient } from "@/lib/auth-client"
 
@@ -208,9 +203,7 @@ export function InviteTeammatesForm({
                     onClick={() => setDefaultRole(r.value)}
                     className="flex items-start gap-2"
                   >
-                    <HugeiconsIcon
-                      icon={Tick01Icon}
-                      strokeWidth={2}
+                    <IconCircleCheck
                       className={cn(
                         "mt-0.5 size-3.5 shrink-0",
                         defaultRole === r.value ? "opacity-100" : "opacity-0"
@@ -295,7 +288,7 @@ export function InviteTeammatesForm({
                 : validChips.length > 0
                   ? `Send ${validChips.length} invite${validChips.length === 1 ? "" : "s"}`
                   : "Send invites"}
-              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
+              <IconArrowBoldRight />
             </Button>
           </div>
         )}
@@ -370,9 +363,7 @@ function EmailChip({
                 onClick={() => onRoleChange(r.value)}
                 className="flex items-start gap-2"
               >
-                <HugeiconsIcon
-                  icon={Tick01Icon}
-                  strokeWidth={2}
+                <IconCircleCheck
                   className={cn(
                     "mt-0.5 size-3.5 shrink-0",
                     chip.role === r.value ? "opacity-100" : "opacity-0"
@@ -400,7 +391,7 @@ function EmailChip({
         aria-label={`Remove ${chip.email}`}
         className="flex size-5 items-center justify-center rounded-full opacity-50 hover:bg-foreground/[0.06] hover:opacity-100"
       >
-        <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-3" />
+        <IconDeleteX className="size-3" />
       </button>
     </span>
   )

@@ -25,13 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  Delete01Icon,
-  MailSend01Icon,
-  More01Icon,
-  Shield01Icon,
-} from "@hugeicons/core-free-icons"
+import { IconCircleDotsVertical, IconDeleteX, IconEnvelope, IconLock } from "nucleo-glass"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { authClient } from "@/lib/auth-client"
 
@@ -189,11 +183,7 @@ export function MembersTable({
                 <TableCell>
                   {isOwner ? (
                     <Badge variant="outline" className="gap-1.5">
-                      <HugeiconsIcon
-                        icon={Shield01Icon}
-                        strokeWidth={2}
-                        className="size-3"
-                      />
+                      <IconLock className="size-3" />
                       Owner
                     </Badge>
                   ) : (
@@ -236,11 +226,7 @@ export function MembersTable({
                           />
                         }
                       >
-                        <HugeiconsIcon
-                          icon={More01Icon}
-                          strokeWidth={2}
-                          className="size-4"
-                        />
+                        <IconCircleDotsVertical className="size-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-44">
                         <DropdownMenuItem
@@ -249,10 +235,7 @@ export function MembersTable({
                             window.open(`mailto:${member.user.email}`)
                           }
                         >
-                          <HugeiconsIcon
-                            icon={MailSend01Icon}
-                            strokeWidth={2}
-                          />
+                          <IconEnvelope />
                           Send email
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -260,7 +243,7 @@ export function MembersTable({
                           variant="destructive"
                           onClick={() => void handleRemove(member)}
                         >
-                          <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
+                          <IconDeleteX />
                           Remove
                         </DropdownMenuItem>
                       </DropdownMenuContent>
