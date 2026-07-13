@@ -5,6 +5,7 @@ import { z } from "zod"
 import { finalizeProposalDraft as buildSnapshotPayload } from "@workspace/document/finalize"
 import { createProposalDraftFromBlueprint } from "@workspace/document/proposal"
 import { safeParseProposalDraft } from "@workspace/document/schema"
+import { calculateProposalPricing } from "@workspace/document/calculate"
 import { and, count, db, desc, eq, schema, sql } from "@workspace/database"
 import { requireAuth } from "./auth"
 import type { JsonValue } from "./api-client"
@@ -42,6 +43,11 @@ export type ProposalDraftListItem = {
   lastViewedAt: string | null
   acceptedAt: string | null
   publicToken: string | null
+  customerName: string
+  issueDate: string
+  validUntil: string | null
+  valueMinor: number
+  currency: string
 }
 
 export type PersistedProposalDraft = {
@@ -153,6 +159,28 @@ export const listProposalDrafts = createServerFn({ method: "GET" })
           .orderBy(desc(schema.proposalAcceptance.acceptedAt))
           .limit(1)
 
+        const parsed = safeParseProposalDraft(row.document)
+        let valueMinor = 0
+        let currency = "KES"
+        let customerName = ""
+        let issueDate = row.createdAt.toISOString().split("T")[0]
+        let validUntil: string | null = null
+
+        if (parsed.success) {
+          customerName = parsed.data.data.customer.name
+          issueDate = parsed.data.data.issueDate
+          validUntil = parsed.data.data.validUntil ?? null
+          if (parsed.data.data.pricing) {
+            try {
+              const calc = calculateProposalPricing(parsed.data.data.pricing)
+              valueMinor = calc.totalMinor
+              currency = parsed.data.data.pricing.currency
+            } catch (e) {
+              // ignore
+            }
+          }
+        }
+
         return {
           id: row.id,
           title: row.title,
@@ -164,6 +192,11 @@ export const listProposalDrafts = createServerFn({ method: "GET" })
           lastViewedAt: viewSummary?.lastViewedAt?.toISOString() ?? null,
           acceptedAt: latestAcceptance[0]?.acceptedAt.toISOString() ?? null,
           publicToken: latestLink[0]?.token ?? null,
+          customerName,
+          issueDate,
+          validUntil,
+          valueMinor,
+          currency,
         }
       })
     )
