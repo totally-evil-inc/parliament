@@ -1,4 +1,3 @@
-import { useState } from "react"
 import {
   useMutation,
   useQueryClient,
@@ -16,12 +15,11 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover"
+import { Calendar } from "@workspace/ui/components/calendar"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   FilterIcon,
@@ -34,10 +32,13 @@ import {
   CancelCircleIcon,
   PlusSignIcon,
   FileDollarIcon,
+  Calendar01Icon,
 } from "@hugeicons/core-free-icons"
 import { PageHeader } from "@/components/page-header"
+import { useConfirm } from "@/components/confirm-dialog-provider"
+import { useProposalsFilter } from "@/hooks/use-proposals-filter"
 import { proposalDraftsQuery } from "@/api/proposals"
-import { createProposalDraft } from "@/server/proposals"
+import { createProposalDraft, deleteProposalDraft } from "@/server/proposals"
 import type { PersistedProposalDraft, ProposalDraftListItem } from "@/server/proposals"
 import { formatMoneyMinor, formatDateOnly } from "@workspace/document/calculate"
 
@@ -48,61 +49,22 @@ export const Route = createFileRoute("/_workspace/proposals/")({
   component: ProposalsRoute,
 })
 
-type TimeFilter = "30-days" | "this-month" | "last-month" | "this-year" | "all"
-
-function getPeriodRanges(filter: TimeFilter, referenceDate: Date = new Date()) {
-  let currentStart = new Date(0)
-  let currentEnd = new Date(referenceDate)
-  let prevStart = new Date(0)
-  let prevEnd = new Date(0)
-  let showTrend = true
-
-  const now = new Date(referenceDate)
-
-  if (filter === "30-days") {
-    currentStart = new Date(now)
-    currentStart.setDate(now.getDate() - 30)
-    currentEnd = now
-
-    prevStart = new Date(currentStart)
-    prevStart.setDate(currentStart.getDate() - 30)
-    prevEnd = currentStart
-  } else if (filter === "this-month") {
-    currentStart = new Date(now.getFullYear(), now.getMonth(), 1)
-    currentEnd = now
-
-    prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    prevEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
-  } else if (filter === "last-month") {
-    currentStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    currentEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
-
-    prevStart = new Date(now.getFullYear(), now.getMonth() - 2, 1)
-    prevEnd = new Date(now.getFullYear(), now.getMonth() - 1, 0, 23, 59, 59, 999)
-  } else if (filter === "this-year") {
-    currentStart = new Date(now.getFullYear(), 0, 1)
-    currentEnd = now
-
-    prevStart = new Date(now.getFullYear() - 1, 0, 1)
-    prevEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999)
-  } else {
-    showTrend = false
-  }
-
-  return { currentStart, currentEnd, prevStart, prevEnd, showTrend }
-}
-
-const isProposalInPeriod = (pDate: Date, start: Date, end: Date) => {
-  return pDate >= start && pDate <= end
-}
-
 function ProposalsRoute() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const confirm = useConfirm()
   const { data: proposals } = useSuspenseQuery(proposalDraftsQuery)
 
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>("30-days")
-  const [searchQuery, setSearchQuery] = useState("")
+  const {
+    dateRange,
+    setDateRange,
+    searchQuery,
+    setSearchQuery,
+    filteredList,
+    currentStats,
+    trends,
+    showTrend,
+  } = useProposalsFilter(proposals)
 
   const createDraft = useMutation({
     mutationFn: () =>
@@ -117,78 +79,14 @@ function ProposalsRoute() {
     },
   })
 
-  // 1. Calculate Period Filter Boundaries
-  const ranges = getPeriodRanges(timeFilter)
-
-  // 2. Filter proposals for current active period statistics
-  const currentPeriodProposals = proposals.filter((p) => {
-    if (timeFilter === "all") return true
-    const pDate = new Date(p.issueDate)
-    return isProposalInPeriod(pDate, ranges.currentStart, ranges.currentEnd)
+  const deleteDraft = useMutation({
+    mutationFn: (id: string) => deleteProposalDraft({ data: { id } }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["proposals"] })
+    },
   })
 
-  const prevPeriodProposals = proposals.filter((p) => {
-    if (!ranges.showTrend) return false
-    const pDate = new Date(p.issueDate)
-    return isProposalInPeriod(pDate, ranges.prevStart, ranges.prevEnd)
-  })
-
-  // 3. Helper to sum up pricing total
-  const getStats = (list: ProposalDraftListItem[]) => {
-    const totalProposedList = list.filter((p) => p.status !== "draft")
-    const totalProposedSum = totalProposedList.reduce((sum, p) => sum + p.valueMinor, 0)
-
-    const acceptedList = list.filter((p) => p.status === "accepted")
-    const acceptedSum = acceptedList.reduce((sum, p) => sum + p.valueMinor, 0)
-
-    const pendingList = list.filter((p) => p.status === "sent")
-    const pendingSum = pendingList.reduce((sum, p) => sum + p.valueMinor, 0)
-
-    const rejectedList = list.filter((p) => p.status === "rejected")
-    const rejectedSum = rejectedList.reduce((sum, p) => sum + p.valueMinor, 0)
-
-    return {
-      proposedSum: totalProposedSum,
-      proposedCount: totalProposedList.length,
-      acceptedSum,
-      acceptedCount: acceptedList.length,
-      pendingSum,
-      pendingCount: pendingList.length,
-      rejectedSum,
-      rejectedCount: rejectedList.length,
-    }
-  }
-
-  const currentStats = getStats(currentPeriodProposals)
-  const prevStats = getStats(prevPeriodProposals)
-
-  const getTrendPercentage = (curr: number, prev: number) => {
-    if (prev === 0) {
-      if (curr === 0) return 0
-      return 100
-    }
-    return Math.round(((curr - prev) / prev) * 100)
-  }
-
-  const trends = {
-    proposed: getTrendPercentage(currentStats.proposedSum, prevStats.proposedSum),
-    accepted: getTrendPercentage(currentStats.acceptedSum, prevStats.acceptedSum),
-    pending: getTrendPercentage(currentStats.pendingSum, prevStats.pendingSum),
-    rejected: getTrendPercentage(currentStats.rejectedSum, prevStats.rejectedSum),
-  }
-
-  // 4. Search Filter for main Proposals List
-  const filteredList = proposals.filter((p) => {
-    if (!searchQuery) return true
-    const q = searchQuery.toLowerCase()
-    return (
-      p.title.toLowerCase().includes(q) ||
-      p.customerName.toLowerCase().includes(q) ||
-      (p.status && p.status.toLowerCase().includes(q))
-    )
-  })
-
-  // 5. Monthly Grouping function
+  // Monthly Grouping function
   const groupProposalsByMonth = (list: ProposalDraftListItem[]) => {
     const groups: {
       [key: string]: {
@@ -246,8 +144,24 @@ function ProposalsRoute() {
     return name.slice(0, 2).toUpperCase()
   }
 
+  const handleDelete = async (id: string, title: string) => {
+    const isConfirmed = await confirm({
+      title: "Delete proposal",
+      description: `Are you sure you want to delete "${
+        title || "Untitled proposal"
+      }"? This action cannot be undone.`,
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      variant: "destructive",
+    })
+
+    if (isConfirmed) {
+      deleteDraft.mutate(id)
+    }
+  }
+
   const renderTrendBadge = (val: number) => {
-    if (!ranges.showTrend) return null
+    if (!showTrend) return null
     const isNegative = val < 0
     const text = isNegative ? `${val}%` : `+${val}%`
     
@@ -272,25 +186,43 @@ function ProposalsRoute() {
         description="Track proposed value, acceptance and pipeline."
         action={
           <div className="flex items-center gap-3">
-            <Select
-              value={timeFilter}
-              onValueChange={(val: any) => val && setTimeFilter(val as TimeFilter)}
-            >
-              <SelectTrigger className="w-[140px] bg-neutral-900 border-neutral-800 text-xs text-neutral-300 rounded-lg">
-                <SelectValue placeholder="Select period" />
-              </SelectTrigger>
-              <SelectContent className="bg-neutral-900 border-neutral-800 text-neutral-300">
-                <SelectItem value="30-days">Last 30 Days</SelectItem>
-                <SelectItem value="this-month">This Month</SelectItem>
-                <SelectItem value="last-month">Last Month</SelectItem>
-                <SelectItem value="this-year">This Year</SelectItem>
-                <SelectItem value="all">All Time</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    className="bg-neutral-900 border-neutral-800 text-xs text-neutral-300 rounded-lg flex items-center gap-2 h-9 cursor-pointer"
+                  />
+                }
+              >
+                <HugeiconsIcon icon={Calendar01Icon} className="w-3.5 h-3.5" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {formatDateOnly(dateRange.from.toISOString().split("T")[0], "en-US")} -{" "}
+                      {formatDateOnly(dateRange.to.toISOString().split("T")[0], "en-US")}
+                    </>
+                  ) : (
+                    formatDateOnly(dateRange.from.toISOString().split("T")[0], "en-US")
+                  )
+                ) : (
+                  <span>Pick a date range</span>
+                )}
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-neutral-900 border-neutral-800" align="end">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  className="bg-neutral-900 text-neutral-300"
+                />
+              </PopoverContent>
+            </Popover>
 
             <Button
               type="button"
-              className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs py-2 px-4 rounded-full flex items-center gap-2 border-0 cursor-pointer"
+              className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs py-2 px-4 rounded-full flex items-center gap-2 border-0 cursor-pointer h-9"
               onClick={() => createDraft.mutate()}
               disabled={createDraft.isPending}
             >
@@ -578,6 +510,13 @@ function ProposalsRoute() {
                                   Copy public link
                                 </DropdownMenuItem>
                               )}
+                              <DropdownMenuItem
+                                variant="destructive"
+                                className="cursor-pointer text-xs text-red-500 focus:text-red-500 focus:bg-red-500/10"
+                                onClick={() => handleDelete(proposal.id, proposal.title)}
+                              >
+                                Delete
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

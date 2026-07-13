@@ -6,7 +6,7 @@ import { finalizeProposalDraft as buildSnapshotPayload } from "@workspace/docume
 import { createProposalDraftFromBlueprint } from "@workspace/document/proposal"
 import { safeParseProposalDraft } from "@workspace/document/schema"
 import { calculateProposalPricing } from "@workspace/document/calculate"
-import { and, count, db, desc, eq, schema, sql } from "@workspace/database"
+import { and, count, db, desc, eq, inArray, schema, sql } from "@workspace/database"
 import { requireAuth } from "./auth"
 import type { JsonValue } from "./api-client"
 import type { AuthenticatedCommandAuthContext } from "./auth-context"
@@ -523,3 +523,49 @@ function createPublicToken() {
 function toJsonValue(value: unknown): JsonValue {
   return JSON.parse(JSON.stringify(value)) as JsonValue
 }
+
+export const deleteProposalDraft = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const organizationId = await requireActiveOrganization(context.auth)
+    
+    await db.transaction(async (tx) => {
+      const snapshots = await tx
+        .select({ id: schema.proposalSnapshot.id })
+        .from(schema.proposalSnapshot)
+        .where(eq(schema.proposalSnapshot.proposalDraftId, data.id))
+      
+      const snapshotIds = snapshots.map((s) => s.id)
+      
+      if (snapshotIds.length > 0) {
+        await tx
+          .delete(schema.proposalEvent)
+          .where(inArray(schema.proposalEvent.proposalSnapshotId, snapshotIds))
+          
+        await tx
+          .delete(schema.proposalAcceptance)
+          .where(inArray(schema.proposalAcceptance.proposalSnapshotId, snapshotIds))
+          
+        await tx
+          .delete(schema.proposalPublicLink)
+          .where(inArray(schema.proposalPublicLink.proposalSnapshotId, snapshotIds))
+          
+        await tx
+          .delete(schema.proposalSnapshot)
+          .where(eq(schema.proposalSnapshot.proposalDraftId, data.id))
+      }
+      
+      await tx
+        .delete(schema.proposalDraft)
+        .where(
+          and(
+            eq(schema.proposalDraft.id, data.id),
+            eq(schema.proposalDraft.organizationId, organizationId)
+          )
+        )
+    })
+    
+    return { success: true }
+  })
+
