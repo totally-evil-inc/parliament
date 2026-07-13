@@ -72,6 +72,12 @@ apps/command  (TanStack Start + React, orchestration)
 @workspace/database: .
 ```
 
+## Styling convention
+
+- All design tokens and component CSS live in `packages/ui/src/styles/globals.css` (`@layer base`, `@layer components`, `@layer utilities`).
+- Components must **not** use hard-coded Tailwind values (e.g. `bg-white`, `text-gray-900`). Instead use CSS variable tokens mapped through `@theme inline` (e.g. `bg-background`, `text-foreground`, `border-border`).
+- This keeps theming (light/dark mode) centralized and makes refactoring safe.
+
 ## Git conventions
 
 - Commits are not frequent; no conventional commit standard enforced.
