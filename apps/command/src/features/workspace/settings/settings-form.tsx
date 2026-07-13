@@ -1,5 +1,3 @@
-import { useId } from "react"
-import { IconFileUpload } from "nucleo-glass"
 import { Button } from "@workspace/ui/components/button"
 import {
   Field,
@@ -13,6 +11,8 @@ import {
   NativeSelectOption,
 } from "@workspace/ui/components/native-select"
 import { Switch } from "@workspace/ui/components/switch"
+import { IconFileUpload } from "nucleo-glass"
+import { useId } from "react"
 import { SettingsSection } from "./settings-section"
 
 export type WorkspaceSettingsValues = {
@@ -59,7 +59,7 @@ export function SettingsForm({ values, onChange }: SettingsFormProps) {
               <IconFileUpload />
               Upload avatar
             </Button>
-            <p className="mt-1.5 text-xs text-muted-foreground">
+            <p className="mt-1.5 text-muted-foreground text-xs">
               PNG or SVG, 1024x1024 max.
             </p>
           </div>

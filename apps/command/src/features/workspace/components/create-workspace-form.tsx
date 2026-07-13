@@ -1,4 +1,3 @@
-import { useRef, useState } from "react"
 import { useForm } from "@tanstack/react-form"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -10,6 +9,7 @@ import {
 } from "@workspace/ui/components/input-group"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
+import { useRef, useState } from "react"
 import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
 import { slugify } from "@/features/auth/onboarding/onboarding-draft"
 import { useSlugAvailability } from "@/features/workspace/hooks/use-slug-availability"
@@ -86,7 +86,7 @@ export function CreateWorkspaceForm({
       className={cn("flex flex-col gap-5", className)}
     >
       {serverError ? (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-destructive text-sm">
           {serverError}
         </p>
       ) : null}
@@ -99,7 +99,7 @@ export function CreateWorkspaceForm({
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="create-workspace-name"
-                className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase"
+                className="block font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]"
               >
                 Workspace name
               </label>
@@ -121,7 +121,7 @@ export function CreateWorkspaceForm({
                 aria-invalid={!!error}
               />
               {error ? (
-                <p className="text-xs text-destructive">{error}</p>
+                <p className="text-destructive text-xs">{error}</p>
               ) : null}
             </div>
           )
@@ -136,7 +136,7 @@ export function CreateWorkspaceForm({
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="create-workspace-slug"
-                className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase"
+                className="block font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]"
               >
                 Workspace URL
               </label>
@@ -170,13 +170,13 @@ export function CreateWorkspaceForm({
                 </InputGroupAddon>
               </InputGroup>
               {error ? (
-                <p className="text-xs text-destructive">{error}</p>
+                <p className="text-destructive text-xs">{error}</p>
               ) : slugState === "taken" ? (
-                <p className="text-xs text-destructive">
+                <p className="text-destructive text-xs">
                   This slug is already taken.
                 </p>
               ) : slugState === "error" ? (
-                <p className="text-xs text-destructive">
+                <p className="text-destructive text-xs">
                   Could not verify availability. Please try again.
                 </p>
               ) : null}

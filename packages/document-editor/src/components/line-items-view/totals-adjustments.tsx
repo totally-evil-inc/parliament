@@ -3,10 +3,9 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
 import { cn } from "@workspace/ui/lib/utils"
+import { CanvasNumberField } from "../canvas-fields"
 import { money, safeNumber } from "./pricing"
 import { Signature } from "./signature-billing-notes"
-
-import { CanvasNumberField } from "../canvas-fields"
 
 type TotalsAdjustmentsProps = {
   subtotal: number
@@ -42,10 +41,10 @@ export function TotalsAdjustments({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+        <span className="font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-widest">
           Subtotal
         </span>
-        <span className="text-sm font-bold tabular-nums text-[var(--document-foreground)]">
+        <span className="font-bold text-[var(--document-foreground)] text-sm tabular-nums">
           {money(subtotal, currency, locale)}
         </span>
       </div>
@@ -84,7 +83,7 @@ export function TotalsAdjustments({
               variant="ghost"
               size="sm"
               onClick={() => updateAttributes({ discountEnabled: true })}
-              className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider uppercase text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
+              className="h-7 gap-1.5 px-2 font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-wider hover:text-[var(--document-foreground)]"
             >
               <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
               Discount
@@ -96,7 +95,7 @@ export function TotalsAdjustments({
               variant="ghost"
               size="sm"
               onClick={() => updateAttributes({ taxEnabled: true })}
-              className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider uppercase text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
+              className="h-7 gap-1.5 px-2 font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-wider hover:text-[var(--document-foreground)]"
             >
               <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
               Tax
@@ -108,10 +107,10 @@ export function TotalsAdjustments({
       <Separator />
 
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold tracking-widest text-[var(--document-foreground)] uppercase">
+        <span className="font-bold text-[10px] text-[var(--document-foreground)] uppercase tracking-widest">
           Total
         </span>
-        <span className="text-2xl font-black tracking-tight text-[var(--document-accent)] tabular-nums">
+        <span className="font-black text-2xl text-[var(--document-accent)] tabular-nums tracking-tight">
           {money(total, currency, locale)}
         </span>
       </div>
@@ -152,7 +151,9 @@ function AdjustmentRow({
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="flex items-center gap-1.5 text-[var(--document-muted-foreground)]">
-        <span className="text-[10px] font-bold tracking-widest uppercase">{label}</span>
+        <span className="font-bold text-[10px] uppercase tracking-widest">
+          {label}
+        </span>
         <Button
           type="button"
           variant="ghost"
@@ -171,11 +172,13 @@ function AdjustmentRow({
           value={rate}
           onValueChange={onRateChange}
         />
-        <span className="text-sm font-bold text-[var(--document-muted-foreground)]">%</span>
+        <span className="font-bold text-[var(--document-muted-foreground)] text-sm">
+          %
+        </span>
       </div>
       <span
         className={cn(
-          "min-w-20 text-right text-sm font-bold tabular-nums",
+          "min-w-20 text-right font-bold text-sm tabular-nums",
           amount < 0 ? "text-destructive" : "text-[var(--document-foreground)]"
         )}
       >

@@ -1,7 +1,7 @@
 "use client"
 
-import { IconBrightnessIncrease, IconCloudMoon } from "nucleo-glass"
 import { Button } from "@workspace/ui/components/button"
+import { IconBrightnessIncrease, IconCloudMoon } from "nucleo-glass"
 import { useTheme } from "@/components/theme-provider"
 
 type ThemeToggleProps = {

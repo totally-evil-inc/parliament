@@ -12,11 +12,11 @@ export function SettingsSection({
   children,
 }: SettingsSectionProps) {
   return (
-    <section className="grid gap-4 border-b border-border/60 py-8 last:border-b-0 md:grid-cols-[180px_minmax(0,1fr)] md:gap-x-10">
+    <section className="grid gap-4 border-border/60 border-b py-8 last:border-b-0 md:grid-cols-[180px_minmax(0,1fr)] md:gap-x-10">
       <div>
-        <h2 className="text-sm font-medium">{title}</h2>
+        <h2 className="font-medium text-sm">{title}</h2>
         {hint ? (
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          <p className="mt-1 text-muted-foreground text-xs leading-relaxed">
             {hint}
           </p>
         ) : null}

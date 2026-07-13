@@ -1,7 +1,7 @@
 import type { AnyExtension, JSONContent, Range } from "@tiptap/core"
 import type { Editor } from "@tiptap/react"
-import type { ReactNode } from "react"
 import type { DocumentTemplate } from "@workspace/document/presentation"
+import type { ReactNode } from "react"
 import type { EditorCommand } from "../commands/types"
 
 export type { DocumentTemplate } from "@workspace/document/presentation"

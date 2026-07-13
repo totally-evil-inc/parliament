@@ -1,4 +1,3 @@
-import { useRef, useState } from "react"
 import { useForm } from "@tanstack/react-form"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -10,6 +9,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 import { IconArrowBoldRight, IconCircleCheck, IconDeleteX } from "nucleo-glass"
 import type { ClipboardEvent, KeyboardEvent } from "react"
+import { useRef, useState } from "react"
 import { authClient } from "@/lib/auth-client"
 
 type Role = "admin" | "member"
@@ -156,7 +156,7 @@ export function InviteTeammatesForm({
       className="flex flex-col gap-5"
     >
       {serverError ? (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-destructive text-sm">
           {serverError}
         </p>
       ) : null}
@@ -165,12 +165,12 @@ export function InviteTeammatesForm({
         <div className="flex items-center justify-between gap-3">
           <label
             htmlFor="invite-teammates-email"
-            className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase"
+            className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]"
           >
             Invitees
           </label>
           <div className="flex items-center gap-2">
-            <span className="hidden font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase sm:inline">
+            <span className="hidden font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em] sm:inline">
               Default role
             </span>
             <DropdownMenu>
@@ -178,7 +178,7 @@ export function InviteTeammatesForm({
                 render={
                   <button
                     type="button"
-                    className="flex h-8 w-28 items-center justify-between rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                    className="flex h-8 w-28 items-center justify-between rounded-md border border-input bg-background px-3 text-foreground text-sm"
                   >
                     {ROLES.find((r) => r.value === defaultRole)?.label}
                     <svg
@@ -211,7 +211,7 @@ export function InviteTeammatesForm({
                     />
                     <div className="flex flex-col">
                       <span>{r.label}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {r.description}
                       </span>
                     </div>
@@ -222,9 +222,7 @@ export function InviteTeammatesForm({
           </div>
         </div>
 
-        <div
-          className="mt-3 flex w-full cursor-text flex-wrap items-center gap-1.5 rounded-lg border border-input bg-background p-2 text-left transition-shadow focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/24"
-        >
+        <div className="mt-3 flex w-full cursor-text flex-wrap items-center gap-1.5 rounded-lg border border-input bg-background p-2 text-left transition-shadow focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/24">
           {chips.map((chip) => (
             <EmailChip
               key={chip.uid}
@@ -252,7 +250,7 @@ export function InviteTeammatesForm({
           />
         </div>
 
-        <div className="mt-2 flex items-center gap-3 font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+        <div className="mt-2 flex items-center gap-3 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
           <span>
             <span className="text-foreground">{validChips.length}</span> to
             invite
@@ -337,7 +335,7 @@ function EmailChip({
             render={
               <button
                 type="button"
-                className="flex h-5 items-center gap-0.5 rounded-full px-1.5 font-mono text-[10px] tracking-[0.18em] text-muted-foreground uppercase transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
+                className="flex h-5 items-center gap-0.5 rounded-full px-1.5 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.18em] transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
               >
                 {ROLES.find((r) => r.value === chip.role)?.label}
                 <svg
@@ -371,7 +369,7 @@ function EmailChip({
                 />
                 <div className="flex flex-col">
                   <span>{r.label}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     {r.description}
                   </span>
                 </div>
@@ -380,7 +378,7 @@ function EmailChip({
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <span className="font-mono text-[9px] tracking-[0.2em] uppercase">
+        <span className="font-mono text-[9px] uppercase tracking-[0.2em]">
           Invalid
         </span>
       )}

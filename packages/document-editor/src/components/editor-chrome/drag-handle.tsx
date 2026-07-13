@@ -1,14 +1,14 @@
-import * as React from "react"
 import { Delete02Icon, Plus } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import type { DragHandleRule } from "@tiptap/extension-drag-handle"
 import DragHandle from "@tiptap/extension-drag-handle-react"
+import type { Editor } from "@tiptap/react"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
-import type { DragHandleRule } from "@tiptap/extension-drag-handle"
-import type { Editor } from "@tiptap/react"
+import * as React from "react"
 import type { EditorCommand } from "../../commands/types"
 
 import {

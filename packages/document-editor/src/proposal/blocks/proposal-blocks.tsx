@@ -7,13 +7,9 @@ import {
   Tick01Icon,
   UserIcon,
 } from "@hugeicons/core-free-icons"
-import { MetricPreview } from "./metric-preview"
-import { TeamPreview } from "./team-preview"
-import { TestimonialPreview } from "./testimonial-preview"
 import type { DocumentBlockDefinition } from "../../core/types"
-
-import { Gallery } from "../extensions/gallery"
 import { Faq } from "../extensions/faq"
+import { Gallery } from "../extensions/gallery"
 import { KeyNumbers } from "../extensions/key-numbers"
 import { ProposalSection } from "../extensions/proposal-section"
 import { TeamMembers } from "../extensions/team-members"
@@ -25,6 +21,9 @@ import {
   ProposalImageText,
   ProposalSignature,
 } from "../extensions/visual-blocks"
+import { MetricPreview } from "./metric-preview"
+import { TeamPreview } from "./team-preview"
+import { TestimonialPreview } from "./testimonial-preview"
 
 const field = (text: string) => ({
   type: "doc",
@@ -104,16 +103,16 @@ const coverMinimalPreview = (
 
 const twoColumnPreview = (
   <div className="grid h-20 w-full grid-cols-2 gap-2">
-    <div className="rounded-lg border-t border-border bg-muted/40" />
-    <div className="rounded-lg border-t border-border bg-muted/40" />
+    <div className="rounded-lg border-border border-t bg-muted/40" />
+    <div className="rounded-lg border-border border-t bg-muted/40" />
   </div>
 )
 
 const threeColumnPreview = (
   <div className="grid h-20 w-full grid-cols-3 gap-1.5">
-    <div className="rounded-lg border-t border-border bg-muted/40" />
-    <div className="rounded-lg border-t border-border bg-muted/40" />
-    <div className="rounded-lg border-t border-border bg-muted/40" />
+    <div className="rounded-lg border-border border-t bg-muted/40" />
+    <div className="rounded-lg border-border border-t bg-muted/40" />
+    <div className="rounded-lg border-border border-t bg-muted/40" />
   </div>
 )
 
@@ -241,7 +240,7 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
           content: paragraph("List the concrete deliverables or constraints."),
         },
         preview: (
-          <div className="flex h-20 w-full flex-col justify-center gap-1.5 border-t border-border/60 pt-3">
+          <div className="flex h-20 w-full flex-col justify-center gap-1.5 border-border/60 border-t pt-3">
             <div className="h-1.5 w-16 rounded-full bg-primary/60" />
             <div className="h-2.5 w-2/3 rounded-full bg-muted/60" />
             <div className="h-1.5 w-4/5 rounded-full bg-muted/40" />
@@ -305,7 +304,7 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
           ),
         },
         preview: (
-          <div className="flex h-20 w-full flex-col justify-center gap-1.5 border-t border-border/60 pt-3">
+          <div className="flex h-20 w-full flex-col justify-center gap-1.5 border-border/60 border-t pt-3">
             <div className="h-1.5 w-16 rounded-full bg-primary/60" />
             <div className="h-2.5 w-3/4 rounded-full bg-muted/60" />
             <div className="h-1.5 w-4/5 rounded-full bg-muted/40" />
@@ -347,7 +346,7 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
           ),
         },
         preview: (
-          <div className="flex h-20 w-full flex-col justify-center gap-1.5 border-t border-border/60 pt-3">
+          <div className="flex h-20 w-full flex-col justify-center gap-1.5 border-border/60 border-t pt-3">
             <div className="h-1.5 w-20 rounded-full bg-primary/60" />
             <div className="h-2.5 w-4/5 rounded-full bg-muted/60" />
             <div className="h-1.5 w-full rounded-full bg-muted/40" />
@@ -492,9 +491,9 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
     },
     preview: (
       <div className="mt-2 grid h-12 w-full grid-cols-3 gap-1.5">
-        <div className="rounded-lg border-t border-border bg-muted/40" />
-        <div className="rounded-lg border-t border-border bg-muted/40" />
-        <div className="rounded-lg border-t border-border bg-muted/40" />
+        <div className="rounded-lg border-border border-t bg-muted/40" />
+        <div className="rounded-lg border-border border-t bg-muted/40" />
+        <div className="rounded-lg border-border border-t bg-muted/40" />
       </div>
     ),
     layouts: [
@@ -639,23 +638,25 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         columns: layout?.attrs?.columns ?? 3,
         variant: layout?.attrs?.variant ?? "vertical",
       },
-      content: (layout?.attrs?.items ?? [
-        {
-          id: "image-card-1",
-          title: field("Strategy"),
-          body: paragraph("Define the right direction before production."),
-        },
-        {
-          id: "image-card-2",
-          title: field("Design"),
-          body: paragraph("Create a polished system for key journeys."),
-        },
-        {
-          id: "image-card-3",
-          title: field("Launch"),
-          body: paragraph("Ship with QA, analytics, and handover."),
-        },
-      ]).map((item: any) => ({
+      content: (
+        layout?.attrs?.items ?? [
+          {
+            id: "image-card-1",
+            title: field("Strategy"),
+            body: paragraph("Define the right direction before production."),
+          },
+          {
+            id: "image-card-2",
+            title: field("Design"),
+            body: paragraph("Create a polished system for key journeys."),
+          },
+          {
+            id: "image-card-3",
+            title: field("Launch"),
+            body: paragraph("Ship with QA, analytics, and handover."),
+          },
+        ]
+      ).map((item: any) => ({
         type: "proposalImageCardItem",
         attrs: { id: item.id, image: item.image },
         content: [
@@ -734,7 +735,7 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
       ],
     }),
     preview: (
-      <div className="mt-2 flex h-12 w-full items-end justify-end border-t border-border pt-2">
+      <div className="mt-2 flex h-12 w-full items-end justify-end border-border border-t pt-2">
         <div className="w-20 space-y-1 text-right">
           <div className="ml-auto h-2 w-16 rounded-full bg-muted/60" />
           <div className="ml-auto h-1.5 w-12 rounded-full bg-muted/40" />
@@ -1187,22 +1188,24 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
       attrs: {
         variant: "list",
       },
-      content: (layout?.attrs?.items ?? [
-        {
-          id: "faq-1",
-          question: field("What happens after approval?"),
-          answer: paragraph(
-            "We confirm stakeholders, collect access, and schedule the kickoff session."
-          ),
-        },
-        {
-          id: "faq-2",
-          question: field("Can the scope change later?"),
-          answer: paragraph(
-            "Yes. We will document any changes and confirm the impact before work continues."
-          ),
-        },
-      ]).map((item: any) => ({
+      content: (
+        layout?.attrs?.items ?? [
+          {
+            id: "faq-1",
+            question: field("What happens after approval?"),
+            answer: paragraph(
+              "We confirm stakeholders, collect access, and schedule the kickoff session."
+            ),
+          },
+          {
+            id: "faq-2",
+            question: field("Can the scope change later?"),
+            answer: paragraph(
+              "Yes. We will document any changes and confirm the impact before work continues."
+            ),
+          },
+        ]
+      ).map((item: any) => ({
         type: "proposalFaqItem",
         attrs: { id: item.id },
         content: [
@@ -1435,7 +1438,7 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
     createContent: () => ({ type: "lineItems" }),
     preview: (
       <div className="mt-2 flex h-12 w-full flex-col justify-center gap-1 rounded-lg border border-border/25 bg-muted/30 p-1.5">
-        <div className="flex gap-1 border-b border-border/20 pb-0.5">
+        <div className="flex gap-1 border-border/20 border-b pb-0.5">
           <div className="h-1.5 flex-1 rounded-full bg-muted/65" />
           <div className="h-1.5 flex-1 rounded-full bg-muted/65" />
         </div>
@@ -1456,7 +1459,7 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         description: "Compare plans, rates, pricing, and scope list features",
         preview: (
           <div className="flex h-20 w-full flex-col justify-center gap-1.5 rounded-xl border border-border/40 bg-muted/20 p-2.5 shadow-sm">
-            <div className="flex gap-2 border-b border-border/30 pb-1.5">
+            <div className="flex gap-2 border-border/30 border-b pb-1.5">
               <div className="h-2 flex-1 rounded-full bg-muted/50" />
               <div className="h-2 flex-1 rounded-full bg-muted/50" />
             </div>

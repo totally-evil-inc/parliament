@@ -7,10 +7,7 @@ import { member } from "./member"
 import { session } from "./session"
 
 export const user = pgTable("user", {
-  id: uuid("id")
-    .default(sql`uuidv7()`)
-    .primaryKey()
-    .notNull(),
+  id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),

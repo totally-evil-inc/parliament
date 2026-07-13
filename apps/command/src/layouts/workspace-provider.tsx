@@ -1,13 +1,7 @@
-import {
-  createContext,
-  use,
-  useCallback,
-  useMemo,
-  useState,
-} from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "@tanstack/react-router"
 import type { ReactNode } from "react"
+import { createContext, use, useCallback, useMemo, useState } from "react"
 import { authClient } from "@/lib/auth-client"
 
 export type WorkspaceOrganization = {

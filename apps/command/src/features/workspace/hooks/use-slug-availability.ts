@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { useEffect, useState } from "react"
 import { checkOrgSlug } from "@/server/org"
 import { organizationSchema } from "@/utils/auth-schemas"
 

@@ -1,12 +1,12 @@
-import { useMemo } from "react"
 import { useForm } from "@tanstack/react-form"
 import { Button } from "@workspace/ui/components/button"
-import { AuthSeparator } from "../../components/auth-separator"
-import { AuthTextField } from "../../components/auth-text-field"
-import { AppleIcon, GoogleIcon } from "../../components/social-icons"
+import { useMemo } from "react"
 import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
 import { authClient } from "@/lib/auth-client"
 import { signUpSchema } from "@/utils/auth-schemas"
+import { AuthSeparator } from "../../components/auth-separator"
+import { AuthTextField } from "../../components/auth-text-field"
+import { AppleIcon, GoogleIcon } from "../../components/social-icons"
 
 export function AccountStep({
   pending,
@@ -21,13 +21,13 @@ export function AccountStep({
 }) {
   return (
     <>
-      <div className="mt-8 font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+      <div className="mt-8 font-mono text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
         Account
       </div>
       <h1 className="mt-2 font-heading text-3xl leading-tight">
         Create your account
       </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
+      <p className="mt-2 text-muted-foreground text-sm">
         Use email and password, or continue with a social provider.
       </p>
 

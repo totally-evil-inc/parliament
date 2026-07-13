@@ -3,11 +3,11 @@ import { NodeViewContent, NodeViewWrapper } from "@tiptap/react"
 export function FaqView() {
   return (
     <NodeViewWrapper className="proposal-faq my-[var(--document-section-spacing)] text-[var(--document-foreground)]">
-      <div className="mb-6 border-b border-[var(--document-border)] pb-4">
-        <p className="text-[10px] font-bold tracking-[0.18em] text-[var(--document-accent)] uppercase">
+      <div className="mb-6 border-[var(--document-border)] border-b pb-4">
+        <p className="font-bold text-[10px] text-[var(--document-accent)] uppercase tracking-[0.18em]">
           FAQ
         </p>
-        <h3 className="mt-1 [font-family:var(--document-heading-font-family)] text-2xl font-bold tracking-normal">
+        <h3 className="mt-1 font-bold text-2xl tracking-normal [font-family:var(--document-heading-font-family)]">
           Common Questions
         </h3>
       </div>

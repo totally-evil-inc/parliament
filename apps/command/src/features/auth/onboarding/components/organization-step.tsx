@@ -1,4 +1,3 @@
-import { useRef, useState } from "react"
 import { useForm } from "@tanstack/react-form"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -9,11 +8,12 @@ import {
   InputGroupText,
 } from "@workspace/ui/components/input-group"
 import { Spinner } from "@workspace/ui/components/spinner"
-import { slugify } from "../onboarding-draft"
-import type { OrganizationDraft } from "../onboarding-draft"
+import { useRef, useState } from "react"
 import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
 import { useSlugAvailability } from "@/features/workspace/hooks/use-slug-availability"
 import { organizationSchema } from "@/utils/auth-schemas"
+import type { OrganizationDraft } from "../onboarding-draft"
+import { slugify } from "../onboarding-draft"
 
 export function OrganizationStep({
   draft,
@@ -48,13 +48,13 @@ export function OrganizationStep({
 
   return (
     <>
-      <div className="mt-8 font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+      <div className="mt-8 font-mono text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
         Organization basics
       </div>
       <h1 className="mt-2 font-heading text-3xl leading-tight">
         Name your organization
       </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
+      <p className="mt-2 text-muted-foreground text-sm">
         The URL slug is required and can be changed later in settings.
       </p>
 
@@ -74,7 +74,7 @@ export function OrganizationStep({
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor="onboarding-organization"
-                  className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase"
+                  className="block font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]"
                 >
                   Workspace name
                 </label>
@@ -96,7 +96,7 @@ export function OrganizationStep({
                   aria-invalid={!!error}
                 />
                 {error ? (
-                  <p className="text-xs text-destructive">{error}</p>
+                  <p className="text-destructive text-xs">{error}</p>
                 ) : null}
               </div>
             )
@@ -111,7 +111,7 @@ export function OrganizationStep({
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor="onboarding-slug"
-                  className="block font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase"
+                  className="block font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]"
                 >
                   Workspace URL
                 </label>
@@ -145,13 +145,13 @@ export function OrganizationStep({
                   </InputGroupAddon>
                 </InputGroup>
                 {error ? (
-                  <p className="text-xs text-destructive">{error}</p>
+                  <p className="text-destructive text-xs">{error}</p>
                 ) : slugState === "taken" ? (
-                  <p className="text-xs text-destructive">
+                  <p className="text-destructive text-xs">
                     This slug is already taken.
                   </p>
                 ) : slugState === "error" ? (
-                  <p className="text-xs text-destructive">
+                  <p className="text-destructive text-xs">
                     Could not verify availability. Please try again.
                   </p>
                 ) : null}

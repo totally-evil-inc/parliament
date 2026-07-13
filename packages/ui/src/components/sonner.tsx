@@ -1,8 +1,14 @@
 "use client"
 
 import { useTheme } from "next-themes"
+import {
+  IconBan,
+  IconCircleCheck,
+  IconCircleInfo,
+  IconLoader,
+  IconTriangleWarning,
+} from "nucleo-glass"
 import { Toaster as Sonner, type ToasterProps, toast } from "sonner"
-import { IconCircleCheck, IconCircleInfo, IconTriangleWarning, IconBan, IconLoader } from "nucleo-glass"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
@@ -12,31 +18,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       icons={{
-        success: (
-          <IconCircleCheck
-            className="size-4"
-          />
-        ),
-        info: (
-          <IconCircleInfo
-            className="size-4"
-          />
-        ),
-        warning: (
-          <IconTriangleWarning
-            className="size-4"
-          />
-        ),
-        error: (
-          <IconBan
-            className="size-4"
-          />
-        ),
-        loading: (
-          <IconLoader
-            className="size-4 animate-spin"
-          />
-        ),
+        success: <IconCircleCheck className="size-4" />,
+        info: <IconCircleInfo className="size-4" />,
+        warning: <IconTriangleWarning className="size-4" />,
+        error: <IconBan className="size-4" />,
+        loading: <IconLoader className="size-4 animate-spin" />,
       }}
       style={
         {

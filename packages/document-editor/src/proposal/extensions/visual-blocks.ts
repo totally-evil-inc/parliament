@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from "@tiptap/core"
+import { mergeAttributes, Node } from "@tiptap/core"
 import { ReactNodeViewRenderer } from "@tiptap/react"
 import {
   ProposalColumnsView,
@@ -233,7 +233,8 @@ export const ProposalColumnItem = Node.create({
       "section",
       mergeAttributes(HTMLAttributes, {
         "data-type": "proposal-column-item",
-        class: "break-inside-avoid border-t border-[var(--document-border)] pt-4",
+        class:
+          "break-inside-avoid border-t border-[var(--document-border)] pt-4",
       }),
       0,
     ]
@@ -299,7 +300,11 @@ export const ProposalImageCardItem = Node.create({
           class:
             "proposal-image-placeholder mb-4 flex min-h-40 w-full flex-col items-center justify-center gap-2 rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] text-[color-mix(in_oklab,var(--document-muted-foreground)_55%,transparent)]",
         },
-        ["span", { class: "text-[10px] font-semibold tracking-widest uppercase" }, "Image"],
+        [
+          "span",
+          { class: "text-[10px] font-semibold tracking-widest uppercase" },
+          "Image",
+        ],
       ],
       ["div", { class: "proposal-image-card-content" }, 0],
     ]

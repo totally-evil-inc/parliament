@@ -1,9 +1,9 @@
-import { useState } from "react"
 import { useForm } from "@tanstack/react-form"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Kbd } from "@workspace/ui/components/kbd"
 import { Label } from "@workspace/ui/components/label"
+import { useState } from "react"
 import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
 import { signInSchema } from "@/utils/auth-schemas"
 
@@ -61,7 +61,7 @@ export function MagicLinkForm() {
                 {error ? (
                   <p
                     id="sign-in-email-error"
-                    className="text-xs text-destructive"
+                    className="text-destructive text-xs"
                   >
                     {error}
                   </p>
@@ -84,14 +84,14 @@ export function MagicLinkForm() {
           )}
         </form.Subscribe>
         {!sentTo ? (
-          <p className="text-center text-xs text-muted-foreground">
+          <p className="text-center text-muted-foreground text-xs">
             <Kbd className="font-mono">⌘↵</Kbd> to submit
           </p>
         ) : null}
       </form>
 
       {sentTo ? (
-        <div className="mt-4 rounded-lg border border-border/70 bg-background/40 px-3 py-2 text-sm text-muted-foreground">
+        <div className="mt-4 rounded-lg border border-border/70 bg-background/40 px-3 py-2 text-muted-foreground text-sm">
           Link sent to <span className="text-foreground">{sentTo}</span>. Open
           your inbox to continue.
         </div>

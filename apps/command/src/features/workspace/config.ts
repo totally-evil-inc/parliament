@@ -1,4 +1,15 @@
-import { IconBell, IconFile, IconFolder, IconGear, IconHouse, IconInbox, IconLayers, IconLink, IconRoadmap, IconUsers } from "nucleo-glass"
+import {
+  IconBell,
+  IconFile,
+  IconFolder,
+  IconGear,
+  IconHouse,
+  IconInbox,
+  IconLayers,
+  IconLink,
+  IconRoadmap,
+  IconUsers,
+} from "nucleo-glass"
 import type React from "react"
 
 export type WorkspaceRouteNavItem = {

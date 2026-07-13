@@ -71,7 +71,7 @@ function ColorPicker({
         </span>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 gap-3">
-        <div className="text-xs font-medium text-foreground">{label}</div>
+        <div className="font-medium text-foreground text-xs">{label}</div>
         <div className="grid grid-cols-8 gap-2">
           {colors.map((color) => {
             const selected = color.toLowerCase() === normalizedValue

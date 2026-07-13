@@ -3,9 +3,11 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query"
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { formatDateOnly, formatMoneyMinor } from "@workspace/document/calculate"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import { Calendar } from "@workspace/ui/components/calendar"
 import { Card } from "@workspace/ui/components/card"
 import {
   DropdownMenu,
@@ -19,15 +21,28 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
-import { Calendar } from "@workspace/ui/components/calendar"
-import { IconBan, IconBulletList, IconCalendar, IconCircleCheck, IconCircleCoin, IconCircleCopyPlus, IconDots, IconGrid, IconMagnifier, IconMoneyBill, IconSlidersVertical } from "nucleo-glass"
-import { PageHeader } from "@/components/page-header"
-import { useConfirm } from "@/components/confirm-dialog-provider"
-import { useProposalsFilter } from "@/hooks/use-proposals-filter"
+import {
+  IconBan,
+  IconBulletList,
+  IconCalendar,
+  IconCircleCheck,
+  IconCircleCoin,
+  IconCircleCopyPlus,
+  IconDots,
+  IconGrid,
+  IconMagnifier,
+  IconMoneyBill,
+  IconSlidersVertical,
+} from "nucleo-glass"
 import { proposalDraftsQuery } from "@/api/proposals"
+import { useConfirm } from "@/components/confirm-dialog-provider"
+import { PageHeader } from "@/components/page-header"
+import { useProposalsFilter } from "@/hooks/use-proposals-filter"
+import type {
+  PersistedProposalDraft,
+  ProposalDraftListItem,
+} from "@/server/proposals"
 import { createProposalDraft, deleteProposalDraft } from "@/server/proposals"
-import type { PersistedProposalDraft, ProposalDraftListItem } from "@/server/proposals"
-import { formatMoneyMinor, formatDateOnly } from "@workspace/document/calculate"
 
 export const Route = createFileRoute("/_workspace/proposals/")({
   loader: async ({ context }) => {
@@ -54,8 +69,7 @@ function ProposalsRoute() {
   } = useProposalsFilter(proposals)
 
   const createDraft = useMutation({
-    mutationFn: () =>
-      createProposalDraft({ data: { blueprint: "classic" } }),
+    mutationFn: () => createProposalDraft({ data: { blueprint: "classic" } }),
     onSuccess: async (draftResult) => {
       const draft = draftResult as PersistedProposalDraft
       await queryClient.invalidateQueries({ queryKey: ["proposals"] })
@@ -151,14 +165,14 @@ function ProposalsRoute() {
     if (!showTrend) return null
     const isNegative = val < 0
     const text = isNegative ? `${val}%` : `+${val}%`
-    
+
     return (
       <Badge
         variant="outline"
-        className={`ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded ${
+        className={`ml-2 rounded px-1.5 py-0.5 font-bold text-[10px] ${
           isNegative
-            ? "bg-red-500/10 text-red-500 border-red-500/20"
-            : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+            ? "border-red-500/20 bg-red-500/10 text-red-500"
+            : "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
         }`}
       >
         {text}
@@ -178,25 +192,38 @@ function ProposalsRoute() {
                 render={
                   <Button
                     variant="outline"
-                    className="bg-neutral-900 border-neutral-800 text-xs text-neutral-300 rounded-lg flex items-center gap-2 h-9 cursor-pointer"
+                    className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border-neutral-800 bg-neutral-900 text-neutral-300 text-xs"
                   />
                 }
               >
-                <IconCalendar className="w-3.5 h-3.5" />
+                <IconCalendar className="h-3.5 w-3.5" />
                 {dateRange?.from ? (
                   dateRange.to ? (
                     <>
-                      {formatDateOnly(dateRange.from.toISOString().split("T")[0], "en-US")} -{" "}
-                      {formatDateOnly(dateRange.to.toISOString().split("T")[0], "en-US")}
+                      {formatDateOnly(
+                        dateRange.from.toISOString().split("T")[0],
+                        "en-US"
+                      )}{" "}
+                      -{" "}
+                      {formatDateOnly(
+                        dateRange.to.toISOString().split("T")[0],
+                        "en-US"
+                      )}
                     </>
                   ) : (
-                    formatDateOnly(dateRange.from.toISOString().split("T")[0], "en-US")
+                    formatDateOnly(
+                      dateRange.from.toISOString().split("T")[0],
+                      "en-US"
+                    )
                   )
                 ) : (
                   <span>Pick a date range</span>
                 )}
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-neutral-900 border-neutral-800" align="end">
+              <PopoverContent
+                className="w-auto border-neutral-800 bg-neutral-900 p-0"
+                align="end"
+              >
                 <Calendar
                   mode="range"
                   selected={dateRange}
@@ -209,138 +236,162 @@ function ProposalsRoute() {
 
             <Button
               type="button"
-              className="bg-white hover:bg-neutral-200 text-black font-semibold text-xs py-2 px-4 rounded-full flex items-center gap-2 border-0 cursor-pointer h-9"
+              className="flex h-9 cursor-pointer items-center gap-2 rounded-full border-0 bg-white px-4 py-2 font-semibold text-black text-xs hover:bg-neutral-200"
               onClick={() => createDraft.mutate()}
               disabled={createDraft.isPending}
             >
-              <IconCircleCopyPlus className="w-3.5 h-3.5" />
+              <IconCircleCopyPlus className="h-3.5 w-3.5" />
               {createDraft.isPending ? "Creating..." : "New Proposal"}
             </Button>
           </div>
         }
       />
 
-      <div className="grid gap-6 p-6 md:p-8 bg-neutral-950/40 text-neutral-200">
+      <div className="grid gap-6 bg-neutral-950/40 p-6 text-neutral-200 md:p-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           {/* Card 1: Total Proposed */}
-          <Card className="bg-neutral-900/60 border-neutral-800/80 rounded-2xl p-5 relative">
-            <div className="flex justify-between items-start">
-              <span className="text-xs font-medium text-neutral-400">Total Proposed</span>
-              <div className="p-1.5 rounded-lg bg-neutral-800/40 text-neutral-400 border border-neutral-800">
-                <IconMoneyBill className="w-4 h-4" />
+          <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
+            <div className="flex items-start justify-between">
+              <span className="font-medium text-neutral-400 text-xs">
+                Total Proposed
+              </span>
+              <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
+                <IconMoneyBill className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-3">
-              <span className="text-3xl font-semibold text-white tracking-tight">
+              <span className="font-semibold text-3xl text-white tracking-tight">
                 {formatValueNoDecimals(currentStats.proposedSum, "USD")}
               </span>
             </div>
-            <div className="mt-4 flex justify-between items-center text-xs">
-              <span className="text-neutral-500">{currentStats.proposedCount} proposals</span>
+            <div className="mt-4 flex items-center justify-between text-xs">
+              <span className="text-neutral-500">
+                {currentStats.proposedCount} proposals
+              </span>
               {renderTrendBadge(trends.proposed)}
             </div>
           </Card>
 
           {/* Card 2: Accepted */}
-          <Card className="bg-neutral-900/60 border-neutral-800/80 rounded-2xl p-5 relative">
-            <div className="flex justify-between items-start">
-              <span className="text-xs font-medium text-neutral-400">Accepted</span>
-              <div className="p-1.5 rounded-lg bg-neutral-800/40 text-neutral-400 border border-neutral-800">
-                <IconCircleCheck className="w-4 h-4" />
+          <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
+            <div className="flex items-start justify-between">
+              <span className="font-medium text-neutral-400 text-xs">
+                Accepted
+              </span>
+              <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
+                <IconCircleCheck className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-3">
-              <span className="text-3xl font-semibold text-white tracking-tight">
+              <span className="font-semibold text-3xl text-white tracking-tight">
                 {formatValueNoDecimals(currentStats.acceptedSum, "USD")}
               </span>
             </div>
-            <div className="mt-4 flex justify-between items-center text-xs">
-              <span className="text-neutral-500">{currentStats.acceptedCount} accepted</span>
+            <div className="mt-4 flex items-center justify-between text-xs">
+              <span className="text-neutral-500">
+                {currentStats.acceptedCount} accepted
+              </span>
               {renderTrendBadge(trends.accepted)}
             </div>
           </Card>
 
           {/* Card 3: Pending */}
-          <Card className="bg-neutral-900/60 border-neutral-800/80 rounded-2xl p-5 relative">
-            <div className="flex justify-between items-start">
-              <span className="text-xs font-medium text-neutral-400">Pending</span>
-              <div className="p-1.5 rounded-lg bg-neutral-800/40 text-neutral-400 border border-neutral-800">
-                <IconCircleCoin className="w-4 h-4" />
+          <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
+            <div className="flex items-start justify-between">
+              <span className="font-medium text-neutral-400 text-xs">
+                Pending
+              </span>
+              <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
+                <IconCircleCoin className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-3">
-              <span className="text-3xl font-semibold text-white tracking-tight">
+              <span className="font-semibold text-3xl text-white tracking-tight">
                 {formatValueNoDecimals(currentStats.pendingSum, "USD")}
               </span>
             </div>
-            <div className="mt-4 flex justify-between items-center text-xs">
-              <span className="text-neutral-500">{currentStats.pendingCount} awaiting</span>
+            <div className="mt-4 flex items-center justify-between text-xs">
+              <span className="text-neutral-500">
+                {currentStats.pendingCount} awaiting
+              </span>
               {renderTrendBadge(trends.pending)}
             </div>
           </Card>
 
           {/* Card 4: Rejected */}
-          <Card className="bg-neutral-900/60 border-neutral-800/80 rounded-2xl p-5 relative">
-            <div className="flex justify-between items-start">
-              <span className="text-xs font-medium text-neutral-400">Rejected</span>
-              <div className="p-1.5 rounded-lg bg-neutral-800/40 text-neutral-400 border border-neutral-800">
-                <IconBan className="w-4 h-4" />
+          <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
+            <div className="flex items-start justify-between">
+              <span className="font-medium text-neutral-400 text-xs">
+                Rejected
+              </span>
+              <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
+                <IconBan className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-3">
-              <span className="text-3xl font-semibold text-white tracking-tight">
+              <span className="font-semibold text-3xl text-white tracking-tight">
                 {formatValueNoDecimals(currentStats.rejectedSum, "USD")}
               </span>
             </div>
-            <div className="mt-4 flex justify-between items-center text-xs">
-              <span className="text-neutral-500">{currentStats.rejectedCount} lost</span>
+            <div className="mt-4 flex items-center justify-between text-xs">
+              <span className="text-neutral-500">
+                {currentStats.rejectedCount} lost
+              </span>
               {renderTrendBadge(trends.rejected)}
             </div>
           </Card>
         </div>
 
         {/* Proposals List Card Container */}
-        <Card className="bg-neutral-900/30 border-neutral-800/80 rounded-2xl overflow-hidden p-6 mt-2">
+        <Card className="mt-2 overflow-hidden rounded-2xl border-neutral-800/80 bg-neutral-900/30 p-6">
           {/* List Card Header */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-800/50 pb-6 mb-6">
+          <div className="mb-6 flex flex-col gap-4 border-neutral-800/50 border-b pb-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-white">All proposals</h2>
-              <p className="text-xs text-neutral-500 mt-1">
+              <h2 className="font-semibold text-lg text-white">
+                All proposals
+              </h2>
+              <p className="mt-1 text-neutral-500 text-xs">
                 {filteredList.length} of {proposals.length} shown
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {/* Layout Switcher */}
-              <div className="flex items-center bg-neutral-900/60 border border-neutral-800/80 rounded-lg p-0.5">
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-white bg-neutral-800 rounded">
-                  <IconBulletList className="w-3.5 h-3.5" />
+              <div className="flex items-center rounded-lg border border-neutral-800/80 bg-neutral-900/60 p-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded bg-neutral-800 text-white"
+                >
+                  <IconBulletList className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-neutral-500 hover:text-neutral-300">
-                  <IconGrid className="w-3.5 h-3.5" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-neutral-500 hover:text-neutral-300"
+                >
+                  <IconGrid className="h-3.5 w-3.5" />
                 </Button>
               </div>
 
               {/* Filters */}
               <Button
                 variant="outline"
-                className="bg-neutral-900/60 border-neutral-800/80 hover:bg-neutral-800/50 text-xs gap-1.5 h-8 rounded-lg cursor-pointer"
+                className="h-8 cursor-pointer gap-1.5 rounded-lg border-neutral-800/80 bg-neutral-900/60 text-xs hover:bg-neutral-800/50"
               >
-                <IconSlidersVertical className="w-3.5 h-3.5" />
+                <IconSlidersVertical className="h-3.5 w-3.5" />
                 Filters
               </Button>
 
               {/* Search bar */}
               <div className="relative w-full sm:w-[220px]">
-                <IconMagnifier
-                  className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-neutral-500"
-                />
+                <IconMagnifier className="absolute top-2.5 left-2.5 h-3.5 w-3.5 text-neutral-500" />
                 <Input
                   type="search"
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 bg-neutral-900/60 border-neutral-800/80 text-xs rounded-lg h-8 w-full placeholder-neutral-500 text-neutral-200 focus-visible:ring-neutral-700 focus-visible:border-neutral-700"
+                  className="h-8 w-full rounded-lg border-neutral-800/80 bg-neutral-900/60 pl-8 text-neutral-200 text-xs placeholder-neutral-500 focus-visible:border-neutral-700 focus-visible:ring-neutral-700"
                 />
               </div>
             </div>
@@ -348,7 +399,7 @@ function ProposalsRoute() {
 
           {/* Month Grouped Table View */}
           {groupedMonths.length === 0 ? (
-            <div className="py-12 text-center text-sm text-neutral-500">
+            <div className="py-12 text-center text-neutral-500 text-sm">
               No proposals found.
             </div>
           ) : (
@@ -356,10 +407,12 @@ function ProposalsRoute() {
               {groupedMonths.map((group) => (
                 <div key={group.monthName} className="space-y-3">
                   {/* Month Header Grid */}
-                  <div className="grid grid-cols-[48px_1fr_110px_110px_90px_100px_40px] items-center gap-4 px-2 text-xs font-semibold text-neutral-500 border-b border-neutral-900 pb-2">
-                    <div className="flex items-center gap-1.5 col-span-2">
-                      <span className="text-neutral-300 font-bold">{group.monthName}</span>
-                      <span className="bg-neutral-800/60 text-neutral-400 text-[10px] px-1.5 py-0.2 rounded-full font-normal">
+                  <div className="grid grid-cols-[48px_1fr_110px_110px_90px_100px_40px] items-center gap-4 border-neutral-900 border-b px-2 pb-2 font-semibold text-neutral-500 text-xs">
+                    <div className="col-span-2 flex items-center gap-1.5">
+                      <span className="font-bold text-neutral-300">
+                        {group.monthName}
+                      </span>
+                      <span className="rounded-full bg-neutral-800/60 px-1.5 py-0.2 font-normal text-[10px] text-neutral-400">
                         {group.proposals.length}
                       </span>
                     </div>
@@ -377,29 +430,29 @@ function ProposalsRoute() {
                     {group.proposals.map((proposal) => (
                       <div
                         key={proposal.id}
-                        className="grid grid-cols-[48px_1fr_110px_110px_90px_100px_40px] items-center gap-4 px-2 py-3 bg-neutral-900/20 hover:bg-neutral-900/55 border border-neutral-900/40 rounded-xl transition duration-150"
+                        className="grid grid-cols-[48px_1fr_110px_110px_90px_100px_40px] items-center gap-4 rounded-xl border border-neutral-900/40 bg-neutral-900/20 px-2 py-3 transition duration-150 hover:bg-neutral-900/55"
                       >
                         {/* Initials Circle */}
-                        <div className="w-9 h-9 rounded-full bg-neutral-800/80 border border-neutral-700/30 flex items-center justify-center text-xs font-semibold text-neutral-400 select-none">
+                        <div className="flex h-9 w-9 select-none items-center justify-center rounded-full border border-neutral-700/30 bg-neutral-800/80 font-semibold text-neutral-400 text-xs">
                           {getInitials(proposal.title)}
                         </div>
 
                         {/* Details */}
-                        <div className="min-w-0 flex flex-col">
+                        <div className="flex min-w-0 flex-col">
                           <Link
                             to="/proposals/$proposalId"
                             params={{ proposalId: proposal.id }}
-                            className="font-medium text-sm text-neutral-200 hover:text-white truncate transition-colors"
+                            className="truncate font-medium text-neutral-200 text-sm transition-colors hover:text-white"
                           >
                             {proposal.title || "Untitled proposal"}
                           </Link>
-                          <div className="flex items-center gap-2 mt-1 min-w-0">
-                            <span className="text-xs text-neutral-500 truncate">
+                          <div className="mt-1 flex min-w-0 items-center gap-2">
+                            <span className="truncate text-neutral-500 text-xs">
                               {proposal.customerName || "Untitled client"}
                             </span>
                             <Badge
                               variant="outline"
-                              className="text-[9px] bg-neutral-800/40 text-neutral-500 border-neutral-800 px-1 py-0 rounded"
+                              className="rounded border-neutral-800 bg-neutral-800/40 px-1 py-0 text-[9px] text-neutral-500"
                             >
                               Proposal
                             </Badge>
@@ -407,12 +460,12 @@ function ProposalsRoute() {
                         </div>
 
                         {/* Created Date */}
-                        <div className="text-right text-xs text-neutral-400">
+                        <div className="text-right text-neutral-400 text-xs">
                           {formatDateOnly(proposal.issueDate, "en-US")}
                         </div>
 
                         {/* Valid Until Date */}
-                        <div className="text-right text-xs text-neutral-400">
+                        <div className="text-right text-neutral-400 text-xs">
                           {proposal.validUntil
                             ? formatDateOnly(proposal.validUntil, "en-US")
                             : "—"}
@@ -422,12 +475,12 @@ function ProposalsRoute() {
                         <div className="flex justify-end">
                           <Badge
                             variant="outline"
-                            className={`text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded ${
+                            className={`rounded px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider ${
                               proposal.status === "accepted"
-                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25"
+                                ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
                                 : proposal.status === "sent"
-                                ? "bg-neutral-800/60 text-neutral-300 border-neutral-700/60"
-                                : "bg-neutral-900 text-neutral-500 border-neutral-800"
+                                  ? "border-neutral-700/60 bg-neutral-800/60 text-neutral-300"
+                                  : "border-neutral-800 bg-neutral-900 text-neutral-500"
                             }`}
                           >
                             {proposal.status}
@@ -435,8 +488,11 @@ function ProposalsRoute() {
                         </div>
 
                         {/* Value */}
-                        <div className="text-right text-sm font-semibold text-white">
-                          {formatValueNoDecimals(proposal.valueMinor, proposal.currency)}
+                        <div className="text-right font-semibold text-sm text-white">
+                          {formatValueNoDecimals(
+                            proposal.valueMinor,
+                            proposal.currency
+                          )}
                         </div>
 
                         {/* Action Menu */}
@@ -447,17 +503,15 @@ function ProposalsRoute() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-7 w-7 text-neutral-500 hover:text-neutral-200 cursor-pointer rounded-lg"
+                                  className="h-7 w-7 cursor-pointer rounded-lg text-neutral-500 hover:text-neutral-200"
                                 />
                               }
                             >
-                              <IconDots
-                                className="w-3.5 h-3.5"
-                              />
+                              <IconDots className="h-3.5 w-3.5" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="bg-neutral-900 border-neutral-800 text-neutral-300 w-40"
+                              className="w-40 border-neutral-800 bg-neutral-900 text-neutral-300"
                             >
                               <DropdownMenuItem
                                 render={
@@ -475,7 +529,9 @@ function ProposalsRoute() {
                                   render={
                                     <Link
                                       to="/proposal/$publicToken"
-                                      params={{ publicToken: proposal.publicToken }}
+                                      params={{
+                                        publicToken: proposal.publicToken,
+                                      }}
                                       target="_blank"
                                       className="cursor-pointer text-xs"
                                     />
@@ -497,8 +553,10 @@ function ProposalsRoute() {
                               )}
                               <DropdownMenuItem
                                 variant="destructive"
-                                className="cursor-pointer text-xs text-red-500 focus:text-red-500 focus:bg-red-500/10"
-                                onClick={() => handleDelete(proposal.id, proposal.title)}
+                                className="cursor-pointer text-red-500 text-xs focus:bg-red-500/10 focus:text-red-500"
+                                onClick={() =>
+                                  handleDelete(proposal.id, proposal.title)
+                                }
                               >
                                 Delete
                               </DropdownMenuItem>

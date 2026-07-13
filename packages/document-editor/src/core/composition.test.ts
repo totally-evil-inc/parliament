@@ -320,7 +320,10 @@ test("phase 2 proposal blocks survive the TipTap adapter", () => {
             },
             content: [
               inlineNode("proposalImageCardTitle", field("Launch")),
-              blockNode("proposalImageCardBody", paragraph("Ship confidently.")),
+              blockNode(
+                "proposalImageCardBody",
+                paragraph("Ship confidently.")
+              ),
             ],
           },
         ],

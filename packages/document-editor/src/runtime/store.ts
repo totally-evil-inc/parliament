@@ -1,9 +1,9 @@
-import { parseProposalDraft } from "@workspace/document/schema"
 import type {
   DocumentBlock,
   PartySnapshot,
   ProposalDraft,
 } from "@workspace/document/schema"
+import { parseProposalDraft } from "@workspace/document/schema"
 
 type Listener = () => void
 type HistoryEntry = {

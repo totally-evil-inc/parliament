@@ -1,7 +1,8 @@
 import { HugeiconsIcon } from "@hugeicons/react"
 import "@tiptap/extension-table/table"
-import { BubbleMenu } from "@tiptap/react/menus"
+import type { Editor } from "@tiptap/react"
 import { useEditorState } from "@tiptap/react"
+import { BubbleMenu } from "@tiptap/react/menus"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -13,7 +14,6 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { Toggle } from "@workspace/ui/components/toggle"
-import type { Editor } from "@tiptap/react"
 import type { EditorCommand } from "../../commands/types"
 
 type BubbleVisibilityState = Pick<Editor, "isEditable" | "isFocused"> & {
@@ -83,7 +83,7 @@ export function EditorBubbleMenu({
         inline: true,
       }}
       shouldShow={({ editor: current }) => shouldShowEditorBubbleMenu(current)}
-      className="z-50 no-scrollbar flex max-w-[90vw] items-center gap-1 overflow-x-auto rounded-md border bg-popover p-1 shadow-md"
+      className="no-scrollbar z-50 flex max-w-[90vw] items-center gap-1 overflow-x-auto rounded-md border bg-popover p-1 shadow-md"
     >
       {commands.map((command) => (
         <Toggle

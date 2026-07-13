@@ -1,6 +1,6 @@
+import type { Text } from "@hugeicons/core-free-icons"
 import type { Range } from "@tiptap/core"
 import type { Editor } from "@tiptap/react"
-import type { Text } from "@hugeicons/core-free-icons"
 
 export type EditorCommandContext = {
   editor: Editor

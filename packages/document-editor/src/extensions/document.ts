@@ -1,5 +1,5 @@
-import { Node, mergeAttributes } from "@tiptap/core"
 import type { NodeViewRenderer } from "@tiptap/core"
+import { mergeAttributes, Node } from "@tiptap/core"
 
 export const DocumentRoot = Node.create({
   name: "doc",

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import type { OrganizationDraft } from "@/features/auth/onboarding/onboarding-draft"
+import { useCallback, useEffect, useState } from "react"
 import { ONBOARDING_STEP_IDS } from "@/features/auth/onboarding/constants"
+import type { OrganizationDraft } from "@/features/auth/onboarding/onboarding-draft"
 import {
   readDraft,
   writeDraft,

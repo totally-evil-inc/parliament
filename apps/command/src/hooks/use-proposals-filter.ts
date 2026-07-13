@@ -41,7 +41,7 @@ export function useProposalsFilter(proposals: ProposalDraftListItem[]) {
       const matchesSearch =
         p.title.toLowerCase().includes(q) ||
         p.customerName.toLowerCase().includes(q) ||
-        (p.status && p.status.toLowerCase().includes(q))
+        p.status?.toLowerCase().includes(q)
       if (!matchesSearch) return false
     }
 
@@ -71,7 +71,10 @@ export function useProposalsFilter(proposals: ProposalDraftListItem[]) {
 
   const getStats = (list: ProposalDraftListItem[]) => {
     const totalProposedList = list.filter((p) => p.status !== "draft")
-    const totalProposedSum = totalProposedList.reduce((sum, p) => sum + p.valueMinor, 0)
+    const totalProposedSum = totalProposedList.reduce(
+      (sum, p) => sum + p.valueMinor,
+      0
+    )
 
     const acceptedList = list.filter((p) => p.status === "accepted")
     const acceptedSum = acceptedList.reduce((sum, p) => sum + p.valueMinor, 0)
@@ -106,10 +109,19 @@ export function useProposalsFilter(proposals: ProposalDraftListItem[]) {
   }
 
   const trends = {
-    proposed: getTrendPercentage(currentStats.proposedSum, prevStats.proposedSum),
-    accepted: getTrendPercentage(currentStats.acceptedSum, prevStats.acceptedSum),
+    proposed: getTrendPercentage(
+      currentStats.proposedSum,
+      prevStats.proposedSum
+    ),
+    accepted: getTrendPercentage(
+      currentStats.acceptedSum,
+      prevStats.acceptedSum
+    ),
     pending: getTrendPercentage(currentStats.pendingSum, prevStats.pendingSum),
-    rejected: getTrendPercentage(currentStats.rejectedSum, prevStats.rejectedSum),
+    rejected: getTrendPercentage(
+      currentStats.rejectedSum,
+      prevStats.rejectedSum
+    ),
   }
 
   return {

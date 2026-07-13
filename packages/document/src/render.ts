@@ -1,6 +1,6 @@
 import { calculateProposalPricing } from "./calculate"
-import { parseProposalDraft } from "./schema"
 import type { DocumentBlock, PartySnapshot, ProposalDraft } from "./schema"
+import { parseProposalDraft } from "./schema"
 
 export type ProposalRenderModel = {
   id: string

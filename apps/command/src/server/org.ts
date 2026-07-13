@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start"
-import { z } from "zod"
-
 import { db, eq, schema } from "@workspace/database"
+import { z } from "zod"
 
 export const checkOrgSlug = createServerFn({ method: "GET" })
   .inputValidator(z.object({ slug: z.string().min(1) }))

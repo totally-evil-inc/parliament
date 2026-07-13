@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { InviteTeammatesForm } from "@/features/workspace/components/invite-teammates-form"
+import { useWorkspace } from "@/layouts/workspace-provider"
+import { authClient } from "@/lib/auth-client"
 import { InvitationsList } from "./invitations-list"
 import { MembersTable } from "./members-table"
-import { InviteTeammatesForm } from "@/features/workspace/components/invite-teammates-form"
-import { authClient } from "@/lib/auth-client"
-import { useWorkspace } from "@/layouts/workspace-provider"
 
 export function MembersPage() {
   const { activeOrg, isSwitching } = useWorkspace()
@@ -40,11 +40,11 @@ export function MembersPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-8 px-6 py-8 md:px-8">
       <div>
-        <div className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+        <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
           Members · Invite
         </div>
         <h2 className="mt-1 font-heading text-xl">Invite teammates</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-muted-foreground text-sm">
           Paste or type emails separated by spaces, commas, or new lines.
         </p>
         <div className="mt-5">
@@ -55,7 +55,7 @@ export function MembersPage() {
       <div className="space-y-5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+            <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
               Members · List
             </div>
             <h2 className="mt-1 font-heading text-xl">

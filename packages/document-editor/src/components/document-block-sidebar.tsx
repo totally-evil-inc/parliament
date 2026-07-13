@@ -1,13 +1,29 @@
-import * as React from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowLeft01Icon,
   Cancel01Icon,
   LayoutGridIcon,
-  TextFontIcon,
   StarIcon,
+  TextFontIcon,
 } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
+import type { Editor } from "@tiptap/react"
+import type { DocumentTemplateTokens } from "@workspace/document/presentation"
+import {
+  darkDocumentTemplate,
+  defaultDocumentTemplate,
+  documentColorTokenOptions,
+  documentFontOptions,
+  documentRadiusOptions,
+  documentSpacingOptions,
+  updateDocumentTemplateToken,
+} from "@workspace/document/presentation"
 import { ColorPicker } from "@workspace/ui/components/color-picker"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+} from "@workspace/ui/components/drawer"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import {
   Select,
   SelectContent,
@@ -15,28 +31,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { ScrollArea } from "@workspace/ui/components/scroll-area"
-import {
-  Drawer,
-  DrawerContent,
-  DrawerTitle,
-} from "@workspace/ui/components/drawer"
-import { useDocumentSidebar } from "../runtime/sidebar-context"
 import { cn } from "@workspace/ui/lib/utils"
+import * as React from "react"
 import { insertDocumentBlockFromDefinition } from "../core/definition"
 import {
   documentHeaderLayouts,
   isDocumentHeaderLayoutId,
 } from "../core/header-layouts"
-import {
-  documentColorTokenOptions,
-  documentFontOptions,
-  documentRadiusOptions,
-  documentSpacingOptions,
-  defaultDocumentTemplate,
-  darkDocumentTemplate,
-  updateDocumentTemplateToken,
-} from "@workspace/document/presentation"
 import type {
   CustomizeGroup,
   DocumentBlockDefinition,
@@ -46,8 +47,7 @@ import type {
   InsertableDocumentBlockDefinition,
   SingletonDocumentBlockDefinition,
 } from "../core/types"
-import type { DocumentTemplateTokens } from "@workspace/document/presentation"
-import type { Editor } from "@tiptap/react"
+import { useDocumentSidebar } from "../runtime/sidebar-context"
 
 type SidebarPanel = "customize" | "blocks"
 
@@ -188,7 +188,7 @@ export function DocumentBlockSidebar({
 
   React.useEffect(() => {
     setHeaderLayoutOverride(null)
-  }, [editor])
+  }, [])
 
   const handleInsertLayout = (
     block: InsertableDocumentBlockDefinition | SingletonDocumentBlockDefinition,
@@ -239,11 +239,11 @@ export function DocumentBlockSidebar({
     <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-background/95 shadow-2xl backdrop-blur-xl">
       {selectedBlock && selectedBlock.kind !== "action" ? (
         <>
-          <div className="flex shrink-0 flex-row items-center justify-between gap-3 border-b border-border/70 px-4 py-4">
+          <div className="flex shrink-0 flex-row items-center justify-between gap-3 border-border/70 border-b px-4 py-4">
             <button
               type="button"
               onClick={() => setSelectedBlockId(null)}
-              className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+              className="group/back flex items-center gap-1.5 font-semibold text-muted-foreground text-xs transition-colors hover:text-foreground"
             >
               <HugeiconsIcon
                 icon={ArrowLeft01Icon}
@@ -252,7 +252,7 @@ export function DocumentBlockSidebar({
               Back
             </button>
             <div className="absolute left-1/2 -translate-x-1/2">
-              <span className="text-sm font-semibold">
+              <span className="font-semibold text-sm">
                 {selectedBlock.label}
               </span>
             </div>
@@ -268,7 +268,7 @@ export function DocumentBlockSidebar({
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden p-4">
             <ScrollArea className="relative min-h-0 flex-1 overflow-hidden">
               <div className="space-y-4">
-                <div className="px-1 text-xs text-muted-foreground/85">
+                <div className="px-1 text-muted-foreground/85 text-xs">
                   Select a layout structure to insert into your{" "}
                   {definition.title.toLowerCase()}.
                 </div>
@@ -285,10 +285,10 @@ export function DocumentBlockSidebar({
                       <div className="mb-3.5 rounded-lg border border-border/30 bg-muted/15 p-2 transition-all group-hover:bg-muted/25">
                         {layout.preview}
                       </div>
-                      <h4 className="text-sm leading-none font-bold">
+                      <h4 className="font-bold text-sm leading-none">
                         {layout.name}
                       </h4>
-                      <p className="mt-1 text-xs leading-normal text-muted-foreground">
+                      <p className="mt-1 text-muted-foreground text-xs leading-normal">
                         {layout.description}
                       </p>
                     </button>
@@ -300,13 +300,13 @@ export function DocumentBlockSidebar({
         </>
       ) : (
         <>
-          <div className="flex shrink-0 flex-col gap-3 border-b border-border/70 px-4 py-4">
+          <div className="flex shrink-0 flex-col gap-3 border-border/70 border-b px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
                   <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
                 </div>
-                <span className="text-sm font-bold">
+                <span className="font-bold text-sm">
                   {definition.title} Builder
                 </span>
               </div>
@@ -353,10 +353,7 @@ export function DocumentBlockSidebar({
                 />
               )
             ) : (
-              <BlocksPanel
-                blocks={blocks}
-                onSelectBlock={handleSelectBlock}
-              />
+              <BlocksPanel blocks={blocks} onSelectBlock={handleSelectBlock} />
             )}
           </div>
         </>
@@ -368,11 +365,11 @@ export function DocumentBlockSidebar({
     <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-background/95 shadow-2xl backdrop-blur-xl">
       {selectedBlock && selectedBlock.kind !== "action" ? (
         <>
-          <div className="flex shrink-0 flex-row items-center justify-between gap-3 border-b border-border/70 px-4 py-4">
+          <div className="flex shrink-0 flex-row items-center justify-between gap-3 border-border/70 border-b px-4 py-4">
             <button
               type="button"
               onClick={() => setSelectedBlockId(null)}
-              className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+              className="group/back flex items-center gap-1.5 font-semibold text-muted-foreground text-xs transition-colors hover:text-foreground"
             >
               <HugeiconsIcon
                 icon={ArrowLeft01Icon}
@@ -381,7 +378,7 @@ export function DocumentBlockSidebar({
               Back
             </button>
             <div className="absolute left-1/2 -translate-x-1/2">
-              <span className="text-sm font-semibold">
+              <span className="font-semibold text-sm">
                 {selectedBlock.label}
               </span>
             </div>
@@ -396,7 +393,7 @@ export function DocumentBlockSidebar({
 
           <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
             <div className="space-y-4">
-              <div className="px-1 text-xs text-muted-foreground/85">
+              <div className="px-1 text-muted-foreground/85 text-xs">
                 Select a layout structure to insert into your{" "}
                 {definition.title.toLowerCase()}.
               </div>
@@ -405,18 +402,16 @@ export function DocumentBlockSidebar({
                   <button
                     type="button"
                     key={layout.id}
-                    onClick={() =>
-                      handleInsertLayout(selectedBlock, layout.id)
-                    }
+                    onClick={() => handleInsertLayout(selectedBlock, layout.id)}
                     className="group w-full rounded-xl border border-border/60 bg-background/50 p-3.5 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
                   >
                     <div className="mb-3.5 rounded-lg border border-border/30 bg-muted/15 p-2 transition-all group-hover:bg-muted/25">
                       {layout.preview}
                     </div>
-                    <h4 className="text-sm leading-none font-bold">
+                    <h4 className="font-bold text-sm leading-none">
                       {layout.name}
                     </h4>
-                    <p className="mt-1 text-xs leading-normal text-muted-foreground">
+                    <p className="mt-1 text-muted-foreground text-xs leading-normal">
                       {layout.description}
                     </p>
                   </button>
@@ -427,13 +422,13 @@ export function DocumentBlockSidebar({
         </>
       ) : (
         <>
-          <div className="flex shrink-0 flex-col gap-3 border-b border-border/70 px-4 py-4">
+          <div className="flex shrink-0 flex-col gap-3 border-border/70 border-b px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
                   <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
                 </div>
-                <span className="text-sm font-bold">
+                <span className="font-bold text-sm">
                   {definition.title} Builder
                 </span>
               </div>
@@ -504,11 +499,7 @@ export function DocumentBlockSidebar({
       >
         {sidebarContent}
       </aside>
-      <Drawer
-        open={openMobile}
-        onOpenChange={setOpenMobile}
-        direction="bottom"
-      >
+      <Drawer open={openMobile} onOpenChange={setOpenMobile} direction="bottom">
         <DrawerContent className="h-[70vh] max-h-[70vh] overflow-hidden">
           <DrawerTitle className="sr-only">Document builder</DrawerTitle>
           {mobileSidebarContent}
@@ -532,7 +523,7 @@ function SidebarTabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all",
+        "flex-1 rounded-lg py-1.5 font-semibold text-xs transition-all",
         active
           ? "bg-background text-foreground shadow-sm"
           : "text-muted-foreground hover:text-foreground"
@@ -566,7 +557,7 @@ function BlocksPanel({
                   icon={block.icon}
                   className="h-4 w-4 text-muted-foreground"
                 />
-                <span className="text-sm font-bold text-foreground">
+                <span className="font-bold text-foreground text-sm">
                   {block.label}
                 </span>
               </div>
@@ -618,7 +609,7 @@ function MobileBlocksPanel({
                   icon={block.icon}
                   className="h-4 w-4 text-muted-foreground"
                 />
-                <span className="text-sm font-bold text-foreground">
+                <span className="font-bold text-foreground text-sm">
                   {block.label}
                 </span>
               </div>
@@ -646,8 +637,6 @@ function MobileBlocksPanel({
     </div>
   )
 }
-
-
 
 const HEADER_PREVIEW_LOGO = (
   <div className="h-4 w-7 rounded-sm border border-current/25" />
@@ -734,7 +723,7 @@ function ColorTokenField({
 }) {
   return (
     <label className="grid grid-cols-[minmax(0,1fr)_minmax(0,8.5rem)] items-center gap-3">
-      <span className="text-xs font-medium text-foreground">{label}</span>
+      <span className="font-medium text-foreground text-xs">{label}</span>
       <ColorPicker
         colors={colors}
         label={label}
@@ -758,7 +747,7 @@ function SelectTokenField<TValue extends string>({
 }) {
   return (
     <label className="grid grid-cols-[minmax(0,1fr)_8.5rem] items-center gap-3">
-      <span className="text-xs font-medium text-foreground">{label}</span>
+      <span className="font-medium text-foreground text-xs">{label}</span>
       <Select
         value={value}
         onValueChange={(nextValue) => {
@@ -793,8 +782,8 @@ function CustomizeGroupsPanel({
     <ScrollArea className="relative min-h-0 flex-1 px-1">
       <div className="space-y-4 pb-4">
         <div className="px-1">
-          <h3 className="text-sm font-bold text-foreground">Customize</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <h3 className="font-bold text-foreground text-sm">Customize</h3>
+          <p className="mt-0.5 text-muted-foreground text-xs">
             Select a category to customize
           </p>
         </div>
@@ -812,11 +801,11 @@ function CustomizeGroupsPanel({
                     <HugeiconsIcon icon={group.icon} className="h-4 w-4" />
                   </div>
                   <div>
-                    <span className="text-sm font-bold text-foreground">
+                    <span className="font-bold text-foreground text-sm">
                       {group.label}
                     </span>
                     {group.description && (
-                      <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
+                      <p className="mt-0.5 line-clamp-1 text-muted-foreground text-xs">
                         {group.description}
                       </p>
                     )}
@@ -872,7 +861,7 @@ function CustomizeGroupPanel({
           <button
             type="button"
             onClick={onBack}
-            className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            className="group/back flex items-center gap-1.5 font-semibold text-muted-foreground text-xs transition-colors hover:text-foreground"
           >
             <HugeiconsIcon
               icon={ArrowLeft01Icon}
@@ -884,7 +873,7 @@ function CustomizeGroupPanel({
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
               <HugeiconsIcon icon={group.icon} className="h-4 w-4" />
             </div>
-            <span className="text-sm font-bold">{group.label}</span>
+            <span className="font-bold text-sm">{group.label}</span>
           </div>
         </div>
 
@@ -908,9 +897,9 @@ function CustomizeGroupPanel({
                     : "border-border/60 bg-background/50 hover:border-border hover:bg-accent/40"
                 )}
               >
-                <h4 className="text-sm font-bold">{preset.name}</h4>
+                <h4 className="font-bold text-sm">{preset.name}</h4>
                 {preset.description && (
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-muted-foreground text-xs">
                     {preset.description}
                   </p>
                 )}
@@ -988,10 +977,10 @@ function CustomizeGroupPanel({
                 )}
               >
                 <HeaderLayoutPreview layout={layout.id} />
-                <div className="mt-2 text-xs font-semibold text-foreground">
+                <div className="mt-2 font-semibold text-foreground text-xs">
                   {layout.name}
                 </div>
-                <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-muted-foreground">
+                <div className="mt-0.5 line-clamp-2 text-[10px] text-muted-foreground leading-snug">
                   {layout.description}
                 </div>
               </button>
@@ -1030,7 +1019,7 @@ function MobileCustomizeGroupPanel({
           <button
             type="button"
             onClick={onBack}
-            className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            className="group/back flex items-center gap-1.5 font-semibold text-muted-foreground text-xs transition-colors hover:text-foreground"
           >
             <HugeiconsIcon
               icon={ArrowLeft01Icon}
@@ -1042,7 +1031,7 @@ function MobileCustomizeGroupPanel({
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
               <HugeiconsIcon icon={group.icon} className="h-4 w-4" />
             </div>
-            <span className="text-sm font-bold">{group.label}</span>
+            <span className="font-bold text-sm">{group.label}</span>
           </div>
         </div>
 
@@ -1066,9 +1055,9 @@ function MobileCustomizeGroupPanel({
                     : "border-border/60 bg-background/50 hover:border-border hover:bg-accent/40"
                 )}
               >
-                <h4 className="text-sm font-bold">{preset.name}</h4>
+                <h4 className="font-bold text-sm">{preset.name}</h4>
                 {preset.description && (
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-muted-foreground text-xs">
                     {preset.description}
                   </p>
                 )}
@@ -1146,10 +1135,10 @@ function MobileCustomizeGroupPanel({
                 )}
               >
                 <HeaderLayoutPreview layout={layout.id} />
-                <div className="mt-2 text-xs font-semibold text-foreground">
+                <div className="mt-2 font-semibold text-foreground text-xs">
                   {layout.name}
                 </div>
-                <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-muted-foreground">
+                <div className="mt-0.5 line-clamp-2 text-[10px] text-muted-foreground leading-snug">
                   {layout.description}
                 </div>
               </button>

@@ -1,5 +1,5 @@
-import type { DocumentBlock, RichTextNode } from "./schema"
 import type { ProposalRenderModel } from "./render"
+import type { DocumentBlock, RichTextNode } from "./schema"
 
 function richText(node: RichTextNode): string {
   const own = node.text ?? ""

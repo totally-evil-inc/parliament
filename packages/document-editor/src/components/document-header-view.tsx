@@ -5,7 +5,9 @@ import {
   PlusSignIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import type { NodeViewProps } from "@tiptap/react"
 import { NodeViewWrapper } from "@tiptap/react"
+import type { PartySnapshot } from "@workspace/document/schema"
 import { Button } from "@workspace/ui/components/button"
 import { Calendar } from "@workspace/ui/components/calendar"
 import {
@@ -13,17 +15,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
+import { isDocumentHeaderLayoutId } from "../core/header-layouts"
+import type { DocumentHeaderLayoutId } from "../core/types"
 import {
+  useDocumentEditorHost,
   useProposalDraftCommands,
   useProposalDraftSelector,
 } from "../runtime/react"
-import type { PartySnapshot } from "@workspace/document/schema"
-import type { NodeViewProps } from "@tiptap/react"
-import type { DocumentHeaderLayoutId } from "../core/types"
-
 import { CanvasRichTextArea, CanvasTextField } from "./canvas-fields"
-import { isDocumentHeaderLayoutId } from "../core/header-layouts"
-import { useDocumentEditorHost } from "../runtime/react"
 
 const dateFormatter = new Intl.DateTimeFormat("en-KE", {
   day: "numeric",
@@ -88,7 +87,7 @@ function DocumentHeaderView({ node }: NodeViewProps) {
         }
       />
 
-      <div className="grid grid-cols-1 gap-8 border-t border-[var(--document-border)] pt-8 md:grid-cols-2 md:gap-16">
+      <div className="grid grid-cols-1 gap-8 border-[var(--document-border)] border-t pt-8 md:grid-cols-2 md:gap-16">
         <PartyFields
           label="From"
           party={data.seller}
@@ -170,7 +169,7 @@ function HeaderLayout({
   }
   return (
     <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:gap-8">
-      <div className="max-w-4xl min-w-0 flex-1 space-y-6">
+      <div className="min-w-0 max-w-4xl flex-1 space-y-6">
         <LogoPlaceholder />
         {titleField}
       </div>
@@ -189,7 +188,7 @@ function TitleField({
   return (
     <CanvasRichTextArea
       aria-label="Proposal title"
-      className="min-h-12 [font-family:var(--document-heading-font-family)] text-4xl leading-[1.08] font-bold tracking-tight"
+      className="min-h-12 font-bold text-4xl leading-[1.08] tracking-tight [font-family:var(--document-heading-font-family)]"
       placeholder="Proposal title..."
       value={value}
       onValueChange={onChange}
@@ -201,12 +200,12 @@ function LogoPlaceholder() {
   return (
     <button
       type="button"
-      className="flex h-16 w-28 shrink-0 items-center justify-center rounded-[var(--document-radius)] border border-dashed border-[var(--document-border)] bg-[color-mix(in_oklab,var(--document-accent)_6%,transparent)] text-[var(--document-muted-foreground)]"
+      className="flex h-16 w-28 shrink-0 items-center justify-center rounded-[var(--document-radius)] border border-[var(--document-border)] border-dashed bg-[color-mix(in_oklab,var(--document-accent)_6%,transparent)] text-[var(--document-muted-foreground)]"
       aria-label="Logo placeholder"
     >
       <div className="flex flex-col items-center gap-1">
         <HugeiconsIcon icon={Image01Icon} className="h-5 w-5" />
-        <span className="text-[10px] font-bold tracking-widest uppercase">
+        <span className="font-bold text-[10px] uppercase tracking-widest">
           Logo
         </span>
       </div>
@@ -249,7 +248,7 @@ function DatePicker({
   const parsed = parseDate(value)
   return (
     <div className="space-y-1.5">
-      <div className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+      <div className="font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-widest">
         {label}
       </div>
       <Popover>
@@ -258,7 +257,7 @@ function DatePicker({
             <Button
               type="button"
               variant="ghost"
-              className="h-auto w-full justify-start gap-2 px-0 py-0 text-sm font-medium hover:bg-transparent"
+              className="h-auto w-full justify-start gap-2 px-0 py-0 font-medium text-sm hover:bg-transparent"
             />
           }
         >
@@ -298,7 +297,7 @@ function PartyFields({
 }) {
   return (
     <section className="space-y-6">
-      <div className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+      <div className="font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-widest">
         {label}
       </div>
       <div className="space-y-3">
@@ -380,7 +379,7 @@ function PartyFields({
           variant="ghost"
           size="sm"
           onClick={onAddCustomField}
-          className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider uppercase"
+          className="h-7 gap-1.5 px-2 font-bold text-[10px] uppercase tracking-wider"
         >
           <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
           Add Field

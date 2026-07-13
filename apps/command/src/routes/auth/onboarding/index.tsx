@@ -1,13 +1,13 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import { z } from "zod"
-import { getSession } from "@/server/auth"
-import { ONBOARDING_STEP_IDS } from "@/features/auth/onboarding/constants"
-import { useOnboardingFlow } from "@/hooks/use-onboarding-flow"
-import { Stepper } from "@/features/auth/onboarding/components/stepper"
-import { OrganizationStep } from "@/features/auth/onboarding/components/organization-step"
 import { AccountStep } from "@/features/auth/onboarding/components/account-step"
 import { InviteStep } from "@/features/auth/onboarding/components/invite-step"
+import { OrganizationStep } from "@/features/auth/onboarding/components/organization-step"
 import { ReadyStep } from "@/features/auth/onboarding/components/ready-step"
+import { Stepper } from "@/features/auth/onboarding/components/stepper"
+import { ONBOARDING_STEP_IDS } from "@/features/auth/onboarding/constants"
+import { useOnboardingFlow } from "@/hooks/use-onboarding-flow"
+import { getSession } from "@/server/auth"
 
 const searchSchema = z.object({
   step: z.enum(ONBOARDING_STEP_IDS).catch("organization"),
@@ -44,7 +44,7 @@ function OnboardingPage() {
     <div className="w-full max-w-lg">
       <Stepper step={currentStepIndex} />
       {status ? (
-        <div className="mt-5 rounded-md border border-destructive/35 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <div className="mt-5 rounded-md border border-destructive/35 bg-destructive/10 px-3 py-2 text-destructive text-sm">
           {status}
         </div>
       ) : null}

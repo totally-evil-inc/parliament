@@ -1,15 +1,14 @@
+import type { QueryClient } from "@tanstack/react-query"
+import { QueryClientProvider } from "@tanstack/react-query"
 import {
+  createRootRouteWithContext,
   HeadContent,
   Scripts,
-  createRootRouteWithContext,
 } from "@tanstack/react-router"
-import { QueryClientProvider } from "@tanstack/react-query"
-import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { Toaster } from "@workspace/ui/components/sonner"
-
+import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import appCss from "@workspace/ui/globals.css?url"
 import katexCss from "katex/dist/katex.min.css?url"
-import type { QueryClient } from "@tanstack/react-query"
 import { ConfirmDialogProvider } from "@/components/confirm-dialog-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 

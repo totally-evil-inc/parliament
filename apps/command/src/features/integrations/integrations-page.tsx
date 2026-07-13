@@ -1,5 +1,3 @@
-import * as React from "react"
-import { IconArrowBoldRight, IconCircleCheck } from "nucleo-glass"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -18,9 +16,11 @@ import {
   TabsTrigger,
 } from "@workspace/ui/components/tabs"
 import { cn } from "@workspace/ui/lib/utils"
-import { integrationCategories } from "./data"
-import type { Integration, IntegrationStatus } from "./data"
+import { IconArrowBoldRight, IconCircleCheck } from "nucleo-glass"
+import * as React from "react"
 import { PageHeader } from "@/components/page-header"
+import type { Integration, IntegrationStatus } from "./data"
+import { integrationCategories } from "./data"
 
 type IntegrationFilter = (typeof integrationCategories)[number]["value"]
 
@@ -109,7 +109,7 @@ function IntegrationCard({ integration }: { integration: Integration }) {
       </CardContent>
 
       <CardFooter className="mt-auto justify-between gap-3 border-t">
-        <span className="text-xs text-muted-foreground capitalize">
+        <span className="text-muted-foreground text-xs capitalize">
           {integration.category}
         </span>
         <Button

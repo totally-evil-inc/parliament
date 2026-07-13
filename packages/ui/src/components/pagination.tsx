@@ -1,13 +1,16 @@
-import * as React from "react"
+import { Button } from "@workspace/ui/components/button"
 
 import { cn } from "@workspace/ui/lib/utils"
-import { Button } from "@workspace/ui/components/button"
-import { IconArrowBoldLeft, IconArrowBoldRight, IconCircleDots } from "nucleo-glass"
+import {
+  IconArrowBoldLeft,
+  IconArrowBoldRight,
+  IconCircleDots,
+} from "nucleo-glass"
+import type * as React from "react"
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (
     <nav
-      role="navigation"
       aria-label="pagination"
       data-slot="pagination"
       className={cn("mx-auto flex w-full justify-center", className)}
@@ -74,9 +77,7 @@ function PaginationPrevious({
       className={cn("pl-2!", className)}
       {...props}
     >
-      <IconArrowBoldLeft
-        data-icon="inline-start"
-      />
+      <IconArrowBoldLeft data-icon="inline-start" />
       <span className="hidden sm:block">{text}</span>
     </PaginationLink>
   )
@@ -95,9 +96,7 @@ function PaginationNext({
       {...props}
     >
       <span className="hidden sm:block">{text}</span>
-      <IconArrowBoldRight
-        data-icon="inline-end"
-      />
+      <IconArrowBoldRight data-icon="inline-end" />
     </PaginationLink>
   )
 }

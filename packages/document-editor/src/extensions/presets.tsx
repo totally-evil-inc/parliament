@@ -1,4 +1,4 @@
-import { Placeholder } from "@tiptap/extensions"
+import type { AnyExtension } from "@tiptap/core"
 import {
   Details,
   DetailsContent,
@@ -6,51 +6,34 @@ import {
 } from "@tiptap/extension-details"
 import HardBreak from "@tiptap/extension-hard-break"
 import HorizontalRule from "@tiptap/extension-horizontal-rule"
-import { Mathematics } from "@tiptap/extension-mathematics"
 import { TaskItem as BaseTaskItem, TaskList } from "@tiptap/extension-list"
-import { Table } from "@tiptap/extension-table/table"
+import { Mathematics } from "@tiptap/extension-mathematics"
 import { TableCell } from "@tiptap/extension-table/cell"
 import { TableHeader } from "@tiptap/extension-table/header"
 import { TableRow } from "@tiptap/extension-table/row"
+import { Table } from "@tiptap/extension-table/table"
+import { Placeholder } from "@tiptap/extensions"
+import type { Editor } from "@tiptap/react"
 import { ReactNodeViewRenderer } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
+import type { EditorCommand } from "../commands/types"
 import { SlashCommand } from "../components/editor-chrome/slash-command"
 import { TaskItemNodeView } from "../components/task-item-node-view"
-import type { AnyExtension } from "@tiptap/core"
-import type { Editor } from "@tiptap/react"
-import type { EditorCommand } from "../commands/types"
-
-import { DocumentRoot as BusinessDocument } from "./document"
 import { DocumentHeader } from "../proposal/extensions/document-header"
-import { LineItems } from "../proposal/extensions/line-items"
 import {
-  Timeline,
-  TimelineDate,
-  TimelineDescription,
-  TimelineItem,
-  TimelineTitle,
-} from "./timeline"
+  Faq,
+  FaqAnswer,
+  FaqItem,
+  FaqQuestion,
+} from "../proposal/extensions/faq"
 import {
   KeyNumbers,
-  KeyNumbersItem,
-  KeyNumbersValue,
-  KeyNumbersLabel,
   KeyNumbersDetail,
+  KeyNumbersItem,
+  KeyNumbersLabel,
+  KeyNumbersValue,
 } from "../proposal/extensions/key-numbers"
-import {
-  TeamMembers,
-  TeamMemberItem,
-  TeamMemberName,
-  TeamMemberRole,
-  TeamMemberBio,
-} from "../proposal/extensions/team-members"
-import {
-  Testimonials,
-  TestimonialItem,
-  TestimonialQuote,
-  TestimonialAuthor,
-  TestimonialRole,
-} from "../proposal/extensions/testimonials"
+import { LineItems } from "../proposal/extensions/line-items"
 import {
   ProposalSection,
   ProposalSectionBody,
@@ -58,7 +41,20 @@ import {
   ProposalSectionLead,
   ProposalSectionTitle,
 } from "../proposal/extensions/proposal-section"
-import { Faq, FaqAnswer, FaqItem, FaqQuestion } from "../proposal/extensions/faq"
+import {
+  TeamMemberBio,
+  TeamMemberItem,
+  TeamMemberName,
+  TeamMemberRole,
+  TeamMembers,
+} from "../proposal/extensions/team-members"
+import {
+  TestimonialAuthor,
+  TestimonialItem,
+  TestimonialQuote,
+  TestimonialRole,
+  Testimonials,
+} from "../proposal/extensions/testimonials"
 import {
   ProposalColumnBody,
   ProposalColumnHeading,
@@ -71,8 +67,8 @@ import {
   ProposalCoverTitle,
   ProposalImageCardBody,
   ProposalImageCardItem,
-  ProposalImageCardTitle,
   ProposalImageCards,
+  ProposalImageCardTitle,
   ProposalImageText,
   ProposalImageTextBody,
   ProposalImageTextEyebrow,
@@ -81,6 +77,14 @@ import {
   ProposalSignatureTerms,
   ProposalSignatureTitle,
 } from "../proposal/extensions/visual-blocks"
+import { DocumentRoot as BusinessDocument } from "./document"
+import {
+  Timeline,
+  TimelineDate,
+  TimelineDescription,
+  TimelineItem,
+  TimelineTitle,
+} from "./timeline"
 
 const TaskItem = BaseTaskItem.extend({
   addNodeView() {

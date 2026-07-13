@@ -1,23 +1,22 @@
-import * as React from "react"
-import { DocumentDragHandle } from "./editor-chrome/drag-handle"
-import { DocumentEditorCanvas } from "../runtime/editor"
-import { EditorBubbleMenu, EditorTableMenu } from "./editor-chrome/menus"
 import type { JSONContent } from "@tiptap/core"
 import type { Editor } from "@tiptap/react"
-import type { EditorCommand } from "../commands/types"
-import type { DocumentDefinition, DocumentTemplate } from "../core/types"
-
-import { createDocumentCommands } from "../core/definition"
-import { createBaseEditorCommands } from "../commands/base"
-import { editorCommandsForSurface } from "../commands/types"
-import {
-  DocumentEditorChromeContext,
-  useDocumentEditorHost,
-} from "../runtime/react"
 import {
   defaultDocumentTemplate,
   getDocumentTemplateStyle,
 } from "@workspace/document/presentation"
+import * as React from "react"
+import { createBaseEditorCommands } from "../commands/base"
+import type { EditorCommand } from "../commands/types"
+import { editorCommandsForSurface } from "../commands/types"
+import { createDocumentCommands } from "../core/definition"
+import type { DocumentDefinition, DocumentTemplate } from "../core/types"
+import { DocumentEditorCanvas } from "../runtime/editor"
+import {
+  DocumentEditorChromeContext,
+  useDocumentEditorHost,
+} from "../runtime/react"
+import { DocumentDragHandle } from "./editor-chrome/drag-handle"
+import { EditorBubbleMenu, EditorTableMenu } from "./editor-chrome/menus"
 
 const protectedNodeTypes = ["documentHeader", "lineItems"]
 

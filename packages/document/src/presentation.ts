@@ -244,7 +244,6 @@ export function getDocumentTemplate(
   }
 }
 
-
 export function updateDocumentTemplateToken<
   TKey extends keyof DocumentTemplateTokens,
 >(

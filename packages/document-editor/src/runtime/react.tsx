@@ -1,5 +1,5 @@
-import * as React from "react"
 import type { ProposalDraft } from "@workspace/document/schema"
+import * as React from "react"
 import type { ProposalDraftCommands, ProposalDraftStore } from "./store"
 
 const StoreContext = React.createContext<ProposalDraftStore | null>(null)

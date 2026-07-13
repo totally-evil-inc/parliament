@@ -1,5 +1,5 @@
 {
-  "include": ["**/*.ts", "**/*.tsx", "eslint.config.js", "prettier.config.js", "vite.config.js"],
+  "include": ["**/*.ts", "**/*.tsx", "vite.config.js"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",
@@ -28,8 +28,10 @@
       "@workspace/database/*": ["../../packages/database/src/*"],
       "@workspace/document": ["../../packages/document/src/index.ts"],
       "@workspace/document/*": ["../../packages/document/src/*"],
-      "@workspace/document-editor": ["../../packages/document-editor/src/index.ts"],
-      "@workspace/document-editor/*": ["../../packages/document-editor/src/*"],
+      "@workspace/document-editor": [
+        "../../packages/document-editor/src/index.ts"
+      ],
+      "@workspace/document-editor/*": ["../../packages/document-editor/src/*"]
     }
   }
 }

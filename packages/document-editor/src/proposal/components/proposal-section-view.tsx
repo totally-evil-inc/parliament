@@ -1,5 +1,5 @@
-import { NodeViewContent, NodeViewWrapper } from "@tiptap/react"
 import type { NodeViewProps } from "@tiptap/react"
+import { NodeViewContent, NodeViewWrapper } from "@tiptap/react"
 
 const variantClassNames = {
   default: "",

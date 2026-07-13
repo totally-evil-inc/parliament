@@ -31,16 +31,12 @@ function blockToTiptap(block: DocumentBlock): Array<JSONContent> {
       return block.content.content as Array<JSONContent>
     case "section":
       return [
-        node(
-          "proposalSection",
-          { blockId: block.id, variant: block.variant },
-          [
-            inlineField("proposalSectionEyebrow", block.eyebrow),
-            inlineField("proposalSectionTitle", block.title),
-            inlineField("proposalSectionLead", block.lead),
-            blockField("proposalSectionBody", block.content),
-          ]
-        ),
+        node("proposalSection", { blockId: block.id, variant: block.variant }, [
+          inlineField("proposalSectionEyebrow", block.eyebrow),
+          inlineField("proposalSectionTitle", block.title),
+          inlineField("proposalSectionLead", block.lead),
+          blockField("proposalSectionBody", block.content),
+        ]),
       ]
     case "cover":
       return [
@@ -60,23 +56,15 @@ function blockToTiptap(block: DocumentBlock): Array<JSONContent> {
       ]
     case "columns":
       return [
-        node(
-          "proposalColumns",
-          { blockId: block.id, columns: block.columns },
-          [
-            inlineField("proposalColumnsTitle", block.title),
-            ...block.items.map((item) =>
-              node(
-                "proposalColumnItem",
-                { id: item.id },
-                [
-                  inlineField("proposalColumnHeading", item.heading),
-                  blockField("proposalColumnBody", item.body),
-                ]
-              )
-            ),
-          ]
-        ),
+        node("proposalColumns", { blockId: block.id, columns: block.columns }, [
+          inlineField("proposalColumnsTitle", block.title),
+          ...block.items.map((item) =>
+            node("proposalColumnItem", { id: item.id }, [
+              inlineField("proposalColumnHeading", item.heading),
+              blockField("proposalColumnBody", item.body),
+            ])
+          ),
+        ]),
       ]
     case "imageText":
       return [
@@ -104,14 +92,10 @@ function blockToTiptap(block: DocumentBlock): Array<JSONContent> {
             variant: block.variant,
           },
           block.items.map((item) =>
-            node(
-              "proposalImageCardItem",
-              { id: item.id, image: item.image },
-              [
-                inlineField("proposalImageCardTitle", item.title),
-                blockField("proposalImageCardBody", item.body),
-              ]
-            )
+            node("proposalImageCardItem", { id: item.id, image: item.image }, [
+              inlineField("proposalImageCardTitle", item.title),
+              blockField("proposalImageCardBody", item.body),
+            ])
           )
         ),
       ]
@@ -132,15 +116,11 @@ function blockToTiptap(block: DocumentBlock): Array<JSONContent> {
           "keyNumbers",
           { blockId: block.id, columns: block.columns },
           block.items.map((item) =>
-            node(
-              "keyNumbersItem",
-              { id: item.id },
-              [
-                inlineField("keyNumbersValue", item.value),
-                inlineField("keyNumbersLabel", item.label),
-                blockField("keyNumbersDetail", item.detail),
-              ]
-            )
+            node("keyNumbersItem", { id: item.id }, [
+              inlineField("keyNumbersValue", item.value),
+              inlineField("keyNumbersLabel", item.label),
+              blockField("keyNumbersDetail", item.detail),
+            ])
           )
         ),
       ]
@@ -150,15 +130,11 @@ function blockToTiptap(block: DocumentBlock): Array<JSONContent> {
           "teamMembers",
           { blockId: block.id, columns: block.columns },
           block.items.map((item) =>
-            node(
-              "teamMemberItem",
-              { id: item.id, sourceId: item.sourceId },
-              [
-                inlineField("teamMemberName", item.name),
-                inlineField("teamMemberRole", item.role),
-                blockField("teamMemberBio", item.bio),
-              ]
-            )
+            node("teamMemberItem", { id: item.id, sourceId: item.sourceId }, [
+              inlineField("teamMemberName", item.name),
+              inlineField("teamMemberRole", item.role),
+              blockField("teamMemberBio", item.bio),
+            ])
           )
         ),
       ]
@@ -168,15 +144,11 @@ function blockToTiptap(block: DocumentBlock): Array<JSONContent> {
           "testimonials",
           { blockId: block.id, columns: block.columns },
           block.items.map((item) =>
-            node(
-              "testimonialItem",
-              { id: item.id, sourceId: item.sourceId },
-              [
-                blockField("testimonialQuote", item.quote),
-                inlineField("testimonialAuthor", item.author),
-                inlineField("testimonialRole", item.role),
-              ]
-            )
+            node("testimonialItem", { id: item.id, sourceId: item.sourceId }, [
+              blockField("testimonialQuote", item.quote),
+              inlineField("testimonialAuthor", item.author),
+              inlineField("testimonialRole", item.role),
+            ])
           )
         ),
       ]
@@ -205,14 +177,10 @@ function blockToTiptap(block: DocumentBlock): Array<JSONContent> {
           "proposalFaq",
           { blockId: block.id, variant: block.variant },
           block.items.map((item) =>
-            node(
-              "proposalFaqItem",
-              { id: item.id },
-              [
-                inlineField("proposalFaqQuestion", item.question),
-                blockField("proposalFaqAnswer", item.answer),
-              ]
-            )
+            node("proposalFaqItem", { id: item.id }, [
+              inlineField("proposalFaqQuestion", item.question),
+              blockField("proposalFaqAnswer", item.answer),
+            ])
           )
         ),
       ]

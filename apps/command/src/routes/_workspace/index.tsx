@@ -2,9 +2,9 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import { testQuery } from "@/api/workspace"
-import { workspaceStats } from "@/features/workspace/config"
-import { PageHeader } from "@/components/page-header"
 import { MetricCard } from "@/components/metric-card"
+import { PageHeader } from "@/components/page-header"
+import { workspaceStats } from "@/features/workspace/config"
 
 export const Route = createFileRoute("/_workspace/")({
   loader: async ({ context }) => {

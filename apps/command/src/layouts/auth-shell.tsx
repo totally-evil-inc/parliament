@@ -35,7 +35,7 @@ export function AuthShell({
       >
         <div
           className={cn(
-            "relative hidden flex-1 overflow-hidden border-r border-border/60 lg:block",
+            "relative hidden flex-1 overflow-hidden border-border/60 border-r lg:block",
             leftClassName
           )}
         >

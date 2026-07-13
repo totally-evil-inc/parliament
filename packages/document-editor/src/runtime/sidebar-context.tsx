@@ -8,7 +8,9 @@ type DocumentSidebarContextType = {
   toggleSidebar: () => void
 }
 
-const DocumentSidebarContext = React.createContext<DocumentSidebarContextType | undefined>(undefined)
+const DocumentSidebarContext = React.createContext<
+  DocumentSidebarContextType | undefined
+>(undefined)
 
 export function DocumentSidebarProvider({
   children,
@@ -45,7 +47,9 @@ export function DocumentSidebarProvider({
 export function useDocumentSidebar() {
   const context = React.useContext(DocumentSidebarContext)
   if (!context) {
-    throw new Error("useDocumentSidebar must be used within a DocumentSidebarProvider")
+    throw new Error(
+      "useDocumentSidebar must be used within a DocumentSidebarProvider"
+    )
   }
   return context
 }

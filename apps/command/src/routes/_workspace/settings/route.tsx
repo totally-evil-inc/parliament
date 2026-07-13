@@ -1,17 +1,17 @@
 import {
+  createFileRoute,
   Link,
   Outlet,
-  createFileRoute,
   useParams,
 } from "@tanstack/react-router"
 import { cn } from "@workspace/ui/lib/utils"
-import { SettingsProvider } from "@/features/workspace/settings/settings-provider"
 import { PageHeader } from "@/components/page-header"
 import {
   defaultWorkspaceSettingsTab,
   isWorkspaceSettingsTab,
   workspaceSettingsTabs,
 } from "@/features/workspace/settings"
+import { SettingsProvider } from "@/features/workspace/settings/settings-provider"
 
 export const Route = createFileRoute("/_workspace/settings")({
   component: SettingsLayout,
@@ -43,7 +43,7 @@ function SettingsTabs() {
   return (
     <nav
       aria-label="Settings sections"
-      className="border-b border-border/60 px-6 py-4 md:border-r md:border-b-0 md:px-4"
+      className="border-border/60 border-b px-6 py-4 md:border-r md:border-b-0 md:px-4"
     >
       <div className="flex gap-1 overflow-x-auto md:flex-col md:overflow-visible">
         {workspaceSettingsTabs.map((tab) => (
@@ -57,7 +57,7 @@ function SettingsTabs() {
             }
             preload="intent"
             className={cn(
-              "relative inline-flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium whitespace-nowrap text-foreground/60 transition-colors hover:text-foreground md:w-full",
+              "relative inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-md px-2 font-medium text-foreground/60 text-xs transition-colors hover:text-foreground md:w-full",
               activeTab === tab.value &&
                 "bg-background text-foreground after:absolute after:inset-y-1 after:-right-4 after:hidden after:w-0.5 after:bg-foreground md:after:block"
             )}

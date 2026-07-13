@@ -1,5 +1,5 @@
-import katex from "katex"
 import type { RichTextNode } from "@workspace/document/schema"
+import katex from "katex"
 import type * as React from "react"
 
 type RichTextRendererProps = {
@@ -112,21 +112,21 @@ function renderNode(node: RichTextNode): React.ReactNode {
   }
   if (node.type === "keyNumbersValue") {
     return (
-      <div className="mb-1.5 text-4xl font-black tracking-tight text-[var(--document-accent)] md:text-5xl">
+      <div className="mb-1.5 font-black text-4xl text-[var(--document-accent)] tracking-tight md:text-5xl">
         {children}
       </div>
     )
   }
   if (node.type === "keyNumbersLabel") {
     return (
-      <div className="mb-1 text-base font-bold tracking-tight text-[var(--document-foreground)] md:text-lg">
+      <div className="mb-1 font-bold text-[var(--document-foreground)] text-base tracking-tight md:text-lg">
         {children}
       </div>
     )
   }
   if (node.type === "keyNumbersDetail") {
     return (
-      <div className="text-sm leading-relaxed text-[var(--document-muted-foreground)] md:text-base">
+      <div className="text-[var(--document-muted-foreground)] text-sm leading-relaxed md:text-base">
         {children}
       </div>
     )
@@ -156,21 +156,21 @@ function renderNode(node: RichTextNode): React.ReactNode {
   }
   if (node.type === "teamMemberName") {
     return (
-      <div className="mb-1 text-base font-bold tracking-tight text-[var(--document-foreground)] md:text-lg">
+      <div className="mb-1 font-bold text-[var(--document-foreground)] text-base tracking-tight md:text-lg">
         {children}
       </div>
     )
   }
   if (node.type === "teamMemberRole") {
     return (
-      <div className="mb-3 text-sm font-medium text-[var(--document-muted-foreground)] md:text-base">
+      <div className="mb-3 font-medium text-[var(--document-muted-foreground)] text-sm md:text-base">
         {children}
       </div>
     )
   }
   if (node.type === "teamMemberBio") {
     return (
-      <div className="text-xs leading-normal text-[var(--document-muted-foreground)] md:text-sm">
+      <div className="text-[var(--document-muted-foreground)] text-xs leading-normal md:text-sm">
         {children}
       </div>
     )
@@ -178,28 +178,28 @@ function renderNode(node: RichTextNode): React.ReactNode {
 
   if (node.type === "testimonialItem") {
     return (
-      <blockquote className="m-0 break-inside-avoid border-l-2 border-[var(--document-accent)] py-1 pl-5 text-left">
+      <blockquote className="m-0 break-inside-avoid border-[var(--document-accent)] border-l-2 py-1 pl-5 text-left">
         {children}
       </blockquote>
     )
   }
   if (node.type === "testimonialQuote") {
     return (
-      <div className="mb-3 text-base leading-relaxed font-medium text-[var(--document-muted-foreground)] italic md:text-lg">
+      <div className="mb-3 font-medium text-[var(--document-muted-foreground)] text-base italic leading-relaxed md:text-lg">
         {children}
       </div>
     )
   }
   if (node.type === "testimonialAuthor") {
     return (
-      <div className="mb-0.5 text-sm font-bold tracking-tight text-[var(--document-foreground)] md:text-base">
+      <div className="mb-0.5 font-bold text-[var(--document-foreground)] text-sm tracking-tight md:text-base">
         {children}
       </div>
     )
   }
   if (node.type === "testimonialRole") {
     return (
-      <div className="text-xs font-medium text-[var(--document-muted-foreground)] md:text-sm">
+      <div className="font-medium text-[var(--document-muted-foreground)] text-xs md:text-sm">
         {children}
       </div>
     )

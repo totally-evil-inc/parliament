@@ -3,10 +3,10 @@ import { CanvasTextField } from "../canvas-fields"
 export function SignatureBillingNotes() {
   return (
     <div className="space-y-2">
-      <h4 className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+      <h4 className="font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-widest">
         Billing notes
       </h4>
-      <p className="text-xs leading-relaxed text-[var(--document-muted-foreground)]">
+      <p className="text-[var(--document-muted-foreground)] text-xs leading-relaxed">
         Use this section to confirm the services, quantities, pricing,
         discounts, and taxes included in this document.
       </p>
@@ -36,20 +36,20 @@ export function Signature({
           onValueChange={onSignerNameChange}
         />
       ) : (
-        <p className="font-[cursive] text-3xl leading-none text-[var(--document-foreground)]">
+        <p className="font-[cursive] text-3xl text-[var(--document-foreground)] leading-none">
           {signerName || "Signer name"}
         </p>
       )}
       {onSignerTitleChange ? (
         <CanvasTextField
           aria-label="Signer title"
-          className="mt-2 ml-auto h-5 text-right text-[10px] leading-5 font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase"
+          className="mt-2 ml-auto h-5 text-right font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase leading-5 tracking-widest"
           placeholder="Signer title"
           value={signerTitle || ""}
           onValueChange={onSignerTitleChange}
         />
       ) : (
-        <p className="mt-2 text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+        <p className="mt-2 font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-widest">
           {signerTitle || "Signer title"}
         </p>
       )}

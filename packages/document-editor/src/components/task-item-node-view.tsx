@@ -1,6 +1,6 @@
+import type { NodeViewProps } from "@tiptap/react"
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react"
 import { Checkbox } from "@workspace/ui/components/checkbox"
-import type { NodeViewProps } from "@tiptap/react"
 
 export function TaskItemNodeView({ node, updateAttributes }: NodeViewProps) {
   const checked = Boolean(node.attrs.checked)

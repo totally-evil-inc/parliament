@@ -2,7 +2,7 @@ import { ONBOARDING_STEPS } from "../constants"
 
 export function Stepper({ step }: { step: number }) {
   return (
-    <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase">
+    <div className="flex items-center gap-2 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.3em]">
       <span>
         Step {String(step + 1).padStart(2, "0")} / {ONBOARDING_STEPS.length}
       </span>

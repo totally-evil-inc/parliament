@@ -10,16 +10,16 @@ const db = drizzle({
   schema,
 })
 
-export { db, schema }
 export {
-  eq,
   and,
-  or,
-  sql,
-  desc,
   asc,
   count,
-  isNull,
-  isNotNull,
+  desc,
+  eq,
   inArray,
+  isNotNull,
+  isNull,
+  or,
+  sql,
 } from "drizzle-orm"
+export { db, schema }

@@ -1,5 +1,5 @@
 {
-  "include": ["**/*.ts", "eslint.config.js", "../../packages/database/src/schema/auth-schema.ts"],
+  "include": ["**/*.ts", "../../packages/database/src/schema/auth-schema.ts"],
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],
@@ -19,7 +19,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@workspace/database": ["../../packages/database/src/index.ts"],
-      "@workspace/database/*": ["../../packages/database/src/*"],
+      "@workspace/database/*": ["../../packages/database/src/*"]
     }
   },
   "exclude": ["node_modules", "dist"]

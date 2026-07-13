@@ -34,7 +34,7 @@ export function AuthTextField({
         aria-describedby={error ? `${id}-error` : undefined}
       />
       {error ? (
-        <p id={`${id}-error`} className="text-xs text-destructive">
+        <p id={`${id}-error`} className="text-destructive text-xs">
           {error}
         </p>
       ) : null}

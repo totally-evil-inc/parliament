@@ -10,8 +10,8 @@ import {
   TableRow,
 } from "@workspace/ui/components/table"
 import { LineItemRow } from "./line-item-row"
-import { getLineItemKey } from "./pricing"
 import type { PricingItem } from "./pricing"
+import { getLineItemKey } from "./pricing"
 
 type LineItemsTableProps = {
   lineItems: Array<PricingItem>
@@ -43,7 +43,7 @@ export function LineItemsTable({
         className="min-w-180 border-collapse text-left"
       >
         <TableHeader>
-          <TableRow className="border-b border-[var(--document-border)] bg-transparent text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase hover:bg-transparent">
+          <TableRow className="border-[var(--document-border)] border-b bg-transparent font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-widest hover:bg-transparent">
             <TableHead className="h-auto px-0 py-3 pr-5 text-[var(--document-muted-foreground)]">
               Description
             </TableHead>
@@ -64,7 +64,7 @@ export function LineItemsTable({
             <TableRow>
               <TableCell
                 colSpan={5}
-                className="px-0 py-10 text-center text-sm text-[var(--document-muted-foreground)]"
+                className="px-0 py-10 text-center text-[var(--document-muted-foreground)] text-sm"
               >
                 No line items yet. Add a service to start building the total.
               </TableCell>
@@ -91,7 +91,7 @@ export function LineItemsTable({
           variant="ghost"
           size="sm"
           onClick={addItem}
-          className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider uppercase text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
+          className="h-7 gap-1.5 px-2 font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-wider hover:text-[var(--document-foreground)]"
         >
           <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
           Add Line Item
@@ -101,7 +101,7 @@ export function LineItemsTable({
           variant="ghost"
           size="sm"
           onClick={addCatalogItem}
-          className="h-7 gap-1.5 px-2 text-[10px] font-bold tracking-wider uppercase text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
+          className="h-7 gap-1.5 px-2 font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-wider hover:text-[var(--document-foreground)]"
         >
           <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
           From Catalog

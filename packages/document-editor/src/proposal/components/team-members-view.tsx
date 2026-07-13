@@ -1,5 +1,5 @@
-import { NodeViewContent, NodeViewWrapper } from "@tiptap/react"
 import type { NodeViewProps } from "@tiptap/react"
+import { NodeViewContent, NodeViewWrapper } from "@tiptap/react"
 
 const gridColumnClassNames = {
   1: "proposal-grid-cols-1",

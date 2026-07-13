@@ -57,5 +57,3 @@ function isActiveNavItem(to: string, pathname: string) {
 
   return pathname === to || pathname.startsWith(`${to}/`)
 }
-
-
