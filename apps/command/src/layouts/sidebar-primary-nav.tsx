@@ -21,7 +21,7 @@ export function SidebarPrimaryNav({
   return (
     <SidebarGroup className="py-2">
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu className="gap-3">
           {items.map((item) => (
             <SidebarMenuItem key={item.label}>
               {item.to ? (
