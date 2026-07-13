@@ -4,10 +4,12 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/manrope";
 @import "@fontsource-variable/jetbrains-mono";
+@import url("https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&f[]=cabinet-grotesk@400,500,700,800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Mono:wght@400;700&display=swap");
 
 @custom-variant dark (&:is(.dark *));
-@source "../../../apps/**/*.{ts,tsx}";
-@source "../../../components/**/*.{ts,tsx}";
+@source "../../../../apps/**/*.{ts,tsx}";
+@source "../../../document-editor/src/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
 :root {
@@ -166,46 +168,137 @@
     box-shadow: none;
     transition: background-color 999999s ease-in-out 0s;
   }
+
+  /* Suppress ProseMirror selection outline on card-grid block wrappers */
+  .key-numbers,
+  .team-members,
+  .testimonials,
+  [data-node-view-wrapper]:has(.key-numbers),
+  [data-node-view-wrapper]:has(.team-members),
+  [data-node-view-wrapper]:has(.testimonials) {
+    outline: none !important;
+    border-color: transparent !important;
+  }
+
+  /* Suppress focus outline on embedded card tiptap editors */
+  .key-numbers .tiptap,
+  .team-members .tiptap,
+  .testimonials .tiptap,
+  .key-numbers .tiptap:focus,
+  .team-members .tiptap:focus,
+  .testimonials .tiptap:focus {
+    outline: none !important;
+  }
+
+  .proposal-grid-block {
+    width: 100%;
+  }
+
+  .proposal-grid-block [data-node-view-content-react] {
+    display: grid;
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+    align-items: start;
+    gap: 3rem 2.5rem;
+    margin: 2.5rem auto;
+  }
+
+  .proposal-grid-block [data-node-view-content-react] > * {
+    min-width: 0;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .proposal-columns [data-node-view-content-react],
+  .proposal-image-cards [data-node-view-content-react] {
+    gap: 1rem;
+    margin: 0 auto;
+  }
+
+  .proposal-columns [data-node-view-content-react] > [data-type="proposal-columns-title"] {
+    grid-column: 1 / -1;
+    margin-bottom: 0.25rem;
+  }
+
+  @media (min-width: 48rem) {
+    .proposal-grid-cols-2 [data-node-view-content-react] {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .proposal-grid-cols-3 [data-node-view-content-react] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .proposal-image-cards-horizontal [data-type="proposal-image-card-item"] {
+      display: grid;
+      grid-template-columns: 7rem 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .proposal-image-cards-horizontal .proposal-image-placeholder {
+      margin-bottom: 0;
+      min-height: 7rem;
+    }
+  }
 }
 
 @layer components {
-  .document-drag-handle,
-  .document-delete-handle {
+  .document-block-controls {
     z-index: 50;
-    width: 1.5rem;
-    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .document-block-controls-left {
+    cursor: grab;
+    translate: -0.5rem 0;
+  }
+
+  .document-block-controls-right {
+    translate: 0.5rem 0;
+  }
+
+  .document-block-control {
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 2rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    background: var(--background);
     color: var(--muted-foreground);
-    opacity: 0.72;
+    padding: 0;
+    box-shadow: var(--shadow-sm);
+    opacity: 0.88;
     transition:
       opacity 120ms ease,
       background-color 120ms ease,
-      color 120ms ease;
+      border-color 120ms ease,
+      color 120ms ease,
+      box-shadow 120ms ease;
   }
 
-  .document-drag-handle {
-    cursor: grab;
-  }
-
-  .document-delete-handle {
+  .document-block-insert-control,
+  .document-block-delete-control {
     cursor: pointer;
   }
 
-  .document-drag-handle-button,
-  .document-delete-handle-button {
-    width: 100%;
-    height: 100%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: inherit;
-    background: transparent;
-    color: inherit;
-    padding: 0;
+  .document-block-control:hover,
+  .document-block-control:focus-visible {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+    opacity: 1;
+  }
+
+  .document-block-control:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--ring) 45%, transparent);
+    outline-offset: 2px;
   }
 
   .document-drag-handle-grip {
@@ -217,23 +310,100 @@
     background-repeat: repeat;
   }
 
-  .document-drag-handle:hover,
-  .document-drag-handle:focus-visible,
-  .document-drag-handle[data-dragging="true"] {
+  .document-block-controls-left[data-dragging="true"]
+    .document-block-drag-control {
     background-color: var(--accent);
     color: var(--accent-foreground);
     opacity: 1;
   }
 
-  .document-delete-handle:hover,
-  .document-delete-handle:focus-visible {
+  .document-block-delete-control:hover,
+  .document-block-delete-control:focus-visible {
     background-color: color-mix(in oklab, var(--destructive) 12%, transparent);
+    border-color: color-mix(in oklab, var(--destructive) 24%, var(--border));
     color: var(--destructive);
     opacity: 1;
   }
 
-  .document-drag-handle:active,
-  .document-drag-handle[data-dragging="true"] {
+  .document-block-controls-left:active,
+  .document-block-controls-left[data-dragging="true"] {
     cursor: grabbing;
+  }
+}
+
+@layer utilities {
+  .document-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(
+        in oklab,
+        var(--document-border) 88%,
+        transparent
+      )
+      transparent;
+  }
+
+  .document-scrollbar::-webkit-scrollbar {
+    width: 0.375rem;
+    height: 0.375rem;
+  }
+
+  .document-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .document-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--document-border) 88%, transparent);
+  }
+
+  .document-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: color-mix(
+      in oklab,
+      var(--document-accent) 52%,
+      var(--document-border)
+    );
+  }
+
+  .document-print-root,
+  .document-print-root body {
+    overflow: auto;
+  }
+
+  .document-print-page,
+  .document-print-page * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .document-print-page table {
+    page-break-inside: auto;
+  }
+
+  .document-print-page tr,
+  .document-print-page .break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .document-print-page p {
+    overflow-wrap: anywhere;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 18mm;
+}
+
+@media print {
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  .document-print-canvas {
+    min-height: 0 !important;
   }
 }

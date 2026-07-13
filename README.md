@@ -1,5 +1,10 @@
 # shadcn/ui monorepo template
 
+## Project documentation
+
+- [Document editor system](./docs/document-editor/README.md)
+- [Document editor architecture audit](./DOCUMENT_EDITOR_ARCHITECTURE_AUDIT.md)
+
 This is a TanStack Start monorepo template with shadcn/ui.
 
 ## Adding components
