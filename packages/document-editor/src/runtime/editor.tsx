@@ -25,7 +25,10 @@ export function useDocumentEditorAdapter({
 
   React.useEffect(() => {
     if (!editor || editor.isFocused || equalContent(editor.getJSON(), content)) return
-    editor.commands.setContent(content, { emitUpdate: false })
+    queueMicrotask(() => {
+      if (!editor || editor.isFocused) return
+      editor.commands.setContent(content, { emitUpdate: false })
+    })
   }, [content, editor])
 
   return editor
