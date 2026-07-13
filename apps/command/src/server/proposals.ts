@@ -12,7 +12,7 @@ import type { AuthenticatedCommandAuthContext } from "./auth-context"
 
 const proposalIdSchema = z.object({ id: z.string().uuid() })
 const createProposalDraftSchema = z.object({
-  blueprint: z.literal("web-design").default("web-design"),
+  blueprint: z.enum(["web-design", "classic"]).default("classic"),
 })
 const saveProposalDraftSchema = z.object({
   id: z.string().uuid(),

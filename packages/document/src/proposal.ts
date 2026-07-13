@@ -168,7 +168,7 @@ export function createProposalDraftFromBlueprint({
   now = new Date(),
   sellerName = "Northstar Studio",
 }: {
-  blueprint: "web-design"
+  blueprint: "web-design" | "classic"
   id: string
   now?: Date
   sellerName?: string

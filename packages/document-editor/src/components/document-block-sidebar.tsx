@@ -34,6 +34,7 @@ import {
   documentRadiusOptions,
   documentSpacingOptions,
   defaultDocumentTemplate,
+  darkDocumentTemplate,
   updateDocumentTemplateToken,
 } from "@workspace/document/presentation"
 import type {
@@ -56,7 +57,6 @@ type DocumentBlockSidebarProps = {
   defaultTemplate: DocumentTemplate
   template: DocumentTemplate
   onTemplateChange: (template: DocumentTemplate) => void
-  onTemplateReset: () => void
 }
 
 export function DocumentBlockSidebar({
@@ -65,7 +65,6 @@ export function DocumentBlockSidebar({
   defaultTemplate: _defaultTemplate,
   template,
   onTemplateChange,
-  onTemplateReset,
 }: DocumentBlockSidebarProps) {
   const { open, openMobile, setOpen, setOpenMobile } = useDocumentSidebar()
   const [activePanel, setActivePanel] =
@@ -343,7 +342,6 @@ export function DocumentBlockSidebar({
                   template={template}
                   headerLayout={headerLayout}
                   onBack={() => setSelectedCustomizeGroupId(null)}
-                  onReset={onTemplateReset}
                   onTokenChange={updateToken}
                   onTemplateChange={onTemplateChange}
                   onHeaderLayoutChange={updateHeaderLayout}
@@ -471,7 +469,6 @@ export function DocumentBlockSidebar({
                   template={template}
                   headerLayout={headerLayout}
                   onBack={() => setSelectedCustomizeGroupId(null)}
-                  onReset={onTemplateReset}
                   onTokenChange={updateToken}
                   onTemplateChange={onTemplateChange}
                   onHeaderLayoutChange={updateHeaderLayout}
@@ -853,7 +850,6 @@ function CustomizeGroupPanel({
   template,
   headerLayout,
   onBack,
-  onReset,
   onTokenChange,
   onTemplateChange,
   onHeaderLayoutChange,
@@ -862,7 +858,6 @@ function CustomizeGroupPanel({
   template: DocumentTemplate
   headerLayout: DocumentHeaderLayoutId
   onBack: () => void
-  onReset: () => void
   onTokenChange: <TKey extends keyof DocumentTemplateTokens>(
     key: TKey,
     value: DocumentTemplateTokens[TKey]
@@ -901,29 +896,17 @@ function CustomizeGroupPanel({
                 key={preset.id}
                 onClick={() => {
                   if (preset.id === defaultDocumentTemplate.id) {
-                    onReset()
+                    onTemplateChange(defaultDocumentTemplate)
                   } else if (preset.id === "classic-dark") {
-                    const darkTemplate: DocumentTemplate = {
-                      ...template,
-                      id: "classic-dark",
-                      name: "Classic Dark",
-                      tokens: {
-                        canvasBackground: "#1a1a1a",
-                        pageBackground: "#0d0d0d",
-                        foreground: "#c4c4c4",
-                        mutedForeground: "#a9a9a9",
-                        accent: "#9a9a9a",
-                        border: "#0d0d0d",
-                        fontFamily: "sans",
-                        headingFontFamily: "sans",
-                        radius: "0.75rem",
-                        spacingScale: "comfortable",
-                      },
-                    }
-                    onTemplateChange(darkTemplate)
+                    onTemplateChange(darkDocumentTemplate)
                   }
                 }}
-                className="group w-full rounded-xl border border-border/60 bg-background/50 p-3.5 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
+                className={cn(
+                  "group w-full rounded-xl border p-3.5 text-left shadow-xs transition-all",
+                  template.id === preset.id
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "border-border/60 bg-background/50 hover:border-border hover:bg-accent/40"
+                )}
               >
                 <h4 className="text-sm font-bold">{preset.name}</h4>
                 {preset.description && (
@@ -1025,7 +1008,6 @@ function MobileCustomizeGroupPanel({
   template,
   headerLayout,
   onBack,
-  onReset,
   onTokenChange,
   onTemplateChange,
   onHeaderLayoutChange,
@@ -1034,7 +1016,6 @@ function MobileCustomizeGroupPanel({
   template: DocumentTemplate
   headerLayout: DocumentHeaderLayoutId
   onBack: () => void
-  onReset: () => void
   onTokenChange: <TKey extends keyof DocumentTemplateTokens>(
     key: TKey,
     value: DocumentTemplateTokens[TKey]
@@ -1073,29 +1054,17 @@ function MobileCustomizeGroupPanel({
                 key={preset.id}
                 onClick={() => {
                   if (preset.id === defaultDocumentTemplate.id) {
-                    onReset()
+                    onTemplateChange(defaultDocumentTemplate)
                   } else if (preset.id === "classic-dark") {
-                    const darkTemplate: DocumentTemplate = {
-                      ...template,
-                      id: "classic-dark",
-                      name: "Classic Dark",
-                      tokens: {
-                        canvasBackground: "#1a1a1a",
-                        pageBackground: "#0d0d0d",
-                        foreground: "#c4c4c4",
-                        mutedForeground: "#a9a9a9",
-                        accent: "#9a9a9a",
-                        border: "#0d0d0d",
-                        fontFamily: "sans",
-                        headingFontFamily: "sans",
-                        radius: "0.75rem",
-                        spacingScale: "comfortable",
-                      },
-                    }
-                    onTemplateChange(darkTemplate)
+                    onTemplateChange(darkDocumentTemplate)
                   }
                 }}
-                className="group w-full rounded-xl border border-border/60 bg-background/50 p-3.5 text-left shadow-xs transition-all hover:border-border hover:bg-accent/40"
+                className={cn(
+                  "group w-full rounded-xl border p-3.5 text-left shadow-xs transition-all",
+                  template.id === preset.id
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "border-border/60 bg-background/50 hover:border-border hover:bg-accent/40"
+                )}
               >
                 <h4 className="text-sm font-bold">{preset.name}</h4>
                 {preset.description && (

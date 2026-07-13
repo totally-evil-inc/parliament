@@ -4,8 +4,7 @@ import { buildProposalRenderModel } from "@workspace/document/render"
 import { createProposalDraft } from "@workspace/document/proposal"
 import { safeParseProposalDraft } from "@workspace/document/schema"
 import {
-  defaultDocumentTemplate,
-  webStudioProposalTemplate,
+  getDocumentTemplate,
 } from "@workspace/document/presentation"
 
 import { ProposalPrintView } from "@/features/documents/print/proposal-print-view"
@@ -39,29 +38,9 @@ function PrintRoute() {
   return (
     <ProposalPrintView
       model={buildProposalRenderModel(result.document)}
-      template={getTemplate(result.document.template)}
+      template={getDocumentTemplate(result.document.template, "light")}
     />
   )
-}
-
-function getTemplate(
-  reference: ReturnType<typeof createProposalDraft>["template"]
-) {
-  const baseTemplate =
-    reference.id === webStudioProposalTemplate.id
-      ? webStudioProposalTemplate
-      : defaultDocumentTemplate
-  const overrides = reference.overrides ?? {}
-  const tokens = Object.fromEntries(
-    Object.entries(overrides).filter(
-      (entry): entry is [string, string] => typeof entry[1] === "string"
-    )
-  )
-  return {
-    ...baseTemplate,
-    id: reference.id,
-    tokens: { ...baseTemplate.tokens, ...tokens },
-  }
 }
 
 function readDraft():

@@ -188,7 +188,7 @@ export const webStudioProposalTemplate: DocumentTemplate = {
   },
 }
 
-const darkDocumentTemplate: DocumentTemplate = {
+export const darkDocumentTemplate: DocumentTemplate = {
   id: "classic-dark",
   name: "Classic Dark",
   tokens: {
@@ -213,6 +213,37 @@ const defaultDocumentTemplates = {
 export function getDefaultDocumentTemplateForScheme(scheme: "light" | "dark") {
   return defaultDocumentTemplates[scheme]
 }
+
+export function getDocumentTemplate(
+  reference: { id: string; overrides?: Record<string, any> },
+  appTheme: "light" | "dark"
+): DocumentTemplate {
+  const isClassic =
+    reference.id === "proposal-classic" ||
+    reference.id === "classic-light" ||
+    reference.id === "classic-dark"
+
+  const baseTemplate =
+    reference.id === webStudioProposalTemplate.id
+      ? webStudioProposalTemplate
+      : appTheme === "dark"
+        ? darkDocumentTemplate
+        : defaultDocumentTemplate
+
+  const overrides = reference.overrides ?? {}
+  const tokens = Object.fromEntries(
+    Object.entries(overrides).filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string"
+    )
+  )
+
+  return {
+    ...baseTemplate,
+    id: isClassic ? baseTemplate.id : reference.id,
+    tokens: { ...baseTemplate.tokens, ...tokens },
+  }
+}
+
 
 export function updateDocumentTemplateToken<
   TKey extends keyof DocumentTemplateTokens,

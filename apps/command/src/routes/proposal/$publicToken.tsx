@@ -8,9 +8,9 @@ import { createFileRoute } from "@tanstack/react-router"
 import { buildProposalRenderModel } from "@workspace/document/render"
 import { parseProposalDraft } from "@workspace/document/schema"
 import {
-  defaultDocumentTemplate,
-  webStudioProposalTemplate,
+  getDocumentTemplate,
 } from "@workspace/document/presentation"
+import { useTheme } from "@/components/theme-provider"
 import { Button } from "@workspace/ui/components/button"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import {
@@ -29,7 +29,7 @@ import {
 } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
-import type { ProposalDraft } from "@workspace/document/schema"
+
 import { ProposalPrintView } from "@/features/documents/print/proposal-print-view"
 import { publicProposalQuery } from "@/api/proposals"
 import { acceptPublicProposal } from "@/server/proposals"
@@ -65,13 +65,14 @@ function PublicProposalRoute() {
     )
   }
 
+  const { resolved: appTheme } = useTheme()
   const document = parseProposalDraft(proposal.document)
 
   return (
     <div className="h-screen overflow-auto bg-muted/30">
       <ProposalPrintView
         model={buildProposalRenderModel(document)}
-        template={getTemplate(document.template)}
+        template={getDocumentTemplate(document.template, appTheme)}
       />
       <div className="fixed right-4 bottom-4 left-4 z-20 mx-auto flex max-w-3xl items-center justify-between gap-3 rounded-md border bg-background/95 p-3 shadow-lg backdrop-blur">
         {proposal.accepted ? (
@@ -239,23 +240,7 @@ function UnavailableProposal({ title }: { title: string }) {
   )
 }
 
-function getTemplate(reference: ProposalDraft["template"]) {
-  const baseTemplate =
-    reference.id === webStudioProposalTemplate.id
-      ? webStudioProposalTemplate
-      : defaultDocumentTemplate
-  const overrides = reference.overrides ?? {}
-  const tokens = Object.fromEntries(
-    Object.entries(overrides).filter(
-      (entry): entry is [string, string] => typeof entry[1] === "string"
-    )
-  )
-  return {
-    ...baseTemplate,
-    id: reference.id,
-    tokens: { ...baseTemplate.tokens, ...tokens },
-  }
-}
+
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat(undefined, {

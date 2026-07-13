@@ -30,7 +30,7 @@ function ProposalsRoute() {
   const { data: proposals } = useSuspenseQuery(proposalDraftsQuery)
   const createDraft = useMutation({
     mutationFn: () =>
-      createProposalDraft({ data: { blueprint: "web-design" } }),
+      createProposalDraft({ data: { blueprint: "classic" } }),
     onSuccess: async (draftResult) => {
       const draft = draftResult as PersistedProposalDraft
       await queryClient.invalidateQueries({ queryKey: ["proposals"] })

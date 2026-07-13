@@ -19,12 +19,13 @@ import {
   useProposalEditorRuntime,
 } from "@workspace/document-editor"
 import {
-  defaultDocumentTemplate,
   webStudioProposalTemplate,
+  getDefaultDocumentTemplateForScheme,
+  getDocumentTemplate,
 } from "@workspace/document/presentation"
+import { useTheme } from "@/components/theme-provider"
 import { parseProposalDraft } from "@workspace/document/schema"
 import type { DocumentTemplate } from "@workspace/document/presentation"
-import type { ProposalDraft } from "@workspace/document/schema"
 import type { DocumentEditorHostAdapter } from "@workspace/document-editor"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { createId } from "@/lib/create-id"
@@ -92,14 +93,22 @@ function ProposalEditorScreen({
 }) {
   const queryClient = useQueryClient()
   const runtime = useProposalEditorRuntime({ store })
-  const defaultTemplate = webStudioProposalTemplate
+  const { resolved: appTheme } = useTheme()
+  const defaultTemplate =
+    appTheme === "dark"
+      ? getDefaultDocumentTemplateForScheme("dark")
+      : webStudioProposalTemplate
   const [serverRevision, setServerRevision] = React.useState(initialRevision)
   const [status, setStatus] = React.useState(initialStatus)
   const [customTemplate, setCustomTemplate] =
     React.useState<DocumentTemplate | null>(null)
   const [message, setMessage] = React.useState<string | null>(null)
   const [shareUrl, setShareUrl] = React.useState<string | null>(null)
-  const template = customTemplate ?? getTemplate(store.getSnapshot().template)
+  const template =
+    customTemplate ??
+    getDocumentTemplate(store.getSnapshot().template, appTheme)
+
+
 
   const saveDraft = useMutation({
     mutationFn: async () => {
@@ -265,14 +274,6 @@ function ProposalEditorScreen({
                 overrides: nextTemplate.tokens,
               })
             }}
-            onTemplateReset={() => {
-              setCustomTemplate(null)
-              store.commands.setTemplate({
-                id: defaultTemplate.id,
-                version: 1,
-                overrides: defaultTemplate.tokens,
-              })
-            }}
           />
         </div>
       </DocumentSidebarProvider>
@@ -280,20 +281,4 @@ function ProposalEditorScreen({
   )
 }
 
-function getTemplate(reference: ProposalDraft["template"]) {
-  const baseTemplate =
-    reference.id === webStudioProposalTemplate.id
-      ? webStudioProposalTemplate
-      : defaultDocumentTemplate
-  const overrides = reference.overrides ?? {}
-  const tokens = Object.fromEntries(
-    Object.entries(overrides).filter(
-      (entry): entry is [string, string] => typeof entry[1] === "string"
-    )
-  )
-  return {
-    ...baseTemplate,
-    id: reference.id,
-    tokens: { ...baseTemplate.tokens, ...tokens },
-  }
-}
+
