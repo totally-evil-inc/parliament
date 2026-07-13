@@ -1,6 +1,11 @@
 import { NodeViewWrapper } from "@tiptap/react"
 import { Button } from "@workspace/ui/components/button"
-import { IconDeleteX, IconImage, IconDuplicatePlus } from "nucleo-glass"
+import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  Delete02Icon,
+  Image01Icon,
+  PlusSignIcon,
+} from "@hugeicons/core-free-icons"
 import type { NodeViewProps } from "@tiptap/react"
 import type { GalleryImage } from "../types"
 import { getArrayAttr, getColumnCount } from "../types"
@@ -50,7 +55,7 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
           onClick={addImage}
           className="h-8 gap-1.5 text-xs"
         >
-          <IconDuplicatePlus className="h-3.5 w-3.5" />
+          <HugeiconsIcon icon={PlusSignIcon} className="h-3.5 w-3.5" />
           Add Image
         </Button>
       </div>
@@ -62,7 +67,7 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
             className="group relative aspect-square overflow-hidden rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)]"
           >
             <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[color-mix(in_oklab,var(--document-muted-foreground)_50%,transparent)]">
-              <IconImage className="h-8 w-8" />
+              <HugeiconsIcon icon={Image01Icon} className="h-8 w-8" />
               <span className="text-[10px] font-medium tracking-wider uppercase">
                 Placeholder
               </span>
@@ -76,7 +81,7 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
               className="absolute top-2 right-2 text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive/80"
               aria-label="Remove image"
             >
-              <IconDeleteX className="h-4 w-4" />
+              <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
             </Button>
           </div>
         ))}

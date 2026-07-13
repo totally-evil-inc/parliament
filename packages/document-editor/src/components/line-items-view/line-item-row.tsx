@@ -1,4 +1,5 @@
-import { IconDeleteX, IconImage } from "nucleo-glass"
+import { Delete02Icon, Image01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
 import { TableCell, TableRow } from "@workspace/ui/components/table"
 import { getLineItemKey, getLineTotal, money, safeNumber } from "./pricing"
@@ -44,7 +45,7 @@ export function LineItemRow({
               className="mt-0.5 size-10 shrink-0 rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] text-[var(--document-muted-foreground)] hover:text-[var(--document-foreground)]"
               aria-label="Line item image placeholder"
             >
-              <IconImage className="h-4 w-4" />
+              <HugeiconsIcon icon={Image01Icon} className="h-4 w-4" />
             </Button>
           ) : null}
           <div className="min-w-0 flex-1 space-y-2">
@@ -106,7 +107,7 @@ export function LineItemRow({
           className="text-[var(--document-muted-foreground)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
           aria-label="Remove line item"
         >
-          <IconDeleteX className="h-4 w-4" />
+          <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
         </Button>
       </TableCell>
     </TableRow>

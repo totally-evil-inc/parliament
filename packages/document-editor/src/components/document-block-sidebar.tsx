@@ -1,11 +1,12 @@
 import * as React from "react"
+import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  IconArrowBoldLeft,
-  IconDeleteX,
-  IconGrid,
-  IconNote,
-  IconStar,
-} from "nucleo-glass"
+  ArrowLeft01Icon,
+  Cancel01Icon,
+  LayoutGridIcon,
+  TextFontIcon,
+  StarIcon,
+} from "@hugeicons/core-free-icons"
 import { ColorPicker } from "@workspace/ui/components/color-picker"
 import {
   Select,
@@ -90,7 +91,7 @@ export function DocumentBlockSidebar({
       {
         id: "presets",
         label: "Presets",
-        icon: IconStar,
+        icon: StarIcon,
         presets: [
           {
             id: defaultDocumentTemplate.id,
@@ -107,7 +108,7 @@ export function DocumentBlockSidebar({
       {
         id: "colors",
         label: "Colors",
-        icon: IconGrid,
+        icon: LayoutGridIcon,
         description: "Canvas, page, text, and accent colors",
         presets: documentColorTokenOptions.map((opt) => ({
           id: opt.key,
@@ -118,7 +119,7 @@ export function DocumentBlockSidebar({
       {
         id: "typography",
         label: "Typography",
-        icon: IconNote,
+        icon: TextFontIcon,
         description: "Body and heading fonts",
         presets: [
           {
@@ -136,7 +137,7 @@ export function DocumentBlockSidebar({
       {
         id: "layout",
         label: "Layout",
-        icon: IconGrid,
+        icon: LayoutGridIcon,
         description: "Spacing and border radius",
         presets: [
           {
@@ -154,7 +155,7 @@ export function DocumentBlockSidebar({
       {
         id: "header",
         label: "Header layout",
-        icon: IconGrid,
+        icon: LayoutGridIcon,
         description: "Document header arrangement",
         presets: documentHeaderLayouts.map((layout) => ({
           id: layout.id,
@@ -244,7 +245,10 @@ export function DocumentBlockSidebar({
               onClick={() => setSelectedBlockId(null)}
               className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
             >
-              <IconArrowBoldLeft className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5" />
+              <HugeiconsIcon
+                icon={ArrowLeft01Icon}
+                className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
+              />
               Back
             </button>
             <div className="absolute left-1/2 -translate-x-1/2">
@@ -255,9 +259,9 @@ export function DocumentBlockSidebar({
             <button
               type="button"
               onClick={closeSidebar}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all               hover:bg-muted/50 hover:text-foreground"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
             >
-              <IconDeleteX className="h-4 w-4" />
+              <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
             </button>
           </div>
 
@@ -300,7 +304,7 @@ export function DocumentBlockSidebar({
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <IconGrid className="h-4 w-4" />
+                  <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
                 </div>
                 <span className="text-sm font-bold">
                   {definition.title} Builder
@@ -311,7 +315,7 @@ export function DocumentBlockSidebar({
                 onClick={closeSidebar}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
               >
-                <IconDeleteX className="h-4 w-4" />
+                <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
               </button>
             </div>
             <div className="flex rounded-xl border border-border/15 bg-muted/65 p-1">
@@ -370,7 +374,10 @@ export function DocumentBlockSidebar({
               onClick={() => setSelectedBlockId(null)}
               className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
             >
-              <IconArrowBoldLeft className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5" />
+              <HugeiconsIcon
+                icon={ArrowLeft01Icon}
+                className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
+              />
               Back
             </button>
             <div className="absolute left-1/2 -translate-x-1/2">
@@ -383,7 +390,7 @@ export function DocumentBlockSidebar({
               onClick={closeSidebar}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
             >
-              <IconDeleteX className="h-4 w-4" />
+              <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
             </button>
           </div>
 
@@ -424,7 +431,7 @@ export function DocumentBlockSidebar({
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <IconGrid className="h-4 w-4" />
+                  <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
                 </div>
                 <span className="text-sm font-bold">
                   {definition.title} Builder
@@ -435,7 +442,7 @@ export function DocumentBlockSidebar({
                 onClick={closeSidebar}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
               >
-                <IconDeleteX className="h-4 w-4" />
+                <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
               </button>
             </div>
             <div className="flex rounded-xl border border-border/15 bg-muted/65 p-1">
@@ -555,7 +562,10 @@ function BlocksPanel({
           >
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2">
-                <block.icon className="h-4 w-4 text-muted-foreground" />
+                <HugeiconsIcon
+                  icon={block.icon}
+                  className="h-4 w-4 text-muted-foreground"
+                />
                 <span className="text-sm font-bold text-foreground">
                   {block.label}
                 </span>
@@ -604,7 +614,10 @@ function MobileBlocksPanel({
           >
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2">
-                <block.icon className="h-4 w-4 text-muted-foreground" />
+                <HugeiconsIcon
+                  icon={block.icon}
+                  className="h-4 w-4 text-muted-foreground"
+                />
                 <span className="text-sm font-bold text-foreground">
                   {block.label}
                 </span>
@@ -796,7 +809,7 @@ function CustomizeGroupsPanel({
               <div className="flex w-full items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground transition-colors group-hover:bg-muted group-hover:text-foreground">
-                    <group.icon className="h-4 w-4" />
+                    <HugeiconsIcon icon={group.icon} className="h-4 w-4" />
                   </div>
                   <div>
                     <span className="text-sm font-bold text-foreground">
@@ -861,12 +874,15 @@ function CustomizeGroupPanel({
             onClick={onBack}
             className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
-            <IconArrowBoldLeft className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5" />
+            <HugeiconsIcon
+              icon={ArrowLeft01Icon}
+              className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
+            />
             Back
           </button>
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
-              <group.icon className="h-4 w-4" />
+              <HugeiconsIcon icon={group.icon} className="h-4 w-4" />
             </div>
             <span className="text-sm font-bold">{group.label}</span>
           </div>
@@ -1016,12 +1032,15 @@ function MobileCustomizeGroupPanel({
             onClick={onBack}
             className="group/back flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
-            <IconArrowBoldLeft className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5" />
+            <HugeiconsIcon
+              icon={ArrowLeft01Icon}
+              className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
+            />
             Back
           </button>
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
-              <group.icon className="h-4 w-4" />
+              <HugeiconsIcon icon={group.icon} className="h-4 w-4" />
             </div>
             <span className="text-sm font-bold">{group.label}</span>
           </div>

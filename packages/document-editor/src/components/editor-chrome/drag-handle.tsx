@@ -1,5 +1,6 @@
 import * as React from "react"
-import { IconDeleteX, IconDuplicatePlus } from "nucleo-glass"
+import { Delete02Icon, Plus } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import DragHandle from "@tiptap/extension-drag-handle-react"
 import {
   Popover,
@@ -128,7 +129,7 @@ export function DocumentDragHandle({
               />
             }
           >
-            <IconDuplicatePlus className="size-4" />
+            <HugeiconsIcon icon={Plus} className="size-4" />
           </PopoverTrigger>
           <PopoverContent
             align="start"
@@ -168,7 +169,7 @@ export function DocumentDragHandle({
           title="Delete block"
           type="button"
         >
-          <IconDeleteX className="h-3.5 w-3.5" />
+          <HugeiconsIcon icon={Delete02Icon} className="h-3.5 w-3.5" />
         </button>
       </DragHandle>
     </>

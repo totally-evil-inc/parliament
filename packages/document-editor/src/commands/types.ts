@@ -1,8 +1,6 @@
 import type { Range } from "@tiptap/core"
 import type { Editor } from "@tiptap/react"
-import type { FC } from "react"
-
-export type IconComponent = FC<{ size?: number | string; className?: string }>
+import type { Text } from "@hugeicons/core-free-icons"
 
 export type EditorCommandContext = {
   editor: Editor
@@ -24,7 +22,7 @@ export type EditorCommand = {
   title: string
   description: string
   searchTerms: Array<string>
-  icon: IconComponent
+  icon: typeof Text
   group: "block" | "mark"
   showInSlashMenu?: boolean
   showInFloatingMenu?: boolean

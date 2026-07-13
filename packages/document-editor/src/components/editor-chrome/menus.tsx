@@ -1,3 +1,4 @@
+import { HugeiconsIcon } from "@hugeicons/react"
 import "@tiptap/extension-table/table"
 import { BubbleMenu } from "@tiptap/react/menus"
 import { useEditorState } from "@tiptap/react"
@@ -91,7 +92,7 @@ export function EditorBubbleMenu({
           pressed={Boolean(state.active[command.id])}
           onPressedChange={() => command.command({ editor })}
         >
-          <command.icon className="h-4 w-4" />
+          <HugeiconsIcon icon={command.icon} className="h-4 w-4" />
         </Toggle>
       ))}
     </BubbleMenu>

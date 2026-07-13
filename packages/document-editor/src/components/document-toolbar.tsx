@@ -1,3 +1,4 @@
+import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
 import {
   Tooltip,
@@ -84,7 +85,7 @@ export function DocumentToolbar({
                   />
                 }
               >
-                <action.icon className="h-5 w-5" />
+                <HugeiconsIcon icon={action.icon} className="h-5 w-5" />
                 <span className="sr-only">{action.label}</span>
               </TooltipTrigger>
               <TooltipContent side="top" className="rounded-lg font-medium">
@@ -141,7 +142,7 @@ function MobileCompactDock({
             onClick={() => handleAction(action.id)}
             className="h-9 w-9 rounded-xl hover:bg-accent hover:text-accent-foreground"
           >
-            <action.icon className="h-4 w-4" />
+            <HugeiconsIcon icon={action.icon} className="h-4 w-4" />
             <span className="sr-only">{action.label}</span>
           </Button>
         ))}
