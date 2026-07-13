@@ -6,6 +6,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "check": "biome check",
+    "check:write": "biome check --write",
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck"

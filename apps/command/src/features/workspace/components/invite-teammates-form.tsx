@@ -191,6 +191,7 @@ export function InviteTeammatesForm({
                       strokeLinejoin="round"
                       aria-hidden
                     >
+                      <title>Dropdown icon</title>
                       <polyline points="3 5 6 8 9 5" />
                     </svg>
                   </button>
@@ -348,6 +349,7 @@ function EmailChip({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
+                  <title>Dropdown icon</title>
                   <polyline points="3 5 6 8 9 5" />
                 </svg>
               </button>

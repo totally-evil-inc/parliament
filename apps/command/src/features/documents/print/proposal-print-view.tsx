@@ -107,6 +107,7 @@ function Header({ model }: { model: ProposalRenderModel }) {
               {model.title ? (
                 <h1
                   className="font-bold text-5xl leading-none tracking-normal [font-family:var(--document-heading-font-family)]"
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: model title HTML structure is intended
                   dangerouslySetInnerHTML={{ __html: model.title }}
                 />
               ) : (
@@ -186,6 +187,7 @@ function Party({
         .filter((field) => Boolean(field[1]))
         .map(([key, value]) => {
           if (key === "address") {
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: addresses can contain formatted lines
             return <p key={key} dangerouslySetInnerHTML={{ __html: value }} />
           }
           return <p key={key}>{value}</p>
@@ -401,6 +403,7 @@ function Team({ block }: { block: Extract<DocumentBlock, { type: "team" }> }) {
                 stroke="currentColor"
                 strokeWidth="2"
               >
+                <title>Avatar</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -599,11 +602,13 @@ function Pricing({
                 <td className="py-5 pr-5">
                   <p
                     className="font-medium"
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: item description allows rich formatting
                     dangerouslySetInnerHTML={{ __html: item.description || "" }}
                   />
                   {item.details ? (
                     <p
                       className="text-[var(--document-muted-foreground)] text-sm"
+                      // biome-ignore lint/security/noDangerouslySetInnerHtml: item details allow rich formatting
                       dangerouslySetInnerHTML={{ __html: item.details }}
                     />
                   ) : null}

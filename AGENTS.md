@@ -43,9 +43,10 @@ apps/command  (TanStack Start + React, orchestration)
 | Run all tests | `bun test` (from root runs all workspace tests) |
 | Tests (single package) | `cd packages/document && bun test` |
 | Typecheck all | `bun run typecheck` |
-| Lint & format check | `bun run lint` (turbo lint → biome lint) |
-| Format all files | `bun run format` (turbo format → biome format --write) |
-| Full check + write | `bunx biome check --write .` |
+| Lint check (read-only) | `bun run lint` (turbo → biome lint on all 6 packages) |
+| Full check (read-only) | `bun run check` (root `biome check`, scans everything) |
+| Safe auto-fix | `bun run check:write` (root `biome check --write`) |
+| Format all files | `bun run format` (turbo → biome format --write) |
 | CI gate (read-only) | `bunx biome ci .` |
 | DB migrate | `cd packages/database && bun run db:migrate` |
 | DB generate | `cd packages/database && bun run db:generate` |

@@ -478,6 +478,7 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
             "proposalColumnsTitle",
             layout?.attrs?.title ?? field("How we will approach the work")
           ),
+          // biome-ignore lint/suspicious/noExplicitAny: items data structure layout mapped dynamically
           ...items.map((item: any) => ({
             type: "proposalColumnItem",
             attrs: { id: item.id },
@@ -656,14 +657,16 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
             body: paragraph("Ship with QA, analytics, and handover."),
           },
         ]
-      ).map((item: any) => ({
-        type: "proposalImageCardItem",
-        attrs: { id: item.id, image: item.image },
-        content: [
-          inlineField("proposalImageCardTitle", item.title),
-          blockField("proposalImageCardBody", item.body),
-        ],
-      })),
+      )
+        // biome-ignore lint/suspicious/noExplicitAny: image card items data structure mapped dynamically
+        .map((item: any) => ({
+          type: "proposalImageCardItem",
+          attrs: { id: item.id, image: item.image },
+          content: [
+            inlineField("proposalImageCardTitle", item.title),
+            blockField("proposalImageCardBody", item.body),
+          ],
+        })),
     }),
     preview: (
       <div className="mt-2 grid h-12 w-full grid-cols-3 gap-1.5">
@@ -779,6 +782,7 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         attrs: {
           columns,
         },
+        // biome-ignore lint/suspicious/noExplicitAny: metrics data structure mapped dynamically
         content: metrics.map((metric: any, index: number) => ({
           type: "keyNumbersItem",
           attrs: { id: metric.id ?? `metric-${index + 1}` },
@@ -914,6 +918,7 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         attrs: {
           columns,
         },
+        // biome-ignore lint/suspicious/noExplicitAny: members data structure mapped dynamically
         content: members.map((member: any, index: number) => ({
           type: "teamMemberItem",
           attrs: {
@@ -1055,6 +1060,7 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
         attrs: {
           columns,
         },
+        // biome-ignore lint/suspicious/noExplicitAny: testimonial data shape allows arbitrary fields
         content: testimonials.map((testimonial: any, index: number) => ({
           type: "testimonialItem",
           attrs: {
@@ -1205,14 +1211,16 @@ export const proposalBlocks: Array<DocumentBlockDefinition> = [
             ),
           },
         ]
-      ).map((item: any) => ({
-        type: "proposalFaqItem",
-        attrs: { id: item.id },
-        content: [
-          inlineField("proposalFaqQuestion", item.question),
-          blockField("proposalFaqAnswer", item.answer),
-        ],
-      })),
+      )
+        // biome-ignore lint/suspicious/noExplicitAny: FAQ block data items map safely with any
+        .map((item: any) => ({
+          type: "proposalFaqItem",
+          attrs: { id: item.id },
+          content: [
+            inlineField("proposalFaqQuestion", item.question),
+            blockField("proposalFaqAnswer", item.answer),
+          ],
+        })),
     }),
     preview: (
       <div className="mt-2 space-y-2">

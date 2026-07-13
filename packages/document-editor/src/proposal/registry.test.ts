@@ -28,7 +28,7 @@ test("card layout presets insert atomic items matching their column count", () =
   for (const blockId of ["key-numbers", "team-members", "testimonials"]) {
     const block = proposalEditorRegistry.blocks.find(({ id }) => id === blockId)
     expect(block?.kind).toBe("insertable")
-    if (!block || block.kind !== "insertable") continue
+    if (block?.kind !== "insertable") continue
 
     for (const columns of [2, 3]) {
       const layout = block.layouts?.find(
@@ -36,9 +36,9 @@ test("card layout presets insert atomic items matching their column count", () =
       )
       expect(layout).toBeDefined()
       const content = block.createContent(layout)
-      expect(content.content).toBeUndefined()
+      expect(content.content).toHaveLength(columns)
       expect(content.attrs?.columns).toBe(columns)
-      expect(content.attrs?.items).toHaveLength(columns)
+      expect(content.attrs?.items).toBeUndefined()
     }
   }
 })

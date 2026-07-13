@@ -46,6 +46,7 @@ function PublicProposalRoute() {
   const query = publicProposalQuery(publicToken)
   const { data } = useSuspenseQuery(query)
   const proposal = data as PublicProposalResult
+  const { resolved: appTheme } = useTheme()
 
   if (proposal.status === "not_found") {
     return <UnavailableProposal title="Proposal link not found" />
@@ -62,7 +63,6 @@ function PublicProposalRoute() {
     )
   }
 
-  const { resolved: appTheme } = useTheme()
   const document = parseProposalDraft(proposal.document)
 
   return (

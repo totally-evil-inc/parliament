@@ -53,7 +53,10 @@ export function createProposalDraftStore(
   let beforeStructuredChange: (() => void) | null = null
   const listeners = new Set<Listener>()
 
-  const emit = () => listeners.forEach((listener) => listener())
+  const emit = () =>
+    listeners.forEach((listener) => {
+      listener()
+    })
   const commit = (
     update: (current: ProposalDraft) => ProposalDraft,
     options: { coalesceKey?: string; recordHistory?: boolean } = {}

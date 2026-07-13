@@ -9,6 +9,7 @@ export function Stepper({ step }: { step: number }) {
       <div className="ml-2 flex items-center gap-1.5">
         {ONBOARDING_STEPS.map((_, i) => (
           <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: onboarding steps are static
             key={i}
             className={`h-1.5 rounded-full transition-all ${
               i === step

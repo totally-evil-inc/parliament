@@ -5,6 +5,8 @@
   "private": true,
   "scripts": {
     "test": "bun test",
+    "lint": "biome lint",
+    "format": "biome format --write",
     "typecheck": "tsc --noEmit"
   },
   "exports": {

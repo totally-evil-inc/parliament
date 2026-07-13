@@ -59,6 +59,7 @@ export function RichTextInlineRenderer({
 
 function renderNode(node: RichTextNode): React.ReactNode {
   const children = node.content?.map((child, index) => (
+    // biome-ignore lint/suspicious/noArrayIndexKey: read-only text blocks have no stable unique IDs
     <RenderNode key={index} node={child} />
   ))
 
@@ -81,6 +82,7 @@ function renderNode(node: RichTextNode): React.ReactNode {
             ? "my-3 block overflow-x-auto py-3"
             : "inline"
         }
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: KaTeX output is safe and trusted
         dangerouslySetInnerHTML={{ __html: html }}
       />
     )
@@ -143,6 +145,7 @@ function renderNode(node: RichTextNode): React.ReactNode {
             stroke="currentColor"
             strokeWidth="2"
           >
+            <title>Avatar</title>
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -223,6 +226,7 @@ function renderMarks(
     if (mark.type === "code") return <code>{node}</code>
     if (mark.type === "link") {
       const href = typeof mark.attrs?.href === "string" ? mark.attrs.href : "#"
+      // biome-ignore lint/correctness/useJsxKeyInIterable: reduce is chaining wrappers, not rendering list elements
       return <a href={href}>{node}</a>
     }
 

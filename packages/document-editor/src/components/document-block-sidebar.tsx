@@ -569,6 +569,7 @@ function BlocksPanel({
                 stroke="currentColor"
                 className="h-3.5 w-3.5 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-foreground"
               >
+                <title>Arrow right</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -621,6 +622,7 @@ function MobileBlocksPanel({
                 stroke="currentColor"
                 className="h-3.5 w-3.5 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-foreground"
               >
+                <title>Arrow right</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -722,7 +724,7 @@ function ColorTokenField({
   onChange: (value: string) => void
 }) {
   return (
-    <label className="grid grid-cols-[minmax(0,1fr)_minmax(0,8.5rem)] items-center gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,8.5rem)] items-center gap-3">
       <span className="font-medium text-foreground text-xs">{label}</span>
       <ColorPicker
         colors={colors}
@@ -730,7 +732,7 @@ function ColorTokenField({
         value={value}
         onValueChange={onChange}
       />
-    </label>
+    </div>
   )
 }
 
@@ -746,7 +748,7 @@ function SelectTokenField<TValue extends string>({
   onChange: (value: TValue) => void
 }) {
   return (
-    <label className="grid grid-cols-[minmax(0,1fr)_8.5rem] items-center gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)_8.5rem] items-center gap-3">
       <span className="font-medium text-foreground text-xs">{label}</span>
       <Select
         value={value}
@@ -767,7 +769,7 @@ function SelectTokenField<TValue extends string>({
           ))}
         </SelectContent>
       </Select>
-    </label>
+    </div>
   )
 }
 
@@ -819,6 +821,7 @@ function CustomizeGroupsPanel({
                   stroke="currentColor"
                   className="h-3.5 w-3.5 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-foreground"
                 >
+                  <title>Arrow right</title>
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

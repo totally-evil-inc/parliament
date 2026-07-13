@@ -215,7 +215,10 @@ export function getDefaultDocumentTemplateForScheme(scheme: "light" | "dark") {
 }
 
 export function getDocumentTemplate(
-  reference: { id: string; overrides?: Record<string, any> },
+  reference: {
+    id: string
+    overrides?: Record<string, string | number | boolean | null>
+  },
   appTheme: "light" | "dark"
 ): DocumentTemplate {
   const isClassic =
