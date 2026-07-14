@@ -1,10 +1,13 @@
 import type { NodeViewProps } from "@tiptap/react"
 import { NodeViewWrapper } from "@tiptap/react"
-import { calculateProposalPricing } from "@workspace/document/calculate"
 import {
+  calculateInvoicePricing,
+  calculateProposalPricing,
+} from "@workspace/document/calculate"
+import {
+  useDocumentDraft,
+  useDocumentDraftCommands,
   useDocumentEditorHost,
-  useProposalDraftCommands,
-  useProposalDraftSelector,
 } from "../runtime/react"
 
 import { LineItemsTable } from "./line-items-view/line-items-table"
@@ -14,15 +17,15 @@ import { TotalsAdjustments } from "./line-items-view/totals-adjustments"
 
 function LineItemsView(_props: NodeViewProps) {
   const { confirm, createId } = useDocumentEditorHost()
-  const { locale, pricing } = useProposalDraftSelector((document) => ({
-    locale: document.locale,
-    pricing: document.data.pricing,
-  }))
-  const commands = useProposalDraftCommands()
+  const document = useDocumentDraft()
+  const locale = document.locale
+  const pricing = document.data.pricing
+  const commands = useDocumentDraftCommands()
 
   if (!pricing) return null
 
-  const lineItems: Array<PricingItem> = pricing.items.map((item) => ({
+  // biome-ignore lint/suspicious/noExplicitAny: items can be proposal or invoice pricing items
+  const lineItems: Array<PricingItem> = pricing.items.map((item: any) => ({
     id: item.id,
     description: item.description,
     details: item.details,
@@ -31,7 +34,10 @@ function LineItemsView(_props: NodeViewProps) {
     showDetails: item.showDetails,
     showImage: item.showImage,
   }))
-  const calculation = calculateProposalPricing(pricing)
+  const calculation =
+    document.kind === "proposal"
+      ? calculateProposalPricing(pricing)
+      : calculateInvoicePricing(pricing)
   const discountRate =
     pricing.discount?.kind === "rate" ? pricing.discount.basisPoints / 100 : 0
   const taxRate = pricing.tax ? pricing.tax.basisPoints / 100 : 0
@@ -42,9 +48,11 @@ function LineItemsView(_props: NodeViewProps) {
     value: PricingItem[TKey]
   ) => {
     commands.updatePricing(
-      (current) => ({
+      // biome-ignore lint/suspicious/noExplicitAny: current pricing state
+      (current: any) => ({
         ...current,
-        items: current.items.map((item, itemIndex) => {
+        // biome-ignore lint/suspicious/noExplicitAny: item is proposal or invoice item
+        items: current.items.map((item: any, itemIndex: number) => {
           if (itemIndex !== index) return item
           if (key === "rate")
             return { ...item, unitPriceMinor: Math.round(Number(value) * 100) }
@@ -59,7 +67,8 @@ function LineItemsView(_props: NodeViewProps) {
   }
 
   const addItem = (catalog = false) =>
-    commands.updatePricing((current) => ({
+    // biome-ignore lint/suspicious/noExplicitAny: current pricing state
+    commands.updatePricing((current: any) => ({
       ...current,
       items: [
         ...current.items,
@@ -90,14 +99,17 @@ function LineItemsView(_props: NodeViewProps) {
       variant: "destructive",
     })
     if (!confirmed) return
-    commands.updatePricing((current) => ({
+    // biome-ignore lint/suspicious/noExplicitAny: current pricing state
+    commands.updatePricing((current: any) => ({
       ...current,
-      items: current.items.filter((_, itemIndex) => itemIndex !== index),
+      // biome-ignore lint/suspicious/noExplicitAny: filtering items
+      items: current.items.filter((_: any, itemIndex: number) => itemIndex !== index),
     }))
   }
 
   const updateAdjustments = (attributes: Record<string, unknown>) => {
-    commands.updatePricing((current) => {
+    // biome-ignore lint/suspicious/noExplicitAny: current pricing state
+    commands.updatePricing((current: any) => {
       let next = current
       if ("discountEnabled" in attributes) {
         next = {
@@ -139,10 +151,12 @@ function LineItemsView(_props: NodeViewProps) {
           },
         }
       }
-      if (typeof attributes.signerName === "string")
-        next = { ...next, signerName: attributes.signerName }
-      if (typeof attributes.signerTitle === "string")
-        next = { ...next, signerTitle: attributes.signerTitle }
+      // biome-ignore lint/suspicious/noExplicitAny: check property and assign dynamically
+      if (typeof attributes.signerName === "string" && "signerName" in next)
+        (next as any).signerName = attributes.signerName
+      // biome-ignore lint/suspicious/noExplicitAny: check property and assign dynamically
+      if (typeof attributes.signerTitle === "string" && "signerTitle" in next)
+        (next as any).signerTitle = attributes.signerTitle
       return next
     })
   }
@@ -157,7 +171,9 @@ function LineItemsView(_props: NodeViewProps) {
           Services & Billing
         </h3>
         <p className="mt-1.5 text-[var(--document-muted-foreground)] text-xs">
-          Indicative proposal pricing
+          {document.kind === "proposal"
+            ? "Indicative proposal pricing"
+            : "Final invoice billing"}
         </p>
       </div>
       <div className="pt-5">
@@ -181,8 +197,10 @@ function LineItemsView(_props: NodeViewProps) {
             discountAmount={calculation.discountMinor / 100}
             taxAmount={calculation.taxMinor / 100}
             total={calculation.totalMinor / 100}
-            signerName={pricing.signerName}
-            signerTitle={pricing.signerTitle}
+            // biome-ignore lint/suspicious/noExplicitAny: pricing could be proposal pricing containing signerName
+            signerName={(pricing as any).signerName}
+            // biome-ignore lint/suspicious/noExplicitAny: pricing could be proposal pricing containing signerTitle
+            signerTitle={(pricing as any).signerTitle}
             updateAttributes={updateAdjustments}
             currency={pricing.currency}
             locale={locale}

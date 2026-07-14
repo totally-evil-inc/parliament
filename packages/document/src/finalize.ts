@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto"
-import { calculateProposalPricing } from "./calculate"
-import { buildProposalRenderModel } from "./render"
-import type { ProposalDraft } from "./schema"
-import { parseProposalDraft } from "./schema"
+import { calculateInvoicePricing, calculateProposalPricing } from "./calculate"
+import { buildInvoiceRenderModel, buildProposalRenderModel } from "./render"
+import type { InvoiceDraft, ProposalDraft } from "./schema"
+import { parseInvoiceDraft, parseProposalDraft } from "./schema"
 
 export type ProposalSnapshotPayload = {
   document: ProposalDraft
@@ -17,6 +17,34 @@ export function finalizeProposalDraft(input: unknown): ProposalSnapshotPayload {
   const model = buildProposalRenderModel(document)
   const calculationVersion = document.data.pricing
     ? calculateProposalPricing(document.data.pricing).calculationVersion
+    : null
+
+  return {
+    document,
+    contentHash: hashNormalized({
+      document,
+      renderModel: model,
+      calculationVersion,
+    }),
+    templateId: document.template.id,
+    templateVersion: document.template.version,
+    calculationVersion,
+  }
+}
+
+export type InvoiceSnapshotPayload = {
+  document: InvoiceDraft
+  contentHash: string
+  templateId: string
+  templateVersion: number
+  calculationVersion: string | null
+}
+
+export function finalizeInvoiceDraft(input: unknown): InvoiceSnapshotPayload {
+  const document = parseInvoiceDraft(input)
+  const model = buildInvoiceRenderModel(document)
+  const calculationVersion = document.data.pricing
+    ? calculateInvoicePricing(document.data.pricing).calculationVersion
     : null
 
   return {

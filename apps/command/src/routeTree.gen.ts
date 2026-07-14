@@ -19,9 +19,11 @@ import { Route as AuthSignInIndexRouteImport } from './routes/auth/sign-in/index
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
 import { Route as WorkspaceSettingsIndexRouteImport } from './routes/_workspace/settings/index'
 import { Route as WorkspaceProposalsIndexRouteImport } from './routes/_workspace/proposals/index'
+import { Route as WorkspaceInvoicesIndexRouteImport } from './routes/_workspace/invoices/index'
 import { Route as WorkspaceIntegrationsIndexRouteImport } from './routes/_workspace/integrations/index'
 import { Route as WorkspaceSettingsTabRouteImport } from './routes/_workspace/settings/$tab'
 import { Route as WorkspaceProposalsProposalIdRouteImport } from './routes/_workspace/proposals/$proposalId'
+import { Route as WorkspaceInvoicesInvoiceIdRouteImport } from './routes/_workspace/invoices/$invoiceId'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/auth',
@@ -72,6 +74,11 @@ const WorkspaceProposalsIndexRoute = WorkspaceProposalsIndexRouteImport.update({
   path: '/proposals/',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
+const WorkspaceInvoicesIndexRoute = WorkspaceInvoicesIndexRouteImport.update({
+  id: '/invoices/',
+  path: '/invoices/',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
 const WorkspaceIntegrationsIndexRoute =
   WorkspaceIntegrationsIndexRouteImport.update({
     id: '/integrations/',
@@ -89,6 +96,12 @@ const WorkspaceProposalsProposalIdRoute =
     path: '/proposals/$proposalId',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceInvoicesInvoiceIdRoute =
+  WorkspaceInvoicesInvoiceIdRouteImport.update({
+    id: '/invoices/$invoiceId',
+    path: '/invoices/$invoiceId',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof WorkspaceIndexRoute
@@ -96,9 +109,11 @@ export interface FileRoutesByFullPath {
   '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
+  '/invoices/$invoiceId': typeof WorkspaceInvoicesInvoiceIdRoute
   '/proposals/$proposalId': typeof WorkspaceProposalsProposalIdRoute
   '/settings/$tab': typeof WorkspaceSettingsTabRoute
   '/integrations/': typeof WorkspaceIntegrationsIndexRoute
+  '/invoices/': typeof WorkspaceInvoicesIndexRoute
   '/proposals/': typeof WorkspaceProposalsIndexRoute
   '/settings/': typeof WorkspaceSettingsIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
@@ -109,9 +124,11 @@ export interface FileRoutesByTo {
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
   '/': typeof WorkspaceIndexRoute
+  '/invoices/$invoiceId': typeof WorkspaceInvoicesInvoiceIdRoute
   '/proposals/$proposalId': typeof WorkspaceProposalsProposalIdRoute
   '/settings/$tab': typeof WorkspaceSettingsTabRoute
   '/integrations': typeof WorkspaceIntegrationsIndexRoute
+  '/invoices': typeof WorkspaceInvoicesIndexRoute
   '/proposals': typeof WorkspaceProposalsIndexRoute
   '/settings': typeof WorkspaceSettingsIndexRoute
   '/auth/onboarding': typeof AuthOnboardingIndexRoute
@@ -125,9 +142,11 @@ export interface FileRoutesById {
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
   '/_workspace/': typeof WorkspaceIndexRoute
+  '/_workspace/invoices/$invoiceId': typeof WorkspaceInvoicesInvoiceIdRoute
   '/_workspace/proposals/$proposalId': typeof WorkspaceProposalsProposalIdRoute
   '/_workspace/settings/$tab': typeof WorkspaceSettingsTabRoute
   '/_workspace/integrations/': typeof WorkspaceIntegrationsIndexRoute
+  '/_workspace/invoices/': typeof WorkspaceInvoicesIndexRoute
   '/_workspace/proposals/': typeof WorkspaceProposalsIndexRoute
   '/_workspace/settings/': typeof WorkspaceSettingsIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
@@ -141,9 +160,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/documents/print'
     | '/proposal/$publicToken'
+    | '/invoices/$invoiceId'
     | '/proposals/$proposalId'
     | '/settings/$tab'
     | '/integrations/'
+    | '/invoices/'
     | '/proposals/'
     | '/settings/'
     | '/auth/onboarding/'
@@ -154,9 +175,11 @@ export interface FileRouteTypes {
     | '/documents/print'
     | '/proposal/$publicToken'
     | '/'
+    | '/invoices/$invoiceId'
     | '/proposals/$proposalId'
     | '/settings/$tab'
     | '/integrations'
+    | '/invoices'
     | '/proposals'
     | '/settings'
     | '/auth/onboarding'
@@ -169,9 +192,11 @@ export interface FileRouteTypes {
     | '/documents/print'
     | '/proposal/$publicToken'
     | '/_workspace/'
+    | '/_workspace/invoices/$invoiceId'
     | '/_workspace/proposals/$proposalId'
     | '/_workspace/settings/$tab'
     | '/_workspace/integrations/'
+    | '/_workspace/invoices/'
     | '/_workspace/proposals/'
     | '/_workspace/settings/'
     | '/auth/onboarding/'
@@ -257,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceProposalsIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/invoices/': {
+      id: '/_workspace/invoices/'
+      path: '/invoices'
+      fullPath: '/invoices/'
+      preLoaderRoute: typeof WorkspaceInvoicesIndexRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/integrations/': {
       id: '/_workspace/integrations/'
       path: '/integrations'
@@ -276,6 +308,13 @@ declare module '@tanstack/react-router' {
       path: '/proposals/$proposalId'
       fullPath: '/proposals/$proposalId'
       preLoaderRoute: typeof WorkspaceProposalsProposalIdRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/invoices/$invoiceId': {
+      id: '/_workspace/invoices/$invoiceId'
+      path: '/invoices/$invoiceId'
+      fullPath: '/invoices/$invoiceId'
+      preLoaderRoute: typeof WorkspaceInvoicesInvoiceIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
   }
@@ -300,16 +339,20 @@ const WorkspaceSettingsRouteRouteWithChildren =
 interface WorkspaceRouteRouteChildren {
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
+  WorkspaceInvoicesInvoiceIdRoute: typeof WorkspaceInvoicesInvoiceIdRoute
   WorkspaceProposalsProposalIdRoute: typeof WorkspaceProposalsProposalIdRoute
   WorkspaceIntegrationsIndexRoute: typeof WorkspaceIntegrationsIndexRoute
+  WorkspaceInvoicesIndexRoute: typeof WorkspaceInvoicesIndexRoute
   WorkspaceProposalsIndexRoute: typeof WorkspaceProposalsIndexRoute
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
+  WorkspaceInvoicesInvoiceIdRoute: WorkspaceInvoicesInvoiceIdRoute,
   WorkspaceProposalsProposalIdRoute: WorkspaceProposalsProposalIdRoute,
   WorkspaceIntegrationsIndexRoute: WorkspaceIntegrationsIndexRoute,
+  WorkspaceInvoicesIndexRoute: WorkspaceInvoicesIndexRoute,
   WorkspaceProposalsIndexRoute: WorkspaceProposalsIndexRoute,
 }
 

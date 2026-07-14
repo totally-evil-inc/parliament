@@ -13,6 +13,7 @@
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
     "./proposal": "./src/proposal.ts",
+    "./invoice": "./src/invoice.ts",
     "./presentation": "./src/presentation.ts",
     "./calculate": "./src/calculate.ts",
     "./finalize": "./src/finalize.ts",

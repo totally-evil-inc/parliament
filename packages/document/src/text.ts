@@ -1,4 +1,4 @@
-import type { ProposalRenderModel } from "./render"
+import type { InvoiceRenderModel, ProposalRenderModel } from "./render"
 import type { DocumentBlock, RichTextNode } from "./schema"
 
 function richText(node: RichTextNode): string {
@@ -13,7 +13,10 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, "")
 }
 
-function blockText(block: DocumentBlock, model: ProposalRenderModel): string {
+function blockText(
+  block: DocumentBlock,
+  model: ProposalRenderModel | InvoiceRenderModel
+): string {
   switch (block.type) {
     case "partyHeader":
       return [
@@ -127,6 +130,13 @@ function blockText(block: DocumentBlock, model: ProposalRenderModel): string {
 }
 
 export function extractProposalText(model: ProposalRenderModel) {
+  return model.blocks
+    .map((block) => blockText(block, model))
+    .filter(Boolean)
+    .join("\n\n")
+}
+
+export function extractInvoiceText(model: InvoiceRenderModel) {
   return model.blocks
     .map((block) => blockText(block, model))
     .filter(Boolean)

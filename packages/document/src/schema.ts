@@ -202,7 +202,10 @@ export const documentBlockSchema = z.union([
     .object({
       ...blockBase,
       type: z.literal("partyHeader"),
-      binding: z.literal("proposal.parties"),
+      binding: z.union([
+        z.literal("proposal.parties"),
+        z.literal("invoice.parties"),
+      ]),
       config: z.object({ layout: z.string().min(1) }).strict(),
     })
     .strict(),
@@ -210,7 +213,10 @@ export const documentBlockSchema = z.union([
     .object({
       ...blockBase,
       type: z.literal("pricing"),
-      binding: z.literal("proposal.pricing"),
+      binding: z.union([
+        z.literal("proposal.pricing"),
+        z.literal("invoice.pricing"),
+      ]),
       config: z.object({ title: z.string() }).strict(),
     })
     .strict(),
@@ -400,4 +406,57 @@ export function parseProposalDraft(input: unknown): ProposalDraft {
 
 export function safeParseProposalDraft(input: unknown) {
   return proposalDraftSchema.safeParse(input)
+}
+
+export const invoicePricingSchema = z
+  .object({
+    currency: z.string().regex(/^[A-Z]{3}$/, "Expected an ISO 4217 currency"),
+    items: z.array(pricingItemSchema),
+    discount: z
+      .discriminatedUnion("kind", [rateAdjustmentSchema, fixedAdjustmentSchema])
+      .optional(),
+    tax: rateAdjustmentSchema.optional(),
+    notes: richTextDocSchema.optional(),
+  })
+  .strict()
+
+export const invoiceDraftSchema = z
+  .object({
+    id: idSchema,
+    kind: z.literal("invoice"),
+    schemaVersion: z.literal(1),
+    revision: z.number().int().nonnegative(),
+    status: z.literal("draft"),
+    locale: z.string().min(2),
+    timezone: z.string().min(1),
+    template: documentTemplateSchema,
+    data: z
+      .object({
+        title: z.string(),
+        invoiceNumber: z.string(),
+        issueDate: dateOnlySchema,
+        dueDate: dateOnlySchema,
+        seller: partySchema,
+        customer: partySchema,
+        pricing: invoicePricingSchema.optional(),
+        paymentTerms: z.string().optional(),
+      })
+      .strict(),
+    composition: z
+      .object({ version: z.literal(1), blocks: z.array(documentBlockSchema) })
+      .strict(),
+    assets: z.array(documentAssetSchema),
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+  })
+  .strict()
+
+export type InvoiceDraft = z.infer<typeof invoiceDraftSchema>
+
+export function parseInvoiceDraft(input: unknown): InvoiceDraft {
+  return invoiceDraftSchema.parse(input)
+}
+
+export function safeParseInvoiceDraft(input: unknown) {
+  return invoiceDraftSchema.safeParse(input)
 }

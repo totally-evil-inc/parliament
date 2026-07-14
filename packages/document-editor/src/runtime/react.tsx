@@ -1,8 +1,14 @@
-import type { ProposalDraft } from "@workspace/document/schema"
+import type { InvoiceDraft, ProposalDraft } from "@workspace/document/schema"
 import * as React from "react"
-import type { ProposalDraftCommands, ProposalDraftStore } from "./store"
+import type {
+  InvoiceDraftCommands,
+  InvoiceDraftStore,
+  ProposalDraftCommands,
+  ProposalDraftStore,
+} from "./store"
 
-const StoreContext = React.createContext<ProposalDraftStore | null>(null)
+// biome-ignore lint/suspicious/noExplicitAny: generic store context
+const StoreContext = React.createContext<any | null>(null)
 
 export type DocumentEditorHostAdapter = {
   confirm: (options: {
@@ -44,6 +50,48 @@ export function useDocumentEditorHost() {
   return adapter
 }
 
+// Generalized Document Draft Context & Hooks
+export function DocumentDraftProvider({
+  children,
+  store,
+}: {
+  children: React.ReactNode
+  // biome-ignore lint/suspicious/noExplicitAny: generic store parameter
+  store: any
+}) {
+  return <StoreContext value={store}>{children}</StoreContext>
+}
+
+export function useDocumentDraftStore() {
+  const store = React.use(StoreContext)
+  if (!store)
+    throw new Error(
+      "useDocumentDraftStore must be used within DocumentDraftProvider"
+    )
+  return store
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: generic document return value
+export function useDocumentDraft(): any {
+  const store = useDocumentDraftStore()
+  return React.useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    store.getSnapshot
+  )
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: generic document selector parameter
+export function useDocumentDraftSelector<T>(selector: (document: any) => T): T {
+  return selector(useDocumentDraft())
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: generic commands return value
+export function useDocumentDraftCommands(): any {
+  return useDocumentDraftStore().commands
+}
+
+// Backwards-compatible Proposal hooks/provider
 export function ProposalDraftProvider({
   children,
   store,
@@ -51,16 +99,54 @@ export function ProposalDraftProvider({
   children: React.ReactNode
   store: ProposalDraftStore
 }) {
-  return <StoreContext value={store}>{children}</StoreContext>
+  return <DocumentDraftProvider store={store}>{children}</DocumentDraftProvider>
 }
 
-export function useProposalDraftStore() {
-  const store = React.use(StoreContext)
-  if (!store)
-    throw new Error(
-      "useProposalDraftStore must be used within ProposalDraftProvider"
-    )
-  return store
+export function useProposalDraftStore(): ProposalDraftStore {
+  return useDocumentDraftStore()
+}
+
+export function useProposalDraft(): ProposalDraft {
+  return useDocumentDraft()
+}
+
+export function useProposalDraftSelector<T>(
+  selector: (document: ProposalDraft) => T
+): T {
+  return selector(useProposalDraft())
+}
+
+export function useProposalDraftCommands(): ProposalDraftCommands {
+  return useProposalDraftStore().commands
+}
+
+// Invoice specific hooks/provider
+export function InvoiceDraftProvider({
+  children,
+  store,
+}: {
+  children: React.ReactNode
+  store: InvoiceDraftStore
+}) {
+  return <DocumentDraftProvider store={store}>{children}</DocumentDraftProvider>
+}
+
+export function useInvoiceDraftStore(): InvoiceDraftStore {
+  return useDocumentDraftStore()
+}
+
+export function useInvoiceDraft(): InvoiceDraft {
+  return useDocumentDraft()
+}
+
+export function useInvoiceDraftSelector<T>(
+  selector: (document: InvoiceDraft) => T
+): T {
+  return selector(useInvoiceDraft())
+}
+
+export function useInvoiceDraftCommands(): InvoiceDraftCommands {
+  return useInvoiceDraftStore().commands
 }
 
 export type DocumentEditorChromeContextType = {
@@ -72,23 +158,4 @@ export const DocumentEditorChromeContext =
 
 export function useDocumentEditorChrome() {
   return React.use(DocumentEditorChromeContext)
-}
-
-export function useProposalDraft(): ProposalDraft {
-  const store = useProposalDraftStore()
-  return React.useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    store.getSnapshot
-  )
-}
-
-export function useProposalDraftSelector<T>(
-  selector: (document: ProposalDraft) => T
-): T {
-  return selector(useProposalDraft())
-}
-
-export function useProposalDraftCommands(): ProposalDraftCommands {
-  return useProposalDraftStore().commands
 }

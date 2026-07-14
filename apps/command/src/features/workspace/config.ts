@@ -7,6 +7,7 @@ import {
   IconInbox,
   IconLayers,
   IconLink,
+  IconMoneyBill,
   IconRoadmap,
   IconUsers,
 } from "nucleo-glass"
@@ -14,7 +15,7 @@ import type React from "react"
 
 export type WorkspaceRouteNavItem = {
   label: string
-  to: "/" | "/integrations" | "/proposals" | "/settings"
+  to: "/" | "/integrations" | "/proposals" | "/invoices" | "/settings"
   icon: React.ComponentType<{ className?: string }>
   badge?: number
 }
@@ -46,6 +47,7 @@ export const workspaceConfig = {
     { icon: IconLayers, label: "Projects" },
     { icon: IconUsers, label: "People" },
     { icon: IconFile, label: "Proposals", to: "/proposals" },
+    { icon: IconMoneyBill, label: "Invoices", to: "/invoices" },
     { icon: IconLink, label: "Integrations", to: "/integrations" },
     { icon: IconGear, label: "Settings", to: "/settings" },
   ],

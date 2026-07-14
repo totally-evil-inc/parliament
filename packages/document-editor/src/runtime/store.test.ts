@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
+import { createInvoiceDraftFromBlueprint } from "@workspace/document/invoice"
 import { createProposalDraft } from "@workspace/document/proposal"
-import { createProposalDraftStore } from "./store"
+import { createInvoiceDraftStore, createProposalDraftStore } from "./store"
 
 test("structured changes increment revision and support undo", () => {
   const store = createProposalDraftStore(
@@ -39,4 +40,32 @@ test("structured commands flush pending composition before committing", () => {
   store.commands.setTitle("After prose")
   expect(flushed).toBe(true)
   expect(store.getSnapshot().data.title).toBe("After prose")
+})
+
+test("invoice store supports invoice-specific fields and operations", () => {
+  const store = createInvoiceDraftStore(
+    createInvoiceDraftFromBlueprint({
+      id: "invoice-1",
+      blueprint: "standard",
+      sellerName: "Acme",
+    })
+  )
+
+  store.commands.setTitle("Acme Invoice")
+  store.commands.setInvoiceNumber("INV-2026-001")
+  store.commands.setDueDate("2026-08-30")
+  store.commands.setPaymentTerms("Net 30")
+
+  const snapshot = store.getSnapshot()
+  expect(snapshot.data.title).toBe("Acme Invoice")
+  expect(snapshot.data.invoiceNumber).toBe("INV-2026-001")
+  expect(snapshot.data.dueDate).toBe("2026-08-30")
+  expect(snapshot.data.paymentTerms).toBe("Net 30")
+  expect(snapshot.revision).toBe(4)
+
+  store.commands.undo()
+  expect(store.getSnapshot().data.paymentTerms).toBe(
+    "Net 14 Days. Please remit payment via bank transfer."
+  )
+  expect(store.getSnapshot().data.dueDate).toBe("2026-08-30")
 })
