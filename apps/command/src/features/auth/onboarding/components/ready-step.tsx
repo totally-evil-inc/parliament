@@ -11,13 +11,13 @@ export function ReadyStep({
 }) {
   return (
     <>
-      <div className="mt-8 font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+      <div className="mt-8 font-mono text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
         You're set
       </div>
       <h1 className="mt-2 font-heading text-3xl leading-tight">
         Welcome to {organization}.
       </h1>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+      <p className="mt-3 text-muted-foreground text-sm leading-relaxed">
         {count === 0
           ? "Quiet for now. Invite people from settings when you're ready."
           : `We've sent ${count} invite${count === 1 ? "" : "s"}. They'll show up once accepted.`}
@@ -39,7 +39,7 @@ export function ReadyStep({
 function FactCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-border/70 bg-background/40 px-3 py-3">
-      <div className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+      <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
         {label}
       </div>
       <div className="mt-1 truncate font-heading text-sm">{value}</div>

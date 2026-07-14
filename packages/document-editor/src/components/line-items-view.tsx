@@ -1,16 +1,16 @@
+import type { NodeViewProps } from "@tiptap/react"
 import { NodeViewWrapper } from "@tiptap/react"
 import { calculateProposalPricing } from "@workspace/document/calculate"
 import {
+  useDocumentEditorHost,
   useProposalDraftCommands,
   useProposalDraftSelector,
 } from "../runtime/react"
-import type { NodeViewProps } from "@tiptap/react"
-import type { PricingItem } from "./line-items-view/pricing"
 
 import { LineItemsTable } from "./line-items-view/line-items-table"
+import type { PricingItem } from "./line-items-view/pricing"
 import { SignatureBillingNotes } from "./line-items-view/signature-billing-notes"
 import { TotalsAdjustments } from "./line-items-view/totals-adjustments"
-import { useDocumentEditorHost } from "../runtime/react"
 
 function LineItemsView(_props: NodeViewProps) {
   const { confirm, createId } = useDocumentEditorHost()
@@ -152,11 +152,11 @@ function LineItemsView(_props: NodeViewProps) {
       className="document-line-items my-[var(--document-section-spacing)] text-[var(--document-foreground)]"
       contentEditable={false}
     >
-      <div className="border-b border-[var(--document-border)] pb-4">
-        <h3 className="text-xs font-bold tracking-[0.16em] text-[var(--document-foreground)] uppercase">
+      <div className="border-[var(--document-border)] border-b pb-4">
+        <h3 className="font-bold text-[var(--document-foreground)] text-xs uppercase tracking-[0.16em]">
           Services & Billing
         </h3>
-        <p className="mt-1.5 text-xs text-[var(--document-muted-foreground)]">
+        <p className="mt-1.5 text-[var(--document-muted-foreground)] text-xs">
           Indicative proposal pricing
         </p>
       </div>
@@ -170,7 +170,7 @@ function LineItemsView(_props: NodeViewProps) {
           currency={pricing.currency}
           locale={locale}
         />
-        <div className="mt-10 grid gap-10 border-t border-[var(--document-border)] pt-8 md:grid-cols-[1fr_26rem]">
+        <div className="mt-10 grid gap-10 border-[var(--document-border)] border-t pt-8 md:grid-cols-[1fr_26rem]">
           <SignatureBillingNotes />
           <TotalsAdjustments
             subtotal={calculation.subtotalMinor / 100}

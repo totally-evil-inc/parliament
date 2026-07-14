@@ -1,7 +1,7 @@
+import { db } from "@workspace/database"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { jwt, organization } from "better-auth/plugins"
-import { db } from "@workspace/database"
 
 import { trustedOrigins } from "./utils"
 

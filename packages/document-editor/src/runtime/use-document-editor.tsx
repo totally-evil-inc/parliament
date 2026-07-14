@@ -1,15 +1,14 @@
+import type { Editor } from "@tiptap/react"
 import * as React from "react"
-import { useDocumentEditorAdapter } from "./editor"
+import { createBaseEditorCommands } from "../commands/base"
 import { createDocumentCommands } from "../core/definition"
+import type { DocumentEditorConfig } from "../core/types"
 import {
   businessDocumentPreset,
   createBaseRichTextPreset,
   documentEditorClassName,
 } from "../extensions/presets"
-import type { DocumentEditorConfig } from "../core/types"
-import type { Editor } from "@tiptap/react"
-
-import { createBaseEditorCommands } from "../commands/base"
+import { useDocumentEditorAdapter } from "./editor"
 import { useDocumentEditorHost } from "./react"
 
 export function useDocumentEditor({

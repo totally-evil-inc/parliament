@@ -1,11 +1,9 @@
-import * as React from "react"
 import { createFileRoute } from "@tanstack/react-router"
-import { buildProposalRenderModel } from "@workspace/document/render"
+import { getDocumentTemplate } from "@workspace/document/presentation"
 import { createProposalDraft } from "@workspace/document/proposal"
+import { buildProposalRenderModel } from "@workspace/document/render"
 import { safeParseProposalDraft } from "@workspace/document/schema"
-import {
-  getDocumentTemplate,
-} from "@workspace/document/presentation"
+import * as React from "react"
 
 import { ProposalPrintView } from "@/features/documents/print/proposal-print-view"
 
@@ -29,7 +27,7 @@ function PrintRoute() {
   if (!result) return null
   if (!result.success) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-8 text-sm text-destructive">
+      <div className="flex min-h-screen items-center justify-center p-8 text-destructive text-sm">
         {result.error}
       </div>
     )

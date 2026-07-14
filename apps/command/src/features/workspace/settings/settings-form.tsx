@@ -1,6 +1,3 @@
-import { useId } from "react"
-import { ImageUpload01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
 import {
   Field,
@@ -14,6 +11,8 @@ import {
   NativeSelectOption,
 } from "@workspace/ui/components/native-select"
 import { Switch } from "@workspace/ui/components/switch"
+import { IconFileUpload } from "nucleo-glass"
+import { useId } from "react"
 import { SettingsSection } from "./settings-section"
 
 export type WorkspaceSettingsValues = {
@@ -57,10 +56,10 @@ export function SettingsForm({ values, onChange }: SettingsFormProps) {
           <div className="size-14 rounded-lg bg-gradient-to-br from-primary/40 to-primary/10 ring-1 ring-border/60" />
           <div className="min-w-0 flex-1">
             <Button size="sm" variant="outline" type="button">
-              <HugeiconsIcon icon={ImageUpload01Icon} strokeWidth={2} />
+              <IconFileUpload />
               Upload avatar
             </Button>
-            <p className="mt-1.5 text-xs text-muted-foreground">
+            <p className="mt-1.5 text-muted-foreground text-xs">
               PNG or SVG, 1024x1024 max.
             </p>
           </div>

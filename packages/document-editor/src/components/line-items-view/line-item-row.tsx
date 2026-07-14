@@ -2,10 +2,9 @@ import { Delete02Icon, Image01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
 import { TableCell, TableRow } from "@workspace/ui/components/table"
-import { getLineItemKey, getLineTotal, money, safeNumber } from "./pricing"
-import type { PricingItem } from "./pricing"
-
 import { CanvasNumberField, CanvasRichTextArea } from "../canvas-fields"
+import type { PricingItem } from "./pricing"
+import { getLineItemKey, getLineTotal, money, safeNumber } from "./pricing"
 
 type LineItemRowProps = {
   item: PricingItem
@@ -35,7 +34,7 @@ export function LineItemRow({
       key={getLineItemKey(item)}
       className="group align-top hover:bg-transparent"
     >
-      <TableCell className="px-0 py-5 pr-5 whitespace-normal">
+      <TableCell className="whitespace-normal px-0 py-5 pr-5">
         <div className="flex gap-3">
           {item.showImage ? (
             <Button
@@ -71,7 +70,7 @@ export function LineItemRow({
                 variant="ghost"
                 size="sm"
                 onClick={() => updateItem(index, "showDetails", true)}
-                className="h-auto px-0 py-0 text-sm text-[var(--document-muted-foreground)] hover:bg-transparent hover:text-[var(--document-foreground)]"
+                className="h-auto px-0 py-0 text-[var(--document-muted-foreground)] text-sm hover:bg-transparent hover:text-[var(--document-foreground)]"
               >
                 + Add details
               </Button>
@@ -104,7 +103,7 @@ export function LineItemRow({
           variant="ghost"
           size="icon-sm"
           onClick={() => void removeItem(index)}
-          className="text-[var(--document-muted-foreground)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+          className="text-[var(--document-muted-foreground)] opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
           aria-label="Remove line item"
         >
           <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />

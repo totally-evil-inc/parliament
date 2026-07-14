@@ -1,6 +1,6 @@
-import * as React from "react"
-import { EditorContent, useEditor } from "@tiptap/react"
 import type { AnyExtension, Editor, JSONContent } from "@tiptap/core"
+import { EditorContent, useEditor } from "@tiptap/react"
+import * as React from "react"
 
 export function useDocumentEditorAdapter({
   className,
@@ -24,7 +24,8 @@ export function useDocumentEditorAdapter({
   )
 
   React.useEffect(() => {
-    if (!editor || editor.isFocused || equalContent(editor.getJSON(), content)) return
+    if (!editor || editor.isFocused || equalContent(editor.getJSON(), content))
+      return
     queueMicrotask(() => {
       if (!editor || editor.isFocused) return
       editor.commands.setContent(content, { emitUpdate: false })

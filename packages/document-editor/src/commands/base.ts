@@ -13,8 +13,8 @@ import {
   Text,
   Variable,
 } from "@hugeicons/core-free-icons"
-import type { Editor } from "@tiptap/react"
 import type { Range } from "@tiptap/core"
+import type { Editor } from "@tiptap/react"
 import type { EditorCommand } from "./types"
 
 const deleteRangeIfPresent = (editor: Editor, range?: Range) => {

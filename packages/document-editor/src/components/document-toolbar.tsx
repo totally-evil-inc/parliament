@@ -1,4 +1,5 @@
 import { HugeiconsIcon } from "@hugeicons/react"
+import type { Editor } from "@tiptap/react"
 import { Button } from "@workspace/ui/components/button"
 import {
   Tooltip,
@@ -6,12 +7,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
-import { useDocumentSidebar } from "../runtime/sidebar-context"
 import { insertDocumentBlockFromDefinition } from "../core/definition"
 import type { DocumentBlockDefinition, DocumentDefinition } from "../core/types"
-import type { Editor } from "@tiptap/react"
-
 import { useDocumentEditorHost } from "../runtime/react"
+import { useDocumentSidebar } from "../runtime/sidebar-context"
 
 type DocumentToolbarProps = {
   editor: Editor | null

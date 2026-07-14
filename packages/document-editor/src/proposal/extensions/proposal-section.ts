@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from "@tiptap/core"
+import { mergeAttributes, Node } from "@tiptap/core"
 import { ReactNodeViewRenderer } from "@tiptap/react"
 import { ProposalSectionView } from "../components/proposal-section-view"
 
@@ -100,7 +100,8 @@ export const ProposalSectionBody = Node.create({
       "div",
       mergeAttributes(HTMLAttributes, {
         "data-type": "proposal-section-body",
-        class: "mt-5 text-sm text-[var(--document-foreground)] focus:outline-none",
+        class:
+          "mt-5 text-sm text-[var(--document-foreground)] focus:outline-none",
       }),
       0,
     ]

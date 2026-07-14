@@ -1,5 +1,5 @@
-import { AppleIcon, GoogleIcon } from "../components/social-icons"
 import type { ComponentProps, ElementType } from "react"
+import { AppleIcon, GoogleIcon } from "../components/social-icons"
 
 export const SUPPORTED_OAUTH_PROVIDERS = ["google", "apple"] as const
 export type SupportedOAuthProvider = (typeof SUPPORTED_OAUTH_PROVIDERS)[number]

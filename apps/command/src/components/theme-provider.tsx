@@ -8,9 +8,9 @@ import {
   useMemo,
   useState,
 } from "react"
+import { DEFAULT_PALETTE } from "@/lib/themes/palettes"
 import type { ThemePalette } from "@/lib/themes/types"
 import { isThemePalette } from "@/lib/themes/types"
-import { DEFAULT_PALETTE } from "@/lib/themes/palettes"
 
 /** localStorage key for mode preference. */
 export const APP_THEME_STORAGE_KEY = "command-theme"

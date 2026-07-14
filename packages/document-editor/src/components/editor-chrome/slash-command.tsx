@@ -1,9 +1,9 @@
-import { useEffect, useImperativeHandle, useRef, useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
+import type { Range } from "@tiptap/core"
 import { Extension } from "@tiptap/core"
+import type { Editor } from "@tiptap/react"
 import { ReactRenderer } from "@tiptap/react"
 import Suggestion from "@tiptap/suggestion"
-import tippy from "tippy.js"
 import {
   Command,
   CommandEmpty,
@@ -11,10 +11,10 @@ import {
   CommandItem,
   CommandList,
 } from "@workspace/ui/components/command"
-import type { Range } from "@tiptap/core"
-import type { Editor } from "@tiptap/react"
 import type { Ref } from "react"
+import { useEffect, useImperativeHandle, useRef, useState } from "react"
 import type { Instance, Props as TippyProps } from "tippy.js"
+import tippy from "tippy.js"
 import type { EditorCommand } from "../../commands/types"
 
 import {
@@ -104,8 +104,8 @@ export function SlashCommandList({
                   />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{item.title}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="truncate font-medium text-sm">{item.title}</p>
+                  <p className="truncate text-muted-foreground text-xs">
                     {item.description}
                   </p>
                 </div>

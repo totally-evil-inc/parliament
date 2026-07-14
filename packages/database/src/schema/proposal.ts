@@ -1,7 +1,7 @@
 import { relations, sql } from "drizzle-orm"
 import {
-  index,
   boolean,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -16,10 +16,7 @@ import { user } from "./user"
 export const proposalDraft = pgTable(
   "proposal_draft",
   {
-    id: uuid("id")
-      .default(sql`uuidv7()`)
-      .primaryKey()
-      .notNull(),
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
@@ -42,10 +39,7 @@ export const proposalDraft = pgTable(
 export const proposalSnapshot = pgTable(
   "proposal_snapshot",
   {
-    id: uuid("id")
-      .default(sql`uuidv7()`)
-      .primaryKey()
-      .notNull(),
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     proposalDraftId: uuid("proposal_draft_id")
       .notNull()
       .references(() => proposalDraft.id),
@@ -71,10 +65,7 @@ export const proposalSnapshot = pgTable(
 export const proposalPublicLink = pgTable(
   "proposal_public_link",
   {
-    id: uuid("id")
-      .default(sql`uuidv7()`)
-      .primaryKey()
-      .notNull(),
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     proposalSnapshotId: uuid("proposal_snapshot_id")
       .notNull()
       .references(() => proposalSnapshot.id),
@@ -96,10 +87,7 @@ export const proposalPublicLink = pgTable(
 export const proposalAcceptance = pgTable(
   "proposal_acceptance",
   {
-    id: uuid("id")
-      .default(sql`uuidv7()`)
-      .primaryKey()
-      .notNull(),
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     proposalSnapshotId: uuid("proposal_snapshot_id")
       .notNull()
       .references(() => proposalSnapshot.id),
@@ -123,10 +111,7 @@ export const proposalAcceptance = pgTable(
 export const proposalEvent = pgTable(
   "proposal_event",
   {
-    id: uuid("id")
-      .default(sql`uuidv7()`)
-      .primaryKey()
-      .notNull(),
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     proposalSnapshotId: uuid("proposal_snapshot_id")
       .notNull()
       .references(() => proposalSnapshot.id),

@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto"
 import { calculateProposalPricing } from "./calculate"
 import { buildProposalRenderModel } from "./render"
-import { parseProposalDraft } from "./schema"
 import type { ProposalDraft } from "./schema"
+import { parseProposalDraft } from "./schema"
 
 export type ProposalSnapshotPayload = {
   document: ProposalDraft

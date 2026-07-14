@@ -5,13 +5,14 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "check": "biome check",
+    "check:write": "biome check --write",
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
-    "prettier": "^3.8.1",
-    "prettier-plugin-tailwindcss": "^0.7.2",
+    "@biomejs/biome": "^2.5.3",
     "turbo": "^2.8.17",
     "typescript": "5.9.3"
   },
@@ -19,8 +20,5 @@
   "engines": {
     "bun": ">=1.1.0"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
+  "workspaces": ["apps/*", "packages/*"]
 }

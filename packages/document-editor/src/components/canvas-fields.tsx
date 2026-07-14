@@ -1,9 +1,9 @@
-import * as React from "react"
+import { Placeholder } from "@tiptap/extensions"
+import { EditorContent, useEditor } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
 import { useIsomorphicLayoutEffect } from "@workspace/ui/hooks/use-isomorphic-layout-effect"
 import { cn } from "@workspace/ui/lib/utils"
-import { useEditor, EditorContent } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import { Placeholder } from "@tiptap/extensions"
+import * as React from "react"
 import {
   isCanvasNumberDraft,
   normalizeCanvasNumberDraft,
@@ -39,7 +39,7 @@ export function CanvasTextField({
         value={value}
         className={cn(
           canvasFieldClassName,
-          "h-6 text-sm leading-6 relative z-10",
+          "relative z-10 h-6 text-sm leading-6",
           isPlaceholder && "opacity-0",
           className
         )}
@@ -54,8 +54,8 @@ export function CanvasTextField({
         }}
       />
       {isPlaceholder && (
-        <div className="absolute inset-0 pointer-events-none flex items-center">
-          <div className="h-4 w-full rounded-sm bg-[repeating-linear-gradient(-60deg,#DBDBDB,#DBDBDB_1px,transparent_1px,transparent_5px)] dark:bg-[repeating-linear-gradient(-60deg,#2C2C2C,#2C2C2C_1px,transparent_1px,transparent_5px)] opacity-50" />
+        <div className="pointer-events-none absolute inset-0 flex items-center">
+          <div className="h-4 w-full rounded-sm bg-[repeating-linear-gradient(-60deg,#DBDBDB,#DBDBDB_1px,transparent_1px,transparent_5px)] opacity-50 dark:bg-[repeating-linear-gradient(-60deg,#2C2C2C,#2C2C2C_1px,transparent_1px,transparent_5px)]" />
         </div>
       )}
     </div>
@@ -105,7 +105,7 @@ export function CanvasTextArea({
         value={value}
         className={cn(
           canvasFieldClassName,
-          "block resize-none overflow-hidden text-sm leading-6 relative z-10",
+          "relative z-10 block resize-none overflow-hidden text-sm leading-6",
           isPlaceholder && "opacity-0",
           className
         )}
@@ -121,8 +121,8 @@ export function CanvasTextArea({
         }}
       />
       {isPlaceholder && (
-        <div className="absolute inset-0 pointer-events-none flex items-start pt-1">
-          <div className="h-4 w-full rounded-sm bg-[repeating-linear-gradient(-60deg,#DBDBDB,#DBDBDB_1px,transparent_1px,transparent_5px)] dark:bg-[repeating-linear-gradient(-60deg,#2C2C2C,#2C2C2C_1px,transparent_1px,transparent_5px)] opacity-50" />
+        <div className="pointer-events-none absolute inset-0 flex items-start pt-1">
+          <div className="h-4 w-full rounded-sm bg-[repeating-linear-gradient(-60deg,#DBDBDB,#DBDBDB_1px,transparent_1px,transparent_5px)] opacity-50 dark:bg-[repeating-linear-gradient(-60deg,#2C2C2C,#2C2C2C_1px,transparent_1px,transparent_5px)]" />
         </div>
       )}
     </div>
@@ -160,7 +160,7 @@ export function CanvasNumberField({
         value={editState.draft}
         className={cn(
           canvasFieldClassName,
-          "h-6 text-sm leading-6 tabular-nums relative z-10",
+          "relative z-10 h-6 text-sm tabular-nums leading-6",
           isPlaceholder && "opacity-0",
           className
         )}
@@ -185,8 +185,8 @@ export function CanvasNumberField({
         }}
       />
       {isPlaceholder && (
-        <div className="absolute inset-0 pointer-events-none flex items-center">
-          <div className="h-4 w-full rounded-sm bg-[repeating-linear-gradient(-60deg,#DBDBDB,#DBDBDB_1px,transparent_1px,transparent_5px)] dark:bg-[repeating-linear-gradient(-60deg,#2C2C2C,#2C2C2C_1px,transparent_1px,transparent_5px)] opacity-50" />
+        <div className="pointer-events-none absolute inset-0 flex items-center">
+          <div className="h-4 w-full rounded-sm bg-[repeating-linear-gradient(-60deg,#DBDBDB,#DBDBDB_1px,transparent_1px,transparent_5px)] opacity-50 dark:bg-[repeating-linear-gradient(-60deg,#2C2C2C,#2C2C2C_1px,transparent_1px,transparent_5px)]" />
         </div>
       )}
     </div>
@@ -252,8 +252,8 @@ export function CanvasRichTextArea({
       <EditorContent
         editor={editor}
         className={cn(
-          "w-full min-h-6 outline-none bg-transparent text-[var(--document-foreground)]",
-          "prose prose-sm dark:prose-invert max-w-none relative z-10",
+          "min-h-6 w-full bg-transparent text-[var(--document-foreground)] outline-none",
+          "prose prose-sm dark:prose-invert relative z-10 max-w-none",
           "[&_.ProseMirror]:outline-none [&_.ProseMirror_p]:m-0",
           "[&_.ProseMirror_p.is-empty::before]:content-[attr(data-placeholder)]",
           "[&_.ProseMirror_p.is-empty::before]:text-[color-mix(in_oklab,var(--document-muted-foreground)_58%,transparent)]",
@@ -265,8 +265,8 @@ export function CanvasRichTextArea({
         )}
       />
       {isPlaceholder && (
-        <div className="absolute inset-0 pointer-events-none flex items-start pt-1">
-          <div className="h-4 w-full rounded-sm bg-[repeating-linear-gradient(-60deg,#DBDBDB,#DBDBDB_1px,transparent_1px,transparent_5px)] dark:bg-[repeating-linear-gradient(-60deg,#2C2C2C,#2C2C2C_1px,transparent_1px,transparent_5px)] opacity-50" />
+        <div className="pointer-events-none absolute inset-0 flex items-start pt-1">
+          <div className="h-4 w-full rounded-sm bg-[repeating-linear-gradient(-60deg,#DBDBDB,#DBDBDB_1px,transparent_1px,transparent_5px)] opacity-50 dark:bg-[repeating-linear-gradient(-60deg,#2C2C2C,#2C2C2C_1px,transparent_1px,transparent_5px)]" />
         </div>
       )}
     </div>

@@ -1,11 +1,11 @@
-import { useState } from "react"
 import { Button } from "@workspace/ui/components/button"
-import {
-  SUPPORTED_OAUTH_PROVIDERS,
-  SUPPORTED_OAUTH_PROVIDER_DETAILS,
-} from "../lib/o-auth-providers"
-import type { SupportedOAuthProvider } from "../lib/o-auth-providers"
+import { useState } from "react"
 import { authClient } from "@/lib/auth-client"
+import type { SupportedOAuthProvider } from "../lib/o-auth-providers"
+import {
+  SUPPORTED_OAUTH_PROVIDER_DETAILS,
+  SUPPORTED_OAUTH_PROVIDERS,
+} from "../lib/o-auth-providers"
 
 export function SocialAuthButtons() {
   const [isPending, setIsPending] = useState(false)

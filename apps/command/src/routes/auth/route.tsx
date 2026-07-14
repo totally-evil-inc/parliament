@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router"
+import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router"
 import { AuthShell } from "@/layouts/auth-shell"
 
 export const Route = createFileRoute("/auth")({
@@ -25,12 +25,12 @@ function AuthLayout() {
         <div className="flex h-full flex-col justify-between p-12">
           <div className="flex items-center gap-2 font-mono text-sm">
             <span className="inline-block h-2 w-2 rounded-full bg-foreground" />
-            <span className="tracking-[0.2em] uppercase">
+            <span className="uppercase tracking-[0.2em]">
               Sean&apos;s scratch pad
             </span>
           </div>
           <div className="max-w-md">
-            <div className="font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+            <div className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
               {copy.label}
             </div>
             <p className="mt-3 font-heading text-xl leading-snug md:text-2xl">

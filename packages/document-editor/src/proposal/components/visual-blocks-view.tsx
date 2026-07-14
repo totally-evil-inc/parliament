@@ -1,7 +1,7 @@
-import { NodeViewContent, NodeViewWrapper } from "@tiptap/react"
-import { HugeiconsIcon } from "@hugeicons/react"
 import { Image01Icon, QuillWrite02Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import type { NodeViewProps } from "@tiptap/react"
+import { NodeViewContent, NodeViewWrapper } from "@tiptap/react"
 import { getColumnCount } from "../types"
 
 const gridColumnClassNames = {
@@ -18,7 +18,7 @@ function ImagePlaceholder({ label = "Image" }: { label?: string }) {
   return (
     <div className="flex h-full min-h-40 w-full flex-col items-center justify-center gap-2 rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] text-[color-mix(in_oklab,var(--document-muted-foreground)_55%,transparent)]">
       <HugeiconsIcon icon={Image01Icon} className="h-8 w-8" />
-      <span className="text-[10px] font-semibold tracking-widest uppercase">
+      <span className="font-semibold text-[10px] uppercase tracking-widest">
         {label}
       </span>
     </div>
@@ -93,14 +93,14 @@ export function ProposalImageCardsView({ node }: NodeViewProps) {
 export function ProposalSignatureView() {
   return (
     <NodeViewWrapper className="proposal-signature my-[var(--document-section-spacing)] text-[var(--document-foreground)]">
-      <section className="grid gap-8 border-t border-[var(--document-border)] pt-8 md:grid-cols-[1fr_16rem]">
+      <section className="grid gap-8 border-[var(--document-border)] border-t pt-8 md:grid-cols-[1fr_16rem]">
         <NodeViewContent />
-        <div className="flex min-h-28 flex-col justify-end border-t border-[var(--document-border)] pt-4 text-right">
+        <div className="flex min-h-28 flex-col justify-end border-[var(--document-border)] border-t pt-4 text-right">
           <HugeiconsIcon
             icon={QuillWrite02Icon}
             className="ml-auto h-7 w-7 text-[var(--document-muted-foreground)]"
           />
-          <p className="mt-3 text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+          <p className="mt-3 font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-widest">
             Signer from pricing
           </p>
         </div>

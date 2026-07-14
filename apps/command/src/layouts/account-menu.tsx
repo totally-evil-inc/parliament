@@ -11,29 +11,28 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { SidebarMenuButton } from "@workspace/ui/components/sidebar"
-import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  ComputerIcon,
-  CreditCardIcon,
-  Logout01Icon,
-  Moon02Icon,
-  Sun02Icon,
-  UserIcon,
-} from "@hugeicons/core-free-icons"
-import type { WorkspaceUserProfile } from "@/features/workspace/config"
-import type { ThemePreference } from "@/components/theme-provider"
-import { authClient } from "@/lib/auth-client"
+  IconBrightnessIncrease,
+  IconCloudMoon,
+  IconCreditCards,
+  IconExpandWindow,
+  IconMonitor,
+  IconUser,
+} from "nucleo-glass"
 import { useConfirm } from "@/components/confirm-dialog-provider"
+import type { ThemePreference } from "@/components/theme-provider"
 import { useTheme } from "@/components/theme-provider"
+import type { WorkspaceUserProfile } from "@/features/workspace/config"
+import { authClient } from "@/lib/auth-client"
 
 function ThemeIcon({ preference }: { preference: ThemePreference }) {
   switch (preference) {
     case "light":
-      return <HugeiconsIcon icon={Sun02Icon} />
+      return <IconBrightnessIncrease />
     case "dark":
-      return <HugeiconsIcon icon={Moon02Icon} />
+      return <IconCloudMoon />
     default:
-      return <HugeiconsIcon icon={ComputerIcon} />
+      return <IconMonitor />
   }
 }
 
@@ -65,13 +64,13 @@ export function AccountMenu({ user }: { user: WorkspaceUserProfile }) {
             className="group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-1!"
           >
             <Avatar className="group-data-[collapsible=icon]:size-6">
-              <AvatarFallback className="bg-sidebar-foreground text-[10px] font-medium text-sidebar">
+              <AvatarFallback className="bg-sidebar-foreground font-medium text-[10px] text-sidebar">
                 {user.initials}
               </AvatarFallback>
             </Avatar>
             <span className="grid min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-              <span className="truncate text-sm font-medium">{user.name}</span>
-              <span className="truncate text-xs text-sidebar-foreground/60">
+              <span className="truncate font-medium text-sm">{user.name}</span>
+              <span className="truncate text-sidebar-foreground/60 text-xs">
                 {user.email}
               </span>
             </span>
@@ -88,13 +87,13 @@ export function AccountMenu({ user }: { user: WorkspaceUserProfile }) {
         <DropdownMenuGroup>
           <div className="flex items-center gap-2 px-2 py-1.5 text-left text-sm">
             <Avatar className="size-8">
-              <AvatarFallback className="bg-sidebar-foreground text-[10px] font-medium text-sidebar">
+              <AvatarFallback className="bg-sidebar-foreground font-medium text-[10px] text-sidebar">
                 {user.initials}
               </AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{user.name}</span>
-              <span className="truncate text-xs text-muted-foreground">
+              <span className="truncate text-muted-foreground text-xs">
                 {user.email}
               </span>
             </div>
@@ -103,11 +102,11 @@ export function AccountMenu({ user }: { user: WorkspaceUserProfile }) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <HugeiconsIcon icon={UserIcon} />
+            <IconUser />
             Profile
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <HugeiconsIcon icon={CreditCardIcon} />
+            <IconCreditCards />
             Billing
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -136,7 +135,7 @@ export function AccountMenu({ user }: { user: WorkspaceUserProfile }) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={handleSignOut} variant="destructive">
-            <HugeiconsIcon icon={Logout01Icon} />
+            <IconExpandWindow />
             Sign out
           </DropdownMenuItem>
         </DropdownMenuGroup>

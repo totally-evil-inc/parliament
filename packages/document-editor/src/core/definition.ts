@@ -1,14 +1,13 @@
+import type { Range } from "@tiptap/core"
+import type { Editor } from "@tiptap/react"
+import type { EditorCommand } from "../commands/types"
+import { insertDocumentBlock } from "./insert-document-block"
 import type {
   DocumentDefinition,
   DocumentLayoutPreset,
   InsertableDocumentBlockDefinition,
   SingletonDocumentBlockDefinition,
 } from "./types"
-import type { EditorCommand } from "../commands/types"
-import type { Editor } from "@tiptap/react"
-import type { Range } from "@tiptap/core"
-
-import { insertDocumentBlock } from "./insert-document-block"
 
 type InsertFromDefinitionOptions = {
   editor: Editor

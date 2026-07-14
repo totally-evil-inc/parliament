@@ -1,15 +1,15 @@
-import { NodeViewWrapper } from "@tiptap/react"
-import { Button } from "@workspace/ui/components/button"
-import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Delete02Icon,
   Image01Icon,
   PlusSignIcon,
 } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import type { NodeViewProps } from "@tiptap/react"
+import { NodeViewWrapper } from "@tiptap/react"
+import { Button } from "@workspace/ui/components/button"
+import { useDocumentEditorHost } from "../../runtime/react"
 import type { GalleryImage } from "../types"
 import { getArrayAttr, getColumnCount } from "../types"
-import { useDocumentEditorHost } from "../../runtime/react"
 
 const gridColumnClassNames = {
   1: "grid-cols-1",
@@ -44,9 +44,9 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
   }
 
   return (
-    <NodeViewWrapper className="gallery my-[var(--document-section-spacing)] rounded-[var(--document-radius)] border-2 border-dashed border-[color-mix(in_oklab,var(--document-muted-foreground)_24%,transparent)] p-8 transition-colors hover:border-[color-mix(in_oklab,var(--document-accent)_40%,transparent)]">
+    <NodeViewWrapper className="gallery my-[var(--document-section-spacing)] rounded-[var(--document-radius)] border-2 border-[color-mix(in_oklab,var(--document-muted-foreground)_24%,transparent)] border-dashed p-8 transition-colors hover:border-[color-mix(in_oklab,var(--document-accent)_40%,transparent)]">
       <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-sm font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+        <h3 className="font-bold text-[var(--document-muted-foreground)] text-sm uppercase tracking-widest">
           Gallery
         </h3>
         <Button
@@ -68,7 +68,7 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
           >
             <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[color-mix(in_oklab,var(--document-muted-foreground)_50%,transparent)]">
               <HugeiconsIcon icon={Image01Icon} className="h-8 w-8" />
-              <span className="text-[10px] font-medium tracking-wider uppercase">
+              <span className="font-medium text-[10px] uppercase tracking-wider">
                 Placeholder
               </span>
             </div>
@@ -78,7 +78,7 @@ export function GalleryView({ node, updateAttributes }: NodeViewProps) {
               variant="ghost"
               size="icon-sm"
               onClick={() => void removeImage(index)}
-              className="absolute top-2 right-2 text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive/80"
+              className="absolute top-2 right-2 text-destructive opacity-0 transition-opacity hover:text-destructive/80 group-hover:opacity-100"
               aria-label="Remove image"
             >
               <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />

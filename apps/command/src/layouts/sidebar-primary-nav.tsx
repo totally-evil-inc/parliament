@@ -1,5 +1,4 @@
 import { Link, useRouterState } from "@tanstack/react-router"
-import { HugeiconsIcon } from "@hugeicons/react"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -8,7 +7,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@workspace/ui/components/sidebar"
-import type { IconSvgElement } from "@hugeicons/react"
 import type { WorkspaceNavItem } from "@/features/workspace/config"
 
 export function SidebarPrimaryNav({
@@ -23,7 +21,7 @@ export function SidebarPrimaryNav({
   return (
     <SidebarGroup className="py-2">
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu className="gap-3">
           {items.map((item) => (
             <SidebarMenuItem key={item.label}>
               {item.to ? (
@@ -32,12 +30,12 @@ export function SidebarPrimaryNav({
                   isActive={isActiveNavItem(item.to, pathname)}
                   render={<Link to={item.to} />}
                 >
-                  <NavIcon icon={item.icon} />
+                  <item.icon className="text-sidebar-foreground/70" />
                   <span>{item.label}</span>
                 </SidebarMenuButton>
               ) : (
                 <SidebarMenuButton type="button" tooltip={item.label}>
-                  <NavIcon icon={item.icon} />
+                  <item.icon className="text-sidebar-foreground/70" />
                   <span>{item.label}</span>
                 </SidebarMenuButton>
               )}
@@ -58,14 +56,4 @@ function isActiveNavItem(to: string, pathname: string) {
   }
 
   return pathname === to || pathname.startsWith(`${to}/`)
-}
-
-function NavIcon({ icon }: { icon: IconSvgElement }) {
-  return (
-    <HugeiconsIcon
-      icon={icon}
-      strokeWidth={2}
-      className="text-sidebar-foreground/70"
-    />
-  )
 }

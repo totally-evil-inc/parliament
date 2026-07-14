@@ -1,6 +1,6 @@
 import { SettingsActions } from "./settings-actions"
-import { useSettings } from "./settings-provider"
 import { SettingsForm } from "./settings-form"
+import { useSettings } from "./settings-provider"
 
 export function GeneralSettings() {
   const { draftSettings, dirty, updateSetting, discardChanges, saveChanges } =

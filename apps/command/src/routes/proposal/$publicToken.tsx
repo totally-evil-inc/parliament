@@ -1,16 +1,12 @@
-import * as React from "react"
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { getDocumentTemplate } from "@workspace/document/presentation"
 import { buildProposalRenderModel } from "@workspace/document/render"
 import { parseProposalDraft } from "@workspace/document/schema"
-import {
-  getDocumentTemplate,
-} from "@workspace/document/presentation"
-import { useTheme } from "@/components/theme-provider"
 import { Button } from "@workspace/ui/components/button"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import {
@@ -29,11 +25,12 @@ import {
 } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
-
-import { ProposalPrintView } from "@/features/documents/print/proposal-print-view"
+import * as React from "react"
 import { publicProposalQuery } from "@/api/proposals"
-import { acceptPublicProposal } from "@/server/proposals"
+import { useTheme } from "@/components/theme-provider"
+import { ProposalPrintView } from "@/features/documents/print/proposal-print-view"
 import type { PublicProposalResult } from "@/server/proposals"
+import { acceptPublicProposal } from "@/server/proposals"
 
 export const Route = createFileRoute("/proposal/$publicToken")({
   loader: async ({ context, params }) => {
@@ -49,6 +46,7 @@ function PublicProposalRoute() {
   const query = publicProposalQuery(publicToken)
   const { data } = useSuspenseQuery(query)
   const proposal = data as PublicProposalResult
+  const { resolved: appTheme } = useTheme()
 
   if (proposal.status === "not_found") {
     return <UnavailableProposal title="Proposal link not found" />
@@ -65,7 +63,6 @@ function PublicProposalRoute() {
     )
   }
 
-  const { resolved: appTheme } = useTheme()
   const document = parseProposalDraft(proposal.document)
 
   return (
@@ -85,8 +82,8 @@ function PublicProposalRoute() {
         ) : (
           <>
             <div className="min-w-0">
-              <p className="text-sm font-medium">Ready to accept</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="font-medium text-sm">Ready to accept</p>
+              <p className="text-muted-foreground text-xs">
                 Review the proposal, then sign to record acceptance.
               </p>
             </div>
@@ -219,7 +216,7 @@ function AcceptanceCertificate({
 }) {
   return (
     <div className="min-w-0 text-xs">
-      <p className="text-sm font-medium">Accepted by {signerName}</p>
+      <p className="font-medium text-sm">Accepted by {signerName}</p>
       <p className="text-muted-foreground">
         {signerEmail} · {formatDateTime(acceptedAt)} · Link {tokenSuffix}
       </p>
@@ -231,16 +228,14 @@ function UnavailableProposal({ title }: { title: string }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
       <section className="w-full max-w-md rounded-md border bg-background p-6 text-center shadow-sm">
-        <h1 className="text-lg font-semibold">{title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <h1 className="font-semibold text-lg">{title}</h1>
+        <p className="mt-2 text-muted-foreground text-sm">
           Contact the sender if you expected to view this proposal.
         </p>
       </section>
     </main>
   )
 }
-
-
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat(undefined, {

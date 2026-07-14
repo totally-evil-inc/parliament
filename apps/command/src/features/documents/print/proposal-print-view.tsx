@@ -1,9 +1,9 @@
 import { formatDateOnly, formatMoneyMinor } from "@workspace/document/calculate"
-import { getDocumentTemplateStyle } from "@workspace/document/presentation"
-import { RichTextInlineRenderer, RichTextRenderer } from "./rich-text-renderer"
-import type { DocumentBlock, RichTextNode } from "@workspace/document/schema"
-import type { ProposalRenderModel } from "@workspace/document/render"
 import type { DocumentTemplate } from "@workspace/document/presentation"
+import { getDocumentTemplateStyle } from "@workspace/document/presentation"
+import type { ProposalRenderModel } from "@workspace/document/render"
+import type { DocumentBlock, RichTextNode } from "@workspace/document/schema"
+import { RichTextInlineRenderer, RichTextRenderer } from "./rich-text-renderer"
 
 type BlockRendererProps = {
   block: DocumentBlock
@@ -41,7 +41,7 @@ const blockRenderers: Record<
     ) : null,
   timeline: ({ block }) =>
     block.type === "timeline" ? (
-      <section className="my-[var(--document-section-spacing)] border-l border-[var(--document-border)] pl-5">
+      <section className="my-[var(--document-section-spacing)] border-[var(--document-border)] border-l pl-5">
         <SectionHeading eyebrow="Project Plan" title="How the work unfolds" />
         <RichTextRenderer content={block.content} />
       </section>
@@ -57,7 +57,7 @@ const blockRenderers: Record<
         {block.images.map((image) => (
           <div
             key={image.id}
-            className="flex aspect-square items-center justify-center rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] text-xs text-[var(--document-muted-foreground)]"
+            className="flex aspect-square items-center justify-center rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] text-[var(--document-muted-foreground)] text-xs"
           >
             {image.alt || "Image"}
           </div>
@@ -81,7 +81,7 @@ export function ProposalPrintView({
       data-document-template={`${model.template.id}@${model.template.version}`}
       data-document-type="proposal"
     >
-      <article className="document-print-page mx-auto min-h-[297mm] w-[210mm] bg-[var(--document-page-background)] px-[18mm] py-[18mm] [font-family:var(--document-font-family)] shadow-2xl shadow-black/10 print:min-h-0 print:w-auto print:px-0 print:py-0 print:shadow-none">
+      <article className="document-print-page mx-auto min-h-[297mm] w-[210mm] bg-[var(--document-page-background)] px-[18mm] py-[18mm] shadow-2xl shadow-black/10 [font-family:var(--document-font-family)] print:min-h-0 print:w-auto print:px-0 print:py-0 print:shadow-none">
         {model.blocks.map((block) => {
           const Renderer = blockRenderers[block.type]
           return <Renderer key={block.id} block={block} model={model} />
@@ -97,24 +97,25 @@ function Header({ model }: { model: ProposalRenderModel }) {
       <div className="rounded-[calc(var(--document-radius)*1.5)] border border-[color-mix(in_oklab,var(--document-accent)_18%,var(--document-border))] bg-[color-mix(in_oklab,var(--document-accent)_7%,transparent)] p-10">
         <div className="flex items-start justify-between gap-8">
           <div className="space-y-8">
-            <div className="flex h-12 w-28 items-center justify-center rounded-[var(--document-radius)] border border-[color-mix(in_oklab,var(--document-accent)_28%,var(--document-border))] bg-[var(--document-page-background)] text-xs font-semibold text-[var(--document-accent)]">
+            <div className="flex h-12 w-28 items-center justify-center rounded-[var(--document-radius)] border border-[color-mix(in_oklab,var(--document-accent)_28%,var(--document-border))] bg-[var(--document-page-background)] font-semibold text-[var(--document-accent)] text-xs">
               {model.seller.name ? model.seller.name.slice(0, 2) : "PR"}
             </div>
             <div className="max-w-[29rem]">
-              <p className="mb-4 text-[10px] font-bold tracking-[0.22em] text-[var(--document-accent)] uppercase">
+              <p className="mb-4 font-bold text-[10px] text-[var(--document-accent)] uppercase tracking-[0.22em]">
                 Proposal
               </p>
               {model.title ? (
                 <h1
-                  className="[font-family:var(--document-heading-font-family)] text-5xl leading-none font-bold tracking-normal"
+                  className="font-bold text-5xl leading-none tracking-normal [font-family:var(--document-heading-font-family)]"
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: model title HTML structure is intended
                   dangerouslySetInnerHTML={{ __html: model.title }}
                 />
               ) : (
-                <h1 className="[font-family:var(--document-heading-font-family)] text-5xl leading-none font-bold tracking-normal">
+                <h1 className="font-bold text-5xl leading-none tracking-normal [font-family:var(--document-heading-font-family)]">
                   Proposal
                 </h1>
               )}
-              <p className="mt-5 max-w-xl text-base leading-7 text-[var(--document-muted-foreground)]">
+              <p className="mt-5 max-w-xl text-[var(--document-muted-foreground)] text-base leading-7">
                 A focused plan for a clear, performant, and conversion-ready web
                 presence.
               </p>
@@ -135,7 +136,7 @@ function Header({ model }: { model: ProposalRenderModel }) {
             ) : null}
           </div>
         </div>
-        <div className="mt-10 grid grid-cols-2 gap-16 border-t border-[color-mix(in_oklab,var(--document-accent)_18%,var(--document-border))] pt-8">
+        <div className="mt-10 grid grid-cols-2 gap-16 border-[color-mix(in_oklab,var(--document-accent)_18%,var(--document-border))] border-t pt-8">
           <Party label="Prepared By" party={model.seller} />
           <Party label="Prepared For" party={model.customer} />
         </div>
@@ -155,7 +156,7 @@ function DateValue({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+      <p className="font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-widest">
         {label}
       </p>
       <p>{formatDateOnly(value, locale)}</p>
@@ -172,7 +173,7 @@ function Party({
 }) {
   return (
     <section className="space-y-2 text-sm">
-      <p className="mb-5 text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+      <p className="mb-5 font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-widest">
         {label}
       </p>
       {[
@@ -186,6 +187,7 @@ function Party({
         .filter((field) => Boolean(field[1]))
         .map(([key, value]) => {
           if (key === "address") {
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: addresses can contain formatted lines
             return <p key={key} dangerouslySetInnerHTML={{ __html: value }} />
           }
           return <p key={key}>{value}</p>
@@ -250,7 +252,7 @@ function Cover({
             lead={block.subtitle}
             title={block.title}
           />
-          <div className="mt-8 grid gap-8 border-t border-[color-mix(in_oklab,var(--document-accent)_18%,var(--document-border))] pt-6 text-sm md:grid-cols-2">
+          <div className="mt-8 grid gap-8 border-[color-mix(in_oklab,var(--document-accent)_18%,var(--document-border))] border-t pt-6 text-sm md:grid-cols-2">
             <Party label="Prepared By" party={model.seller} />
             <Party label="Prepared For" party={model.customer} />
           </div>
@@ -278,9 +280,9 @@ function Columns({
         {block.items.map((item) => (
           <section
             key={item.id}
-            className="border-t border-[var(--document-border)] pt-5"
+            className="border-[var(--document-border)] border-t pt-5"
           >
-            <h3 className="text-base leading-6 font-semibold">
+            <h3 className="font-semibold text-base leading-6">
               <RichTextInlineRenderer content={item.heading} />
             </h3>
             <RichTextRenderer
@@ -341,7 +343,7 @@ function ImageCards({
             className={horizontal ? "min-h-28" : "min-h-40"}
           />
           <div>
-            <h3 className="text-base leading-6 font-semibold">
+            <h3 className="font-semibold text-base leading-6">
               <RichTextInlineRenderer content={item.title} />
             </h3>
             <RichTextRenderer
@@ -366,14 +368,14 @@ function Metrics({
       <div className={`mt-8 grid gap-8 ${columns(block.columns)}`}>
         {block.items.map((item) => (
           <section key={item.id} className="break-inside-avoid text-center">
-            <div className="mb-1.5 text-4xl font-black tracking-tight text-[var(--document-accent)] md:text-5xl">
+            <div className="mb-1.5 font-black text-4xl text-[var(--document-accent)] tracking-tight md:text-5xl">
               <RichTextInlineRenderer content={item.value} />
             </div>
-            <div className="mb-1 text-base font-bold tracking-tight text-[var(--document-foreground)] md:text-lg">
+            <div className="mb-1 font-bold text-[var(--document-foreground)] text-base tracking-tight md:text-lg">
               <RichTextInlineRenderer content={item.label} />
             </div>
             <RichTextRenderer
-              className="text-sm leading-relaxed text-[var(--document-muted-foreground)] md:text-base"
+              className="text-[var(--document-muted-foreground)] text-sm leading-relaxed md:text-base"
               content={item.detail}
             />
           </section>
@@ -401,6 +403,7 @@ function Team({ block }: { block: Extract<DocumentBlock, { type: "team" }> }) {
                 stroke="currentColor"
                 strokeWidth="2"
               >
+                <title>Avatar</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -408,14 +411,14 @@ function Team({ block }: { block: Extract<DocumentBlock, { type: "team" }> }) {
                 />
               </svg>
             </div>
-            <div className="mb-1 text-base font-bold tracking-tight text-[var(--document-foreground)] md:text-lg">
+            <div className="mb-1 font-bold text-[var(--document-foreground)] text-base tracking-tight md:text-lg">
               <RichTextInlineRenderer content={item.name} />
             </div>
-            <div className="mb-3 text-sm font-medium text-[var(--document-muted-foreground)] md:text-base">
+            <div className="mb-3 font-medium text-[var(--document-muted-foreground)] text-sm md:text-base">
               <RichTextInlineRenderer content={item.role} />
             </div>
             <RichTextRenderer
-              className="text-xs leading-normal text-[var(--document-muted-foreground)] md:text-sm"
+              className="text-[var(--document-muted-foreground)] text-xs leading-normal md:text-sm"
               content={item.bio}
             />
           </section>
@@ -437,16 +440,16 @@ function Testimonials({
         {block.items.map((item) => (
           <blockquote
             key={item.id}
-            className="m-0 break-inside-avoid border-l-2 border-[var(--document-accent)] py-1 pl-5 text-left"
+            className="m-0 break-inside-avoid border-[var(--document-accent)] border-l-2 py-1 pl-5 text-left"
           >
             <RichTextRenderer
-              className="mb-3 text-base leading-relaxed font-medium text-[var(--document-muted-foreground)] italic md:text-lg"
+              className="mb-3 font-medium text-[var(--document-muted-foreground)] text-base italic leading-relaxed md:text-lg"
               content={item.quote}
             />
-            <div className="mb-0.5 text-sm font-bold tracking-tight text-[var(--document-foreground)] md:text-base">
+            <div className="mb-0.5 font-bold text-[var(--document-foreground)] text-sm tracking-tight md:text-base">
               <RichTextInlineRenderer content={item.author} />
             </div>
-            <div className="text-xs font-medium text-[var(--document-muted-foreground)] md:text-sm">
+            <div className="font-medium text-[var(--document-muted-foreground)] text-xs md:text-sm">
               <RichTextInlineRenderer content={item.role} />
             </div>
           </blockquote>
@@ -467,7 +470,7 @@ function Signature({
     model.pricing?.signerName || model.seller.name || "Signer name"
   const signerTitle = model.pricing?.signerTitle || "Signature"
   return (
-    <section className="my-[var(--document-section-spacing)] break-inside-avoid border-t border-[var(--document-border)] pt-8">
+    <section className="my-[var(--document-section-spacing)] break-inside-avoid border-[var(--document-border)] border-t pt-8">
       <div className="grid gap-8 md:grid-cols-[1fr_16rem]">
         <div>
           <SectionHeading title={block.title} />
@@ -476,11 +479,11 @@ function Signature({
             content={block.terms}
           />
         </div>
-        <div className="flex min-h-32 flex-col justify-end border-t border-[var(--document-border)] pt-4 text-right">
-          <p className="font-[cursive] text-3xl leading-none text-[var(--document-foreground)]">
+        <div className="flex min-h-32 flex-col justify-end border-[var(--document-border)] border-t pt-4 text-right">
+          <p className="font-[cursive] text-3xl text-[var(--document-foreground)] leading-none">
             {signerName}
           </p>
-          <p className="mt-2 text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+          <p className="mt-2 font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-widest">
             {signerTitle}
           </p>
         </div>
@@ -501,15 +504,15 @@ function SectionHeading({
   return (
     <div className="max-w-2xl">
       {hasRichTextContent(eyebrow) ? (
-        <p className="mb-2 text-[10px] font-bold tracking-[0.18em] text-[var(--document-accent)] uppercase">
+        <p className="mb-2 font-bold text-[10px] text-[var(--document-accent)] uppercase tracking-[0.18em]">
           <RichTextInlineRenderer content={eyebrow} />
         </p>
       ) : null}
-      <h2 className="[font-family:var(--document-heading-font-family)] text-3xl leading-tight font-bold tracking-normal">
+      <h2 className="font-bold text-3xl leading-tight tracking-normal [font-family:var(--document-heading-font-family)]">
         <RichTextInlineRenderer content={title} />
       </h2>
       {hasRichTextContent(lead) ? (
-        <p className="mt-3 text-base leading-7 text-[var(--document-muted-foreground)]">
+        <p className="mt-3 text-[var(--document-muted-foreground)] text-base leading-7">
           <RichTextInlineRenderer content={lead} />
         </p>
       ) : null}
@@ -521,13 +524,13 @@ function Faq({ block }: { block: Extract<DocumentBlock, { type: "faq" }> }) {
   return (
     <section className="my-[var(--document-section-spacing)] break-inside-avoid">
       <SectionHeading eyebrow="FAQ" title="Common Questions" />
-      <div className="mt-6 divide-y divide-[var(--document-border)] border-y border-[var(--document-border)]">
+      <div className="mt-6 divide-y divide-[var(--document-border)] border-[var(--document-border)] border-y">
         {block.items.map((item) => (
           <div
             key={item.id}
             className="grid gap-4 py-5 md:grid-cols-[15rem_1fr]"
           >
-            <h3 className="text-base leading-6 font-semibold">
+            <h3 className="font-semibold text-base leading-6">
               <RichTextInlineRenderer content={item.question} />
             </h3>
             <RichTextRenderer
@@ -551,7 +554,7 @@ function ImagePlaceholder({
   return (
     <div
       className={[
-        "flex items-center justify-center rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] px-4 text-center text-xs text-[var(--document-muted-foreground)]",
+        "flex items-center justify-center rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] px-4 text-center text-[var(--document-muted-foreground)] text-xs",
         className,
       ]
         .filter(Boolean)
@@ -575,18 +578,18 @@ function Pricing({
     formatMoneyMinor(value, pricing.currency, model.locale)
   return (
     <section className="my-8">
-      <div className="border-b border-[var(--document-border)] pb-4">
-        <h2 className="text-xs font-bold tracking-[0.16em] uppercase">
+      <div className="border-[var(--document-border)] border-b pb-4">
+        <h2 className="font-bold text-xs uppercase tracking-[0.16em]">
           {block.config.title}
         </h2>
-        <p className="mt-1.5 text-xs text-[var(--document-muted-foreground)]">
+        <p className="mt-1.5 text-[var(--document-muted-foreground)] text-xs">
           Indicative proposal pricing
         </p>
       </div>
       <div className="pt-5">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-[var(--document-border)] text-left text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+            <tr className="border-[var(--document-border)] border-b text-left font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-widest">
               <th className="py-3 pr-5">Description</th>
               <th className="px-3 py-3 text-center">Qty</th>
               <th className="px-3 py-3 text-right">Price</th>
@@ -599,11 +602,13 @@ function Pricing({
                 <td className="py-5 pr-5">
                   <p
                     className="font-medium"
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: item description allows rich formatting
                     dangerouslySetInnerHTML={{ __html: item.description || "" }}
                   />
                   {item.details ? (
                     <p
-                      className="text-sm text-[var(--document-muted-foreground)]"
+                      className="text-[var(--document-muted-foreground)] text-sm"
+                      // biome-ignore lint/security/noDangerouslySetInnerHtml: item details allow rich formatting
                       dangerouslySetInnerHTML={{ __html: item.details }}
                     />
                   ) : null}
@@ -619,7 +624,7 @@ function Pricing({
             ))}
           </tbody>
         </table>
-        <div className="mt-8 ml-auto w-72 space-y-3 border-t border-[var(--document-border)] pt-5 text-sm">
+        <div className="mt-8 ml-auto w-72 space-y-3 border-[var(--document-border)] border-t pt-5 text-sm">
           <Total
             label="Subtotal"
             value={money(pricing.calculation.subtotalMinor)}
@@ -640,11 +645,11 @@ function Pricing({
           />
         </div>
         <div className="mt-12 flex justify-end">
-          <div className="w-64 border-t border-[var(--document-border)] pt-4 text-right">
-            <p className="font-[cursive] text-3xl leading-none text-[var(--document-foreground)]">
+          <div className="w-64 border-[var(--document-border)] border-t pt-4 text-right">
+            <p className="font-[cursive] text-3xl text-[var(--document-foreground)] leading-none">
               {pricing.signerName || model.seller.name || "Signer name"}
             </p>
-            <p className="mt-2 text-[10px] font-bold tracking-widest text-[var(--document-muted-foreground)] uppercase">
+            <p className="mt-2 font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-widest">
               {pricing.signerTitle || "Signature"}
             </p>
           </div>
@@ -665,7 +670,7 @@ function Total({
 }) {
   return (
     <div
-      className={`flex justify-between ${strong ? "border-t pt-3 text-lg font-bold" : ""}`}
+      className={`flex justify-between ${strong ? "border-t pt-3 font-bold text-lg" : ""}`}
     >
       <span>{label}</span>
       <span>{value}</span>

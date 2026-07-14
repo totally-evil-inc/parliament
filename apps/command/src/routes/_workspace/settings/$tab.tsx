@@ -1,10 +1,10 @@
-import { Navigate, createFileRoute } from "@tanstack/react-router"
-import { SettingsPlaceholder } from "@/features/workspace/settings/settings-placeholder"
+import { createFileRoute, Navigate } from "@tanstack/react-router"
+import { MembersPage } from "@/features/workspace/members/members-page"
 import {
   getWorkspaceSettingsTab,
   isWorkspaceSettingsParamTab,
 } from "@/features/workspace/settings"
-import { MembersPage } from "@/features/workspace/members/members-page"
+import { SettingsPlaceholder } from "@/features/workspace/settings/settings-placeholder"
 
 export const Route = createFileRoute("/_workspace/settings/$tab")({
   component: SettingsTabPage,

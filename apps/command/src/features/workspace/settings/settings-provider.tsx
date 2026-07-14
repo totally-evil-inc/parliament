@@ -1,13 +1,7 @@
-import {
-  createContext,
-  use,
-  useCallback,
-  useMemo,
-  useState,
-} from "react"
 import type { ReactNode } from "react"
-import type { WorkspaceSettingsValues } from "./settings-form"
+import { createContext, use, useCallback, useMemo, useState } from "react"
 import { useWorkspace } from "@/layouts/workspace-provider"
+import type { WorkspaceSettingsValues } from "./settings-form"
 
 type SettingsContextValue = {
   draftSettings: WorkspaceSettingsValues

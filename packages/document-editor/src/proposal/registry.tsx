@@ -9,9 +9,9 @@ import {
   TextFontIcon,
   VideoReplayIcon,
 } from "@hugeicons/core-free-icons"
-import { proposalBlocks } from "./blocks/proposal-blocks"
-import type { DocumentDefinition } from "../core/types"
 import { defaultDocumentTemplate } from "@workspace/document/presentation"
+import type { DocumentDefinition } from "../core/types"
+import { proposalBlocks } from "./blocks/proposal-blocks"
 
 const proposalDocumentTemplate = {
   ...defaultDocumentTemplate,

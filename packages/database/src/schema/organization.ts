@@ -5,10 +5,7 @@ import { invitation } from "./invitation"
 import { member } from "./member"
 
 export const organization = pgTable("organization", {
-  id: uuid("id")
-    .default(sql`uuidv7()`)
-    .primaryKey()
-    .notNull(),
+  id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   logo: text("logo"),

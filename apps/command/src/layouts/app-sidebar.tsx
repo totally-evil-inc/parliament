@@ -7,14 +7,14 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@workspace/ui/components/sidebar"
-import { AccountMenu } from "./account-menu"
-import { SidebarPrimaryNav } from "./sidebar-primary-nav"
-import { SidebarSearch } from "./sidebar-search"
-import { WorkspaceSwitcher } from "./workspace-switcher"
 import type {
   WorkspaceNavItem,
   WorkspaceUserProfile,
 } from "@/features/workspace/config"
+import { AccountMenu } from "./account-menu"
+import { SidebarPrimaryNav } from "./sidebar-primary-nav"
+import { SidebarSearch } from "./sidebar-search"
+import { WorkspaceSwitcher } from "./workspace-switcher"
 
 type AppSidebarProps = {
   primaryNav: Array<WorkspaceNavItem>
@@ -31,9 +31,9 @@ export function AppSidebar({
     <Sidebar
       variant={variant}
       collapsible="icon"
-      className="border-r border-sidebar-border/80 bg-sidebar"
+      className="border-sidebar-border/80 border-r bg-sidebar"
     >
-      <SidebarHeader className="gap-2 border-b border-sidebar-border/80 p-2">
+      <SidebarHeader className="gap-2 border-sidebar-border/80 border-b p-2">
         <WorkspaceSwitcher />
         <SidebarSearch />
       </SidebarHeader>
@@ -42,7 +42,7 @@ export function AppSidebar({
         <SidebarPrimaryNav items={primaryNav} />
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/80 p-2">
+      <SidebarFooter className="border-sidebar-border/80 border-t p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <AccountMenu user={user} />

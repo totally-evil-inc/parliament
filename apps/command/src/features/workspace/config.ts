@@ -1,27 +1,27 @@
 import {
-  Activity01Icon,
-  FileInputIcon,
-  Folder01Icon,
-  Home01Icon,
-  InboxIcon,
-  Layers01Icon,
-  Notification01Icon,
-  Settings01Icon,
-  Share01Icon,
-  UserGroupIcon,
-} from "@hugeicons/core-free-icons"
-import type { IconSvgElement } from "@hugeicons/react"
+  IconBell,
+  IconFile,
+  IconFolder,
+  IconGear,
+  IconHouse,
+  IconInbox,
+  IconLayers,
+  IconLink,
+  IconRoadmap,
+  IconUsers,
+} from "nucleo-glass"
+import type React from "react"
 
 export type WorkspaceRouteNavItem = {
   label: string
   to: "/" | "/integrations" | "/proposals" | "/settings"
-  icon: IconSvgElement
+  icon: React.ComponentType<{ className?: string }>
   badge?: number
 }
 
 export type WorkspaceActionNavItem = {
   label: string
-  icon: IconSvgElement
+  icon: React.ComponentType<{ className?: string }>
   badge?: number
   to?: never
 }
@@ -40,14 +40,14 @@ export type WorkspaceConfig = {
 
 export const workspaceConfig = {
   primaryNav: [
-    { icon: Home01Icon, label: "Home", to: "/" },
-    { icon: InboxIcon, label: "Inbox", badge: 4 },
-    { icon: Notification01Icon, label: "Activity" },
-    { icon: Layers01Icon, label: "Projects" },
-    { icon: UserGroupIcon, label: "People" },
-    { icon: FileInputIcon, label: "Proposals", to: "/proposals" },
-    { icon: Share01Icon, label: "Integrations", to: "/integrations" },
-    { icon: Settings01Icon, label: "Settings", to: "/settings" },
+    { icon: IconHouse, label: "Home", to: "/" },
+    { icon: IconInbox, label: "Inbox", badge: 4 },
+    { icon: IconBell, label: "Activity" },
+    { icon: IconLayers, label: "Projects" },
+    { icon: IconUsers, label: "People" },
+    { icon: IconFile, label: "Proposals", to: "/proposals" },
+    { icon: IconLink, label: "Integrations", to: "/integrations" },
+    { icon: IconGear, label: "Settings", to: "/settings" },
   ],
 } satisfies WorkspaceConfig
 
@@ -56,23 +56,23 @@ export const workspaceStats = [
     label: "Open projects",
     value: "12",
     detail: "3 moving this week",
-    icon: Folder01Icon,
+    icon: IconFolder,
   },
   {
     label: "Unread inbox",
     value: "4",
     detail: "Needs triage",
-    icon: InboxIcon,
+    icon: IconInbox,
   },
   {
     label: "Activity",
     value: "18",
     detail: "Across teams",
-    icon: Activity01Icon,
+    icon: IconRoadmap,
   },
 ] satisfies Array<{
   label: string
   value: string
   detail: string
-  icon: IconSvgElement
+  icon: React.ComponentType<{ className?: string }>
 }>

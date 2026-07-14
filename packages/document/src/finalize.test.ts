@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
-import { createProposalDraft } from "./proposal"
 import { finalizeProposalDraft } from "./finalize"
+import { createProposalDraft } from "./proposal"
 
 test("finalizeProposalDraft rejects invalid input", () => {
   expect(() => finalizeProposalDraft({ id: "not-a-proposal" })).toThrow()

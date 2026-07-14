@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test"
-import { buildProposalRenderModel } from "./render"
-import { extractProposalText } from "./text"
 import {
   createProposalDraft,
   createProposalDraftFromBlueprint,
 } from "./proposal"
+import { buildProposalRenderModel } from "./render"
 import { parseProposalDraft, safeParseProposalDraft } from "./schema"
+import { extractProposalText } from "./text"
 
 test("the proposal factory produces a valid canonical draft", () => {
   const draft = createProposalDraft({

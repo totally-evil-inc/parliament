@@ -1,9 +1,4 @@
-import * as React from "react"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@workspace/ui/components/sidebar"
+import { Link, useRouterState } from "@tanstack/react-router"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -14,12 +9,17 @@ import {
 } from "@workspace/ui/components/breadcrumb"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
-import { Link, useRouterState } from "@tanstack/react-router"
-import { AppSidebar } from "./app-sidebar"
-import { WorkspaceProvider } from "./workspace-provider"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@workspace/ui/components/sidebar"
 import type { ReactNode } from "react"
+import * as React from "react"
 import { workspaceConfig } from "@/features/workspace/config"
 import { authClient } from "@/lib/auth-client"
+import { AppSidebar } from "./app-sidebar"
+import { WorkspaceProvider } from "./workspace-provider"
 
 type AppShellProps = {
   children: ReactNode
@@ -54,7 +54,7 @@ export function AppShell({ children }: AppShellProps) {
           user={user}
         />
         <SidebarInset className="flex h-svh min-w-0 flex-col overflow-hidden">
-          <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border/60 px-4">
+          <header className="flex h-12 shrink-0 items-center gap-2 border-border/60 border-b px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumbs />

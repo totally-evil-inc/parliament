@@ -1,8 +1,7 @@
 "use client"
 
-import { Moon, Sun } from "@hugeicons/core-free-icons"
 import { Button } from "@workspace/ui/components/button"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { IconBrightnessIncrease, IconCloudMoon } from "nucleo-glass"
 import { useTheme } from "@/components/theme-provider"
 
 type ThemeToggleProps = {
@@ -22,7 +21,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={toggleLightDark}
     >
-      {isDark ? <HugeiconsIcon icon={Sun} /> : <HugeiconsIcon icon={Moon} />}
+      {isDark ? <IconBrightnessIncrease /> : <IconCloudMoon />}
     </Button>
   )
 }

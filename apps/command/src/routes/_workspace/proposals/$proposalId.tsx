@@ -1,13 +1,17 @@
-import * as React from "react"
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { ScrollArea } from "@workspace/ui/components/scroll-area"
-import { Button } from "@workspace/ui/components/button"
-import { createProposalDraftStore } from "@workspace/document-editor/store"
+import type { DocumentTemplate } from "@workspace/document/presentation"
+import {
+  getDefaultDocumentTemplateForScheme,
+  getDocumentTemplate,
+  webStudioProposalTemplate,
+} from "@workspace/document/presentation"
+import { parseProposalDraft } from "@workspace/document/schema"
+import type { DocumentEditorHostAdapter } from "@workspace/document-editor"
 import {
   DocumentBlockSidebar,
   DocumentEditor,
@@ -18,24 +22,20 @@ import {
   proposalEditorRegistry,
   useProposalEditorRuntime,
 } from "@workspace/document-editor"
-import {
-  webStudioProposalTemplate,
-  getDefaultDocumentTemplateForScheme,
-  getDocumentTemplate,
-} from "@workspace/document/presentation"
-import { useTheme } from "@/components/theme-provider"
-import { parseProposalDraft } from "@workspace/document/schema"
-import type { DocumentTemplate } from "@workspace/document/presentation"
-import type { DocumentEditorHostAdapter } from "@workspace/document-editor"
-import { useConfirm } from "@/components/confirm-dialog-provider"
-import { createId } from "@/lib/create-id"
+import { createProposalDraftStore } from "@workspace/document-editor/store"
+import { Button } from "@workspace/ui/components/button"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
+import * as React from "react"
 import { proposalDraftQuery } from "@/api/proposals"
-import { finalizeProposalDraft, saveProposalDraft } from "@/server/proposals"
+import { useConfirm } from "@/components/confirm-dialog-provider"
+import { useTheme } from "@/components/theme-provider"
+import { createId } from "@/lib/create-id"
 import type {
   FinalizeProposalDraftResult,
   PersistedProposalDraft,
   SaveProposalDraftResult,
 } from "@/server/proposals"
+import { finalizeProposalDraft, saveProposalDraft } from "@/server/proposals"
 
 export const Route = createFileRoute("/_workspace/proposals/$proposalId")({
   loader: async ({ context, params }) => {
@@ -57,7 +57,7 @@ function ProposalEditRoute() {
   const confirm = useConfirm()
   const store = React.useMemo(
     () => createProposalDraftStore(document),
-    [document, persisted.id]
+    [document]
   )
   const host = React.useMemo<DocumentEditorHostAdapter>(
     () => ({
@@ -107,8 +107,6 @@ function ProposalEditorScreen({
   const template =
     customTemplate ??
     getDocumentTemplate(store.getSnapshot().template, appTheme)
-
-
 
   const saveDraft = useMutation({
     mutationFn: async () => {
@@ -203,7 +201,7 @@ function ProposalEditorScreen({
   return (
     <div className="flex h-[calc(100svh-3rem)] min-h-0 w-full flex-col overflow-hidden bg-muted/30">
       <div className="flex min-h-12 items-center justify-between gap-3 border-b bg-background px-4">
-        <div className="min-w-0 text-xs text-muted-foreground">
+        <div className="min-w-0 text-muted-foreground text-xs">
           <span className="font-medium text-foreground">{status}</span>
           {message ? <span className="ml-3">{message}</span> : null}
           {shareUrl ? (
@@ -280,5 +278,3 @@ function ProposalEditorScreen({
     </div>
   )
 }
-
-

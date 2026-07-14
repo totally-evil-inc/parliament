@@ -1,9 +1,8 @@
-import * as React from "react"
 import type { JSONContent } from "@tiptap/core"
-import type { ProposalDraftStore } from "../runtime/store"
-import type { DocumentDefinition } from "../core/types"
-
+import * as React from "react"
 import { compositionToTiptap, tiptapToComposition } from "../core/composition"
+import type { DocumentDefinition } from "../core/types"
+import type { ProposalDraftStore } from "../runtime/store"
 import { useDocumentEditor } from "../runtime/use-document-editor"
 import { proposalEditorRegistry } from "./registry"
 

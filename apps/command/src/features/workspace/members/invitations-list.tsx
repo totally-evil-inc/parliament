@@ -1,7 +1,7 @@
-import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import { useState } from "react"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { authClient } from "@/lib/auth-client"
 
@@ -53,7 +53,7 @@ export function InvitationsList({ invitations }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <span className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
+        <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.25em]">
           Pending invitations
         </span>
         <Badge
@@ -71,9 +71,9 @@ export function InvitationsList({ invitations }: Props) {
             className="flex items-center justify-between gap-3 px-4 py-3"
           >
             <div className="min-w-0">
-              <div className="truncate text-sm font-medium">{inv.email}</div>
+              <div className="truncate font-medium text-sm">{inv.email}</div>
               <div className="mt-0.5 flex items-center gap-2">
-                <span className="font-mono text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
+                <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em]">
                   {inv.role ?? "member"}
                 </span>
                 <span className="text-muted-foreground/50">·</span>
@@ -85,7 +85,7 @@ export function InvitationsList({ invitations }: Props) {
             <Button
               variant="ghost"
               size="sm"
-              className="shrink-0 font-mono text-[10px] tracking-[0.15em] text-muted-foreground uppercase hover:text-destructive"
+              className="shrink-0 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em] hover:text-destructive"
               disabled={canceling === inv.id}
               onClick={() => void handleCancel(inv)}
             >

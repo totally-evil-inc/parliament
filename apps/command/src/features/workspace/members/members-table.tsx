@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Badge } from "@workspace/ui/components/badge"
@@ -25,13 +24,13 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
-import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  Delete01Icon,
-  MailSend01Icon,
-  More01Icon,
-  Shield01Icon,
-} from "@hugeicons/core-free-icons"
+  IconCircleDotsVertical,
+  IconDeleteX,
+  IconEnvelope,
+  IconLock,
+} from "nucleo-glass"
+import { useState } from "react"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { authClient } from "@/lib/auth-client"
 
@@ -161,25 +160,25 @@ export function MembersTable({
                 <TableCell className="ps-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="size-8">
-                      <AvatarFallback className="bg-foreground/[0.06] text-[11px] font-medium text-muted-foreground">
+                      <AvatarFallback className="bg-foreground/[0.06] font-medium text-[11px] text-muted-foreground">
                         {initials}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">
+                        <span className="font-medium text-sm">
                           {member.user.name}
                         </span>
                         {isSelf ? (
                           <Badge
                             variant="outline"
-                            className="py-0 font-mono text-[9px] tracking-wider uppercase"
+                            className="py-0 font-mono text-[9px] uppercase tracking-wider"
                           >
                             you
                           </Badge>
                         ) : null}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         {member.user.email}
                       </div>
                     </div>
@@ -189,11 +188,7 @@ export function MembersTable({
                 <TableCell>
                   {isOwner ? (
                     <Badge variant="outline" className="gap-1.5">
-                      <HugeiconsIcon
-                        icon={Shield01Icon}
-                        strokeWidth={2}
-                        className="size-3"
-                      />
+                      <IconLock className="size-3" />
                       Owner
                     </Badge>
                   ) : (
@@ -218,7 +213,7 @@ export function MembersTable({
                   )}
                 </TableCell>
 
-                <TableCell className="text-sm text-muted-foreground tabular-nums">
+                <TableCell className="text-muted-foreground text-sm tabular-nums">
                   {formatDate(member.createdAt)}
                 </TableCell>
 
@@ -236,11 +231,7 @@ export function MembersTable({
                           />
                         }
                       >
-                        <HugeiconsIcon
-                          icon={More01Icon}
-                          strokeWidth={2}
-                          className="size-4"
-                        />
+                        <IconCircleDotsVertical className="size-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-44">
                         <DropdownMenuItem
@@ -249,10 +240,7 @@ export function MembersTable({
                             window.open(`mailto:${member.user.email}`)
                           }
                         >
-                          <HugeiconsIcon
-                            icon={MailSend01Icon}
-                            strokeWidth={2}
-                          />
+                          <IconEnvelope />
                           Send email
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -260,7 +248,7 @@ export function MembersTable({
                           variant="destructive"
                           onClick={() => void handleRemove(member)}
                         >
-                          <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
+                          <IconDeleteX />
                           Remove
                         </DropdownMenuItem>
                       </DropdownMenuContent>
