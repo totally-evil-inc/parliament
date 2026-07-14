@@ -5,6 +5,7 @@ import {
   LayoutTableIcon,
   Share01Icon,
   TextFontIcon,
+  Tick01Icon,
 } from "@hugeicons/core-free-icons"
 import { defaultDocumentTemplate } from "@workspace/document/presentation"
 import type { DocumentDefinition } from "../core/types"
@@ -26,6 +27,7 @@ export const invoiceBlocks = proposalBlocks
       "proposal-image-cards",
       "key-numbers",
       "gallery",
+      "timeline",
       "line-items",
     ].includes(block.id)
   })
@@ -33,8 +35,8 @@ export const invoiceBlocks = proposalBlocks
     if (block.id === "proposal-section") {
       return {
         ...block,
-        label: "Section",
-        description: "Add a structured billing narrative or section.",
+        label: "Notes & Terms",
+        description: "Add structured terms, late payment policy, or notes.",
       }
     }
     if (block.id === "line-items") {
@@ -59,13 +61,22 @@ export const invoiceBlocks = proposalBlocks
     if (block.id === "key-numbers") {
       return {
         ...block,
-        description: "Highlight key billing metrics, hours, or milestones.",
+        label: "Key Billing Metrics",
+        description: "Highlight key billing metrics, hours, or milestone figures.",
       }
     }
     if (block.id === "gallery") {
       return {
         ...block,
-        description: "Showcase proof of deliverables in an image grid.",
+        label: "Receipts & Attachments",
+        description: "Showcase proof of deliverables or scan receipts in a grid.",
+      }
+    }
+    if (block.id === "timeline") {
+      return {
+        ...block,
+        label: "Billing Milestones",
+        description: "Create a checklist of project milestones and billing progression.",
       }
     }
     return block
@@ -108,7 +119,13 @@ export const invoiceEditorRegistry: DocumentDefinition = {
       icon: TextFontIcon,
       command: (editor) => editor.chain().focus().setNode("paragraph").run(),
     },
-    { id: "gallery", label: "Image Grid", icon: Image01Icon, blockId: "gallery" },
+    { id: "gallery", label: "Attachments", icon: Image01Icon, blockId: "gallery" },
+    {
+      id: "timeline",
+      label: "Milestones",
+      icon: Tick01Icon,
+      blockId: "timeline",
+    },
     {
       id: "line-items",
       label: "Billing Table",
