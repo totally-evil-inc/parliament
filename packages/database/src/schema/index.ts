@@ -1,5 +1,6 @@
 export * from "./account"
 export * from "./invitation"
+export * from "./invoice"
 export * from "./jwks"
 export * from "./member"
 export * from "./organization"

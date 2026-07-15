@@ -130,10 +130,7 @@ async function fetchSession(headers: Headers) {
     }
 
     return await readJson<SessionJson>(response)
-  } catch (error) {
-    console.warn(
-      getFetchErrorMessage(`${AUTH_SERVER_URL}/api/auth/get-session`, error)
-    )
+  } catch (_error) {
     return null
   }
 }
@@ -195,10 +192,7 @@ async function selectActiveOrganizationFromMemberships(
         activeOrganizationId: membership.organizationId,
       },
     }
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown organization error"
-    console.warn(`Failed to select active organization: ${message}`)
+  } catch (_error) {
     return session
   }
 }

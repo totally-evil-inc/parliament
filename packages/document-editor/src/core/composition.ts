@@ -229,11 +229,17 @@ export function tiptapToComposition(
   return (content.content ?? []).map((node, index): DocumentBlock => {
     const nodeAttrs = attrs(node)
     if (node.type === "documentHeader") {
+      const binding =
+        typeof nodeAttrs.binding === "string" &&
+        (nodeAttrs.binding === "proposal.parties" ||
+          nodeAttrs.binding === "invoice.parties")
+          ? nodeAttrs.binding
+          : "proposal.parties"
       return {
         id: id(node, index, "header"),
         type: "partyHeader",
         version: 1,
-        binding: "proposal.parties",
+        binding,
         config: {
           layout:
             typeof nodeAttrs.headerLayout === "string"
@@ -243,11 +249,17 @@ export function tiptapToComposition(
       }
     }
     if (node.type === "lineItems") {
+      const binding =
+        typeof nodeAttrs.binding === "string" &&
+        (nodeAttrs.binding === "proposal.pricing" ||
+          nodeAttrs.binding === "invoice.pricing")
+          ? nodeAttrs.binding
+          : "proposal.pricing"
       return {
         id: id(node, index, "pricing"),
         type: "pricing",
         version: 1,
-        binding: "proposal.pricing",
+        binding,
         config: { title: "Services & Billing" },
       }
     }

@@ -18,9 +18,9 @@ import {
 import { isDocumentHeaderLayoutId } from "../core/header-layouts"
 import type { DocumentHeaderLayoutId } from "../core/types"
 import {
+  useDocumentDraft,
+  useDocumentDraftCommands,
   useDocumentEditorHost,
-  useProposalDraftCommands,
-  useProposalDraftSelector,
 } from "../runtime/react"
 import { CanvasRichTextArea, CanvasTextField } from "./canvas-fields"
 
@@ -32,8 +32,9 @@ const dateFormatter = new Intl.DateTimeFormat("en-KE", {
 
 function DocumentHeaderView({ node }: NodeViewProps) {
   const { confirm, createId } = useDocumentEditorHost()
-  const data = useProposalDraftSelector((document) => document.data)
-  const commands = useProposalDraftCommands()
+  const document = useDocumentDraft()
+  const data = document.data
+  const commands = useDocumentDraftCommands()
   const layout = isDocumentHeaderLayoutId(node.attrs.headerLayout)
     ? node.attrs.headerLayout
     : "mark-left-dates-right"
@@ -66,7 +67,9 @@ function DocumentHeaderView({ node }: NodeViewProps) {
     updateParty(
       party,
       "customFields",
-      data[party].customFields.filter((_, fieldIndex) => fieldIndex !== index)
+      data[party].customFields.filter(
+        (_: unknown, fieldIndex: number) => fieldIndex !== index
+      )
     )
   }
 
@@ -76,15 +79,20 @@ function DocumentHeaderView({ node }: NodeViewProps) {
       contentEditable={false}
     >
       <HeaderLayout
+        kind={document.kind}
         layout={layout}
         title={data.title}
         date={data.issueDate}
         validUntil={data.validUntil ?? ""}
+        dueDate={data.dueDate ?? ""}
+        invoiceNumber={data.invoiceNumber ?? ""}
         onTitleChange={commands.setTitle}
         onDateChange={commands.setIssueDate}
         onValidUntilChange={(value) =>
-          commands.setValidUntil(value || undefined)
+          commands.setValidUntil?.(value || undefined)
         }
+        onDueDateChange={commands.setDueDate}
+        onInvoiceNumberChange={commands.setInvoiceNumber}
       />
 
       <div className="grid grid-cols-1 gap-8 border-[var(--document-border)] border-t pt-8 md:grid-cols-2 md:gap-16">
@@ -107,34 +115,65 @@ function DocumentHeaderView({ node }: NodeViewProps) {
           }
         />
       </div>
+
+      {document.kind === "invoice" && (
+        <div className="space-y-2 border-[var(--document-border)] border-t pt-8">
+          <div className="font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-wider">
+            Payment Terms
+          </div>
+          <CanvasTextField
+            value={data.paymentTerms ?? ""}
+            onValueChange={commands.setPaymentTerms}
+            placeholder="e.g. Net 30, payment due upon receipt..."
+            className="min-h-[40px] w-full rounded-[var(--document-radius)] border border-[var(--document-border)] bg-transparent px-3 py-2 text-sm focus:border-[var(--document-accent)] focus:outline-none"
+          />
+        </div>
+      )}
     </NodeViewWrapper>
   )
 }
 
 function HeaderLayout({
+  kind,
   date,
   layout,
   onDateChange,
   onTitleChange,
-  onValidUntilChange,
-  title,
   validUntil,
+  onValidUntilChange,
+  dueDate,
+  onDueDateChange,
+  invoiceNumber,
+  onInvoiceNumberChange,
+  title,
 }: {
+  kind: "proposal" | "invoice"
   date: string
   layout: DocumentHeaderLayoutId
   onDateChange: (value: string) => void
   onTitleChange: (value: string) => void
-  onValidUntilChange: (value: string) => void
+  validUntil?: string
+  onValidUntilChange?: (value: string) => void
+  dueDate?: string
+  onDueDateChange?: (value: string) => void
+  invoiceNumber?: string
+  onInvoiceNumberChange?: (value: string) => void
   title: string
-  validUntil: string
 }) {
-  const titleField = <TitleField value={title} onChange={onTitleChange} />
+  const titleField = (
+    <TitleField value={title} onChange={onTitleChange} kind={kind} />
+  )
   const dates = (
     <DateFields
+      kind={kind}
       date={date}
       validUntil={validUntil}
+      dueDate={dueDate}
+      invoiceNumber={invoiceNumber}
       onDateChange={onDateChange}
       onValidUntilChange={onValidUntilChange}
+      onDueDateChange={onDueDateChange}
+      onInvoiceNumberChange={onInvoiceNumberChange}
     />
   )
 
@@ -181,15 +220,19 @@ function HeaderLayout({
 function TitleField({
   value,
   onChange,
+  kind,
 }: {
   value: string
   onChange: (value: string) => void
+  kind: "proposal" | "invoice"
 }) {
   return (
     <CanvasRichTextArea
-      aria-label="Proposal title"
+      aria-label={kind === "proposal" ? "Proposal title" : "Invoice title"}
       className="min-h-12 font-bold text-4xl leading-[1.08] tracking-tight [font-family:var(--document-heading-font-family)]"
-      placeholder="Proposal title..."
+      placeholder={
+        kind === "proposal" ? "Proposal title..." : "Invoice title..."
+      }
       value={value}
       onValueChange={onChange}
     />
@@ -214,23 +257,59 @@ function LogoPlaceholder() {
 }
 
 function DateFields({
+  kind,
   date,
   onDateChange,
-  onValidUntilChange,
   validUntil,
+  onValidUntilChange,
+  dueDate,
+  onDueDateChange,
+  invoiceNumber,
+  onInvoiceNumberChange,
 }: {
+  kind: "proposal" | "invoice"
   date: string
   onDateChange: (value: string) => void
-  onValidUntilChange: (value: string) => void
-  validUntil: string
+  validUntil?: string
+  onValidUntilChange?: (value: string) => void
+  dueDate?: string
+  onDueDateChange?: (value: string) => void
+  invoiceNumber?: string
+  onInvoiceNumberChange?: (value: string) => void
 }) {
+  if (kind === "invoice") {
+    return (
+      <div className="grid w-full min-w-0 grid-cols-1 gap-4 sm:w-fit sm:min-w-80 sm:gap-6">
+        <div className="space-y-1.5">
+          <div className="font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-wider">
+            Invoice Number
+          </div>
+          <CanvasTextField
+            value={invoiceNumber ?? ""}
+            onValueChange={onInvoiceNumberChange ?? (() => {})}
+            placeholder="INV-0001"
+            className="min-h-[36px] w-full rounded-[var(--document-radius)] border border-[var(--document-border)] bg-transparent px-3 py-1.5 text-sm focus:border-[var(--document-accent)] focus:outline-none"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <DatePicker label="Date" value={date} onChange={onDateChange} />
+          <DatePicker
+            label="Due Date"
+            value={dueDate ?? ""}
+            onChange={onDueDateChange ?? (() => {})}
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="grid w-full min-w-0 grid-cols-2 gap-4 sm:w-fit sm:min-w-64 sm:gap-6">
       <DatePicker label="Date" value={date} onChange={onDateChange} />
       <DatePicker
         label="Valid Until"
-        value={validUntil}
-        onChange={onValidUntilChange}
+        value={validUntil ?? ""}
+        onChange={onValidUntilChange ?? (() => {})}
       />
     </div>
   )

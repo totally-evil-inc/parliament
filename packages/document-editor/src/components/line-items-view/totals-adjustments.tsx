@@ -115,18 +115,20 @@ export function TotalsAdjustments({
         </span>
       </div>
 
-      <div className="pt-8">
-        <Signature
-          signerName={signerName}
-          signerTitle={signerTitle}
-          onSignerNameChange={(value) =>
-            updateAttributes({ signerName: value })
-          }
-          onSignerTitleChange={(value) =>
-            updateAttributes({ signerTitle: value })
-          }
-        />
-      </div>
+      {signerName !== undefined ? (
+        <div className="pt-8">
+          <Signature
+            signerName={signerName}
+            signerTitle={signerTitle}
+            onSignerNameChange={(value) =>
+              updateAttributes({ signerName: value })
+            }
+            onSignerTitleChange={(value) =>
+              updateAttributes({ signerTitle: value })
+            }
+          />
+        </div>
+      ) : null}
     </div>
   )
 }
