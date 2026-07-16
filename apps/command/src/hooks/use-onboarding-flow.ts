@@ -124,6 +124,17 @@ export function useOnboardingFlow(step: OnboardingStep) {
 
     if (step === "invites" && !isAuthenticated) {
       goToStep("account")
+      return
+    }
+
+    if (step === "account" && isAuthenticated && draft) {
+      const autoCreate = async () => {
+        const savedDraft = await createOrganization(draft)
+        if (savedDraft) {
+          goToStep("invites")
+        }
+      }
+      void autoCreate()
     }
   }, [
     draft,
@@ -132,6 +143,7 @@ export function useOnboardingFlow(step: OnboardingStep) {
     pendingOrganization,
     session.isPending,
     step,
+    createOrganization,
   ])
 
   return {

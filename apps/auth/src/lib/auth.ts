@@ -1,8 +1,9 @@
 import { db } from "@workspace/database"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { jwt, organization } from "better-auth/plugins"
+import { jwt, organization, magicLink } from "better-auth/plugins"
 
+import { renderEmail, sendEmail } from "./email"
 import { trustedOrigins } from "./utils"
 
 const authCookieDomain = process.env.AUTH_COOKIE_DOMAIN
@@ -18,10 +19,17 @@ export const auth = betterAuth({
   }),
 
   /**
+   * Global Error Logger
+   */
+  onError: (error: any, ctx: any) => {
+    console.error(`[Better Auth Error] Path: ${ctx.request.url} | Error details:`, error)
+  },
+
+  /**
    * Authentication Methods
    */
   emailAndPassword: {
-    enabled: true,
+    enabled: false,
   },
   socialProviders: {
     google: {
@@ -54,7 +62,46 @@ export const auth = betterAuth({
    * Plugins
    */
   plugins: [
-    organization(),
+    organization({
+      async sendInvitationEmail(data) {
+        try {
+          const commandUrl = Bun.env.COMMAND_SERVER_URL ?? "http://localhost:3000"
+          const inviteUrl = `${commandUrl}/auth/invite/accept?id=${data.invitation.id}&email=${encodeURIComponent(data.email)}&orgName=${encodeURIComponent(data.organization.name)}`
+          const html = await renderEmail("invitation", {
+            url: inviteUrl,
+            orgName: data.organization.name,
+            inviterName: data.inviter.user.name || data.inviter.user.email,
+            email: data.email,
+          })
+          await sendEmail({
+            to: data.email,
+            subject: `Join ${data.organization.name} on Parliament`,
+            html,
+          })
+        } catch (err) {
+          console.error(`[Invitation Email Error] Failed to render or send invitation to ${data.email}:`, err)
+          throw err
+        }
+      },
+    }),
+    magicLink({
+      async sendMagicLink({ email, url }) {
+        try {
+          const html = await renderEmail("magic-link", {
+            url,
+            email,
+          })
+          await sendEmail({
+            to: email,
+            subject: "Sign in to Parliament",
+            html,
+          })
+        } catch (err) {
+          console.error(`[Magic Link Email Error] Failed to render or send magic link to ${email}:`, err)
+          throw err
+        }
+      },
+    }),
     jwt({
       jwt: {
         issuer: authServerUrl,

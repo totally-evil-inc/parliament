@@ -10,7 +10,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { IconArrowBoldRight, IconCircleCheck, IconDeleteX } from "nucleo-glass"
 import type { ClipboardEvent, KeyboardEvent } from "react"
 import { useRef, useState } from "react"
-import { authClient } from "@/lib/auth-client"
+
 
 type Role = "admin" | "member"
 
@@ -59,23 +59,42 @@ export function InviteTeammatesForm({
       setServerError(null)
 
       const results = await Promise.all(
-        validChips.map(async (chip) => ({
-          chip,
-          result: await authClient.organization.inviteMember({
-            email: chip.email,
-            role: chip.role,
-            organizationId,
-          }),
-        }))
+        validChips.map(async (chip) => {
+          try {
+            const authUrl =
+              import.meta.env.VITE_BETTER_AUTH_URL || "http://localhost:4000"
+            const response = await fetch(`${authUrl}/auth/invite`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                email: chip.email,
+                role: chip.role,
+                organizationId,
+              }),
+              credentials: "include",
+            })
+
+            if (!response.ok) {
+              const data = await response.json().catch(() => ({}))
+              return {
+                chip,
+                error: data.error || `Could not invite ${chip.email}.`,
+              }
+            }
+
+            return { chip, error: null }
+          } catch (err: any) {
+            return { chip, error: err.message }
+          }
+        })
       )
 
-      const failedInvite = results.find(({ result }) => result.error)
+      const failedInvite = results.find(({ error }) => error)
 
       if (failedInvite) {
-        setServerError(
-          failedInvite.result.error?.message ??
-            `Could not invite ${failedInvite.chip.email}.`
-        )
+        setServerError(failedInvite.error)
         return
       }
 

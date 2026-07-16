@@ -70,11 +70,6 @@ function OnboardingPage() {
       {step === "account" ? (
         <AccountStep
           pending={pendingOrganization || session.isPending}
-          onAuthenticated={async () => {
-            await session.refetch()
-            const savedDraft = await createOrganization()
-            if (savedDraft) goToStep("invites")
-          }}
           onBack={() => goToStep("organization")}
           onError={setStatus}
         />

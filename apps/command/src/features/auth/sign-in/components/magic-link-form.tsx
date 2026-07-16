@@ -10,6 +10,7 @@ import { signInSchema } from "@/utils/auth-schemas"
 export function MagicLinkForm() {
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  const [serverError, setServerError] = useState<string | null>(null)
   const form = useForm({
     defaultValues: {
       email: "",
@@ -18,14 +19,36 @@ export function MagicLinkForm() {
       onChange: zodFieldValidator(signInSchema),
       onSubmit: zodFieldValidator(signInSchema),
     },
-    onSubmit: ({ value }) => {
+    onSubmit: async ({ value }) => {
       const email = value.email.trim().toLowerCase()
 
       setPending(true)
-      window.setTimeout(() => {
+      setServerError(null)
+      try {
+        const authUrl =
+          import.meta.env.VITE_BETTER_AUTH_URL || "http://localhost:4000"
+        const response = await fetch(`${authUrl}/auth/magic-link/request`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            callbackURL: window.location.origin + "/",
+          }),
+        })
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}))
+          throw new Error(data.error || "Failed to request sign-in link")
+        }
+
         setSentTo(email)
+      } catch (err: any) {
+        setServerError(err.message)
+      } finally {
         setPending(false)
-      }, 600)
+      }
     },
   })
 
@@ -70,6 +93,15 @@ export function MagicLinkForm() {
             )
           }}
         </form.Field>
+
+        {serverError ? (
+          <p
+            className="rounded-md bg-destructive/10 px-3 py-2 text-destructive text-xs"
+            role="alert"
+          >
+            {serverError}
+          </p>
+        ) : null}
 
         <form.Subscribe selector={(state) => state.canSubmit}>
           {(canSubmit) => (
