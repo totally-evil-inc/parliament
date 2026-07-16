@@ -77,8 +77,15 @@ export function MembersPage() {
           />
         )}
 
-        {!invitationsPending && (invitations?.length ?? 0) > 0 ? (
-          <InvitationsList invitations={invitations ?? []} />
+        {!invitationsPending &&
+        (invitations ?? []).filter((inv) => inv.status === "pending").length >
+          0 ? (
+          <InvitationsList
+            invitations={(invitations ?? []).filter(
+              (inv) => inv.status === "pending"
+            )}
+            organizationId={activeOrg.id}
+          />
         ) : null}
       </div>
     </div>

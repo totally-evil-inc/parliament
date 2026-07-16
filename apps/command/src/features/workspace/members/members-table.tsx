@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query"
+import { useQueryClient, useMutation } from "@tanstack/react-query"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
@@ -30,7 +30,6 @@ import {
   IconEnvelope,
   IconLock,
 } from "nucleo-glass"
-import { useState } from "react"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { authClient } from "@/lib/auth-client"
 
@@ -89,8 +88,37 @@ export function MembersTable({
 }: Props) {
   const queryClient = useQueryClient()
   const confirm = useConfirm()
-  const [roleUpdating, setRoleUpdating] = useState<string | null>(null)
-  const [removing, setRemoving] = useState<string | null>(null)
+
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ memberId, role }: { memberId: string; role: string }) => {
+      const { error } = await authClient.organization.updateMemberRole({
+        memberId,
+        role,
+        organizationId,
+      })
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["org-members", organizationId],
+      })
+    },
+  })
+
+  const removeMemberMutation = useMutation({
+    mutationFn: async (memberId: string) => {
+      const { error } = await authClient.organization.removeMember({
+        memberIdOrEmail: memberId,
+        organizationId,
+      })
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["org-members", organizationId],
+      })
+    },
+  })
 
   const handleRoleChange = async (member: Member, role: string | null) => {
     if (!isEditableRole(role) || role === member.role) return
@@ -103,16 +131,10 @@ export function MembersTable({
 
     if (!confirmed) return
 
-    setRoleUpdating(member.id)
     try {
-      await authClient.organization.updateMemberRole({
-        memberId: member.id,
-        role,
-        organizationId,
-      })
-      await queryClient.invalidateQueries({ queryKey: ["org-members"] })
-    } finally {
-      setRoleUpdating(null)
+      await updateRoleMutation.mutateAsync({ memberId: member.id, role })
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -126,15 +148,10 @@ export function MembersTable({
 
     if (!confirmed) return
 
-    setRemoving(member.id)
     try {
-      await authClient.organization.removeMember({
-        memberIdOrEmail: member.id,
-        organizationId,
-      })
-      await queryClient.invalidateQueries({ queryKey: ["org-members"] })
-    } finally {
-      setRemoving(null)
+      await removeMemberMutation.mutateAsync(member.id)
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -197,7 +214,12 @@ export function MembersTable({
                       onValueChange={(role) =>
                         void handleRoleChange(member, role)
                       }
-                      disabled={roleUpdating === member.id || isSelf}
+                      disabled={
+                        (updateRoleMutation.isPending &&
+                          updateRoleMutation.variables?.memberId ===
+                            member.id) ||
+                        isSelf
+                      }
                     >
                       <SelectTrigger size="sm" className="h-8 w-32 text-sm">
                         <SelectValue />
@@ -227,7 +249,10 @@ export function MembersTable({
                             size="icon"
                             className="size-8"
                             aria-label={`Actions for ${member.user.name}`}
-                            disabled={removing === member.id}
+                            disabled={
+                              removeMemberMutation.isPending &&
+                              removeMemberMutation.variables === member.id
+                            }
                           />
                         }
                       >

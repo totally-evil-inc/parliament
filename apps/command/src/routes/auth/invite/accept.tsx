@@ -187,9 +187,13 @@ function AcceptInvitePage() {
               </p>
             ) : null}
 
-            <Button type="submit" size="lg" className="mt-2">
-              Send magic link
-            </Button>
+            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+              {([canSubmit, isSubmitting]) => (
+                <Button type="submit" size="lg" className="mt-2" disabled={!canSubmit || isSubmitting}>
+                  {isSubmitting ? "Sending..." : "Send magic link"}
+                </Button>
+              )}
+            </form.Subscribe>
           </form>
 
           {sentMagicLinkTo ? (
