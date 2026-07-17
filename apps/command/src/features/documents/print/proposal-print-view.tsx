@@ -21,7 +21,7 @@ const blockRenderers: Record<
   richText: ({ block }) =>
     block.type === "richText" ? (
       <RichTextRenderer
-        className="prose prose-sm max-w-none text-[var(--document-foreground)]"
+        className="typeset max-w-none"
         content={block.content}
       />
     ) : null,
@@ -223,7 +223,7 @@ function ProposalSection({
         title={block.title}
       />
       <RichTextRenderer
-        className="prose prose-sm mt-5 max-w-none text-[var(--document-foreground)]"
+        className="typeset mt-5 max-w-none"
         content={block.content}
       />
     </section>
@@ -286,7 +286,7 @@ function Columns({
               <RichTextInlineRenderer content={item.heading} />
             </h3>
             <RichTextRenderer
-              className="prose prose-sm mt-2 max-w-none text-[var(--document-muted-foreground)]"
+              className="typeset mt-2 max-w-none text-muted-foreground"
               content={item.body}
             />
           </section>
@@ -313,7 +313,7 @@ function ImageText({
         <div>
           <SectionHeading eyebrow={block.eyebrow} title={block.title} />
           <RichTextRenderer
-            className="prose prose-sm mt-5 max-w-none text-[var(--document-foreground)]"
+            className="typeset mt-5 max-w-none"
             content={block.content}
           />
         </div>
@@ -347,7 +347,7 @@ function ImageCards({
               <RichTextInlineRenderer content={item.title} />
             </h3>
             <RichTextRenderer
-              className="prose prose-sm mt-2 max-w-none text-[var(--document-muted-foreground)]"
+              className="typeset mt-2 max-w-none text-muted-foreground"
               content={item.body}
             />
           </div>
@@ -475,7 +475,7 @@ function Signature({
         <div>
           <SectionHeading title={block.title} />
           <RichTextRenderer
-            className="prose prose-sm mt-3 max-w-none text-[var(--document-muted-foreground)]"
+            className="typeset mt-3 max-w-none text-muted-foreground"
             content={block.terms}
           />
         </div>
@@ -534,7 +534,7 @@ function Faq({ block }: { block: Extract<DocumentBlock, { type: "faq" }> }) {
               <RichTextInlineRenderer content={item.question} />
             </h3>
             <RichTextRenderer
-              className="prose prose-sm max-w-none text-[var(--document-muted-foreground)]"
+              className="typeset max-w-none text-muted-foreground"
               content={item.answer}
             />
           </div>

@@ -120,6 +120,11 @@ Rebuild it from scratch using the project's architectural conventions:
 - No durable persistence/autosave (store is in-memory, route-scoped).
 - No Docker, no CI workflows, no Vercel deployment config.
 
+## HTTP Requests (TanStack Query)
+
+- **TanStack Query** (React Query) MUST be used for all HTTP requests, mutations, and API integrations in the `command` app.
+- Do not make ad-hoc `fetch` requests inside components, event handlers, or `useEffect` hooks. Wrap data fetching in `useQuery` and write actions (such as inviting members, revoking invitations, or accepting invitations) in `useMutation`. This ensures consistent loading, pending, and error states, and simplifies cache invalidation (e.g. refetching data after mutations).
+
 ---
 
 ## Available Agent Skills

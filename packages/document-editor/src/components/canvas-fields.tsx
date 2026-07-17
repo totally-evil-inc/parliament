@@ -252,11 +252,11 @@ export function CanvasRichTextArea({
       <EditorContent
         editor={editor}
         className={cn(
-          "min-h-6 w-full bg-transparent text-[var(--document-foreground)] outline-none",
-          "prose prose-sm dark:prose-invert relative z-10 max-w-none",
+          "min-h-6 w-full bg-transparent text-foreground outline-none",
+          "typeset relative z-10 max-w-none",
           "[&_.ProseMirror]:outline-none [&_.ProseMirror_p]:m-0",
           "[&_.ProseMirror_p.is-empty::before]:content-[attr(data-placeholder)]",
-          "[&_.ProseMirror_p.is-empty::before]:text-[color-mix(in_oklab,var(--document-muted-foreground)_58%,transparent)]",
+          "[&_.ProseMirror_p.is-empty::before]:text-muted-foreground/60",
           "[&_.ProseMirror_p.is-empty::before]:float-left",
           "[&_.ProseMirror_p.is-empty::before]:pointer-events-none",
           "[&_.ProseMirror_p.is-empty::before]:h-0",

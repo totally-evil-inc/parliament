@@ -21,6 +21,8 @@ import { Route as WorkspaceSettingsIndexRouteImport } from './routes/_workspace/
 import { Route as WorkspaceProposalsIndexRouteImport } from './routes/_workspace/proposals/index'
 import { Route as WorkspaceInvoicesIndexRouteImport } from './routes/_workspace/invoices/index'
 import { Route as WorkspaceIntegrationsIndexRouteImport } from './routes/_workspace/integrations/index'
+import { Route as InternalEmailRenderRouteImport } from './routes/internal/email/render'
+import { Route as AuthInviteAcceptRouteImport } from './routes/auth/invite/accept'
 import { Route as WorkspaceSettingsTabRouteImport } from './routes/_workspace/settings/$tab'
 import { Route as WorkspaceProposalsProposalIdRouteImport } from './routes/_workspace/proposals/$proposalId'
 import { Route as WorkspaceInvoicesInvoiceIdRouteImport } from './routes/_workspace/invoices/$invoiceId'
@@ -85,6 +87,16 @@ const WorkspaceIntegrationsIndexRoute =
     path: '/integrations/',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const InternalEmailRenderRoute = InternalEmailRenderRouteImport.update({
+  id: '/internal/email/render',
+  path: '/internal/email/render',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthInviteAcceptRoute = AuthInviteAcceptRouteImport.update({
+  id: '/invite/accept',
+  path: '/invite/accept',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
 const WorkspaceSettingsTabRoute = WorkspaceSettingsTabRouteImport.update({
   id: '/$tab',
   path: '/$tab',
@@ -112,6 +124,8 @@ export interface FileRoutesByFullPath {
   '/invoices/$invoiceId': typeof WorkspaceInvoicesInvoiceIdRoute
   '/proposals/$proposalId': typeof WorkspaceProposalsProposalIdRoute
   '/settings/$tab': typeof WorkspaceSettingsTabRoute
+  '/auth/invite/accept': typeof AuthInviteAcceptRoute
+  '/internal/email/render': typeof InternalEmailRenderRoute
   '/integrations/': typeof WorkspaceIntegrationsIndexRoute
   '/invoices/': typeof WorkspaceInvoicesIndexRoute
   '/proposals/': typeof WorkspaceProposalsIndexRoute
@@ -127,6 +141,8 @@ export interface FileRoutesByTo {
   '/invoices/$invoiceId': typeof WorkspaceInvoicesInvoiceIdRoute
   '/proposals/$proposalId': typeof WorkspaceProposalsProposalIdRoute
   '/settings/$tab': typeof WorkspaceSettingsTabRoute
+  '/auth/invite/accept': typeof AuthInviteAcceptRoute
+  '/internal/email/render': typeof InternalEmailRenderRoute
   '/integrations': typeof WorkspaceIntegrationsIndexRoute
   '/invoices': typeof WorkspaceInvoicesIndexRoute
   '/proposals': typeof WorkspaceProposalsIndexRoute
@@ -145,6 +161,8 @@ export interface FileRoutesById {
   '/_workspace/invoices/$invoiceId': typeof WorkspaceInvoicesInvoiceIdRoute
   '/_workspace/proposals/$proposalId': typeof WorkspaceProposalsProposalIdRoute
   '/_workspace/settings/$tab': typeof WorkspaceSettingsTabRoute
+  '/auth/invite/accept': typeof AuthInviteAcceptRoute
+  '/internal/email/render': typeof InternalEmailRenderRoute
   '/_workspace/integrations/': typeof WorkspaceIntegrationsIndexRoute
   '/_workspace/invoices/': typeof WorkspaceInvoicesIndexRoute
   '/_workspace/proposals/': typeof WorkspaceProposalsIndexRoute
@@ -163,6 +181,8 @@ export interface FileRouteTypes {
     | '/invoices/$invoiceId'
     | '/proposals/$proposalId'
     | '/settings/$tab'
+    | '/auth/invite/accept'
+    | '/internal/email/render'
     | '/integrations/'
     | '/invoices/'
     | '/proposals/'
@@ -178,6 +198,8 @@ export interface FileRouteTypes {
     | '/invoices/$invoiceId'
     | '/proposals/$proposalId'
     | '/settings/$tab'
+    | '/auth/invite/accept'
+    | '/internal/email/render'
     | '/integrations'
     | '/invoices'
     | '/proposals'
@@ -195,6 +217,8 @@ export interface FileRouteTypes {
     | '/_workspace/invoices/$invoiceId'
     | '/_workspace/proposals/$proposalId'
     | '/_workspace/settings/$tab'
+    | '/auth/invite/accept'
+    | '/internal/email/render'
     | '/_workspace/integrations/'
     | '/_workspace/invoices/'
     | '/_workspace/proposals/'
@@ -208,6 +232,7 @@ export interface RootRouteChildren {
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
   DocumentsPrintRoute: typeof DocumentsPrintRoute
   ProposalPublicTokenRoute: typeof ProposalPublicTokenRoute
+  InternalEmailRenderRoute: typeof InternalEmailRenderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -296,6 +321,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIntegrationsIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/internal/email/render': {
+      id: '/internal/email/render'
+      path: '/internal/email/render'
+      fullPath: '/internal/email/render'
+      preLoaderRoute: typeof InternalEmailRenderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/invite/accept': {
+      id: '/auth/invite/accept'
+      path: '/invite/accept'
+      fullPath: '/auth/invite/accept'
+      preLoaderRoute: typeof AuthInviteAcceptRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
     '/_workspace/settings/$tab': {
       id: '/_workspace/settings/$tab'
       path: '/$tab'
@@ -361,11 +400,13 @@ const WorkspaceRouteRouteWithChildren = WorkspaceRouteRoute._addFileChildren(
 )
 
 interface AuthRouteRouteChildren {
+  AuthInviteAcceptRoute: typeof AuthInviteAcceptRoute
   AuthOnboardingIndexRoute: typeof AuthOnboardingIndexRoute
   AuthSignInIndexRoute: typeof AuthSignInIndexRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
+  AuthInviteAcceptRoute: AuthInviteAcceptRoute,
   AuthOnboardingIndexRoute: AuthOnboardingIndexRoute,
   AuthSignInIndexRoute: AuthSignInIndexRoute,
 }
@@ -379,6 +420,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRouteRoute: AuthRouteRouteWithChildren,
   DocumentsPrintRoute: DocumentsPrintRoute,
   ProposalPublicTokenRoute: ProposalPublicTokenRoute,
+  InternalEmailRenderRoute: InternalEmailRenderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

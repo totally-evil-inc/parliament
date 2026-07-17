@@ -6,10 +6,12 @@ import { poweredBy } from "hono/powered-by"
 import { auth } from "./lib/auth"
 import { trustedOrigins } from "./lib/utils"
 
-const app = new Hono<{
+export const app = new Hono<{
   Variables: {
     user: typeof auth.$Infer.Session.user | null
     session: typeof auth.$Infer.Session.session | null
+    requestId: string
+    logContext: Record<string, any>
   }
 }>()
 const port = Number(Bun.env.AUTH_PORT ?? Bun.env.PORT ?? 4000)
@@ -19,6 +21,10 @@ app.use(poweredBy())
 app.use("*", async (c, next) => {
   const startTime = Date.now()
   const requestId = c.req.header("x-request-id") || crypto.randomUUID()
+  c.set("requestId", requestId)
+
+  const logContext: Record<string, any> = {}
+  c.set("logContext", logContext)
 
   const url = new URL(c.req.url)
   const wideEvent: Record<string, any> = {
@@ -63,7 +69,15 @@ app.use("*", async (c, next) => {
     throw error
   } finally {
     wideEvent.durationMs = Date.now() - startTime
-    logger.info(wideEvent)
+    
+    // Merge any custom log context set during request lifecycle
+    Object.assign(wideEvent, c.get("logContext"))
+
+    if (wideEvent.outcome === "error" || (wideEvent.statusCode && wideEvent.statusCode >= 500)) {
+      logger.error(wideEvent)
+    } else {
+      logger.info(wideEvent)
+    }
   }
 })
 
@@ -92,6 +106,12 @@ app.use("*", async (c, next) => {
   c.set("session", session.session)
   return next()
 })
+
+import { magicLinkRouter } from "./routes/magic-link"
+import { inviteRouter } from "./routes/invite"
+
+app.route("/auth/magic-link", magicLinkRouter)
+app.route("/auth/invite", inviteRouter)
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw)

@@ -1,7 +1,6 @@
-import { useQueryClient } from "@tanstack/react-query"
+import { useQueryClient, useMutation } from "@tanstack/react-query"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import { useState } from "react"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { authClient } from "@/lib/auth-client"
 
@@ -20,12 +19,26 @@ function formatDate(value: Date | string) {
 
 type Props = {
   invitations: Array<Invitation>
+  organizationId: string
 }
 
-export function InvitationsList({ invitations }: Props) {
+export function InvitationsList({ invitations, organizationId }: Props) {
   const queryClient = useQueryClient()
   const confirm = useConfirm()
-  const [canceling, setCanceling] = useState<string | null>(null)
+
+  const cancelInvitationMutation = useMutation({
+    mutationFn: async (invitationId: string) => {
+      const { error } = await authClient.organization.cancelInvitation({
+        invitationId,
+      })
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["org-invitations", organizationId],
+      })
+    },
+  })
 
   const handleCancel = async (invitation: Invitation) => {
     const confirmed = await confirm({
@@ -37,14 +50,10 @@ export function InvitationsList({ invitations }: Props) {
 
     if (!confirmed) return
 
-    setCanceling(invitation.id)
     try {
-      await authClient.organization.cancelInvitation({
-        invitationId: invitation.id,
-      })
-      await queryClient.invalidateQueries({ queryKey: ["org-invitations"] })
-    } finally {
-      setCanceling(null)
+      await cancelInvitationMutation.mutateAsync(invitation.id)
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -86,10 +95,10 @@ export function InvitationsList({ invitations }: Props) {
               variant="ghost"
               size="sm"
               className="shrink-0 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em] hover:text-destructive"
-              disabled={canceling === inv.id}
+              disabled={cancelInvitationMutation.isPending && cancelInvitationMutation.variables === inv.id}
               onClick={() => void handleCancel(inv)}
             >
-              {canceling === inv.id ? "Revoking…" : "Revoke"}
+              {cancelInvitationMutation.isPending && cancelInvitationMutation.variables === inv.id ? "Revoking…" : "Revoke"}
             </Button>
           </div>
         ))}

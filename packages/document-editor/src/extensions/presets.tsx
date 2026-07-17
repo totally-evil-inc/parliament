@@ -93,20 +93,12 @@ const TaskItem = BaseTaskItem.extend({
 })
 
 export const documentEditorClassName = [
-  "prose prose-sm dark:prose-invert",
+  "typeset",
   "max-w-full sm:max-w-4xl box-border w-full min-h-[1200px] cursor-text focus:outline-none px-4 py-6 sm:px-12 sm:py-16",
-  "mx-auto border-t border-b sm:border border-[var(--document-border)] bg-[var(--document-page-background)] text-[var(--document-foreground)] sm:shadow-xl sm:shadow-black/10 sm:rounded-sm",
+  "mx-auto border-t border-b sm:border border-border bg-background text-foreground sm:shadow-xl sm:shadow-black/10 sm:rounded-sm",
   "[font-family:var(--document-font-family)]",
-  "prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground",
-  "prose-headings:[font-family:var(--document-heading-font-family)]",
-  "prose-code:text-foreground prose-blockquote:text-muted-foreground",
-  "prose-a:text-primary prose-hr:border-border prose-ul:data-[type=taskList]:list-none prose-ul:data-[type=taskList]:pl-0",
-  "prose-p:leading-6 prose-li:leading-6 prose-headings:leading-tight",
+  "[&_ul:data-[type=taskList]]:list-none [&_ul:data-[type=taskList]]:pl-0",
   "[&_[data-type=detailsContent][hidden]]:hidden",
-  "[&_table]:my-4 [&_table]:w-full [&_table]:table-fixed [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-md",
-  "[&_th]:border [&_th]:border-border [&_th]:bg-muted/60 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-medium [&_th]:align-top",
-  "[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:align-top",
-  "[&_th_p]:m-0 [&_td_p]:m-0 [&_th_p]:leading-6 [&_td_p]:m-0",
   "[&_.selectedCell]:bg-primary/10 [&_.column-resize-handle]:pointer-events-none [&_.column-resize-handle]:absolute [&_.column-resize-handle]:right-[-2px] [&_.column-resize-handle]:top-0 [&_.column-resize-handle]:bottom-0 [&_.column-resize-handle]:w-1 [&_.column-resize-handle]:bg-primary [&_.resize-cursor]:cursor-col-resize",
   "[&_.tiptap-mathematics-render]:cursor-pointer [&_.tiptap-mathematics-render]:rounded-sm [&_.tiptap-mathematics-render]:border [&_.tiptap-mathematics-render]:border-transparent [&_.tiptap-mathematics-render]:px-1 [&_.tiptap-mathematics-render:hover]:border-border [&_.tiptap-mathematics-render:hover]:bg-muted/50",
   "[&_[data-type=block-math]]:my-3 [&_[data-type=block-math]]:overflow-x-auto [&_[data-type=block-math]]:py-3",

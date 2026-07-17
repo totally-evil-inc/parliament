@@ -1,4 +1,5 @@
 import { useForm } from "@tanstack/react-form"
+import { useQueryClient, useMutation } from "@tanstack/react-query"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -10,7 +11,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { IconArrowBoldRight, IconCircleCheck, IconDeleteX } from "nucleo-glass"
 import type { ClipboardEvent, KeyboardEvent } from "react"
 import { useRef, useState } from "react"
-import { authClient } from "@/lib/auth-client"
+
 
 type Role = "admin" | "member"
 
@@ -44,6 +45,7 @@ export function InviteTeammatesForm({
   onSuccess,
   onSkip,
 }: Props) {
+  const queryClient = useQueryClient()
   const [chips, setChips] = useState<Array<InternalChip>>([])
   const [draft, setDraft] = useState("")
   const [defaultRole, setDefaultRole] = useState<Role>("member")
@@ -53,33 +55,55 @@ export function InviteTeammatesForm({
   const validChips = chips.filter((c) => EMAIL_RE.test(c.email))
   const invalidCount = chips.length - validChips.length
 
+  const inviteMutation = useMutation({
+    mutationFn: async ({ email, role }: { email: string; role: Role }) => {
+      const authUrl =
+        import.meta.env.VITE_BETTER_AUTH_URL || "http://localhost:4000"
+      const response = await fetch(`${authUrl}/auth/invite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          role,
+          organizationId,
+        }),
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        throw new Error(data.error || `Could not invite ${email}.`)
+      }
+      return response.json()
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["org-invitations", organizationId],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: ["org-members", organizationId],
+      })
+    },
+  })
+
   const form = useForm({
     defaultValues: {},
     onSubmit: async () => {
       setServerError(null)
 
-      const results = await Promise.all(
-        validChips.map(async (chip) => ({
-          chip,
-          result: await authClient.organization.inviteMember({
-            email: chip.email,
-            role: chip.role,
-            organizationId,
-          }),
-        }))
-      )
-
-      const failedInvite = results.find(({ result }) => result.error)
-
-      if (failedInvite) {
-        setServerError(
-          failedInvite.result.error?.message ??
-            `Could not invite ${failedInvite.chip.email}.`
+      try {
+        await Promise.all(
+          validChips.map((chip) =>
+            inviteMutation.mutateAsync({ email: chip.email, role: chip.role })
+          )
         )
-        return
+        setChips([])
+        onSuccess?.()
+      } catch (err: any) {
+        setServerError(err.message || "Failed to send invitations.")
       }
-
-      onSuccess?.()
     },
   })
 
