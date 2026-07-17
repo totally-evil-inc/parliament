@@ -96,6 +96,24 @@ apps/command  (TanStack Start + React, orchestration)
 - All new features, route handlers, or server functions going forward **MUST** implement structured logging conforming to the existing Pino-based logging setup.
 - Follow the **Wide Events** (canonical log lines) pattern: consolidate execution metadata (timings, outcomes, authentication contexts, request IDs, and environment characteristics) into single structured logs at operation completion rather than scattering unstructured prints.
 
+## Working with shadcn/ui Blocks
+
+Throughout the lifetime of this project, we will periodically install `shadcn` blocks into the repository. Do **not** treat the generated code as production-ready architecture. The generated code is a reference implementation and should instead be considered raw material.
+
+Rebuild it from scratch using the project's architectural conventions:
+- Organize files and folders according to the feature/domain rather than mirroring the generated output.
+- Extract reusable UI into shared components where appropriate.
+- Create shell/layout components when a component is primarily responsible for composition.
+- Separate presentation from business logic.
+- Move state management, effects, and event handling into custom hooks whenever they improve clarity or reusability.
+- Extract utility functions into appropriate utility modules.
+- Remove duplication aggressively and improve naming.
+- Ensure components have clear, single responsibilities.
+- Follow existing project conventions before introducing new patterns.
+- Reusability: Extract UI elements (buttons, cards, empty states, dialogs, drawers, etc.) if they have a reasonable chance of being reused.
+- Maintainability: Favor small focused components, predictable file structures, minimal prop drilling, composition over configuration, and readability. Avoid creating "God components".
+- Functional Equivalence: Rebuilt implementation must preserve the original functionality and user experience unless there is a clear improvement (e.g. accessibility, performance, cleaner state, types).
+
 ## Known gaps
 
 - Production `vite build` not verified in this environment — tests + typecheck are the CI gates.
