@@ -1,6 +1,6 @@
+import { logger } from "@workspace/logger"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
-import { logger } from "hono/logger"
 import { poweredBy } from "hono/powered-by"
 
 import { auth } from "./lib/auth"
@@ -15,7 +15,57 @@ const app = new Hono<{
 const port = Number(Bun.env.AUTH_PORT ?? Bun.env.PORT ?? 4000)
 
 app.use(poweredBy())
-app.use(logger())
+
+app.use("*", async (c, next) => {
+  const startTime = Date.now()
+  const requestId = c.req.header("x-request-id") || crypto.randomUUID()
+
+  const url = new URL(c.req.url)
+  const wideEvent: Record<string, any> = {
+    requestId,
+    method: c.req.method,
+    path: url.pathname,
+    query: Object.fromEntries(url.searchParams.entries()),
+    userAgent: c.req.header("user-agent"),
+    timestamp: new Date().toISOString(),
+    environment: {
+      nodeEnv: process.env.NODE_ENV || "development",
+      commitHash: process.env.COMMIT_HASH || "unknown",
+      version: "0.0.1",
+    },
+  }
+
+  try {
+    await next()
+
+    wideEvent.statusCode = c.res.status
+    wideEvent.outcome = c.res.status >= 400 ? "failure" : "success"
+
+    const user = c.get("user")
+    const session = c.get("session")
+    if (user) {
+      wideEvent.user = { id: user.id, email: user.email }
+    }
+    if (session) {
+      wideEvent.session = {
+        id: session.id,
+        activeOrganizationId: session.activeOrganizationId,
+      }
+    }
+  } catch (error: any) {
+    wideEvent.statusCode = error.status || 500
+    wideEvent.outcome = "error"
+    wideEvent.error = {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    }
+    throw error
+  } finally {
+    wideEvent.durationMs = Date.now() - startTime
+    logger.info(wideEvent)
+  }
+})
 
 app.use(
   "*",

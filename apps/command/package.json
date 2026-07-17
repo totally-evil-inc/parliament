@@ -21,6 +21,7 @@
     "@workspace/database": "workspace:*",
     "@workspace/document": "workspace:*",
     "@workspace/document-editor": "workspace:*",
+    "@workspace/logger": "workspace:*",
     "@workspace/ui": "workspace:*",
     "better-auth": "^1.6.9",
     "katex": "^0.16.25",

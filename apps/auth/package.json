@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@workspace/database": "workspace:*",
+    "@workspace/logger": "workspace:*",
     "better-auth": "^1.6.9",
     "hono": "^4.12.18"
   },

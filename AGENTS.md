@@ -90,6 +90,12 @@ apps/command  (TanStack Start + React, orchestration)
 - Commits are not frequent; no conventional commit standard enforced.
 - `.env` files are gitignored. Auth requires `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` in `.env`.
 
+## Logging
+
+- Use `@workspace/logger` for all server-side and workspace logging.
+- All new features, route handlers, or server functions going forward **MUST** implement structured logging conforming to the existing Pino-based logging setup.
+- Follow the **Wide Events** (canonical log lines) pattern: consolidate execution metadata (timings, outcomes, authentication contexts, request IDs, and environment characteristics) into single structured logs at operation completion rather than scattering unstructured prints.
+
 ## Known gaps
 
 - Production `vite build` not verified in this environment — tests + typecheck are the CI gates.
