@@ -1,4 +1,5 @@
 import { db } from "@workspace/database"
+import { logger } from "@workspace/logger"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { jwt, organization, magicLink } from "better-auth/plugins"
@@ -22,7 +23,7 @@ export const auth = betterAuth({
    * Global Error Logger
    */
   onError: (error: any, ctx: any) => {
-    console.error(`[Better Auth Error] Path: ${ctx.request.url} | Error details:`, error)
+    logger.error({ err: error, path: ctx.request.url }, "Better Auth error occurred")
   },
 
   /**
@@ -79,7 +80,7 @@ export const auth = betterAuth({
             html,
           })
         } catch (err) {
-          console.error(`[Invitation Email Error] Failed to render or send invitation to ${data.email}:`, err)
+          logger.error({ err, email: data.email }, "Failed to render or send invitation email")
           throw err
         }
       },
@@ -97,7 +98,7 @@ export const auth = betterAuth({
             html,
           })
         } catch (err) {
-          console.error(`[Magic Link Email Error] Failed to render or send magic link to ${email}:`, err)
+          logger.error({ err, email }, "Failed to render or send magic link email")
           throw err
         }
       },

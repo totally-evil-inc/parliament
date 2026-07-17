@@ -1,3 +1,4 @@
+import { logger } from "@workspace/logger"
 import nodemailer from "nodemailer"
 
 export async function renderEmail(
@@ -88,10 +89,8 @@ export async function sendEmail({
   // 3. Fallback for local development warning
   const linkMatch = html.match(/href="([^"]+)"/)
   const link = linkMatch ? linkMatch[1] : "No link found"
-  console.warn(`[EMAIL SENDER WARNING] Neither Resend nor SMTP credentials set.
-----------------------------------------
-To: ${to}
-Subject: ${subject}
-Link: ${link}
-----------------------------------------`)
+  logger.warn(
+    { to, subject, link },
+    "Neither Resend nor SMTP credentials set. Local dev fallback triggered."
+  )
 }
