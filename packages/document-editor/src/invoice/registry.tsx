@@ -62,21 +62,24 @@ export const invoiceBlocks = proposalBlocks
       return {
         ...block,
         label: "Key Billing Metrics",
-        description: "Highlight key billing metrics, hours, or milestone figures.",
+        description:
+          "Highlight key billing metrics, hours, or milestone figures.",
       }
     }
     if (block.id === "gallery") {
       return {
         ...block,
         label: "Receipts & Attachments",
-        description: "Showcase proof of deliverables or scan receipts in a grid.",
+        description:
+          "Showcase proof of deliverables or scan receipts in a grid.",
       }
     }
     if (block.id === "timeline") {
       return {
         ...block,
         label: "Billing Milestones",
-        description: "Create a checklist of project milestones and billing progression.",
+        description:
+          "Create a checklist of project milestones and billing progression.",
       }
     }
     return block
@@ -119,7 +122,12 @@ export const invoiceEditorRegistry: DocumentDefinition = {
       icon: TextFontIcon,
       command: (editor) => editor.chain().focus().setNode("paragraph").run(),
     },
-    { id: "gallery", label: "Attachments", icon: Image01Icon, blockId: "gallery" },
+    {
+      id: "gallery",
+      label: "Attachments",
+      icon: Image01Icon,
+      blockId: "gallery",
+    },
     {
       id: "timeline",
       label: "Milestones",

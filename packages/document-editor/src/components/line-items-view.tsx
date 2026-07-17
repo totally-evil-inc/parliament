@@ -103,7 +103,9 @@ function LineItemsView(_props: NodeViewProps) {
     commands.updatePricing((current: any) => ({
       ...current,
       // biome-ignore lint/suspicious/noExplicitAny: filtering items
-      items: current.items.filter((_: any, itemIndex: number) => itemIndex !== index),
+      items: current.items.filter(
+        (_: any, itemIndex: number) => itemIndex !== index
+      ),
     }))
   }
 
