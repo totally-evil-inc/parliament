@@ -1,4 +1,6 @@
 export * from "./account"
+export * from "./agent"
+export * from "./agent-action"
 export * from "./invitation"
 export * from "./invoice"
 export * from "./jwks"
