@@ -14,6 +14,7 @@ import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
 import { Route as ProposalPublicTokenRouteImport } from './routes/proposal/$publicToken'
 import { Route as DocumentsPrintRouteImport } from './routes/documents/print'
+import { Route as WorkspaceApprovalsRouteImport } from './routes/_workspace/approvals'
 import { Route as WorkspaceSettingsRouteRouteImport } from './routes/_workspace/settings/route'
 import { Route as AuthSignInIndexRouteImport } from './routes/auth/sign-in/index'
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
@@ -50,6 +51,11 @@ const DocumentsPrintRoute = DocumentsPrintRouteImport.update({
   id: '/documents/print',
   path: '/documents/print',
   getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceApprovalsRoute = WorkspaceApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceSettingsRouteRoute = WorkspaceSettingsRouteRouteImport.update({
   id: '/settings',
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/': typeof WorkspaceIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
   '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
+  '/approvals': typeof WorkspaceApprovalsRoute
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
   '/invoices/$invoiceId': typeof WorkspaceInvoicesInvoiceIdRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteRouteWithChildren
+  '/approvals': typeof WorkspaceApprovalsRoute
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
   '/': typeof WorkspaceIndexRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/_workspace': typeof WorkspaceRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
   '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
+  '/_workspace/approvals': typeof WorkspaceApprovalsRoute
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
   '/_workspace/': typeof WorkspaceIndexRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/settings'
+    | '/approvals'
     | '/documents/print'
     | '/proposal/$publicToken'
     | '/invoices/$invoiceId'
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/approvals'
     | '/documents/print'
     | '/proposal/$publicToken'
     | '/'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/_workspace'
     | '/auth'
     | '/_workspace/settings'
+    | '/_workspace/approvals'
     | '/documents/print'
     | '/proposal/$publicToken'
     | '/_workspace/'
@@ -271,6 +283,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/documents/print'
       preLoaderRoute: typeof DocumentsPrintRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_workspace/approvals': {
+      id: '/_workspace/approvals'
+      path: '/approvals'
+      fullPath: '/approvals'
+      preLoaderRoute: typeof WorkspaceApprovalsRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/settings': {
       id: '/_workspace/settings'
@@ -377,6 +396,7 @@ const WorkspaceSettingsRouteRouteWithChildren =
 
 interface WorkspaceRouteRouteChildren {
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
+  WorkspaceApprovalsRoute: typeof WorkspaceApprovalsRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
   WorkspaceInvoicesInvoiceIdRoute: typeof WorkspaceInvoicesInvoiceIdRoute
   WorkspaceProposalsProposalIdRoute: typeof WorkspaceProposalsProposalIdRoute
@@ -387,6 +407,7 @@ interface WorkspaceRouteRouteChildren {
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
+  WorkspaceApprovalsRoute: WorkspaceApprovalsRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
   WorkspaceInvoicesInvoiceIdRoute: WorkspaceInvoicesInvoiceIdRoute,
   WorkspaceProposalsProposalIdRoute: WorkspaceProposalsProposalIdRoute,
