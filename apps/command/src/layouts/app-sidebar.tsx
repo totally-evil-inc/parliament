@@ -1,3 +1,4 @@
+import { cn } from "@workspace/ui/lib/utils"
 import {
   Sidebar,
   SidebarContent,
@@ -31,7 +32,11 @@ export function AppSidebar({
     <Sidebar
       variant={variant}
       collapsible="icon"
-      className="border-sidebar-border/80 border-r bg-sidebar"
+      className={cn(
+        variant === "floating"
+          ? "border-none bg-transparent"
+          : "border-sidebar-border/80 border-r bg-sidebar"
+      )}
     >
       <SidebarHeader className="gap-2 border-sidebar-border/80 border-b p-2">
         <WorkspaceSwitcher />

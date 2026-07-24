@@ -49,7 +49,7 @@ export function AppShell({ children }: AppShellProps) {
     <SidebarProvider defaultOpen={false}>
       <WorkspaceProvider>
         <AppSidebar
-          variant="inset"
+          variant="floating"
           primaryNav={workspaceConfig.primaryNav}
           user={user}
         />
