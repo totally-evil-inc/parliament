@@ -2,7 +2,7 @@ import { db } from "@workspace/database"
 import { logger } from "@workspace/logger"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { jwt, organization, magicLink } from "better-auth/plugins"
+import { jwt, organization, magicLink, genericOAuth } from "better-auth/plugins"
 
 import { renderEmail, sendEmail } from "./email"
 import { trustedOrigins } from "./utils"
@@ -38,6 +38,17 @@ export const auth = betterAuth({
       accessType: "offline",
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      scope: [
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/calendar",
+        "https://www.googleapis.com/auth/calendar.events",
+      ],
+    },
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+      scope: ["repo", "read:org", "user"],
     },
   },
 
@@ -116,6 +127,25 @@ export const auth = betterAuth({
           sid: session.id,
         }),
       },
+    }),
+    genericOAuth({
+      config: [
+        {
+          providerId: "linear",
+          clientId: process.env.LINEAR_CLIENT_ID as string,
+          clientSecret: process.env.LINEAR_CLIENT_SECRET as string,
+          authorizationUrl: "https://linear.app/oauth/authorize",
+          tokenUrl: "https://api.linear.app/oauth/token",
+          scopes: ["read", "write"],
+        },
+        {
+          providerId: "notion",
+          clientId: process.env.NOTION_CLIENT_ID as string,
+          clientSecret: process.env.NOTION_CLIENT_SECRET as string,
+          authorizationUrl: "https://api.notion.com/v1/oauth/authorize",
+          tokenUrl: "https://api.notion.com/v1/oauth/token",
+        },
+      ],
     }),
   ],
 })

@@ -109,9 +109,13 @@ app.use("*", async (c, next) => {
 
 import { magicLinkRouter } from "./routes/magic-link"
 import { inviteRouter } from "./routes/invite"
+import { integrationsRouter } from "./routes/integrations"
+import { agentAuthRouter } from "./routes/agent-auth"
 
 app.route("/auth/magic-link", magicLinkRouter)
 app.route("/auth/invite", inviteRouter)
+app.route("/api/auth/integrations", integrationsRouter)
+app.route("/api/auth/agent", agentAuthRouter)
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw)
