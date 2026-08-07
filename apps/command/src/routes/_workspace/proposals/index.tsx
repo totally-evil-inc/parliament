@@ -527,12 +527,10 @@ function ProposalsRoute() {
                               {proposal.publicToken && (
                                 <DropdownMenuItem
                                   render={
-                                    <Link
-                                      to="/proposal/$publicToken"
-                                      params={{
-                                        publicToken: proposal.publicToken,
-                                      }}
+                                    <a
+                                      href={`${(import.meta.env.VITE_GATE_URL as string | undefined) || "http://localhost:4100"}/p/${proposal.publicToken}`}
                                       target="_blank"
+                                      rel="noreferrer"
                                       className="cursor-pointer text-xs"
                                     />
                                   }
@@ -544,7 +542,10 @@ function ProposalsRoute() {
                                 <DropdownMenuItem
                                   className="cursor-pointer text-xs"
                                   onClick={() => {
-                                    const shareUrl = `${window.location.origin}/proposal/${proposal.publicToken}`
+                                    const gateBaseUrl =
+                                      (import.meta.env.VITE_GATE_URL as string | undefined) ||
+                                      "http://localhost:4100"
+                                    const shareUrl = `${gateBaseUrl}/p/${proposal.publicToken}`
                                     navigator.clipboard.writeText(shareUrl)
                                   }}
                                 >

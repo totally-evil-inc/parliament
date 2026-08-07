@@ -203,7 +203,10 @@ function InvoiceEditorScreen({
   const handleFinalizeAndGetShareUrl = React.useCallback(async (): Promise<string> => {
     const result = await sendDraft.mutateAsync()
     if (result.status === "sent" && result.finalized) {
-      const url = `${window.location.origin}/invoice/${result.finalized.token}`
+      const gateBaseUrl =
+        (import.meta.env.VITE_GATE_URL as string | undefined) ||
+        "http://localhost:4100"
+      const url = `${gateBaseUrl}/i/${result.finalized.token}`
       setShareUrl(url)
       return url
     }

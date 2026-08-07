@@ -208,7 +208,10 @@ function ProposalEditorScreen({
     React.useCallback(async (): Promise<string> => {
       const result = await sendDraft.mutateAsync()
       if (result.status === "sent" && result.finalized) {
-        const url = `${window.location.origin}/proposal/${result.finalized.token}`
+        const gateBaseUrl =
+          (import.meta.env.VITE_GATE_URL as string | undefined) ||
+          "http://localhost:4100"
+        const url = `${gateBaseUrl}/p/${result.finalized.token}`
         setShareUrl(url)
         return url
       }

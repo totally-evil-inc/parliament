@@ -549,7 +549,7 @@ function InvoicesRoute() {
                                   <DropdownMenuItem
                                     render={
                                       <a
-                                        href={`${window.location.origin}/invoice/${invoice.publicToken}`}
+                                        href={`${(import.meta.env.VITE_GATE_URL as string | undefined) || "http://localhost:4100"}/i/${invoice.publicToken}`}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="cursor-pointer text-xs"

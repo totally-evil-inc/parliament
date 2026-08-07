@@ -520,7 +520,10 @@ function serializeAcceptance(
     signerName: row.signerName,
     signerEmail: row.signerEmail,
     signatureText: row.signatureText,
-    acceptedAt: row.acceptedAt.toISOString(),
+    acceptedAt:
+      row.acceptedAt instanceof Date
+        ? row.acceptedAt.toISOString()
+        : String(row.acceptedAt),
   }
 }
 
