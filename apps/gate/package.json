@@ -4,9 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run src/dev.ts",
-    "dev:api": "GATE_PORT=4101 bun --env-file=.env src/index.ts",
-    "dev:client": "bun --bun vite dev --port 4100",
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --port 4100",
     "typecheck": "tsc --noEmit",
@@ -17,12 +15,9 @@
   "dependencies": {
     "@tanstack/react-query": "^5.100.10",
     "@tanstack/react-router": "^1.132.0",
-    "@workspace/database": "workspace:*",
     "@workspace/document": "workspace:*",
-    "@workspace/logger": "workspace:*",
     "@workspace/ui": "workspace:*",
     "better-auth": "^1.6.9",
-    "hono": "^4.12.18",
     "lucide-react": "^1.29.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

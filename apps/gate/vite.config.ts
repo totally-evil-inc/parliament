@@ -14,9 +14,5 @@ export default defineConfig({
   server: {
     port: 4100,
     strictPort: true,
-    proxy: {
-      "/api": "http://localhost:4101",
-      "/health": "http://localhost:4101",
-    },
   },
 })
