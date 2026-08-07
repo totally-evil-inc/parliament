@@ -275,17 +275,23 @@ describe("Milestone 3 Empirical Challenge & Stress Tests (apps/gate)", () => {
 
   describe("Token Priority & Boundary Resolution", () => {
     test("token with BOTH revoked status and expired date prioritizes revoked status", async () => {
-      const res = await getPublicProposal(proposalRevokedAndExpiredToken)
+      const res = await getPublicProposal(proposalRevokedAndExpiredToken, {
+        sessionEmail: "challenge@example.com",
+      })
       expect(res).toEqual({ status: "unavailable", reason: "revoked" })
     })
 
     test("token with status='active' but revokedAt non-null returns unavailable (revoked)", async () => {
-      const res = await getPublicProposal(proposalActiveWithRevokedAtToken)
+      const res = await getPublicProposal(proposalActiveWithRevokedAtToken, {
+        sessionEmail: "challenge@example.com",
+      })
       expect(res).toEqual({ status: "unavailable", reason: "revoked" })
     })
 
     test("invoice for organization without paymentLinkUrl returns null paymentLinkUrl", async () => {
-      const res = await getPublicInvoice(invoiceNoPaymentToken)
+      const res = await getPublicInvoice(invoiceNoPaymentToken, {
+        sessionEmail: "challenge@example.com",
+      })
       expect(res.status).toBe("ready")
       if (res.status === "ready") {
         expect(res.paymentLinkUrl).toBeNull()
@@ -312,7 +318,9 @@ describe("Milestone 3 Empirical Challenge & Stress Tests (apps/gate)", () => {
       expect(acc2.signerName).toBe("Second Signer")
 
       // getPublicProposal should return the LATEST acceptance record
-      const res = await getPublicProposal(proposalValidToken)
+      const res = await getPublicProposal(proposalValidToken, {
+        sessionEmail: "challenge@example.com",
+      })
       expect(res.status).toBe("ready")
       if (res.status === "ready") {
         expect(res.accepted?.signerName).toBe("Second Signer")
@@ -399,7 +407,10 @@ describe("Milestone 3 Empirical Challenge & Stress Tests (apps/gate)", () => {
         `http://localhost/api/public/proposal/${proposalValidToken}/accept`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "challenge@example.com",
+          },
           body: "invalid-json",
         }
       )
@@ -412,7 +423,10 @@ describe("Milestone 3 Empirical Challenge & Stress Tests (apps/gate)", () => {
         `http://localhost/api/public/proposal/${proposalValidToken}/accept`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "challenge@example.com",
+          },
           body: JSON.stringify({
             signerName: "No Terms Signer",
             signerEmail: "noterms@example.com",

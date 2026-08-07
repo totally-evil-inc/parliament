@@ -3,9 +3,17 @@ import type { Context } from "hono"
 import { Hono } from "hono"
 import { z } from "zod"
 import { recordClientEvent } from "./server/events"
-import { acceptPublicInvoice, getPublicInvoice } from "./server/invoices"
-import { sendOtp, verifyOtp } from "./server/otp"
-import { acceptPublicProposal, getPublicProposal } from "./server/proposals"
+import {
+  acceptPublicInvoice,
+  getPublicInvoice,
+  getPublicInvoiceMeta,
+} from "./server/invoices"
+import {
+  acceptPublicProposal,
+  getPublicProposal,
+  getPublicProposalMeta,
+} from "./server/proposals"
+import { getGateSession } from "./server/session"
 
 const acceptDocumentBodySchema = z.object({
   signerName: z.string().min(1),
@@ -14,17 +22,6 @@ const acceptDocumentBodySchema = z.object({
   signatureImage: z.string().optional(),
   otpVerified: z.boolean().optional(),
   agreedTerms: z.literal(true),
-})
-
-const otpSendBodySchema = z.object({
-  publicLinkId: z.string().min(1),
-  email: z.string().min(1),
-})
-
-const otpVerifyBodySchema = z.object({
-  publicLinkId: z.string().min(1),
-  email: z.string().min(1),
-  code: z.string().min(1),
 })
 
 const clientEventBodySchema = z.object({
@@ -97,8 +94,6 @@ app.use("*", async (c, next) => {
 
     Object.assign(wideEvent, c.get("logContext"))
 
-    // Errors handled by app.onError are logged there with full detail; skip
-    // the middleware log for those requests to avoid duplication.
     if (c.get("errorLogged") !== true) {
       if (
         wideEvent.outcome === "error" ||
@@ -142,8 +137,6 @@ app.onError((error: unknown, c) => {
     wideEvent.durationMs = Date.now() - c.get("requestStartTime")
   }
 
-  // Sanitize what the caller sees: internal details never leak, they stay
-  // in the structured wide-event log above.
   c.set("errorLogged", true)
   const responseStatus = status as 400 | 404 | 409 | 500
   logger.error(wideEvent)
@@ -167,7 +160,43 @@ app.get("/health", (c) => {
   })
 })
 
-// Public Proposal Endpoints
+// Proxy Better Auth requests to auth server
+app.all("/api/auth/*", async (c) => {
+  const authBaseUrl = Bun.env.AUTH_SERVER_URL ?? "http://localhost:4000"
+  const url = new URL(c.req.url)
+  const targetUrl = `${authBaseUrl}${url.pathname}${url.search}`
+
+  const headers = new Headers(c.req.raw.headers)
+  try {
+    headers.set("host", new URL(authBaseUrl).host)
+  } catch (_e) {
+    // Ignore invalid URL parsing
+  }
+
+  const proxyRes = await fetch(targetUrl, {
+    method: c.req.method,
+    headers,
+    body: ["GET", "HEAD"].includes(c.req.method)
+      ? undefined
+      : await c.req.raw.arrayBuffer(),
+  })
+
+  return new Response(proxyRes.body, {
+    status: proxyRes.status,
+    headers: proxyRes.headers,
+  })
+})
+
+// Public Proposal Metadata Endpoint (unauthenticated)
+app.get("/api/public/proposal/:token/meta", async (c) => {
+  const token = c.req.param("token")
+  const result = await getPublicProposalMeta(token)
+  if (result.status === "not_found") return c.json(result, 404)
+  if (result.status === "unavailable") return c.json(result, 400)
+  return c.json(result, 200)
+})
+
+// Protected Public Proposal Endpoint (requires verified email session)
 app.get("/api/public/proposal/:token", async (c) => {
   const token = c.req.param("token")
   const logContext = c.get("logContext")
@@ -177,7 +206,19 @@ app.get("/api/public/proposal/:token", async (c) => {
     c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || null
   const userAgent = c.req.header("user-agent") || null
 
-  const result = await getPublicProposal(token, { ipAddress, userAgent })
+  const session = await getGateSession(c.req.raw.headers)
+  if (!session) {
+    return c.json(
+      { status: "unauthorized", error: "Verification required" },
+      401
+    )
+  }
+
+  const result = await getPublicProposal(token, {
+    sessionEmail: session.user.email,
+    ipAddress,
+    userAgent,
+  })
   logContext.lookupStatus = result.status
 
   if (result.status === "not_found") {
@@ -186,11 +227,19 @@ app.get("/api/public/proposal/:token", async (c) => {
   if (result.status === "unavailable") {
     return c.json(result, 400)
   }
+  if (result.status === "forbidden") {
+    return c.json(result, 403)
+  }
   return c.json(result, 200)
 })
 
 app.post("/api/public/proposal/:token/accept", async (c) => {
   const token = c.req.param("token")
+  const session = await getGateSession(c.req.raw.headers)
+  if (!session) {
+    return c.json({ success: false, error: "Verification required" }, 401)
+  }
+
   const parsed = acceptDocumentBodySchema.safeParse(
     await c.req.json().catch(() => ({}))
   )
@@ -217,7 +266,7 @@ app.post("/api/public/proposal/:token/accept", async (c) => {
       signerEmail: body.signerEmail,
       signatureText: body.signatureText,
       signatureImage: body.signatureImage,
-      otpVerified: body.otpVerified,
+      otpVerified: true,
       agreedTerms: body.agreedTerms,
       ipAddress,
       userAgent,
@@ -237,7 +286,16 @@ app.post("/api/public/proposal/:token/accept", async (c) => {
   }
 })
 
-// Public Invoice Endpoints
+// Public Invoice Metadata Endpoint (unauthenticated)
+app.get("/api/public/invoice/:token/meta", async (c) => {
+  const token = c.req.param("token")
+  const result = await getPublicInvoiceMeta(token)
+  if (result.status === "not_found") return c.json(result, 404)
+  if (result.status === "unavailable") return c.json(result, 400)
+  return c.json(result, 200)
+})
+
+// Protected Public Invoice Endpoint (requires verified email session)
 app.get("/api/public/invoice/:token", async (c) => {
   const token = c.req.param("token")
   const logContext = c.get("logContext")
@@ -247,7 +305,19 @@ app.get("/api/public/invoice/:token", async (c) => {
     c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || null
   const userAgent = c.req.header("user-agent") || null
 
-  const result = await getPublicInvoice(token, { ipAddress, userAgent })
+  const session = await getGateSession(c.req.raw.headers)
+  if (!session) {
+    return c.json(
+      { status: "unauthorized", error: "Verification required" },
+      401
+    )
+  }
+
+  const result = await getPublicInvoice(token, {
+    sessionEmail: session.user.email,
+    ipAddress,
+    userAgent,
+  })
   logContext.lookupStatus = result.status
 
   if (result.status === "not_found") {
@@ -256,11 +326,19 @@ app.get("/api/public/invoice/:token", async (c) => {
   if (result.status === "unavailable") {
     return c.json(result, 400)
   }
+  if (result.status === "forbidden") {
+    return c.json(result, 403)
+  }
   return c.json(result, 200)
 })
 
 app.post("/api/public/invoice/:token/accept", async (c) => {
   const token = c.req.param("token")
+  const session = await getGateSession(c.req.raw.headers)
+  if (!session) {
+    return c.json({ success: false, error: "Verification required" }, 401)
+  }
+
   const parsed = acceptDocumentBodySchema.safeParse(
     await c.req.json().catch(() => ({}))
   )
@@ -287,7 +365,7 @@ app.post("/api/public/invoice/:token/accept", async (c) => {
       signerEmail: body.signerEmail,
       signatureText: body.signatureText,
       signatureImage: body.signatureImage,
-      otpVerified: body.otpVerified,
+      otpVerified: true,
       agreedTerms: body.agreedTerms,
       ipAddress,
       userAgent,
@@ -304,63 +382,6 @@ app.post("/api/public/invoice/:token/accept", async (c) => {
       },
       400
     )
-  }
-})
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-// OTP Endpoints
-app.post("/api/public/otp/send", async (c) => {
-  const parsed = otpSendBodySchema.safeParse(
-    await c.req.json().catch(() => ({}))
-  )
-  if (!parsed.success || !EMAIL_REGEX.test(parsed.data.email.trim())) {
-    return c.json(
-      { success: false, error: "Valid publicLinkId and email are required" },
-      400
-    )
-  }
-  const body = parsed.data
-
-  try {
-    const result = await sendOtp(body.publicLinkId, body.email.trim())
-    return c.json(result, 200)
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "Failed to send OTP"
-    return c.json({ success: false, error: message }, 500)
-  }
-})
-
-app.post("/api/public/otp/verify", async (c) => {
-  const parsed = otpVerifyBodySchema.safeParse(
-    await c.req.json().catch(() => ({}))
-  )
-  if (!parsed.success || !EMAIL_REGEX.test(parsed.data.email.trim())) {
-    return c.json(
-      {
-        success: false,
-        error: "Valid publicLinkId, email, and code are required",
-      },
-      400
-    )
-  }
-  const body = parsed.data
-
-  try {
-    const result = await verifyOtp(
-      body.publicLinkId,
-      body.email.trim(),
-      body.code.trim()
-    )
-    if (!result.success) {
-      return c.json(result, 400)
-    }
-    return c.json(result, 200)
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "Failed to verify OTP"
-    return c.json({ success: false, error: message }, 500)
   }
 })
 

@@ -21,9 +21,21 @@ function toAcceptanceTimestamp(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : String(value)
 }
 
+export type GetPublicProposalMetaResult =
+  | { status: "not_found" }
+  | { status: "unavailable"; reason: "revoked" | "expired" }
+  | {
+      status: "ready"
+      token: string
+      title: string
+      sellerName: string
+      recipientEmail: string | null
+    }
+
 export type GetPublicProposalResult =
   | { status: "not_found" }
   | { status: "unavailable"; reason: "revoked" | "expired" }
+  | { status: "forbidden"; error: string }
   | {
       status: "ready"
       linkId: string
@@ -45,17 +57,16 @@ export type AcceptPublicProposalInput = {
   userAgent?: string | null
 }
 
-export async function getPublicProposal(
-  token: string,
-  options?: { ipAddress?: string | null; userAgent?: string | null }
-): Promise<GetPublicProposalResult> {
+export async function getPublicProposalMeta(
+  token: string
+): Promise<GetPublicProposalMetaResult> {
   const [link] = await db
     .select({
       id: schema.proposalPublicLink.id,
-      proposalSnapshotId: schema.proposalPublicLink.proposalSnapshotId,
       status: schema.proposalPublicLink.status,
       revokedAt: schema.proposalPublicLink.revokedAt,
       expiresAt: schema.proposalPublicLink.expiresAt,
+      recipientEmail: schema.proposalPublicLink.recipientEmail,
       document: schema.proposalSnapshot.document,
     })
     .from(schema.proposalPublicLink)
@@ -79,6 +90,73 @@ export async function getPublicProposal(
 
   if (link.expiresAt !== null && link.expiresAt.getTime() <= Date.now()) {
     return { status: "unavailable", reason: "expired" }
+  }
+
+  const document = parseProposalDraft(link.document)
+  return {
+    status: "ready",
+    token,
+    title: document.data.title || "Proposal",
+    sellerName: document.data.seller.name || "",
+    recipientEmail: link.recipientEmail ?? null,
+  }
+}
+
+export async function getPublicProposal(
+  token: string,
+  options: {
+    sessionEmail: string
+    ipAddress?: string | null
+    userAgent?: string | null
+  }
+): Promise<GetPublicProposalResult> {
+  const [link] = await db
+    .select({
+      id: schema.proposalPublicLink.id,
+      proposalSnapshotId: schema.proposalPublicLink.proposalSnapshotId,
+      status: schema.proposalPublicLink.status,
+      revokedAt: schema.proposalPublicLink.revokedAt,
+      expiresAt: schema.proposalPublicLink.expiresAt,
+      recipientEmail: schema.proposalPublicLink.recipientEmail,
+      document: schema.proposalSnapshot.document,
+    })
+    .from(schema.proposalPublicLink)
+    .innerJoin(
+      schema.proposalSnapshot,
+      eq(
+        schema.proposalSnapshot.id,
+        schema.proposalPublicLink.proposalSnapshotId
+      )
+    )
+    .where(eq(schema.proposalPublicLink.token, token))
+    .limit(1)
+
+  if (!link) {
+    return { status: "not_found" }
+  }
+
+  if (link.status === "revoked" || link.revokedAt !== null) {
+    return { status: "unavailable", reason: "revoked" }
+  }
+
+  if (link.expiresAt !== null && link.expiresAt.getTime() <= Date.now()) {
+    return { status: "unavailable", reason: "expired" }
+  }
+
+  const sessionEmail = options.sessionEmail.trim().toLowerCase()
+  if (link.recipientEmail) {
+    if (link.recipientEmail.trim().toLowerCase() !== sessionEmail) {
+      return {
+        status: "forbidden",
+        error: `This document was sent to ${link.recipientEmail}. You are currently verified as ${options.sessionEmail}.`,
+      }
+    }
+  } else {
+    // Bind link recipient email on first access
+    await db
+      .update(schema.proposalPublicLink)
+      .set({ recipientEmail: sessionEmail })
+      .where(eq(schema.proposalPublicLink.id, link.id))
   }
 
   const document = parseProposalDraft(link.document)

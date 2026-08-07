@@ -16,7 +16,7 @@ import {
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import { CheckCircle2, FileCheck, Lock, Send, ShieldCheck } from "lucide-react"
+import { CheckCircle2, FileCheck, Lock, ShieldCheck } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
 import type { AcceptancePayload } from "../lib/api"
@@ -43,8 +43,8 @@ export function ProposalView({
   accepted: propsAccepted,
   publicLinkId: _publicLinkId,
   onAccept,
-  onSendOtp,
-  onVerifyOtp,
+  onSendOtp: _onSendOtp,
+  onVerifyOtp: _onVerifyOtp,
   isSubmitting = false,
   appTheme = "light",
 }: ProposalViewProps) {
@@ -64,66 +64,11 @@ export function ProposalView({
   const [agreedTerms, setAgreedTerms] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  // OTP state
-  const [otpSent, setOtpSent] = useState(false)
-  const [otpCode, setOtpCode] = useState("")
-  const [otpVerified, setOtpVerified] = useState(
-    propsAccepted?.otpVerified ?? false
-  )
-  const [otpLoading, setOtpLoading] = useState(false)
-  const [otpMsg, setOtpMsg] = useState<string | null>(null)
-
   const handleSignerEmailChange = (newEmail: string) => {
     setSignerEmail(newEmail)
-    setOtpSent(false)
-    setOtpVerified(false)
-    setOtpCode("")
-    setOtpMsg(null)
   }
 
   const effectiveAccepted = propsAccepted ?? null
-
-  const handleSendOtp = async () => {
-    if (!signerEmail.trim()) {
-      setOtpMsg("Please enter signer email first")
-      return
-    }
-    if (!onSendOtp) return
-    setOtpLoading(true)
-    setOtpMsg(null)
-    try {
-      const res = await onSendOtp(signerEmail.trim())
-      if (res.success) {
-        setOtpSent(true)
-        setOtpMsg("Verification code sent to your email")
-      } else {
-        setOtpMsg(res.error || "Failed to send verification code")
-      }
-    } catch {
-      setOtpMsg("Failed to send verification code")
-    } finally {
-      setOtpLoading(false)
-    }
-  }
-
-  const handleVerifyOtp = async () => {
-    if (!otpCode.trim() || !onVerifyOtp) return
-    setOtpLoading(true)
-    setOtpMsg(null)
-    try {
-      const res = await onVerifyOtp(signerEmail.trim(), otpCode.trim())
-      if (res.success) {
-        setOtpVerified(true)
-        setOtpMsg("Email verified successfully!")
-      } else {
-        setOtpMsg(res.error || "Invalid or expired code")
-      }
-    } catch {
-      setOtpMsg("Verification failed")
-    } finally {
-      setOtpLoading(false)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -137,10 +82,6 @@ export function ProposalView({
       return
     }
 
-    if (onVerifyOtp && !otpVerified) {
-      setErrorMsg("Email verification is required before accepting.")
-      return
-    }
     if (signatureMode === "typed" && !signatureText.trim()) {
       setErrorMsg("Typed signature is required.")
       return
@@ -161,7 +102,7 @@ export function ProposalView({
             : undefined,
         signatureImage:
           signatureMode === "drawn" ? signatureImage || undefined : undefined,
-        otpVerified,
+        otpVerified: true,
         agreedTerms: true,
       })
     } catch (err: unknown) {
@@ -627,7 +568,9 @@ export function ProposalView({
                           type="email"
                           placeholder="john@example.com"
                           value={signerEmail}
-                          onChange={(e) => handleSignerEmailChange(e.target.value)}
+                          onChange={(e) =>
+                            handleSignerEmailChange(e.target.value)
+                          }
                           required
                         />
                       </div>
@@ -685,65 +628,10 @@ export function ProposalView({
                       )}
                     </div>
 
-                    {/* OTP verification widget if onSendOtp provided */}
-                    {onSendOtp && (
-                      <div className="space-y-2 rounded-md border border-border bg-muted/20 p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-1 font-semibold text-muted-foreground text-xs">
-                            <ShieldCheck className="h-3.5 w-3.5" /> Email
-                            Verification (OTP)
-                          </span>
-                          {otpVerified && (
-                            <Badge className="bg-emerald-600 text-white text-xs">
-                              Verified
-                            </Badge>
-                          )}
-                        </div>
-
-                        {!otpVerified && (
-                          <div className="space-y-2">
-                            {!otpSent ? (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={handleSendOtp}
-                                disabled={otpLoading || !signerEmail.trim()}
-                                className="gap-1.5 text-xs"
-                              >
-                                <Send className="h-3 w-3" /> Send Verification
-                                Code
-                              </Button>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  aria-label="Verification code"
-                                  placeholder="6-digit code"
-                                  value={otpCode}
-                                  onChange={(e) => setOtpCode(e.target.value)}
-                                  className="max-w-[140px] text-xs"
-                                />
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onClick={handleVerifyOtp}
-                                  disabled={otpLoading || !otpCode.trim()}
-                                  className="text-xs"
-                                >
-                                  Verify Code
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {otpMsg && (
-                          <p className="text-muted-foreground text-xs">
-                            {otpMsg}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-emerald-600 text-xs dark:text-emerald-400">
+                      <ShieldCheck className="h-4 w-4" />
+                      <span>Email identity verified</span>
+                    </div>
 
                     <div className="flex items-start space-x-2 pt-2">
                       <Checkbox

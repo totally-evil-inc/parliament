@@ -1,11 +1,41 @@
 import type {
+  GetPublicInvoiceMetaResult,
   GetPublicInvoiceResult,
   InvoiceAcceptanceRecord,
 } from "../server/invoices"
 import type {
+  GetPublicProposalMetaResult,
   GetPublicProposalResult,
   ProposalAcceptanceRecord,
 } from "../server/proposals"
+
+export async function fetchPublicProposalMeta(
+  token: string
+): Promise<GetPublicProposalMetaResult> {
+  try {
+    const res = await fetch(
+      `/api/public/proposal/${encodeURIComponent(token)}/meta`
+    )
+    const data = await res.json().catch(() => ({ status: "not_found" }))
+    return data as GetPublicProposalMetaResult
+  } catch (_err) {
+    return { status: "not_found" }
+  }
+}
+
+export async function fetchPublicInvoiceMeta(
+  token: string
+): Promise<GetPublicInvoiceMetaResult> {
+  try {
+    const res = await fetch(
+      `/api/public/invoice/${encodeURIComponent(token)}/meta`
+    )
+    const data = await res.json().catch(() => ({ status: "not_found" }))
+    return data as GetPublicInvoiceMetaResult
+  } catch (_err) {
+    return { status: "not_found" }
+  }
+}
 
 export type AcceptancePayload = {
   signerName: string

@@ -12,18 +12,20 @@ import {
 import "@workspace/ui/globals.css"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
+
+import { GateChallenge } from "./components/GateChallenge"
 import { InvoiceView } from "./components/InvoiceView"
 import { ProposalView } from "./components/ProposalView"
 import { StatusScreen } from "./components/StatusScreen"
 import {
   type AcceptancePayload,
   fetchPublicInvoice,
+  fetchPublicInvoiceMeta,
   fetchPublicProposal,
+  fetchPublicProposalMeta,
   recordClientEvent,
-  sendOtp,
   submitInvoiceAcceptance,
   submitProposalAcceptance,
-  verifyOtp,
 } from "./lib/api"
 
 const queryClient = new QueryClient({
@@ -94,27 +96,36 @@ function ProposalRouteHandler({
   token: string
   queryClient: ReturnType<typeof useQueryClient>
 }) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["proposal", token],
-    queryFn: () => fetchPublicProposal(token),
+  const { data: meta, isLoading: isMetaLoading } = useQuery({
+    queryKey: ["proposal-meta", token],
+    queryFn: () => fetchPublicProposalMeta(token),
   })
 
-  // Event recording mutation
+  const {
+    data: proposalData,
+    isLoading: isDocLoading,
+    error: docError,
+    refetch,
+  } = useQuery({
+    queryKey: ["proposal", token],
+    queryFn: () => fetchPublicProposal(token),
+    enabled: meta?.status === "ready",
+  })
+
   const eventMutation = useMutation({
     mutationFn: recordClientEvent,
   })
 
   useEffect(() => {
-    if (data && data.status === "ready") {
+    if (proposalData && proposalData.status === "ready") {
       eventMutation.mutate({
         documentType: "proposal",
         token,
         eventType: "document.viewed",
       })
     }
-  }, [data, eventMutation.mutate, token])
+  }, [proposalData, eventMutation.mutate, token])
 
-  // Accept mutation
   const acceptMutation = useMutation({
     mutationFn: async (payload: AcceptancePayload) => {
       const res = await submitProposalAcceptance(token, payload)
@@ -128,30 +139,7 @@ function ProposalRouteHandler({
     },
   })
 
-  // OTP mutations
-  const sendOtpMutation = useMutation({
-    mutationFn: ({
-      publicLinkId,
-      email,
-    }: {
-      publicLinkId: string
-      email: string
-    }) => sendOtp(publicLinkId, email),
-  })
-
-  const verifyOtpMutation = useMutation({
-    mutationFn: ({
-      publicLinkId,
-      email,
-      code,
-    }: {
-      publicLinkId: string
-      email: string
-      code: string
-    }) => verifyOtp(publicLinkId, email, code),
-  })
-
-  if (isLoading) {
+  if (isMetaLoading || (meta?.status === "ready" && isDocLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -159,64 +147,59 @@ function ProposalRouteHandler({
     )
   }
 
-  if (error || !data || data.status === "not_found") {
-    if (error) {
-      return (
-        <StatusScreen
-          status="error"
-          documentType="proposal"
-          message={error instanceof Error ? error.message : undefined}
-        />
-      )
-    }
+  if (!meta || meta.status === "not_found") {
     return <StatusScreen status="not_found" documentType="proposal" />
   }
 
-  if (data.status === "unavailable") {
+  if (meta.status === "unavailable") {
     return (
       <StatusScreen
         status="unavailable"
-        reason={data.reason}
+        reason={meta.reason}
         documentType="proposal"
       />
     )
   }
 
-  const renderModel = buildProposalRenderModel(data.document)
+  // Require verification if forbidden or error
+  if (
+    !proposalData ||
+    proposalData.status === "forbidden" ||
+    (docError && docError.message.includes("401"))
+  ) {
+    return (
+      <GateChallenge
+        title={meta.title}
+        sellerName={meta.sellerName}
+        boundEmail={meta.recipientEmail}
+        documentType="proposal"
+        onVerified={() => {
+          refetch()
+        }}
+      />
+    )
+  }
+
+  if (proposalData.status === "ready") {
+    const renderModel = buildProposalRenderModel(proposalData.document)
+    return (
+      <ProposalView
+        proposal={renderModel}
+        accepted={proposalData.accepted}
+        publicLinkId={proposalData.linkId}
+        onAccept={async (payload) => {
+          await acceptMutation.mutateAsync(payload)
+        }}
+        isSubmitting={acceptMutation.isPending}
+      />
+    )
+  }
 
   return (
-    <ProposalView
-      proposal={renderModel}
-      accepted={data.accepted}
-      publicLinkId={data.linkId}
-      onAccept={async (payload) => {
-        await acceptMutation.mutateAsync(payload)
-      }}
-      onSendOtp={async (email) => {
-        try {
-          return await sendOtpMutation.mutateAsync({
-            publicLinkId: data.linkId,
-            email,
-          })
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : "Failed to send OTP"
-          return { success: false, error: msg }
-        }
-      }}
-      onVerifyOtp={async (email, code) => {
-        try {
-          return await verifyOtpMutation.mutateAsync({
-            publicLinkId: data.linkId,
-            email,
-            code,
-          })
-        } catch (err: unknown) {
-          const msg =
-            err instanceof Error ? err.message : "Failed to verify OTP"
-          return { success: false, error: msg }
-        }
-      }}
-      isSubmitting={acceptMutation.isPending}
+    <StatusScreen
+      status="error"
+      documentType="proposal"
+      message={docError instanceof Error ? docError.message : undefined}
     />
   )
 }
@@ -228,9 +211,20 @@ function InvoiceRouteHandler({
   token: string
   queryClient: ReturnType<typeof useQueryClient>
 }) {
-  const { data, isLoading, error } = useQuery({
+  const { data: meta, isLoading: isMetaLoading } = useQuery({
+    queryKey: ["invoice-meta", token],
+    queryFn: () => fetchPublicInvoiceMeta(token),
+  })
+
+  const {
+    data: invoiceData,
+    isLoading: isDocLoading,
+    error: docError,
+    refetch,
+  } = useQuery({
     queryKey: ["invoice", token],
     queryFn: () => fetchPublicInvoice(token),
+    enabled: meta?.status === "ready",
   })
 
   const eventMutation = useMutation({
@@ -238,14 +232,14 @@ function InvoiceRouteHandler({
   })
 
   useEffect(() => {
-    if (data && data.status === "ready") {
+    if (invoiceData && invoiceData.status === "ready") {
       eventMutation.mutate({
         documentType: "invoice",
         token,
         eventType: "document.viewed",
       })
     }
-  }, [data, eventMutation.mutate, token])
+  }, [invoiceData, eventMutation.mutate, token])
 
   const acceptMutation = useMutation({
     mutationFn: async (payload: AcceptancePayload) => {
@@ -260,29 +254,7 @@ function InvoiceRouteHandler({
     },
   })
 
-  const sendOtpMutation = useMutation({
-    mutationFn: ({
-      publicLinkId,
-      email,
-    }: {
-      publicLinkId: string
-      email: string
-    }) => sendOtp(publicLinkId, email),
-  })
-
-  const verifyOtpMutation = useMutation({
-    mutationFn: ({
-      publicLinkId,
-      email,
-      code,
-    }: {
-      publicLinkId: string
-      email: string
-      code: string
-    }) => verifyOtp(publicLinkId, email, code),
-  })
-
-  if (isLoading) {
+  if (isMetaLoading || (meta?.status === "ready" && isDocLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -290,72 +262,66 @@ function InvoiceRouteHandler({
     )
   }
 
-  if (error || !data || data.status === "not_found") {
-    if (error) {
-      return (
-        <StatusScreen
-          status="error"
-          documentType="invoice"
-          message={error instanceof Error ? error.message : undefined}
-        />
-      )
-    }
+  if (!meta || meta.status === "not_found") {
     return <StatusScreen status="not_found" documentType="invoice" />
   }
 
-  if (data.status === "unavailable") {
+  if (meta.status === "unavailable") {
     return (
       <StatusScreen
         status="unavailable"
-        reason={data.reason}
+        reason={meta.reason}
         documentType="invoice"
       />
     )
   }
 
-  const renderModel = buildInvoiceRenderModel(data.document)
+  if (
+    !invoiceData ||
+    invoiceData.status === "forbidden" ||
+    (docError && docError.message.includes("401"))
+  ) {
+    return (
+      <GateChallenge
+        title={meta.title}
+        sellerName={meta.sellerName}
+        boundEmail={meta.recipientEmail}
+        documentType="invoice"
+        onVerified={() => {
+          refetch()
+        }}
+      />
+    )
+  }
+
+  if (invoiceData.status === "ready") {
+    const renderModel = buildInvoiceRenderModel(invoiceData.document)
+    return (
+      <InvoiceView
+        invoice={renderModel}
+        paymentLinkUrl={invoiceData.paymentLinkUrl}
+        accepted={invoiceData.accepted}
+        publicLinkId={invoiceData.linkId}
+        onPayNow={() => {
+          eventMutation.mutate({
+            documentType: "invoice",
+            token,
+            eventType: "payment.initiated",
+          })
+        }}
+        onAccept={async (payload) => {
+          await acceptMutation.mutateAsync(payload)
+        }}
+        isSubmitting={acceptMutation.isPending}
+      />
+    )
+  }
 
   return (
-    <InvoiceView
-      invoice={renderModel}
-      paymentLinkUrl={data.paymentLinkUrl}
-      accepted={data.accepted}
-      publicLinkId={data.linkId}
-      onPayNow={() => {
-        eventMutation.mutate({
-          documentType: "invoice",
-          token,
-          eventType: "payment.initiated",
-        })
-      }}
-      onAccept={async (payload) => {
-        await acceptMutation.mutateAsync(payload)
-      }}
-      onSendOtp={async (email) => {
-        try {
-          return await sendOtpMutation.mutateAsync({
-            publicLinkId: data.linkId,
-            email,
-          })
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : "Failed to send OTP"
-          return { success: false, error: msg }
-        }
-      }}
-      onVerifyOtp={async (email, code) => {
-        try {
-          return await verifyOtpMutation.mutateAsync({
-            publicLinkId: data.linkId,
-            email,
-            code,
-          })
-        } catch (err: unknown) {
-          const msg =
-            err instanceof Error ? err.message : "Failed to verify OTP"
-          return { success: false, error: msg }
-        }
-      }}
-      isSubmitting={acceptMutation.isPending}
+    <StatusScreen
+      status="error"
+      documentType="invoice"
+      message={docError instanceof Error ? docError.message : undefined}
     />
   )
 }

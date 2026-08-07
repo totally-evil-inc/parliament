@@ -17,9 +17,21 @@ export type InvoiceAcceptanceRecord = {
   userAgent: string | null
 }
 
+export type GetPublicInvoiceMetaResult =
+  | { status: "not_found" }
+  | { status: "unavailable"; reason: "revoked" | "expired" }
+  | {
+      status: "ready"
+      token: string
+      title: string
+      sellerName: string
+      recipientEmail: string | null
+    }
+
 export type GetPublicInvoiceResult =
   | { status: "not_found" }
   | { status: "unavailable"; reason: "revoked" | "expired" }
+  | { status: "forbidden"; error: string }
   | {
       status: "ready"
       linkId: string
@@ -42,18 +54,16 @@ export type AcceptPublicInvoiceInput = {
   userAgent?: string | null
 }
 
-export async function getPublicInvoice(
-  token: string,
-  options?: { ipAddress?: string | null; userAgent?: string | null }
-): Promise<GetPublicInvoiceResult> {
+export async function getPublicInvoiceMeta(
+  token: string
+): Promise<GetPublicInvoiceMetaResult> {
   const [link] = await db
     .select({
       id: schema.invoicePublicLink.id,
-      invoiceSnapshotId: schema.invoicePublicLink.invoiceSnapshotId,
-      organizationId: schema.invoicePublicLink.organizationId,
       status: schema.invoicePublicLink.status,
       revokedAt: schema.invoicePublicLink.revokedAt,
       expiresAt: schema.invoicePublicLink.expiresAt,
+      recipientEmail: schema.invoicePublicLink.recipientEmail,
       document: schema.invoiceSnapshot.document,
     })
     .from(schema.invoicePublicLink)
@@ -74,6 +84,71 @@ export async function getPublicInvoice(
 
   if (link.expiresAt !== null && link.expiresAt.getTime() <= Date.now()) {
     return { status: "unavailable", reason: "expired" }
+  }
+
+  const document = parseInvoiceDraft(link.document)
+  return {
+    status: "ready",
+    token,
+    title: document.data.title || "Invoice",
+    sellerName: document.data.seller.name || "",
+    recipientEmail: link.recipientEmail ?? null,
+  }
+}
+
+export async function getPublicInvoice(
+  token: string,
+  options: {
+    sessionEmail: string
+    ipAddress?: string | null
+    userAgent?: string | null
+  }
+): Promise<GetPublicInvoiceResult> {
+  const [link] = await db
+    .select({
+      id: schema.invoicePublicLink.id,
+      invoiceSnapshotId: schema.invoicePublicLink.invoiceSnapshotId,
+      organizationId: schema.invoicePublicLink.organizationId,
+      status: schema.invoicePublicLink.status,
+      revokedAt: schema.invoicePublicLink.revokedAt,
+      expiresAt: schema.invoicePublicLink.expiresAt,
+      recipientEmail: schema.invoicePublicLink.recipientEmail,
+      document: schema.invoiceSnapshot.document,
+    })
+    .from(schema.invoicePublicLink)
+    .innerJoin(
+      schema.invoiceSnapshot,
+      eq(schema.invoiceSnapshot.id, schema.invoicePublicLink.invoiceSnapshotId)
+    )
+    .where(eq(schema.invoicePublicLink.token, token))
+    .limit(1)
+
+  if (!link) {
+    return { status: "not_found" }
+  }
+
+  if (link.status === "revoked" || link.revokedAt !== null) {
+    return { status: "unavailable", reason: "revoked" }
+  }
+
+  if (link.expiresAt !== null && link.expiresAt.getTime() <= Date.now()) {
+    return { status: "unavailable", reason: "expired" }
+  }
+
+  const sessionEmail = options.sessionEmail.trim().toLowerCase()
+  if (link.recipientEmail) {
+    if (link.recipientEmail.trim().toLowerCase() !== sessionEmail) {
+      return {
+        status: "forbidden",
+        error: `This document was sent to ${link.recipientEmail}. You are currently verified as ${options.sessionEmail}.`,
+      }
+    }
+  } else {
+    // Bind link recipient email on first access
+    await db
+      .update(schema.invoicePublicLink)
+      .set({ recipientEmail: sessionEmail })
+      .where(eq(schema.invoicePublicLink.id, link.id))
   }
 
   const document = parseInvoiceDraft(link.document)

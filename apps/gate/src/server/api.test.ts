@@ -216,6 +216,7 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
   describe("Proposals Server Logic", () => {
     test("getPublicProposal returns ready for valid token and records link.opened event", async () => {
       const res = await getPublicProposal(proposalValidToken, {
+        sessionEmail: "test@example.com",
         ipAddress: "127.0.0.1",
         userAgent: "TestAgent/1.0",
       })
@@ -238,18 +239,31 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
       expect(openedEvent).toBeDefined()
     })
 
+    test("getPublicProposal returns forbidden if session email does not match recipient email", async () => {
+      const res = await getPublicProposal(proposalValidToken, {
+        sessionEmail: "wrongemail@example.com",
+      })
+      expect(res.status).toBe("forbidden")
+    })
+
     test("getPublicProposal returns not_found for nonexistent token", async () => {
-      const res = await getPublicProposal("nonexistent_token_12345")
+      const res = await getPublicProposal("nonexistent_token_12345", {
+        sessionEmail: "test@example.com",
+      })
       expect(res).toEqual({ status: "not_found" })
     })
 
     test("getPublicProposal returns unavailable (revoked) for revoked token", async () => {
-      const res = await getPublicProposal(proposalRevokedToken)
+      const res = await getPublicProposal(proposalRevokedToken, {
+        sessionEmail: "test@example.com",
+      })
       expect(res).toEqual({ status: "unavailable", reason: "revoked" })
     })
 
     test("getPublicProposal returns unavailable (expired) for expired token", async () => {
-      const res = await getPublicProposal(proposalExpiredToken)
+      const res = await getPublicProposal(proposalExpiredToken, {
+        sessionEmail: "test@example.com",
+      })
       expect(res).toEqual({ status: "unavailable", reason: "expired" })
     })
 
@@ -277,7 +291,9 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
       expect(draft.status).toBe("accepted")
 
       // Verify getPublicProposal now returns accepted record
-      const res = await getPublicProposal(proposalValidToken)
+      const res = await getPublicProposal(proposalValidToken, {
+        sessionEmail: "test@example.com",
+      })
       expect(res.status).toBe("ready")
       if (res.status === "ready") {
         expect(res.accepted).not.toBeNull()
@@ -289,6 +305,7 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
   describe("Invoices Server Logic", () => {
     test("getPublicInvoice returns ready with paymentLinkUrl and records link.opened event", async () => {
       const res = await getPublicInvoice(invoiceValidToken, {
+        sessionEmail: "test@example.com",
         ipAddress: "127.0.0.1",
         userAgent: "TestAgent/1.0",
       })
@@ -311,18 +328,31 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
       expect(openedEvent).toBeDefined()
     })
 
+    test("getPublicInvoice returns forbidden if session email does not match recipient email", async () => {
+      const res = await getPublicInvoice(invoiceValidToken, {
+        sessionEmail: "wrongemail@example.com",
+      })
+      expect(res.status).toBe("forbidden")
+    })
+
     test("getPublicInvoice returns not_found for nonexistent token", async () => {
-      const res = await getPublicInvoice("nonexistent_token_12345")
+      const res = await getPublicInvoice("nonexistent_token_12345", {
+        sessionEmail: "test@example.com",
+      })
       expect(res).toEqual({ status: "not_found" })
     })
 
     test("getPublicInvoice returns unavailable (revoked) for revoked token", async () => {
-      const res = await getPublicInvoice(invoiceRevokedToken)
+      const res = await getPublicInvoice(invoiceRevokedToken, {
+        sessionEmail: "test@example.com",
+      })
       expect(res).toEqual({ status: "unavailable", reason: "revoked" })
     })
 
     test("getPublicInvoice returns unavailable (expired) for expired token", async () => {
-      const res = await getPublicInvoice(invoiceExpiredToken)
+      const res = await getPublicInvoice(invoiceExpiredToken, {
+        sessionEmail: "test@example.com",
+      })
       expect(res).toEqual({ status: "unavailable", reason: "expired" })
     })
 
@@ -350,7 +380,9 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
       expect(draft.status).toBe("accepted")
 
       // Verify getPublicInvoice now returns accepted record
-      const res = await getPublicInvoice(invoiceValidToken)
+      const res = await getPublicInvoice(invoiceValidToken, {
+        sessionEmail: "test@example.com",
+      })
       expect(res.status).toBe("ready")
       if (res.status === "ready") {
         expect(res.accepted).not.toBeNull()
@@ -473,10 +505,35 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
   })
 
   describe("Hono API Integration Routes", () => {
-    test("GET /api/public/proposal/:token returns proposal details", async () => {
+    test("GET /api/public/proposal/:token/meta returns proposal metadata", async () => {
+      const req = new Request(
+        `http://localhost/api/public/proposal/${proposalValidToken}/meta`,
+        { method: "GET" }
+      )
+      const res = await app.fetch(req)
+      expect(res.status).toBe(200)
+
+      const json = (await res.json()) as { status: string; token: string }
+      expect(json.status).toBe("ready")
+      expect(json.token).toBe(proposalValidToken)
+    })
+
+    test("GET /api/public/proposal/:token returns 401 if unauthenticated", async () => {
       const req = new Request(
         `http://localhost/api/public/proposal/${proposalValidToken}`,
         { method: "GET" }
+      )
+      const res = await app.fetch(req)
+      expect(res.status).toBe(401)
+    })
+
+    test("GET /api/public/proposal/:token returns proposal details when authenticated", async () => {
+      const req = new Request(
+        `http://localhost/api/public/proposal/${proposalValidToken}`,
+        {
+          method: "GET",
+          headers: { "x-test-session-email": "test@example.com" },
+        }
       )
       const res = await app.fetch(req)
       expect(res.status).toBe(200)
@@ -489,7 +546,10 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
     test("GET /api/public/proposal/:token returns 404 for invalid token", async () => {
       const req = new Request(
         "http://localhost/api/public/proposal/nonexistent_token_999",
-        { method: "GET" }
+        {
+          method: "GET",
+          headers: { "x-test-session-email": "test@example.com" },
+        }
       )
       const res = await app.fetch(req)
       expect(res.status).toBe(404)
@@ -500,7 +560,10 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
         `http://localhost/api/public/proposal/${proposalValidToken}/accept`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "test@example.com",
+          },
           body: JSON.stringify({
             signerName: "API Signer",
             signerEmail: "apisigner@example.com",
@@ -520,10 +583,13 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
       expect(json.accepted.signerName).toBe("API Signer")
     })
 
-    test("GET /api/public/invoice/:token returns invoice details", async () => {
+    test("GET /api/public/invoice/:token returns invoice details when authenticated", async () => {
       const req = new Request(
         `http://localhost/api/public/invoice/${invoiceValidToken}`,
-        { method: "GET" }
+        {
+          method: "GET",
+          headers: { "x-test-session-email": "test@example.com" },
+        }
       )
       const res = await app.fetch(req)
       expect(res.status).toBe(200)
@@ -541,7 +607,10 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
         `http://localhost/api/public/invoice/${invoiceValidToken}/accept`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "test@example.com",
+          },
           body: JSON.stringify({
             signerName: "API Invoice Signer",
             signerEmail: "apiinvoice@example.com",
@@ -558,39 +627,6 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
       }
       expect(json.success).toBe(true)
       expect(json.accepted.signerName).toBe("API Invoice Signer")
-    })
-
-    test("POST /api/public/otp/send and verify flow via API", async () => {
-      const publicLinkId = crypto.randomUUID()
-      const email = "apiotp@example.com"
-
-      const sendReq = new Request("http://localhost/api/public/otp/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicLinkId, email }),
-      })
-      const sendRes = await app.fetch(sendReq)
-      expect(sendRes.status).toBe(200)
-
-      const [otpRow] = await db
-        .select()
-        .from(schema.publicLinkOtp)
-        .where(eq(schema.publicLinkOtp.publicLinkId, publicLinkId))
-
-      const verifyReq = new Request("http://localhost/api/public/otp/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          publicLinkId,
-          email,
-          code: otpRow.code,
-        }),
-      })
-      const verifyRes = await app.fetch(verifyReq)
-      expect(verifyRes.status).toBe(200)
-
-      const json = (await verifyRes.json()) as { success: boolean }
-      expect(json.success).toBe(true)
     })
 
     test("POST /api/public/event records event via API", async () => {
