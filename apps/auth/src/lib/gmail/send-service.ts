@@ -78,59 +78,81 @@ export function buildRfc2822RawMessage(options: {
 /**
  * Sends an email using the Gmail REST API (gmail.send scope)
  */
-export async function sendGmailMessage(options: SendEmailOptions): Promise<GmailMessageResponse> {
+export async function sendGmailMessage(
+  options: SendEmailOptions
+): Promise<GmailMessageResponse> {
   const accessToken = await getValidGoogleAccessToken(options.userId)
   const rawMessage = buildRfc2822RawMessage(options)
 
-  const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      raw: rawMessage,
-    }),
-  })
+  const res = await fetch(
+    "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        raw: rawMessage,
+      }),
+    }
+  )
 
   if (!res.ok) {
     const errText = await res.text()
-    logger.error({ status: res.status, errText, userId: options.userId, to: options.to }, "Failed to send Gmail message")
+    logger.error(
+      { status: res.status, errText, userId: options.userId, to: options.to },
+      "Failed to send Gmail message"
+    )
     throw new Error(`Gmail API send error: ${res.statusText}`)
   }
 
   const data = (await res.json()) as GmailMessageResponse
-  logger.info({ messageId: data.id, threadId: data.threadId, to: options.to }, "Successfully sent Gmail message")
+  logger.info(
+    { messageId: data.id, threadId: data.threadId, to: options.to },
+    "Successfully sent Gmail message"
+  )
   return data
 }
 
 /**
  * Creates a native draft in the user's Gmail mailbox
  */
-export async function createGmailDraft(options: CreateDraftOptions): Promise<GmailDraftResponse> {
+export async function createGmailDraft(
+  options: CreateDraftOptions
+): Promise<GmailDraftResponse> {
   const accessToken = await getValidGoogleAccessToken(options.userId)
   const rawMessage = buildRfc2822RawMessage(options)
 
-  const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/drafts", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      message: {
-        raw: rawMessage,
+  const res = await fetch(
+    "https://gmail.googleapis.com/gmail/v1/users/me/drafts",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
-    }),
-  })
+      body: JSON.stringify({
+        message: {
+          raw: rawMessage,
+        },
+      }),
+    }
+  )
 
   if (!res.ok) {
     const errText = await res.text()
-    logger.error({ status: res.status, errText, userId: options.userId }, "Failed to create Gmail draft")
+    logger.error(
+      { status: res.status, errText, userId: options.userId },
+      "Failed to create Gmail draft"
+    )
     throw new Error(`Gmail API draft error: ${res.statusText}`)
   }
 
   const data = (await res.json()) as GmailDraftResponse
-  logger.info({ draftId: data.id, userId: options.userId }, "Successfully created Gmail draft")
+  logger.info(
+    { draftId: data.id, userId: options.userId },
+    "Successfully created Gmail draft"
+  )
   return data
 }

@@ -1,5 +1,8 @@
-import { db, eq, and, desc } from "@workspace/database"
-import { emailThreadActivity, gmailWatchSubscription } from "@workspace/database/schema"
+import { db, eq } from "@workspace/database"
+import {
+  emailThreadActivity,
+  gmailWatchSubscription,
+} from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 import { getValidGoogleAccessToken } from "./client"
 
@@ -17,29 +20,37 @@ export interface WatchResponse {
 /**
  * Registers a real-time Google Cloud Pub/Sub watch on the user's Gmail mailbox using gmail.metadata
  */
-export async function registerGmailWatch(options: RegisterWatchOptions): Promise<WatchResponse> {
+export async function registerGmailWatch(
+  options: RegisterWatchOptions
+): Promise<WatchResponse> {
   const accessToken = await getValidGoogleAccessToken(options.userId)
   const topicName =
     options.topicName ||
     process.env.GMAIL_PUBSUB_TOPIC ||
     "projects/parliament-app/topics/gmail-events"
 
-  const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/watch", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      topicName,
-      labelIds: ["INBOX"],
-      labelFilterBehavior: "INCLUDE",
-    }),
-  })
+  const res = await fetch(
+    "https://gmail.googleapis.com/gmail/v1/users/me/watch",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        topicName,
+        labelIds: ["INBOX"],
+        labelFilterBehavior: "INCLUDE",
+      }),
+    }
+  )
 
   if (!res.ok) {
     const errText = await res.text()
-    logger.error({ status: res.status, errText, userId: options.userId }, "Failed to register Gmail watch")
+    logger.error(
+      { status: res.status, errText, userId: options.userId },
+      "Failed to register Gmail watch"
+    )
     throw new Error(`Gmail watch error: ${res.statusText}`)
   }
 
@@ -98,19 +109,27 @@ export async function processPubSubNotification(pubSubBody: {
     return { processed: false, reason: "Missing message.data" }
   }
 
-  const decodedString = Buffer.from(pubSubBody.message.data, "base64").toString("utf-8")
+  const decodedString = Buffer.from(pubSubBody.message.data, "base64").toString(
+    "utf-8"
+  )
   let eventData: { emailAddress?: string; historyId?: string }
 
   try {
     eventData = JSON.parse(decodedString)
   } catch (err) {
-    logger.error({ err, decodedString }, "Failed to parse Pub/Sub notification JSON")
+    logger.error(
+      { err, decodedString },
+      "Failed to parse Pub/Sub notification JSON"
+    )
     return { processed: false, reason: "Invalid JSON payload" }
   }
 
   const { emailAddress, historyId } = eventData
   if (!emailAddress || !historyId) {
-    logger.warn({ eventData }, "Incomplete Pub/Sub push notification event data")
+    logger.warn(
+      { eventData },
+      "Incomplete Pub/Sub push notification event data"
+    )
     return { processed: false, reason: "Missing emailAddress or historyId" }
   }
 
@@ -122,7 +141,10 @@ export async function processPubSubNotification(pubSubBody: {
     .limit(1)
 
   if (subs.length === 0) {
-    logger.info({ emailAddress, historyId }, "Received Pub/Sub notification for unmapped user email")
+    logger.info(
+      { emailAddress, historyId },
+      "Received Pub/Sub notification for unmapped user email"
+    )
     return { processed: false, reason: "User email subscription not found" }
   }
 

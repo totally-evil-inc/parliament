@@ -22,9 +22,9 @@ export const auth = betterAuth({
   /**
    * Global Error Logger
    */
-  onError: (error: any, ctx: any) => {
+  onError: (error: unknown, ctx: { request?: { url?: string } }) => {
     logger.error(
-      { err: error, path: ctx.request.url },
+      { err: error, path: ctx.request?.url },
       "Better Auth error occurred"
     )
   },

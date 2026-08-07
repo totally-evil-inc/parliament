@@ -11,7 +11,7 @@ export const app = new Hono<{
     user: typeof auth.$Infer.Session.user | null
     session: typeof auth.$Infer.Session.session | null
     requestId: string
-    logContext: Record<string, any>
+    logContext: Record<string, unknown>
   }
 }>()
 const port = Number(Bun.env.AUTH_PORT ?? Bun.env.PORT ?? 4000)
@@ -23,11 +23,11 @@ app.use("*", async (c, next) => {
   const requestId = c.req.header("x-request-id") || crypto.randomUUID()
   c.set("requestId", requestId)
 
-  const logContext: Record<string, any> = {}
+  const logContext: Record<string, unknown> = {}
   c.set("logContext", logContext)
 
   const url = new URL(c.req.url)
-  const wideEvent: Record<string, any> = {
+  const wideEvent: Record<string, unknown> = {
     requestId,
     method: c.req.method,
     path: url.pathname,
@@ -58,13 +58,19 @@ app.use("*", async (c, next) => {
         activeOrganizationId: session.activeOrganizationId,
       }
     }
-  } catch (error: any) {
-    wideEvent.statusCode = error.status || 500
+  } catch (error: unknown) {
+    const err = error as {
+      status?: number
+      message?: string
+      stack?: string
+      name?: string
+    }
+    wideEvent.statusCode = err.status || 500
     wideEvent.outcome = "error"
     wideEvent.error = {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
+      message: err.message || "Unknown error",
+      stack: err.stack,
+      name: err.name,
     }
     throw error
   } finally {
@@ -75,7 +81,8 @@ app.use("*", async (c, next) => {
 
     if (
       wideEvent.outcome === "error" ||
-      (wideEvent.statusCode && wideEvent.statusCode >= 500)
+      (typeof wideEvent.statusCode === "number" &&
+        wideEvent.statusCode >= 500)
     ) {
       logger.error(wideEvent)
     } else {
@@ -112,6 +119,7 @@ app.use("*", async (c, next) => {
 
 import { agentAuthRouter } from "./routes/agent-auth"
 import { gmailRouter } from "./routes/gmail"
+import { inboundRouter } from "./routes/inbound"
 import { integrationsRouter } from "./routes/integrations"
 import { inviteRouter } from "./routes/invite"
 import { magicLinkRouter } from "./routes/magic-link"
@@ -121,6 +129,7 @@ app.route("/auth/invite", inviteRouter)
 app.route("/api/auth/integrations", integrationsRouter)
 app.route("/api/auth/agent", agentAuthRouter)
 app.route("/api/gmail", gmailRouter)
+app.route("/api/inbound", inboundRouter)
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw)

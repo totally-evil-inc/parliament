@@ -1,4 +1,4 @@
-import { db, eq, and, desc } from "@workspace/database"
+import { and, db, desc, eq } from "@workspace/database"
 import { account } from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 
@@ -13,7 +13,9 @@ interface GoogleTokenResponse {
  * Retrieves a valid Google Access Token for the specified userId.
  * Automatically refreshes token via Google OAuth token endpoint if near expiry.
  */
-export async function getValidGoogleAccessToken(userId: string): Promise<string> {
+export async function getValidGoogleAccessToken(
+  userId: string
+): Promise<string> {
   const records = await db
     .select()
     .from(account)
@@ -33,7 +35,10 @@ export async function getValidGoogleAccessToken(userId: string): Promise<string>
     targetAccount.accessTokenExpiresAt.getTime() <= now.getTime() + 60000
 
   if (isExpired && targetAccount.refreshToken) {
-    logger.info({ userId, accountId: targetAccount.id }, "Refreshing Google access token for user")
+    logger.info(
+      { userId, accountId: targetAccount.id },
+      "Refreshing Google access token for user"
+    )
 
     const refreshRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -48,8 +53,13 @@ export async function getValidGoogleAccessToken(userId: string): Promise<string>
 
     if (!refreshRes.ok) {
       const errText = await refreshRes.text()
-      logger.error({ status: refreshRes.status, errText, userId }, "Failed to refresh Google token")
-      throw new Error(`Failed to refresh Google token: ${refreshRes.statusText}`)
+      logger.error(
+        { status: refreshRes.status, errText, userId },
+        "Failed to refresh Google token"
+      )
+      throw new Error(
+        `Failed to refresh Google token: ${refreshRes.statusText}`
+      )
     }
 
     const tokenData = (await refreshRes.json()) as GoogleTokenResponse
@@ -57,7 +67,9 @@ export async function getValidGoogleAccessToken(userId: string): Promise<string>
       throw new Error("Invalid token refresh response from Google")
     }
 
-    const newExpiresAt = new Date(Date.now() + (tokenData.expires_in || 3600) * 1000)
+    const newExpiresAt = new Date(
+      Date.now() + (tokenData.expires_in || 3600) * 1000
+    )
     await db
       .update(account)
       .set({

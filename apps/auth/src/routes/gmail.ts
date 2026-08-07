@@ -1,14 +1,20 @@
-import { db, eq, desc } from "@workspace/database"
-import { emailThreadActivity, gmailWatchSubscription } from "@workspace/database/schema"
+import { db, desc, eq } from "@workspace/database"
+import {
+  emailThreadActivity,
+  gmailWatchSubscription,
+} from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 import { Hono } from "hono"
 import { createGmailDraft, sendGmailMessage } from "../lib/gmail/send-service"
-import { processPubSubNotification, registerGmailWatch } from "../lib/gmail/watch-service"
+import {
+  processPubSubNotification,
+  registerGmailWatch,
+} from "../lib/gmail/watch-service"
 
 export const gmailRouter = new Hono<{
   Variables: {
-    user: any
-    session: any
+    user: { id: string; email: string } | null
+    session: Record<string, unknown> | null
     logContext: Record<string, unknown>
   }
 }>()
@@ -27,7 +33,10 @@ gmailRouter.post("/send", async (c) => {
     const { to, subject, htmlText, plainText, replyTo } = body
 
     if (!to || !subject || !htmlText) {
-      return c.json({ error: "Missing required fields: to, subject, htmlText" }, 400)
+      return c.json(
+        { error: "Missing required fields: to, subject, htmlText" },
+        400
+      )
     }
 
     const result = await sendGmailMessage({
@@ -46,7 +55,10 @@ gmailRouter.post("/send", async (c) => {
     })
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error"
-    logger.error({ err, userId: user.id }, "Failed to process Gmail send request")
+    logger.error(
+      { err, userId: user.id },
+      "Failed to process Gmail send request"
+    )
     return c.json({ error: errorMsg }, 500)
   }
 })
@@ -65,7 +77,10 @@ gmailRouter.post("/draft", async (c) => {
     const { to, subject, htmlText, plainText } = body
 
     if (!to || !subject || !htmlText) {
-      return c.json({ error: "Missing required fields: to, subject, htmlText" }, 400)
+      return c.json(
+        { error: "Missing required fields: to, subject, htmlText" },
+        400
+      )
     }
 
     const result = await createGmailDraft({
@@ -83,7 +98,10 @@ gmailRouter.post("/draft", async (c) => {
     })
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error"
-    logger.error({ err, userId: user.id }, "Failed to process Gmail draft request")
+    logger.error(
+      { err, userId: user.id },
+      "Failed to process Gmail draft request"
+    )
     return c.json({ error: errorMsg }, 500)
   }
 })
@@ -112,7 +130,10 @@ gmailRouter.post("/watch/register", async (c) => {
     })
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error"
-    logger.error({ err, userId: user.id }, "Failed to register Gmail Pub/Sub watch")
+    logger.error(
+      { err, userId: user.id },
+      "Failed to register Gmail Pub/Sub watch"
+    )
     return c.json({ error: errorMsg }, 500)
   }
 })
