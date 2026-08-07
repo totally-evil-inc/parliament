@@ -164,7 +164,6 @@ function AcceptInvitePage() {
               variant="outline"
               onClick={async () => {
                 await authClient.signOut()
-                window.location.reload()
               }}
             >
               Sign Out

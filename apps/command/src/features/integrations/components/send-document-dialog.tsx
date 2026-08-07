@@ -96,11 +96,12 @@ export function SendDocumentDialog({
         /\n/g,
         "<br/>"
       )
+      const safeUrl = escapeHtml(url)
       const htmlBody = `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
           <p>${safeMessageHtml}</p>
-          <p><a href="${url}" style="display: inline-block; padding: 10px 18px; background-color: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">View ${documentType === "proposal" ? "Proposal" : "Invoice"}</a></p>
-          <p style="font-size: 12px; color: #666;">Or copy link: ${url}</p>
+          <p><a href="${safeUrl}" style="display: inline-block; padding: 10px 18px; background-color: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">View ${documentType === "proposal" ? "Proposal" : "Invoice"}</a></p>
+          <p style="font-size: 12px; color: #666;">Or copy link: ${safeUrl}</p>
         </div>
       `
 
