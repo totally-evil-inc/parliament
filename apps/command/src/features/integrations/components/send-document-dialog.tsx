@@ -19,7 +19,7 @@ export interface SendDocumentDialogProps {
   documentTitle: string
   defaultRecipientEmail?: string
   shareUrl?: string
-  onFinalizeAndGetShareUrl?: () => Promise<string>
+  onFinalizeAndGetShareUrl?: (recipientEmail?: string) => Promise<string>
 }
 
 export function SendDocumentDialog({
@@ -54,10 +54,10 @@ export function SendDocumentDialog({
     }
   }, [open, defaultRecipientEmail, initialShareUrl])
 
-  const ensureShareUrl = async (): Promise<string> => {
+  const ensureShareUrl = async (email?: string): Promise<string> => {
     if (activeShareUrl) return activeShareUrl
     if (onFinalizeAndGetShareUrl) {
-      const url = await onFinalizeAndGetShareUrl()
+      const url = await onFinalizeAndGetShareUrl(email)
       setActiveShareUrl(url)
       return url
     }
@@ -78,7 +78,7 @@ export function SendDocumentDialog({
 
     try {
       setStatusMessage("Finalizing document link...")
-      const url = await ensureShareUrl()
+      const url = await ensureShareUrl(trimmedEmail)
 
       const safeMessageHtml = escapeHtml(personalMessage).replace(
         /\n/g,
@@ -115,7 +115,7 @@ export function SendDocumentDialog({
     }
 
     try {
-      const url = await ensureShareUrl()
+      const url = await ensureShareUrl(trimmedEmail)
       const bodyText = `${personalMessage}\n\n${url}`
       const composeUrl = generateGoogleWebComposeUrl({
         to: trimmedEmail,

@@ -31,6 +31,7 @@ const saveInvoiceDraftSchema = z.object({
 const finalizeInvoiceDraftSchema = z.object({
   id: z.string().uuid(),
   revision: z.number().int().nonnegative(),
+  recipientEmail: z.string().trim().email().optional(),
 })
 const publicTokenSchema = z.object({ token: z.string().min(16) })
 
@@ -301,6 +302,7 @@ export const finalizeInvoiceDraft = createServerFn({ method: "POST" })
         organizationId,
         token,
         status: "active",
+        recipientEmail: data.recipientEmail ?? null,
       })
 
       const [draft] = await tx

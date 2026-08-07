@@ -31,6 +31,7 @@ const saveProposalDraftSchema = z.object({
 const finalizeProposalDraftSchema = z.object({
   id: z.string().uuid(),
   revision: z.number().int().nonnegative(),
+  recipientEmail: z.string().trim().email().optional(),
 })
 const publicTokenSchema = z.object({ token: z.string().min(16) })
 const acceptPublicProposalSchema = publicTokenSchema.extend({
@@ -330,6 +331,7 @@ export const finalizeProposalDraft = createServerFn({ method: "POST" })
         organizationId,
         token,
         status: "active",
+        recipientEmail: data.recipientEmail ?? null,
       })
 
       const [draft] = await tx
