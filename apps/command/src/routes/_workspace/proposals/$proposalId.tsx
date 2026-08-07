@@ -31,6 +31,7 @@ import { useConfirm } from "@/components/confirm-dialog-provider"
 import { useTheme } from "@/components/theme-provider"
 import { SendDocumentDialog } from "@/features/integrations/components/send-document-dialog"
 import { createId } from "@/lib/create-id"
+import { buildPublicLink } from "@/lib/public-links"
 import type {
   FinalizeProposalDraftResult,
   PersistedProposalDraft,
@@ -175,10 +176,7 @@ function ProposalEditorScreen({
       )
       setServerRevision(result.finalized.draft.revision)
       setStatus(result.finalized.draft.status)
-      const gateBaseUrl =
-        (import.meta.env.VITE_GATE_URL as string | undefined) ||
-        "http://localhost:4100"
-      setShareUrl(`${gateBaseUrl}/p/${result.finalized.token}`)
+      setShareUrl(buildPublicLink("proposal", result.finalized.token))
       setMessage("Sent")
       await queryClient.invalidateQueries({ queryKey: ["proposals"] })
     },
@@ -209,14 +207,13 @@ function ProposalEditorScreen({
     React.useCallback(async (): Promise<string> => {
       const result = await sendDraft.mutateAsync()
       if (result.status === "sent" && result.finalized) {
-        const gateBaseUrl =
-          (import.meta.env.VITE_GATE_URL as string | undefined) ||
-          "http://localhost:4100"
-        const url = `${gateBaseUrl}/p/${result.finalized.token}`
+        const url = buildPublicLink("proposal", result.finalized.token)
         setShareUrl(url)
         return url
       }
-      return window.location.href
+      throw new Error(
+        "Unable to create proposal link. Finalize the document before sending it."
+      )
     }, [sendDraft])
 
   return (

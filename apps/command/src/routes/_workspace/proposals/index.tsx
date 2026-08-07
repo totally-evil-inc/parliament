@@ -38,6 +38,7 @@ import { proposalDraftsQuery } from "@/api/proposals"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { PageHeader } from "@/components/page-header"
 import { useProposalsFilter } from "@/hooks/use-proposals-filter"
+import { buildPublicLink } from "@/lib/public-links"
 import type {
   PersistedProposalDraft,
   ProposalDraftListItem,
@@ -528,7 +529,10 @@ function ProposalsRoute() {
                                 <DropdownMenuItem
                                   render={
                                     <a
-                                      href={`${(import.meta.env.VITE_GATE_URL as string | undefined) || "http://localhost:4100"}/p/${proposal.publicToken}`}
+                                      href={buildPublicLink(
+                                        "proposal",
+                                        proposal.publicToken!
+                                      )}
                                       target="_blank"
                                       rel="noreferrer"
                                       className="cursor-pointer text-xs"
@@ -542,10 +546,10 @@ function ProposalsRoute() {
                                 <DropdownMenuItem
                                   className="cursor-pointer text-xs"
                                   onClick={() => {
-                                    const gateBaseUrl =
-                                      (import.meta.env.VITE_GATE_URL as string | undefined) ||
-                                      "http://localhost:4100"
-                                    const shareUrl = `${gateBaseUrl}/p/${proposal.publicToken}`
+                                    const shareUrl = buildPublicLink(
+                                      "proposal",
+                                      proposal.publicToken!
+                                    )
                                     navigator.clipboard.writeText(shareUrl)
                                   }}
                                 >

@@ -31,6 +31,7 @@ import { useConfirm } from "@/components/confirm-dialog-provider"
 import { useTheme } from "@/components/theme-provider"
 import { SendDocumentDialog } from "@/features/integrations/components/send-document-dialog"
 import { createId } from "@/lib/create-id"
+import { buildPublicLink } from "@/lib/public-links"
 import type {
   FinalizeInvoiceDraftResult,
   PersistedInvoiceDraft,
@@ -173,10 +174,7 @@ function InvoiceEditorScreen({
       store.commands.replace(parseInvoiceDraft(result.finalized.draft.document))
       setServerRevision(result.finalized.draft.revision)
       setStatus(result.finalized.draft.status)
-      const gateBaseUrl =
-        (import.meta.env.VITE_GATE_URL as string | undefined) ||
-        "http://localhost:4100"
-      setShareUrl(`${gateBaseUrl}/i/${result.finalized.token}`)
+      setShareUrl(buildPublicLink("invoice", result.finalized.token))
       setMessage("Sent")
       await queryClient.invalidateQueries({ queryKey: ["invoices"] })
     },
@@ -203,18 +201,18 @@ function InvoiceEditorScreen({
   const defaultClientEmail = snapshot.data?.customer?.email || ""
   const invoiceTitle = snapshot.data?.title || "Untitled Invoice"
 
-  const handleFinalizeAndGetShareUrl = React.useCallback(async (): Promise<string> => {
-    const result = await sendDraft.mutateAsync()
-    if (result.status === "sent" && result.finalized) {
-      const gateBaseUrl =
-        (import.meta.env.VITE_GATE_URL as string | undefined) ||
-        "http://localhost:4100"
-      const url = `${gateBaseUrl}/i/${result.finalized.token}`
-      setShareUrl(url)
-      return url
-    }
-    return window.location.href
-  }, [sendDraft])
+  const handleFinalizeAndGetShareUrl =
+    React.useCallback(async (): Promise<string> => {
+      const result = await sendDraft.mutateAsync()
+      if (result.status === "sent" && result.finalized) {
+        const url = buildPublicLink("invoice", result.finalized.token)
+        setShareUrl(url)
+        return url
+      }
+      throw new Error(
+        "Unable to create invoice link. Finalize the document before sending it."
+      )
+    }, [sendDraft])
 
   return (
     <div className="flex h-[calc(100svh-3rem)] min-h-0 w-full flex-col overflow-hidden bg-muted/30">

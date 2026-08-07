@@ -61,7 +61,9 @@ export function SendDocumentDialog({
       setActiveShareUrl(url)
       return url
     }
-    return window.location.href
+    throw new Error(
+      `Unable to create ${documentType} link. Finalize the document before sending it.`
+    )
   }
 
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -151,7 +153,7 @@ export function SendDocumentDialog({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="recipient-email"
-              className="font-medium text-xs text-foreground"
+              className="font-medium text-foreground text-xs"
             >
               Recipient Email Address
             </label>
@@ -169,7 +171,7 @@ export function SendDocumentDialog({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="email-subject"
-              className="font-medium text-xs text-foreground"
+              className="font-medium text-foreground text-xs"
             >
               Subject Line
             </label>
@@ -186,7 +188,7 @@ export function SendDocumentDialog({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="personal-message"
-              className="font-medium text-xs text-foreground"
+              className="font-medium text-foreground text-xs"
             >
               Message Note
             </label>
@@ -210,7 +212,7 @@ export function SendDocumentDialog({
               }`}
             >
               {statusMessage.startsWith("Successfully") && (
-                <IconCircleCheck className="size-3.5 mr-1 inline shrink-0" />
+                <IconCircleCheck className="mr-1 inline size-3.5 shrink-0" />
               )}
               {statusMessage}
             </div>
@@ -224,7 +226,7 @@ export function SendDocumentDialog({
               className="text-xs"
               onClick={handleOpenInGmailWeb}
             >
-              <IconGear className="size-3 mr-1" />
+              <IconGear className="mr-1 size-3" />
               Open in Gmail Web
             </Button>
 
@@ -234,7 +236,7 @@ export function SendDocumentDialog({
               className="text-xs"
               disabled={sendGmailMutation.isPending}
             >
-              <IconArrowBoldRight className="size-3 mr-1" />
+              <IconArrowBoldRight className="mr-1 size-3" />
               {sendGmailMutation.isPending
                 ? "Sending..."
                 : "Send via Gmail API"}
@@ -254,4 +256,3 @@ function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;")
 }
-
