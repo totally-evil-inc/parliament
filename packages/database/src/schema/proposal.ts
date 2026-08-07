@@ -97,6 +97,8 @@ export const proposalAcceptance = pgTable(
     signerName: text("signer_name").notNull(),
     signerEmail: text("signer_email").notNull(),
     signatureText: text("signature_text"),
+    signatureImage: text("signature_image"),
+    otpVerified: boolean("otp_verified").notNull().default(false),
     agreedTerms: boolean("agreed_terms").notNull(),
     acceptedAt: timestamp("accepted_at").defaultNow().notNull(),
     ipAddress: text("ip_address"),

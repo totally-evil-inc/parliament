@@ -31,7 +31,9 @@ export function SendDocumentDialog({
   shareUrl: initialShareUrl,
   onFinalizeAndGetShareUrl,
 }: SendDocumentDialogProps) {
-  const [recipientEmail, setRecipientEmail] = React.useState(defaultRecipientEmail)
+  const [recipientEmail, setRecipientEmail] = React.useState(
+    defaultRecipientEmail
+  )
   const [subject, setSubject] = React.useState(
     `${documentType === "proposal" ? "Proposal" : "Invoice"}: ${documentTitle}`
   )
@@ -39,7 +41,9 @@ export function SendDocumentDialog({
     `Hi,\n\nPlease review the attached ${documentType} "${documentTitle}". You can view and sign it here:`
   )
   const [statusMessage, setStatusMessage] = React.useState<string | null>(null)
-  const [activeShareUrl, setActiveShareUrl] = React.useState<string | null>(initialShareUrl || null)
+  const [activeShareUrl, setActiveShareUrl] = React.useState<string | null>(
+    initialShareUrl || null
+  )
 
   const sendGmailMutation = useSendGmailEmail()
 
@@ -116,7 +120,8 @@ export function SendDocumentDialog({
       window.open(composeUrl, "_blank", "noopener,noreferrer")
       setStatusMessage("Opened pre-filled compose window in Gmail Web.")
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to generate compose URL"
+      const msg =
+        err instanceof Error ? err.message : "Failed to generate compose URL"
       setStatusMessage(`Error: ${msg}`)
     }
   }
@@ -126,16 +131,24 @@ export function SendDocumentDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-base">
-            Send {documentType === "proposal" ? "Proposal" : "Invoice"} via Gmail
+            Send {documentType === "proposal" ? "Proposal" : "Invoice"} via
+            Gmail
           </DialogTitle>
           <DialogDescription>
-            Confirm or change the recipient email address and customize your message before sending.
+            Confirm or change the recipient email address and customize your
+            message before sending.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSendViaGmail} className="flex flex-col gap-3 py-2">
+        <form
+          onSubmit={handleSendViaGmail}
+          className="flex flex-col gap-3 py-2"
+        >
           <div className="flex flex-col gap-1">
-            <label htmlFor="recipient-email" className="font-medium text-xs text-foreground">
+            <label
+              htmlFor="recipient-email"
+              className="font-medium text-xs text-foreground"
+            >
               Recipient Email Address
             </label>
             <input
@@ -150,7 +163,10 @@ export function SendDocumentDialog({
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="email-subject" className="font-medium text-xs text-foreground">
+            <label
+              htmlFor="email-subject"
+              className="font-medium text-xs text-foreground"
+            >
               Subject Line
             </label>
             <input
@@ -164,7 +180,10 @@ export function SendDocumentDialog({
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="personal-message" className="font-medium text-xs text-foreground">
+            <label
+              htmlFor="personal-message"
+              className="font-medium text-xs text-foreground"
+            >
               Message Note
             </label>
             <textarea
@@ -212,7 +231,9 @@ export function SendDocumentDialog({
               disabled={sendGmailMutation.isPending}
             >
               <IconArrowBoldRight className="size-3 mr-1" />
-              {sendGmailMutation.isPending ? "Sending..." : "Send Direct via Gmail"}
+              {sendGmailMutation.isPending
+                ? "Sending..."
+                : "Send Direct via Gmail"}
             </Button>
           </DialogFooter>
         </form>

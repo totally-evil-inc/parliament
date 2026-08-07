@@ -28,8 +28,8 @@ import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import * as React from "react"
 import { invoiceDraftQuery } from "@/api/invoices"
 import { useConfirm } from "@/components/confirm-dialog-provider"
-import { SendDocumentDialog } from "@/features/integrations/components/send-document-dialog"
 import { useTheme } from "@/components/theme-provider"
+import { SendDocumentDialog } from "@/features/integrations/components/send-document-dialog"
 import { createId } from "@/lib/create-id"
 import type {
   FinalizeInvoiceDraftResult,
@@ -198,7 +198,7 @@ function InvoiceEditorScreen({
   const [sendDialogOpen, setSendDialogOpen] = React.useState(false)
   const snapshot = store.getSnapshot()
   const defaultClientEmail = (snapshot as any).parties?.client?.email || ""
-  const invoiceTitle = snapshot.title || "Untitled Invoice"
+  const invoiceTitle = snapshot.data.title || "Untitled Invoice"
 
   const handleFinalizeAndGetShareUrl = async (): Promise<string> => {
     const result = await sendDraft.mutateAsync()

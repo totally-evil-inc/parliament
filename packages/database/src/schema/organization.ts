@@ -11,6 +11,7 @@ export const organization = pgTable("organization", {
   logo: text("logo"),
   createdAt: timestamp("created_at").notNull(),
   metadata: text("metadata"),
+  paymentLinkUrl: text("payment_link_url"),
 })
 
 export const organizationRelations = relations(organization, ({ many }) => ({

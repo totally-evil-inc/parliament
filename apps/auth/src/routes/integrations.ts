@@ -90,12 +90,31 @@ integrationsRouter.get("/internal/token", async (c) => {
       whereConditions.push(eq(account.userId, userId))
     }
 
-    const records = await db
+    let records = await db
       .select()
       .from(account)
       .where(and(...whereConditions))
       .orderBy(desc(account.updatedAt))
       .limit(1)
+
+    // Fallback check for legacy 'google' provider account if specific app account isn't found
+    if (
+      records.length === 0 &&
+      (provider === "gmail" ||
+        provider === "google-calendar" ||
+        provider === "google-drive")
+    ) {
+      const fallbackConditions = [eq(account.providerId, "google")]
+      if (userId) {
+        fallbackConditions.push(eq(account.userId, userId))
+      }
+      records = await db
+        .select()
+        .from(account)
+        .where(and(...fallbackConditions))
+        .orderBy(desc(account.updatedAt))
+        .limit(1)
+    }
 
     if (records.length === 0) {
       return c.json(
@@ -112,11 +131,14 @@ integrationsRouter.get("/internal/token", async (c) => {
       !targetAccount.accessTokenExpiresAt ||
       targetAccount.accessTokenExpiresAt.getTime() <= now.getTime() + 60000
 
-    if (
-      isExpired &&
-      targetAccount.refreshToken &&
-      targetAccount.providerId === "google"
-    ) {
+    const isGoogleProvider = [
+      "google",
+      "gmail",
+      "google-calendar",
+      "google-drive",
+    ].includes(targetAccount.providerId)
+
+    if (isExpired && targetAccount.refreshToken && isGoogleProvider) {
       logger.info(
         { provider, accountId: targetAccount.id },
         "Google access token expired/nearing expiry. Refreshing..."

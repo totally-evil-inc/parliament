@@ -33,14 +33,14 @@ export const integrationCategories = [
 
 export const DEFAULT_INTEGRATIONS: Array<Integration> = [
   {
-    id: "google",
-    providerId: "google",
-    title: "Google Workspace & Gmail Operations",
+    id: "gmail",
+    providerId: "gmail",
+    title: "Gmail & Email Operations",
     description:
-      "Audit-free Gmail dispatches, response analytics, Calendar, and Drive drops.",
+      "Audit-free Gmail dispatches, response velocity analytics, and thread watching.",
     longDescription:
-      "Connect your Google Workspace account to enable direct Gmail dispatches (gmail.send), real-time client response velocity heatmaps (gmail.metadata), Google Drive invoice drops (drive.file), and read-only Google Calendar discovery call meeting detection.",
-    url: "https://workspace.google.com",
+      "Connect your Gmail account to enable direct dispatches (gmail.send), real-time client response velocity heatmaps (gmail.metadata), and automated draft creation.",
+    url: "https://mail.google.com",
     category: "productivity",
     status: "available",
     scopes: [
@@ -48,8 +48,6 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
       "https://www.googleapis.com/auth/userinfo.profile",
       "https://www.googleapis.com/auth/gmail.send",
       "https://www.googleapis.com/auth/gmail.metadata",
-      "https://www.googleapis.com/auth/calendar.events.readonly",
-      "https://www.googleapis.com/auth/drive.file",
     ],
     features: [
       {
@@ -62,24 +60,62 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
         description:
           "Track client response velocities and inactivity warnings using audit-free metadata.",
       },
-      {
-        label: "Google Drive PDF Drop Folder",
-        description:
-          "Ingest client invoice PDFs placed into your Command Drops Drive folder.",
-      },
-      {
-        label: "Discovery Meeting Lead Detection",
-        description:
-          "Flag client discovery calls scheduled on Google Calendar to automatically create candidate leads.",
-      },
     ],
     actions: [
       "gmail_send_email",
       "gmail_create_draft",
       "gmail_watch_threads",
       "gmail_get_activity",
-      "gcal_list_events",
     ],
+  },
+  {
+    id: "google-calendar",
+    providerId: "google-calendar",
+    title: "Google Calendar",
+    description:
+      "Read-only Google Calendar discovery call and meeting detection.",
+    longDescription:
+      "Connect Google Calendar to flag client discovery calls scheduled on your calendar to automatically create candidate leads.",
+    url: "https://calendar.google.com",
+    category: "productivity",
+    status: "available",
+    scopes: [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/calendar.events.readonly",
+    ],
+    features: [
+      {
+        label: "Discovery Meeting Lead Detection",
+        description:
+          "Flag client discovery calls scheduled on Google Calendar to automatically create candidate leads.",
+      },
+    ],
+    actions: ["gcal_list_events"],
+  },
+  {
+    id: "google-drive",
+    providerId: "google-drive",
+    title: "Google Drive",
+    description: "Google Drive document ingestion and PDF drops.",
+    longDescription:
+      "Connect Google Drive to ingest client invoice PDFs placed into your Command Drops Drive folder.",
+    url: "https://drive.google.com",
+    category: "productivity",
+    status: "available",
+    scopes: [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/drive.file",
+    ],
+    features: [
+      {
+        label: "Google Drive PDF Drop Folder",
+        description:
+          "Ingest client invoice PDFs placed into your Command Drops Drive folder.",
+      },
+    ],
+    actions: ["drive_list_files", "drive_upload_file"],
   },
   {
     id: "github",

@@ -1,0 +1,34 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["**/*.ts", "**/*.tsx", "vite.config.ts"],
+  "compilerOptions": {
+    "target": "ES2022",
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["bun", "vite/client"],
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    "skipLibCheck": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "allowJs": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@workspace/ui/*": ["../../packages/ui/src/*"],
+      "@workspace/database": ["../../packages/database/src/index.ts"],
+      "@workspace/database/*": ["../../packages/database/src/*"],
+      "@workspace/document": ["../../packages/document/src/index.ts"],
+      "@workspace/document/*": ["../../packages/document/src/*"],
+      "@workspace/logger": ["../../packages/logger/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}

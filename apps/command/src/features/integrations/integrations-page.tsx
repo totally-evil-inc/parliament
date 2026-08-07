@@ -255,7 +255,7 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
         )}
 
         {/* Gmail Activity Heatmap */}
-        {integration.id === "google" && connected && <GmailActivityHeatmap />}
+        {integration.id === "gmail" && connected && <GmailActivityHeatmap />}
       </ScrollArea>
 
       <SheetFooter className="border-t">

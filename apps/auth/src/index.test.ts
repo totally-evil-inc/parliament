@@ -1,7 +1,12 @@
-import { beforeAll, describe, expect, mock, test } from "bun:test"
+import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test"
+import { db } from "@workspace/database"
 
-// Mock database module
-mock.module("@workspace/database", () => {
+const originalSelect = db.select
+const originalInsert = db.insert
+const originalDelete = db.delete
+const originalUpdate = db.update
+
+beforeAll(() => {
   const queryBuilder = {
     from: () => queryBuilder,
     where: () => queryBuilder,
@@ -51,32 +56,20 @@ mock.module("@workspace/database", () => {
     }),
   }
 
-  return {
-    db: mockDb,
-    schema: {
-      user: { id: "user" },
-      session: { id: "session" },
-      verification: {
-        id: "verification",
-        identifier: "identifier",
-        value: "value",
-        expiresAt: "expiresAt",
-      },
-      invitation: {
-        id: "invitation",
-        organizationId: "organizationId",
-        email: "email",
-        role: "role",
-        status: "status",
-        expiresAt: "expiresAt",
-      },
-      member: { id: "member" },
-      organization: { id: "organization", name: "orgname" },
-    },
-    eq: () => ({}),
-    and: () => ({}),
-  }
+  db.select = mockDb.select as any
+  db.insert = mockDb.insert as any
+  db.delete = mockDb.delete as any
+  db.update = mockDb.update as any
 })
+
+afterAll(() => {
+  db.select = originalSelect
+  db.insert = originalInsert
+  db.delete = originalDelete
+  db.update = originalUpdate
+})
+
+// Mock Better Auth lib
 
 // Mock Better Auth lib
 mock.module("./lib/auth", () => {

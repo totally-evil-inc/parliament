@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm"
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -83,6 +84,32 @@ export const invoicePublicLink = pgTable(
   ]
 )
 
+export const invoiceAcceptance = pgTable(
+  "invoice_acceptance",
+  {
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
+    invoiceSnapshotId: uuid("invoice_snapshot_id")
+      .notNull()
+      .references(() => invoiceSnapshot.id),
+    publicLinkId: uuid("public_link_id")
+      .notNull()
+      .references(() => invoicePublicLink.id),
+    signerName: text("signer_name").notNull(),
+    signerEmail: text("signer_email").notNull(),
+    signatureText: text("signature_text"),
+    signatureImage: text("signature_image"),
+    otpVerified: boolean("otp_verified").notNull().default(false),
+    agreedTerms: boolean("agreed_terms").notNull(),
+    acceptedAt: timestamp("accepted_at").defaultNow().notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+  },
+  (table) => [
+    index("invoice_acceptance_snapshot_id_idx").on(table.invoiceSnapshotId),
+    index("invoice_acceptance_public_link_id_idx").on(table.publicLinkId),
+  ]
+)
+
 export const invoiceEvent = pgTable(
   "invoice_event",
   {
@@ -125,6 +152,7 @@ export const invoiceSnapshotRelations = relations(
       references: [invoiceDraft.id],
     }),
     publicLinks: many(invoicePublicLink),
+    acceptances: many(invoiceAcceptance),
     events: many(invoiceEvent),
   })
 )
@@ -136,6 +164,7 @@ export const invoicePublicLinkRelations = relations(
       fields: [invoicePublicLink.invoiceSnapshotId],
       references: [invoiceSnapshot.id],
     }),
+    acceptances: many(invoiceAcceptance),
     events: many(invoiceEvent),
   })
 )

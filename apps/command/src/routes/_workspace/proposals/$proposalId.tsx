@@ -28,8 +28,8 @@ import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import * as React from "react"
 import { proposalDraftQuery } from "@/api/proposals"
 import { useConfirm } from "@/components/confirm-dialog-provider"
-import { SendDocumentDialog } from "@/features/integrations/components/send-document-dialog"
 import { useTheme } from "@/components/theme-provider"
+import { SendDocumentDialog } from "@/features/integrations/components/send-document-dialog"
 import { createId } from "@/lib/create-id"
 import type {
   FinalizeProposalDraftResult,
@@ -202,7 +202,7 @@ function ProposalEditorScreen({
   const [sendDialogOpen, setSendDialogOpen] = React.useState(false)
   const snapshot = store.getSnapshot()
   const defaultClientEmail = (snapshot as any).parties?.client?.email || ""
-  const proposalTitle = snapshot.title || "Untitled Proposal"
+  const proposalTitle = snapshot.data.title || "Untitled Proposal"
 
   const handleFinalizeAndGetShareUrl = async (): Promise<string> => {
     const result = await sendDraft.mutateAsync()
