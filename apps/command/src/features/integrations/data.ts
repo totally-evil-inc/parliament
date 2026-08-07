@@ -1,4 +1,9 @@
-export type IntegrationStatus = "connected" | "available" | "pending"
+export type IntegrationStatus =
+  | "connected"
+  | "available"
+  | "pending"
+  | "coming_soon"
+
 
 export type IntegrationCategory =
   | "productivity"
@@ -29,6 +34,7 @@ export const integrationCategories = [
   { value: "all", label: "All" },
   { value: "connected", label: "Connected" },
   { value: "available", label: "Available" },
+  { value: "coming_soon", label: "Coming Soon" },
 ] as const
 
 export const DEFAULT_INTEGRATIONS: Array<Integration> = [
@@ -127,7 +133,7 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
       "Allow the AI Agent to interact with your GitHub repositories. It can open pull requests, create or comment on issues, browse repository contents, and read CI/CD run statuses.",
     url: "https://github.com",
     category: "developer",
-    status: "available",
+    status: "coming_soon",
     scopes: ["repo", "read:org", "user"],
     features: [
       {
@@ -168,7 +174,7 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
       "Connect Linear to allow the AI Agent to create and manage issues, update issue statuses, and query your team's project cycles and backlogs. Ideal for keeping engineering workflows in sync with agent-driven tasks.",
     url: "https://linear.app",
     category: "issue-tracking",
-    status: "available",
+    status: "coming_soon",
     scopes: ["read", "write"],
     features: [
       {
@@ -207,7 +213,7 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
       "Grant the AI Agent read and write access to your Notion workspace. It can search pages, query structured databases, create new pages, and append content blocks to existing documents.",
     url: "https://notion.so",
     category: "knowledge",
-    status: "available",
+    status: "coming_soon",
     features: [
       {
         label: "Page Search",
