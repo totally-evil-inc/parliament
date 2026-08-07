@@ -175,9 +175,10 @@ function ProposalEditorScreen({
       )
       setServerRevision(result.finalized.draft.revision)
       setStatus(result.finalized.draft.status)
-      setShareUrl(
-        `${window.location.origin}/proposal/${result.finalized.token}`
-      )
+      const gateBaseUrl =
+        (import.meta.env.VITE_GATE_URL as string | undefined) ||
+        "http://localhost:4100"
+      setShareUrl(`${gateBaseUrl}/p/${result.finalized.token}`)
       setMessage("Sent")
       await queryClient.invalidateQueries({ queryKey: ["proposals"] })
     },
