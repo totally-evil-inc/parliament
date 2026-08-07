@@ -212,7 +212,7 @@ describe("Milestone 1 schema extensions", () => {
       }
     })
 
-    expect(invoiceFks).toHaveLength(2)
+    expect(invoiceFks).toHaveLength(3)
     expect(invoiceFks).toContainEqual({
       localCol: "invoice_snapshot_id",
       foreignTable: "invoice_snapshot",
@@ -221,6 +221,11 @@ describe("Milestone 1 schema extensions", () => {
     expect(invoiceFks).toContainEqual({
       localCol: "public_link_id",
       foreignTable: "invoice_public_link",
+      foreignCol: "id",
+    })
+    expect(invoiceFks).toContainEqual({
+      localCol: "organization_id",
+      foreignTable: "organization",
       foreignCol: "id",
     })
   })
