@@ -312,10 +312,7 @@ function filterIntegrations(
     return integrations
   }
 
-  return integrations.filter(
-    (integration) =>
-      integration.status === filter || integration.category === filter
-  )
+  return integrations.filter((integration) => integration.status === filter)
 }
 
 function getIntegrationCounts(

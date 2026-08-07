@@ -41,6 +41,7 @@ export function MagicLinkEmail({ url, email }: MagicLinkEmailProps) {
             If you did not request this link, you can safely ignore this email.
             This link is valid for 15 minutes and can only be used once.
           </Text>
+          <Section style={divider} />
           <Text style={footer}>
             Parliament Inc. • Secure Passwordless Auth • Need help?{" "}
             <Link style={footerLink} href="mailto:support@parliament.dev">
