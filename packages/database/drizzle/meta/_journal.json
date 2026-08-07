@@ -43,6 +43,13 @@
       "when": 1786073164826,
       "tag": "0005_rich_groot",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786118764209,
+      "tag": "0006_demonic_radioactive_man",
+      "breakpoints": true
     }
   ]
 }

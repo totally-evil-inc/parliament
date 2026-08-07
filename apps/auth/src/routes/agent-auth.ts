@@ -44,9 +44,25 @@ agentAuthRouter.post("/stage", async (c) => {
     c.req.header("X-Harness-Secret") || c.req.header("Authorization")
   const expectedSecret =
     process.env.HARNESS_AUTH_SECRET || process.env.BETTER_AUTH_SECRET
-  if (
-    !user &&
-    expectedSecret &&
+  const isProduction = process.env.NODE_ENV === "production"
+
+  if (user) {
+    // authenticated session: allowed
+  } else if (!expectedSecret) {
+    if (isProduction) {
+      return c.json(
+        {
+          error:
+            "Unauthorized: Harness authentication secret is not configured",
+        },
+        401
+      )
+    }
+    logger.warn(
+      { path: c.req.path },
+      "Allowing unauthenticated stage request in non-production mode"
+    )
+  } else if (
     authSecret !== expectedSecret &&
     authSecret !== `Bearer ${expectedSecret}`
   ) {

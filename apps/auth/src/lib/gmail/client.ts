@@ -5,6 +5,7 @@ import { logger } from "@workspace/logger"
 interface GoogleTokenResponse {
   access_token?: string
   expires_in?: number
+  refresh_token?: string
   error?: string
   error_description?: string
 }
@@ -80,6 +81,8 @@ export async function getValidGoogleAccessToken(
     const newExpiresAt = new Date(
       Date.now() + (tokenData.expires_in || 3600) * 1000
     )
+    const persistedRefreshToken =
+      tokenData.refresh_token ?? targetAccount.refreshToken
     try {
       await db.transaction(async (tx) => {
         await tx
@@ -87,6 +90,7 @@ export async function getValidGoogleAccessToken(
           .set({
             accessToken: tokenData.access_token,
             accessTokenExpiresAt: newExpiresAt,
+            refreshToken: persistedRefreshToken,
             updatedAt: new Date(),
           })
           .where(eq(account.id, targetAccount.id))
@@ -97,6 +101,7 @@ export async function getValidGoogleAccessToken(
         .set({
           accessToken: tokenData.access_token,
           accessTokenExpiresAt: newExpiresAt,
+          refreshToken: persistedRefreshToken,
           updatedAt: new Date(),
         })
         .where(eq(account.id, targetAccount.id))

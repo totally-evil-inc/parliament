@@ -16,6 +16,7 @@ const db = drizzle({
     url:
       process.env.DATABASE_URL ||
       "postgres://postgres:postgres@localhost:5432/parliament",
+    max: 10,
   },
   schema,
   logger: new DrizzlePinoLogger(),
