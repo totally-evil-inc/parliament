@@ -15,7 +15,9 @@ describe("Gmail schema definitions", () => {
   })
 
   it("has correct table names", () => {
-    expect(getTableName(gmailWatchSubscription)).toBe("gmail_watch_subscription")
+    expect(getTableName(gmailWatchSubscription)).toBe(
+      "gmail_watch_subscription"
+    )
     expect(getTableName(emailThreadActivity)).toBe("email_thread_activity")
     expect(getTableName(inboundWebhookLog)).toBe("inbound_webhook_log")
   })

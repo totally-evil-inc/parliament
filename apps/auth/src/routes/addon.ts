@@ -3,8 +3,8 @@ import { Hono } from "hono"
 
 export const addonRouter = new Hono<{
   Variables: {
-    user: any
-    session: any
+    user: { id: string; email: string } | null
+    session: { id: string } | null
     logContext: Record<string, unknown>
   }
 }>()

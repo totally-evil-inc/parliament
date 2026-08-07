@@ -154,7 +154,10 @@ inboundRouter.post("/drive-drop", async (c) => {
       )
     }
 
-    const driveData: any = await driveRes.json()
+    interface GoogleDriveFilesResponse {
+      files?: Array<{ id: string; name: string; createdTime?: string; size?: string }>
+    }
+    const driveData = (await driveRes.json()) as GoogleDriveFilesResponse
     const files = driveData.files || []
 
     const logRecord = await db

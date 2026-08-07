@@ -13,7 +13,9 @@ class DrizzlePinoLogger implements DrizzleLogger {
 
 const db = drizzle({
   connection: {
-    url: process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/parliament",
+    url:
+      process.env.DATABASE_URL ||
+      "postgres://postgres:postgres@localhost:5432/parliament",
   },
   schema,
   logger: new DrizzlePinoLogger(),

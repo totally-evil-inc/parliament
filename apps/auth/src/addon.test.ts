@@ -8,8 +8,13 @@ describe("Google Workspace Add-on API", () => {
     })
 
     expect(res.status).toBe(200)
-    const manifest: any = await res.json()
-    expect(manifest.oauthScopes).toContain("https://www.googleapis.com/auth/gmail.addons.execute")
+    const manifest = (await res.json()) as {
+      oauthScopes: string[]
+      gmail: { name: string }
+    }
+    expect(manifest.oauthScopes).toContain(
+      "https://www.googleapis.com/auth/gmail.addons.execute"
+    )
     expect(manifest.gmail.name).toBe("Parliament Operational Sidebar")
   })
 
@@ -24,7 +29,11 @@ describe("Google Workspace Add-on API", () => {
     })
 
     expect(res.status).toBe(200)
-    const json: any = await res.json()
+    const json = (await res.json()) as {
+      success: boolean
+      clientEmail: string
+      activeProposals: unknown[]
+    }
     expect(json.success).toBe(true)
     expect(json.clientEmail).toBe("client@acme.corp")
     expect(json.activeProposals.length).toBeGreaterThan(0)
