@@ -104,7 +104,16 @@ export async function sendGmailMessage(
       { status: res.status, errText, userId: options.userId, to: options.to },
       "Failed to send Gmail message"
     )
-    throw new Error(`Gmail API send error: ${res.statusText}`)
+
+    let parsedMsg = res.statusText
+    try {
+      const errJson = JSON.parse(errText)
+      if (errJson.error?.message) {
+        parsedMsg = errJson.error.message
+      }
+    } catch (_) {}
+
+    throw new Error(`Gmail API error: ${parsedMsg}`)
   }
 
   const data = (await res.json()) as GmailMessageResponse
