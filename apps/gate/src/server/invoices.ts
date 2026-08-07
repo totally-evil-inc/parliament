@@ -68,7 +68,7 @@ export async function getPublicInvoice(
     return { status: "not_found" }
   }
 
-  if (link.status !== "active" || link.revokedAt !== null) {
+  if (link.status === "revoked" || link.revokedAt !== null) {
     return { status: "unavailable", reason: "revoked" }
   }
 

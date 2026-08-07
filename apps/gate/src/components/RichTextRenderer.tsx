@@ -12,33 +12,36 @@ function renderMarks(
 ): React.ReactNode {
   if (!marks || marks.length === 0) return text
 
-  return marks.reduce<React.ReactNode>((acc, mark) => {
+  return marks.reduce<React.ReactNode>((acc, mark, idx) => {
+    const key = `${mark.type}-${idx}`
     switch (mark.type) {
       case "bold":
       case "strong":
-        return <strong key={mark.type}>{acc}</strong>
+        return <strong key={key}>{acc}</strong>
       case "italic":
       case "em":
-        return <em key={mark.type}>{acc}</em>
+        return <em key={key}>{acc}</em>
       case "underline":
-        return <u key={mark.type}>{acc}</u>
+        return <u key={key}>{acc}</u>
       case "strike":
       case "strikethrough":
-        return <del key={mark.type}>{acc}</del>
+        return <del key={key}>{acc}</del>
       case "code":
         return (
           <code
-            key={mark.type}
+            key={key}
             className="rounded bg-muted/60 px-1 py-0.5 font-mono text-xs"
           >
             {acc}
           </code>
         )
       case "link": {
-        const href = (mark.attrs?.href as string) || "#"
+        const rawHref = (mark.attrs?.href as string) || "#"
+        const isSafe = /^(https?:|mailto:|\/)/i.test(rawHref)
+        const href = isSafe ? rawHref : "#"
         return (
           <a
-            key={mark.type}
+            key={key}
             href={href}
             target="_blank"
             rel="noopener noreferrer"

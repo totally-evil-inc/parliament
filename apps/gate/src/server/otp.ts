@@ -11,12 +11,9 @@ export type VerifyOtpResult =
   | { success: false; reason: "invalid_or_expired" }
 
 export function generateOtpCode(): string {
-  const digits = "0123456789"
-  let code = ""
-  for (let i = 0; i < 6; i++) {
-    const randomIndex = Math.floor(Math.random() * digits.length)
-    code += digits[randomIndex]
-  }
+  const array = new Uint32Array(1)
+  crypto.getRandomValues(array)
+  const code = (array[0] % 1000000).toString().padStart(6, "0")
   return code
 }
 
@@ -43,7 +40,6 @@ export async function sendOtp(
       publicLinkId,
       email,
       otpId: row?.id,
-      code,
       expiresAt: expiresAt.toISOString(),
       timestamp: new Date().toISOString(),
     },

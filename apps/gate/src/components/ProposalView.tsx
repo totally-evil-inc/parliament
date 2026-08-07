@@ -48,8 +48,8 @@ export function ProposalView({
   isSubmitting = false,
   appTheme = "light",
 }: ProposalViewProps) {
-  const template = getDocumentTemplate(proposal.template, appTheme)
-  const templateStyle = getDocumentTemplateStyle(template)
+  const template = useState(() => getDocumentTemplate(proposal.template, appTheme))[0]
+  const templateStyle = useState(() => getDocumentTemplateStyle(template))[0]
 
   // Form states
   const [signerName, setSignerName] = useState(propsAccepted?.signerName ?? "")

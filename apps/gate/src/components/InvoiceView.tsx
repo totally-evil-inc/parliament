@@ -60,8 +60,8 @@ export function InvoiceView({
   isSubmitting = false,
   appTheme = "light",
 }: InvoiceViewProps) {
-  const template = getDocumentTemplate(invoice.template, appTheme)
-  const templateStyle = getDocumentTemplateStyle(template)
+  const template = useState(() => getDocumentTemplate(invoice.template, appTheme))[0]
+  const templateStyle = useState(() => getDocumentTemplateStyle(template))[0]
   const effectiveAccepted = propsAccepted ?? null
 
   // Form state

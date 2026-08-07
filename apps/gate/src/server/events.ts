@@ -91,5 +91,5 @@ export async function recordClientEvent(
     return { success: true, eventId: eventRow.id }
   }
 
-  return { success: false, reason: "not_found" }
+  throw new Error(`Unsupported document type: ${input.documentType}`)
 }

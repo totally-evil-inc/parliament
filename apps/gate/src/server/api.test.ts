@@ -28,7 +28,7 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
       .insert(schema.organization)
       .values({
         name: "Test Org Gate",
-        slug: `test-org-gate-${Date.now()}`,
+        slug: `test-org-gate-${crypto.randomUUID()}`,
         createdAt: new Date(),
         paymentLinkUrl: "https://pay.example.com/org-gate",
       })
@@ -58,14 +58,12 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
         proposalDraftId,
         organizationId: orgId,
         document: proposalDoc,
-        contentHash: "hash-proposal-123",
-        templateId: "proposal-classic",
-        templateVersion: 1,
+        revision: 1,
       })
       .returning()
     proposalSnapshotId = pSnapshot.id
 
-    proposalValidToken = `token_proposal_valid_${Date.now()}`
+    proposalValidToken = `token_proposal_valid_${crypto.randomUUID()}`
     await db.insert(schema.proposalPublicLink).values({
       proposalSnapshotId,
       organizationId: orgId,
@@ -73,16 +71,16 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
       status: "active",
     })
 
-    proposalRevokedToken = `token_proposal_revoked_${Date.now()}`
+    proposalRevokedToken = `token_proposal_revoked_${crypto.randomUUID()}`
     await db.insert(schema.proposalPublicLink).values({
       proposalSnapshotId,
       organizationId: orgId,
       token: proposalRevokedToken,
-      status: "revoked",
+      status: "active",
       revokedAt: new Date(),
     })
 
-    proposalExpiredToken = `token_proposal_expired_${Date.now()}`
+    proposalExpiredToken = `token_proposal_expired_${crypto.randomUUID()}`
     await db.insert(schema.proposalPublicLink).values({
       proposalSnapshotId,
       organizationId: orgId,
@@ -114,14 +112,12 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
         invoiceDraftId,
         organizationId: orgId,
         document: invoiceDoc,
-        contentHash: "hash-invoice-123",
-        templateId: "invoice-classic",
-        templateVersion: 1,
+        revision: 1,
       })
       .returning()
     invoiceSnapshotId = iSnapshot.id
 
-    invoiceValidToken = `token_invoice_valid_${Date.now()}`
+    invoiceValidToken = `token_invoice_valid_${crypto.randomUUID()}`
     await db.insert(schema.invoicePublicLink).values({
       invoiceSnapshotId,
       organizationId: orgId,
@@ -129,16 +125,16 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
       status: "active",
     })
 
-    invoiceRevokedToken = `token_invoice_revoked_${Date.now()}`
+    invoiceRevokedToken = `token_invoice_revoked_${crypto.randomUUID()}`
     await db.insert(schema.invoicePublicLink).values({
       invoiceSnapshotId,
       organizationId: orgId,
       token: invoiceRevokedToken,
-      status: "revoked",
+      status: "active",
       revokedAt: new Date(),
     })
 
-    invoiceExpiredToken = `token_invoice_expired_${Date.now()}`
+    invoiceExpiredToken = `token_invoice_expired_${crypto.randomUUID()}`
     await db.insert(schema.invoicePublicLink).values({
       invoiceSnapshotId,
       organizationId: orgId,

@@ -401,7 +401,7 @@ describe("Milestone 3 Empirical Challenge & Stress Tests (apps/gate)", () => {
       expect(res.status).toBe(400)
     })
 
-    test("POST /api/public/proposal/:token/accept with missing agreedTerms returns 400", async () => {
+    test("POST /api/public/proposal/:token/accept returns 400 when agreedTerms is false", async () => {
       const req = new Request(
         `http://localhost/api/public/proposal/${proposalValidToken}/accept`,
         {

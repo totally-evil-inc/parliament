@@ -51,7 +51,10 @@ export async function fetchPublicProposal(
   token: string
 ): Promise<GetPublicProposalResult> {
   const res = await fetch(`/api/public/proposal/${encodeURIComponent(token)}`)
-  const data = await res.json()
+  if (!res.ok && res.status !== 404 && res.status !== 400) {
+    throw new Error(`Failed to fetch proposal (${res.status})`)
+  }
+  const data = await res.json().catch(() => ({ status: "not_found" }))
   return data as GetPublicProposalResult
 }
 
@@ -59,7 +62,10 @@ export async function fetchPublicInvoice(
   token: string
 ): Promise<GetPublicInvoiceResult> {
   const res = await fetch(`/api/public/invoice/${encodeURIComponent(token)}`)
-  const data = await res.json()
+  if (!res.ok && res.status !== 404 && res.status !== 400) {
+    throw new Error(`Failed to fetch invoice (${res.status})`)
+  }
+  const data = await res.json().catch(() => ({ status: "not_found" }))
   return data as GetPublicInvoiceResult
 }
 
@@ -75,9 +81,12 @@ export async function submitProposalAcceptance(
       body: JSON.stringify(payload),
     }
   )
-  const data = await res.json()
-  if (!res.ok && !data.error) {
-    return { success: false, error: "Failed to submit proposal acceptance" }
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    return {
+      success: false,
+      error: data.error || "Failed to submit proposal acceptance",
+    }
   }
   return data
 }
@@ -94,9 +103,12 @@ export async function submitInvoiceAcceptance(
       body: JSON.stringify(payload),
     }
   )
-  const data = await res.json()
-  if (!res.ok && !data.error) {
-    return { success: false, error: "Failed to submit invoice acceptance" }
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    return {
+      success: false,
+      error: data.error || "Failed to submit invoice acceptance",
+    }
   }
   return data
 }
@@ -110,9 +122,9 @@ export async function sendOtp(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ publicLinkId, email }),
   })
-  const data = await res.json()
-  if (!res.ok && !data.error) {
-    return { success: false, error: "Failed to send OTP" }
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    return { success: false, error: data.error || "Failed to send OTP" }
   }
   return data
 }
@@ -127,9 +139,9 @@ export async function verifyOtp(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ publicLinkId, email, code }),
   })
-  const data = await res.json()
-  if (!res.ok && !data.error) {
-    return { success: false, error: "Failed to verify OTP" }
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    return { success: false, error: data.error || "Failed to verify OTP" }
   }
   return data
 }
@@ -142,9 +154,9 @@ export async function recordClientEvent(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   })
-  const data = await res.json()
-  if (!res.ok && !data.error) {
-    return { success: false, error: "Failed to record event" }
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    return { success: false, error: data.error || "Failed to record event" }
   }
   return data
 }

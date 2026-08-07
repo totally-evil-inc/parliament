@@ -220,6 +220,8 @@ app.post("/api/public/invoice/:token/accept", async (c) => {
   }
 })
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 // OTP Endpoints
 app.post("/api/public/otp/send", async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as {
@@ -227,15 +229,23 @@ app.post("/api/public/otp/send", async (c) => {
     email?: string
   }
 
-  if (!body.publicLinkId || !body.email) {
+  if (!body.publicLinkId || !body.email || !EMAIL_REGEX.test(body.email.trim())) {
     return c.json(
-      { success: false, error: "publicLinkId and email are required" },
+      { success: false, error: "Valid publicLinkId and email are required" },
       400
     )
   }
 
-  const result = await sendOtp(body.publicLinkId, body.email)
-  return c.json(result, 200)
+  try {
+    const result = await sendOtp(body.publicLinkId, body.email.trim())
+    return c.json(result, 200)
+  } catch (error: unknown) {
+    const err = error as { message?: string }
+    return c.json(
+      { success: false, error: err.message || "Failed to send OTP" },
+      500
+    )
+  }
 })
 
 app.post("/api/public/otp/verify", async (c) => {
@@ -245,21 +255,29 @@ app.post("/api/public/otp/verify", async (c) => {
     code?: string
   }
 
-  if (!body.publicLinkId || !body.email || !body.code) {
+  if (!body.publicLinkId || !body.email || !body.code || !EMAIL_REGEX.test(body.email.trim())) {
     return c.json(
       {
         success: false,
-        error: "publicLinkId, email, and code are required",
+        error: "Valid publicLinkId, email, and code are required",
       },
       400
     )
   }
 
-  const result = await verifyOtp(body.publicLinkId, body.email, body.code)
-  if (!result.success) {
-    return c.json(result, 400)
+  try {
+    const result = await verifyOtp(body.publicLinkId, body.email.trim(), body.code.trim())
+    if (!result.success) {
+      return c.json(result, 400)
+    }
+    return c.json(result, 200)
+  } catch (error: unknown) {
+    const err = error as { message?: string }
+    return c.json(
+      { success: false, error: err.message || "Failed to verify OTP" },
+      500
+    )
   }
-  return c.json(result, 200)
 })
 
 // Event Recording Endpoints
