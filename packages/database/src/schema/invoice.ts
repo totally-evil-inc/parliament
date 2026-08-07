@@ -74,6 +74,7 @@ export const invoicePublicLink = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     token: text("token").notNull().unique(),
     status: text("status").default("active").notNull(),
+    recipientEmail: text("recipient_email"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     revokedAt: timestamp("revoked_at"),
     expiresAt: timestamp("expires_at"),

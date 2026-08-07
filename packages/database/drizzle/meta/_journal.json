@@ -50,6 +50,13 @@
       "when": 1786118764209,
       "tag": "0006_demonic_radioactive_man",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786141043617,
+      "tag": "0007_awesome_the_hunter",
+      "breakpoints": true
     }
   ]
 }
