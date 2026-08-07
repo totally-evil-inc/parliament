@@ -35,6 +35,7 @@ import {
 } from "nucleo-glass"
 import * as React from "react"
 import { PageHeader } from "@/components/page-header"
+import { GmailActivityHeatmap } from "./components/gmail-activity-heatmap"
 import type { Integration, IntegrationStatus } from "./data"
 import { integrationCategories } from "./data"
 import {
@@ -252,6 +253,9 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
             </div>
           </section>
         )}
+
+        {/* Gmail Activity Heatmap */}
+        {integration.id === "google" && connected && <GmailActivityHeatmap />}
       </ScrollArea>
 
       <SheetFooter className="border-t">

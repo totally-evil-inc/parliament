@@ -35,46 +35,45 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
   {
     id: "google",
     providerId: "google",
-    title: "Google Calendar & Account",
-    description: "Connect Google Calendar for event scheduling and identity.",
+    title: "Google Workspace & Gmail Operations",
+    description: "Audit-free Gmail dispatches, response analytics, Calendar, and Drive drops.",
     longDescription:
-      "Grant the AI Agent access to your Google Calendar so it can create, update, and delete events on your behalf. The agent can also read your schedule to find available time slots and manage attendees for meetings.",
-    url: "https://calendar.google.com",
+      "Connect your Google Workspace account to enable direct Gmail dispatches (gmail.send), real-time client response velocity heatmaps (gmail.metadata), Google Drive invoice drops (drive.file), and read-only Google Calendar discovery call meeting detection.",
+    url: "https://workspace.google.com",
     category: "productivity",
     status: "available",
     scopes: [
       "https://www.googleapis.com/auth/userinfo.email",
       "https://www.googleapis.com/auth/userinfo.profile",
-      "https://www.googleapis.com/auth/calendar",
-      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/gmail.send",
+      "https://www.googleapis.com/auth/gmail.metadata",
+      "https://www.googleapis.com/auth/calendar.events.readonly",
+      "https://www.googleapis.com/auth/drive.file",
     ],
     features: [
       {
-        label: "Calendar Reading",
-        description:
-          "List upcoming events and check your schedule for free/busy slots.",
+        label: "Direct Gmail Dispatches",
+        description: "Send proposals, invoices, and deposit follow-ups directly from your authentic Gmail address.",
       },
       {
-        label: "Event Creation",
-        description:
-          "Create new calendar events with title, time, description, and attendees.",
+        label: "Thread Activity Heatmap & Silence Detection",
+        description: "Track client response velocities and inactivity warnings using audit-free metadata.",
       },
       {
-        label: "Event Management",
-        description:
-          "Update or delete existing events by event ID or natural language search.",
+        label: "Google Drive PDF Drop Folder",
+        description: "Ingest client invoice PDFs placed into your Command Drops Drive folder.",
       },
       {
-        label: "Identity",
-        description:
-          "Read your Google account email and profile for contextual personalization.",
+        label: "Discovery Meeting Lead Detection",
+        description: "Flag client discovery calls scheduled on Google Calendar to automatically create candidate leads.",
       },
     ],
     actions: [
-      "gcal_create_event",
+      "gmail_send_email",
+      "gmail_create_draft",
+      "gmail_watch_threads",
+      "gmail_get_activity",
       "gcal_list_events",
-      "gcal_delete_event",
-      "gcal_get_event",
     ],
   },
   {
