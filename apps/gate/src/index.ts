@@ -1,14 +1,44 @@
 import { logger } from "@workspace/logger"
 import type { Context } from "hono"
 import { Hono } from "hono"
+import { z } from "zod"
 import { recordClientEvent } from "./server/events"
 import { acceptPublicInvoice, getPublicInvoice } from "./server/invoices"
 import { sendOtp, verifyOtp } from "./server/otp"
 import { acceptPublicProposal, getPublicProposal } from "./server/proposals"
 
+const acceptDocumentBodySchema = z.object({
+  signerName: z.string().min(1),
+  signerEmail: z.string().min(1),
+  signatureText: z.string().optional(),
+  signatureImage: z.string().optional(),
+  otpVerified: z.boolean().optional(),
+  agreedTerms: z.literal(true),
+})
+
+const otpSendBodySchema = z.object({
+  publicLinkId: z.string().min(1),
+  email: z.string().min(1),
+})
+
+const otpVerifyBodySchema = z.object({
+  publicLinkId: z.string().min(1),
+  email: z.string().min(1),
+  code: z.string().min(1),
+})
+
+const clientEventBodySchema = z.object({
+  documentType: z.enum(["proposal", "invoice"]),
+  token: z.string().min(1),
+  eventType: z.string().min(1),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+})
+
 export const app = new Hono<{
   Variables: {
     requestId: string
+    requestStartTime: number
+    errorLogged: boolean
     logContext: Record<string, unknown>
   }
 }>()
@@ -19,6 +49,7 @@ app.use("*", async (c, next) => {
   const startTime = Date.now()
   const requestId = c.req.header("x-request-id") || crypto.randomUUID()
   c.set("requestId", requestId)
+  c.set("requestStartTime", startTime)
 
   const logContext: Record<string, unknown> = {}
   c.set("logContext", logContext)
@@ -40,7 +71,6 @@ app.use("*", async (c, next) => {
 
   try {
     await next()
-
     wideEvent.statusCode = c.res.status
     wideEvent.outcome = c.res.status >= 400 ? "failure" : "success"
   } catch (error: unknown) {
@@ -50,7 +80,10 @@ app.use("*", async (c, next) => {
       stack?: string
       name?: string
     }
-    wideEvent.statusCode = err.status || 500
+    wideEvent.statusCode =
+      typeof err.status === "number" && err.status >= 400 && err.status < 600
+        ? err.status
+        : 500
     wideEvent.outcome = "error"
     wideEvent.error = {
       message: err.message || "Unknown error",
@@ -63,15 +96,66 @@ app.use("*", async (c, next) => {
 
     Object.assign(wideEvent, c.get("logContext"))
 
-    if (
-      wideEvent.outcome === "error" ||
-      (typeof wideEvent.statusCode === "number" && wideEvent.statusCode >= 500)
-    ) {
-      logger.error(wideEvent)
-    } else {
-      logger.info(wideEvent)
+    // Errors handled by app.onError are logged there with full detail; skip
+    // the middleware log for those requests to avoid duplication.
+    if (c.get("errorLogged") !== true) {
+      if (
+        wideEvent.outcome === "error" ||
+        (typeof wideEvent.statusCode === "number" &&
+          wideEvent.statusCode >= 500)
+      ) {
+        logger.error(wideEvent)
+      } else {
+        logger.info(wideEvent)
+      }
     }
   }
+})
+
+app.onError((error: unknown, c) => {
+  const err = error as {
+    status?: number
+    message?: string
+    stack?: string
+    name?: string
+  }
+  const status =
+    typeof err.status === "number" && err.status >= 400 && err.status < 600
+      ? err.status
+      : 500
+
+  const wideEvent: Record<string, unknown> = {
+    requestId: c.get("requestId"),
+    statusCode: status,
+    outcome: "error",
+    error: {
+      message: err.message || "Unknown error",
+      stack: err.stack,
+      name: err.name,
+    },
+    timestamp: new Date().toISOString(),
+  }
+
+  Object.assign(wideEvent, c.get("logContext"))
+  if (typeof c.get("requestStartTime") === "number") {
+    wideEvent.durationMs = Date.now() - c.get("requestStartTime")
+  }
+
+  // Sanitize what the caller sees: internal details never leak, they stay
+  // in the structured wide-event log above.
+  c.set("errorLogged", true)
+  const responseStatus = status as 400 | 404 | 409 | 500
+  logger.error(wideEvent)
+  return c.json(
+    {
+      success: false,
+      error:
+        status >= 500
+          ? "Internal Server Error"
+          : err.message || "Unknown error",
+    },
+    responseStatus
+  )
 })
 
 app.get("/health", (c) => {
@@ -102,20 +186,11 @@ app.get("/api/public/proposal/:token", async (c) => {
 
 app.post("/api/public/proposal/:token/accept", async (c) => {
   const token = c.req.param("token")
-  const body = (await c.req.json().catch(() => ({}))) as {
-    signerName?: string
-    signerEmail?: string
-    signatureText?: string
-    signatureImage?: string
-    otpVerified?: boolean
-    agreedTerms?: boolean
-  }
+  const parsed = acceptDocumentBodySchema.safeParse(
+    await c.req.json().catch(() => ({}))
+  )
 
-  const ipAddress =
-    c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || null
-  const userAgent = c.req.header("user-agent") || null
-
-  if (!body.signerName || !body.signerEmail || body.agreedTerms !== true) {
+  if (!parsed.success) {
     return c.json(
       {
         success: false,
@@ -124,6 +199,11 @@ app.post("/api/public/proposal/:token/accept", async (c) => {
       400
     )
   }
+  const body = parsed.data
+
+  const ipAddress =
+    c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || null
+  const userAgent = c.req.header("user-agent") || null
 
   try {
     const accepted = await acceptPublicProposal({
@@ -140,11 +220,12 @@ app.post("/api/public/proposal/:token/accept", async (c) => {
 
     return c.json({ success: true, accepted }, 200)
   } catch (error: unknown) {
-    const err = error as { message?: string }
+    const message =
+      error instanceof Error ? error.message : "Failed to accept proposal"
     return c.json(
       {
         success: false,
-        error: err.message || "Failed to accept proposal",
+        error: message,
       },
       400
     )
@@ -171,20 +252,11 @@ app.get("/api/public/invoice/:token", async (c) => {
 
 app.post("/api/public/invoice/:token/accept", async (c) => {
   const token = c.req.param("token")
-  const body = (await c.req.json().catch(() => ({}))) as {
-    signerName?: string
-    signerEmail?: string
-    signatureText?: string
-    signatureImage?: string
-    otpVerified?: boolean
-    agreedTerms?: boolean
-  }
+  const parsed = acceptDocumentBodySchema.safeParse(
+    await c.req.json().catch(() => ({}))
+  )
 
-  const ipAddress =
-    c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || null
-  const userAgent = c.req.header("user-agent") || null
-
-  if (!body.signerName || !body.signerEmail || body.agreedTerms !== true) {
+  if (!parsed.success) {
     return c.json(
       {
         success: false,
@@ -193,6 +265,11 @@ app.post("/api/public/invoice/:token/accept", async (c) => {
       400
     )
   }
+  const body = parsed.data
+
+  const ipAddress =
+    c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || null
+  const userAgent = c.req.header("user-agent") || null
 
   try {
     const accepted = await acceptPublicInvoice({
@@ -209,11 +286,12 @@ app.post("/api/public/invoice/:token/accept", async (c) => {
 
     return c.json({ success: true, accepted }, 200)
   } catch (error: unknown) {
-    const err = error as { message?: string }
+    const message =
+      error instanceof Error ? error.message : "Failed to accept invoice"
     return c.json(
       {
         success: false,
-        error: err.message || "Failed to accept invoice",
+        error: message,
       },
       400
     )
@@ -224,47 +302,32 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 // OTP Endpoints
 app.post("/api/public/otp/send", async (c) => {
-  const body = (await c.req.json().catch(() => ({}))) as {
-    publicLinkId?: string
-    email?: string
-  }
-
-  if (
-    !body.publicLinkId ||
-    !body.email ||
-    !EMAIL_REGEX.test(body.email.trim())
-  ) {
+  const parsed = otpSendBodySchema.safeParse(
+    await c.req.json().catch(() => ({}))
+  )
+  if (!parsed.success || !EMAIL_REGEX.test(parsed.data.email.trim())) {
     return c.json(
       { success: false, error: "Valid publicLinkId and email are required" },
       400
     )
   }
+  const body = parsed.data
 
   try {
     const result = await sendOtp(body.publicLinkId, body.email.trim())
     return c.json(result, 200)
   } catch (error: unknown) {
-    const err = error as { message?: string }
-    return c.json(
-      { success: false, error: err.message || "Failed to send OTP" },
-      500
-    )
+    const message =
+      error instanceof Error ? error.message : "Failed to send OTP"
+    return c.json({ success: false, error: message }, 500)
   }
 })
 
 app.post("/api/public/otp/verify", async (c) => {
-  const body = (await c.req.json().catch(() => ({}))) as {
-    publicLinkId?: string
-    email?: string
-    code?: string
-  }
-
-  if (
-    !body.publicLinkId ||
-    !body.email ||
-    !body.code ||
-    !EMAIL_REGEX.test(body.email.trim())
-  ) {
+  const parsed = otpVerifyBodySchema.safeParse(
+    await c.req.json().catch(() => ({}))
+  )
+  if (!parsed.success || !EMAIL_REGEX.test(parsed.data.email.trim())) {
     return c.json(
       {
         success: false,
@@ -273,6 +336,7 @@ app.post("/api/public/otp/verify", async (c) => {
       400
     )
   }
+  const body = parsed.data
 
   try {
     const result = await verifyOtp(
@@ -285,28 +349,18 @@ app.post("/api/public/otp/verify", async (c) => {
     }
     return c.json(result, 200)
   } catch (error: unknown) {
-    const err = error as { message?: string }
-    return c.json(
-      { success: false, error: err.message || "Failed to verify OTP" },
-      500
-    )
+    const message =
+      error instanceof Error ? error.message : "Failed to verify OTP"
+    return c.json({ success: false, error: message }, 500)
   }
 })
 
 // Event Recording Endpoints
 const handleClientEvent = async (c: Context) => {
-  const body = (await c.req.json().catch(() => ({}))) as {
-    documentType?: "proposal" | "invoice"
-    token?: string
-    eventType?: string
-    metadata?: Record<string, unknown>
-  }
-
-  const ipAddress =
-    c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || null
-  const userAgent = c.req.header("user-agent") || null
-
-  if (!body.documentType || !body.token || !body.eventType) {
+  const parsed = clientEventBodySchema.safeParse(
+    await c.req.json().catch(() => ({}))
+  )
+  if (!parsed.success) {
     return c.json(
       {
         success: false,
@@ -315,6 +369,11 @@ const handleClientEvent = async (c: Context) => {
       400
     )
   }
+  const body = parsed.data
+
+  const ipAddress =
+    c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || null
+  const userAgent = c.req.header("user-agent") || null
 
   const result = await recordClientEvent({
     documentType: body.documentType,
@@ -326,7 +385,7 @@ const handleClientEvent = async (c: Context) => {
   })
 
   if (!result.success) {
-    return c.json(result, 404)
+    return c.json(result, result.reason === "not_found" ? 404 : 400)
   }
   return c.json(result, 200)
 }

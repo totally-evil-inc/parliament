@@ -116,14 +116,15 @@ function ProposalRouteHandler({
 
   // Accept mutation
   const acceptMutation = useMutation({
-    mutationFn: (payload: AcceptancePayload) =>
-      submitProposalAcceptance(token, payload),
-    onSuccess: (res) => {
-      if (res.success) {
-        queryClient.invalidateQueries({ queryKey: ["proposal", token] })
-      } else {
+    mutationFn: async (payload: AcceptancePayload) => {
+      const res = await submitProposalAcceptance(token, payload)
+      if (!res.success) {
         throw new Error(res.error || "Failed to submit proposal acceptance")
       }
+      return res
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["proposal", token] })
     },
   })
 
@@ -238,14 +239,15 @@ function InvoiceRouteHandler({
   }, [data?.status, token])
 
   const acceptMutation = useMutation({
-    mutationFn: (payload: AcceptancePayload) =>
-      submitInvoiceAcceptance(token, payload),
-    onSuccess: (res) => {
-      if (res.success) {
-        queryClient.invalidateQueries({ queryKey: ["invoice", token] })
-      } else {
+    mutationFn: async (payload: AcceptancePayload) => {
+      const res = await submitInvoiceAcceptance(token, payload)
+      if (!res.success) {
         throw new Error(res.error || "Failed to submit invoice acceptance")
       }
+      return res
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoice", token] })
     },
   })
 

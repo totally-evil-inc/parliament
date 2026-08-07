@@ -1,4 +1,4 @@
-import { db, desc, eq, schema } from "@workspace/database"
+import { and, db, desc, eq, ne, schema, sql } from "@workspace/database"
 import type { ProposalDraft } from "@workspace/document/schema"
 import { parseProposalDraft } from "@workspace/document/schema"
 
@@ -15,6 +15,10 @@ export type ProposalAcceptanceRecord = {
   acceptedAt: string
   ipAddress: string | null
   userAgent: string | null
+}
+
+function toAcceptanceTimestamp(value: Date | string): string {
+  return value instanceof Date ? value.toISOString() : String(value)
 }
 
 export type GetPublicProposalResult =
@@ -110,7 +114,7 @@ export async function getPublicProposal(
         signatureImage: acceptanceRow.signatureImage,
         otpVerified: acceptanceRow.otpVerified,
         agreedTerms: acceptanceRow.agreedTerms,
-        acceptedAt: acceptanceRow.acceptedAt.toISOString(),
+        acceptedAt: toAcceptanceTimestamp(acceptanceRow.acceptedAt),
         ipAddress: acceptanceRow.ipAddress,
         userAgent: acceptanceRow.userAgent,
       }
@@ -201,9 +205,14 @@ export async function acceptPublicProposal(
       .update(schema.proposalDraft)
       .set({
         status: "accepted",
-        updatedAt: new Date(),
+        updatedAt: sql`now()`,
       })
-      .where(eq(schema.proposalDraft.id, link.proposalDraftId))
+      .where(
+        and(
+          eq(schema.proposalDraft.id, link.proposalDraftId),
+          ne(schema.proposalDraft.status, "accepted")
+        )
+      )
 
     return {
       id: row.id,
@@ -215,7 +224,7 @@ export async function acceptPublicProposal(
       signatureImage: row.signatureImage,
       otpVerified: row.otpVerified,
       agreedTerms: row.agreedTerms,
-      acceptedAt: row.acceptedAt.toISOString(),
+      acceptedAt: toAcceptanceTimestamp(row.acceptedAt),
       ipAddress: row.ipAddress,
       userAgent: row.userAgent,
     }

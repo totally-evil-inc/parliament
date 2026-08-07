@@ -435,7 +435,7 @@ describe("Milestone 3 Empirical Challenge & Stress Tests (apps/gate)", () => {
       expect(res.status).toBe(400)
     })
 
-    test("POST /api/public/event with invalid documentType returns 404", async () => {
+    test("POST /api/public/event with invalid documentType returns 400", async () => {
       const req = new Request("http://localhost/api/public/event", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -446,7 +446,7 @@ describe("Milestone 3 Empirical Challenge & Stress Tests (apps/gate)", () => {
         }),
       })
       const res = await app.fetch(req)
-      expect(res.status).toBe(404)
+      expect(res.status).toBe(400)
     })
   })
 })

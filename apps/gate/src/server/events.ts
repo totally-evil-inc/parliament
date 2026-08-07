@@ -1,5 +1,30 @@
 import { db, eq, schema } from "@workspace/database"
 
+const MAX_METADATA_DEPTH = 6
+const UNSAFE_METADATA_KEYS = new Set(["__proto__", "constructor", "prototype"])
+
+/**
+ * Recursively sanitize user-supplied event metadata to JSON-safe plain values,
+ * strip prototype-polluting keys, and cap nesting depth before persistence.
+ */
+function sanitizeMetadata(value: unknown, depth = 0): unknown {
+  if (depth > MAX_METADATA_DEPTH) {
+    return null
+  }
+  if (value === null || typeof value !== "object") {
+    return value
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeMetadata(item, depth + 1))
+  }
+  const sanitized: Record<string, unknown> = {}
+  for (const [key, item] of Object.entries(value)) {
+    if (UNSAFE_METADATA_KEYS.has(key)) continue
+    sanitized[key] = sanitizeMetadata(item, depth + 1)
+  }
+  return sanitized
+}
+
 export type RecordClientEventInput = {
   documentType: "proposal" | "invoice"
   token: string
@@ -22,8 +47,12 @@ export async function recordClientEvent(
   input: RecordClientEventInput
 ): Promise<RecordClientEventResult> {
   const timestamp = new Date().toISOString()
+  // System-generated fields are applied after the user metadata spread so
+  // callers can never shadow ipAddress/userAgent/timestamp.
   const meta = {
-    ...(input.metadata || {}),
+    ...(sanitizeMetadata(input.metadata) as
+      | Record<string, unknown>
+      | undefined),
     ipAddress: input.ipAddress ?? null,
     userAgent: input.userAgent ?? null,
     timestamp,

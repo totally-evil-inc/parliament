@@ -57,32 +57,37 @@ function renderMarks(
   }, text)
 }
 
+// Stable, path-based React keys derived from node position. Read-only rich
+// text has no per-node IDs in the document model, so the full tree path
+// ("0.3.1") is a deterministic key that stays valid when siblings are
+// appended or reordered within an unaffected subtree.
 export function renderRichTextNode(
   node: RichTextNode,
-  index: number
+  keyPath: string
 ): React.ReactNode {
+  const nodeKey = `node-${keyPath}`
   if (node.type === "text") {
     return (
-      <React.Fragment key={index}>
+      <React.Fragment key={nodeKey}>
         {renderMarks(node.text ?? "", node.marks)}
       </React.Fragment>
     )
   }
 
   const children = (node.content ?? []).map((child, i) =>
-    renderRichTextNode(child, i)
+    renderRichTextNode(child, `${keyPath}.${i}`)
   )
 
   switch (node.type) {
     case "doc":
       return (
-        <div key={index} className="space-y-3">
+        <div key={nodeKey} className="space-y-3">
           {children}
         </div>
       )
     case "paragraph":
       return (
-        <p key={index} className="leading-relaxed">
+        <p key={nodeKey} className="leading-relaxed">
           {children.length > 0 ? children : <br />}
         </p>
       )
@@ -91,7 +96,7 @@ export function renderRichTextNode(
       if (level === 1) {
         return (
           <h1
-            key={index}
+            key={nodeKey}
             className="mt-4 mb-2 font-bold text-2xl tracking-tight"
           >
             {children}
@@ -101,7 +106,7 @@ export function renderRichTextNode(
       if (level === 2) {
         return (
           <h2
-            key={index}
+            key={nodeKey}
             className="mt-3 mb-2 font-semibold text-xl tracking-tight"
           >
             {children}
@@ -111,7 +116,7 @@ export function renderRichTextNode(
       if (level === 3) {
         return (
           <h3
-            key={index}
+            key={nodeKey}
             className="mt-2 mb-1 font-medium text-lg tracking-tight"
           >
             {children}
@@ -119,33 +124,33 @@ export function renderRichTextNode(
         )
       }
       return (
-        <h4 key={index} className="mt-2 mb-1 font-medium text-base">
+        <h4 key={nodeKey} className="mt-2 mb-1 font-medium text-base">
           {children}
         </h4>
       )
     }
     case "bulletList":
       return (
-        <ul key={index} className="my-2 list-inside list-disc space-y-1">
+        <ul key={nodeKey} className="my-2 list-inside list-disc space-y-1">
           {children}
         </ul>
       )
     case "orderedList":
       return (
-        <ol key={index} className="my-2 list-inside list-decimal space-y-1">
+        <ol key={nodeKey} className="my-2 list-inside list-decimal space-y-1">
           {children}
         </ol>
       )
     case "listItem":
       return (
-        <li key={index} className="leading-relaxed">
+        <li key={nodeKey} className="leading-relaxed">
           {children}
         </li>
       )
     case "blockquote":
       return (
         <blockquote
-          key={index}
+          key={nodeKey}
           className="my-2 border-primary/40 border-l-3 py-1 pl-3 text-muted-foreground italic"
         >
           {children}
@@ -154,7 +159,7 @@ export function renderRichTextNode(
     case "codeBlock":
       return (
         <pre
-          key={index}
+          key={nodeKey}
           className="my-2 overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs"
         >
           <code>{children}</code>
@@ -162,12 +167,12 @@ export function renderRichTextNode(
       )
     case "horizontalRule":
     case "hr":
-      return <hr key={index} className="my-4 border-border" />
+      return <hr key={nodeKey} className="my-4 border-border" />
     case "hardBreak":
-      return <br key={index} />
+      return <br key={nodeKey} />
     default:
       return (
-        <div key={index} className="my-1">
+        <div key={nodeKey} className="my-1">
           {children}
         </div>
       )
@@ -183,7 +188,7 @@ export function RichTextRenderer({ doc, className }: RichTextRendererProps) {
 
   return (
     <div className={`rich-text-content ${className ?? ""}`}>
-      {renderRichTextNode(doc as RichTextNode, 0)}
+      {renderRichTextNode(doc as RichTextNode, "")}
     </div>
   )
 }
