@@ -4,7 +4,6 @@ export type IntegrationStatus =
   | "pending"
   | "coming_soon"
 
-
 export type IntegrationCategory =
   | "productivity"
   | "developer"

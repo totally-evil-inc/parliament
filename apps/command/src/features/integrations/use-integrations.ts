@@ -61,8 +61,7 @@ export function useIntegrations() {
     }
 
     const isConnected = accounts?.some(
-      (acc) =>
-        acc.providerId === item.providerId || acc.providerId === "google"
+      (acc) => acc.providerId === item.providerId || acc.providerId === "google"
     )
 
     return {
@@ -87,7 +86,9 @@ export function useConnectIntegration() {
       const callbackURL = window.location.href
       // Trigger Better-Auth link account OAuth flow
       const res = await authClient.linkSocial({
-        provider: integration.providerId as Parameters<typeof authClient.linkSocial>[0]["provider"],
+        provider: integration.providerId as Parameters<
+          typeof authClient.linkSocial
+        >[0]["provider"],
         callbackURL,
       })
       return res

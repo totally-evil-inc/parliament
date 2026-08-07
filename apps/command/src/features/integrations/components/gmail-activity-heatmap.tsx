@@ -18,7 +18,7 @@ export function GmailActivityHeatmap() {
 
   if (isLoading) {
     return (
-      <div className="p-4 text-xs text-muted-foreground">
+      <div className="p-4 text-muted-foreground text-xs">
         Loading Gmail activity heatmap...
       </div>
     )
@@ -26,7 +26,7 @@ export function GmailActivityHeatmap() {
 
   if (error) {
     return (
-      <div className="p-4 text-xs text-destructive">
+      <div className="p-4 text-destructive text-xs">
         Failed to load Gmail activity heatmap.
       </div>
     )
@@ -41,7 +41,7 @@ export function GmailActivityHeatmap() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <IconBolt className="size-4 text-emerald-500" />
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="font-medium text-sm">
               Gmail Real-Time Thread Activity
             </CardTitle>
           </div>
@@ -51,7 +51,7 @@ export function GmailActivityHeatmap() {
             }
             className={
               subscription?.status === "active"
-                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
                 : ""
             }
           >
@@ -63,7 +63,7 @@ export function GmailActivityHeatmap() {
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {activities.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             No thread metadata events captured yet. Real-time Pub/Sub watcher is
             listening.
           </p>
@@ -71,30 +71,32 @@ export function GmailActivityHeatmap() {
           <div className="flex flex-col gap-2">
             {activities.slice(0, 15).map((act) => (
               <div
-                key={act.id || `${act.threadId}-${act.senderEmail || "unknown"}`}
+                key={
+                  act.id || `${act.threadId}-${act.senderEmail || "unknown"}`
+                }
                 className="flex items-center justify-between rounded border border-border/60 bg-background p-2.5 text-xs"
               >
                 <div className="flex flex-col gap-0.5">
                   <span className="font-medium">
                     {act.senderEmail || "Unknown Sender"}
                   </span>
-                  <span className="text-muted-foreground text-[11px]">
+                  <span className="text-[11px] text-muted-foreground">
                     {act.subject || "No subject"}
                   </span>
                 </div>
                 {act.isSilent ? (
                   <Badge
                     variant="outline"
-                    className="border-amber-500/30 text-amber-600 text-[10px]"
+                    className="border-amber-500/30 text-[10px] text-amber-600"
                   >
                     Inactive (Last activity &gt; 5d)
                   </Badge>
                 ) : (
                   <Badge
                     variant="outline"
-                    className="border-emerald-500/30 text-emerald-600 text-[10px]"
+                    className="border-emerald-500/30 text-[10px] text-emerald-600"
                   >
-                    <IconCircleCheck className="size-3 mr-1 inline" />
+                    <IconCircleCheck className="mr-1 inline size-3" />
                     Active
                   </Badge>
                 )}
