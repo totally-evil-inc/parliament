@@ -26,8 +26,8 @@ import {
 } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
+import type { InvoiceAcceptanceRecord } from "@workspace/document/public-api"
 import type { AcceptancePayload } from "../lib/api"
-import type { InvoiceAcceptanceRecord } from "../server/invoices"
 import { DrawnCanvas } from "./DrawnCanvas"
 import { RichTextRenderer } from "./RichTextRenderer"
 

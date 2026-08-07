@@ -90,7 +90,7 @@ export async function getPublicInvoiceMeta(
   return {
     status: "ready",
     token,
-    number: document.data.number || "Invoice",
+    number: document.data.invoiceNumber || "Invoice",
     sellerName: document.data.seller.name || "",
     recipientEmail: link.recipientEmail ?? null,
   }

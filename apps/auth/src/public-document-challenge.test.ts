@@ -229,7 +229,9 @@ describe("Empirical Challenge & Stress Tests for Public Document Access (apps/au
       })
       expect(res.status).toBe("ready")
       if (res.status === "ready") {
-        expect(res.paymentLinkUrl).toBe("https://pay.example.com/challenge-gate")
+        expect(res.paymentLinkUrl).toBe(
+          "https://pay.example.com/challenge-gate"
+        )
       }
     })
   })

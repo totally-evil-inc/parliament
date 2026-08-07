@@ -1,5 +1,4 @@
 import { z } from "zod"
-import type { InvoiceDraft, ProposalDraft } from "./schema"
 import { invoiceDraftSchema, proposalDraftSchema } from "./schema"
 
 export const proposalAcceptanceRecordSchema = z.object({
@@ -86,23 +85,20 @@ export type GetPublicProposalResult = z.infer<
   typeof getPublicProposalResultSchema
 >
 
-export const getPublicInvoiceMetaResultSchema = z.discriminatedUnion(
-  "status",
-  [
-    z.object({ status: z.literal("not_found") }),
-    z.object({
-      status: z.literal("unavailable"),
-      reason: z.enum(["revoked", "expired"]),
-    }),
-    z.object({
-      status: z.literal("ready"),
-      token: z.string(),
-      number: z.string(),
-      sellerName: z.string(),
-      recipientEmail: z.string().nullable(),
-    }),
-  ]
-)
+export const getPublicInvoiceMetaResultSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("not_found") }),
+  z.object({
+    status: z.literal("unavailable"),
+    reason: z.enum(["revoked", "expired"]),
+  }),
+  z.object({
+    status: z.literal("ready"),
+    token: z.string(),
+    number: z.string(),
+    sellerName: z.string(),
+    recipientEmail: z.string().nullable(),
+  }),
+])
 
 export type GetPublicInvoiceMetaResult = z.infer<
   typeof getPublicInvoiceMetaResultSchema

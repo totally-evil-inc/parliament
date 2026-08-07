@@ -18,7 +18,12 @@ import {
 } from "@workspace/document/public-api"
 import { getAuthServerUrl } from "./auth-client"
 
-export type { AcceptancePayload, AcceptanceResponse, ClientEventPayload, ClientEventResponse }
+export type {
+  AcceptancePayload,
+  AcceptanceResponse,
+  ClientEventPayload,
+  ClientEventResponse,
+}
 
 export async function fetchPublicProposalMeta(
   token: string
@@ -76,7 +81,12 @@ export async function fetchPublicProposal(
       }
     )
     const data = await res.json().catch(() => ({ status: "not_found" }))
-    if (!res.ok && res.status !== 404 && res.status !== 400 && res.status !== 403) {
+    if (
+      !res.ok &&
+      res.status !== 404 &&
+      res.status !== 400 &&
+      res.status !== 403
+    ) {
       const message =
         typeof data === "object" && data && "error" in data
           ? String(data.error)
@@ -115,7 +125,12 @@ export async function fetchPublicInvoice(
       }
     )
     const data = await res.json().catch(() => ({ status: "not_found" }))
-    if (!res.ok && res.status !== 404 && res.status !== 400 && res.status !== 403) {
+    if (
+      !res.ok &&
+      res.status !== 404 &&
+      res.status !== 400 &&
+      res.status !== 403
+    ) {
       const message =
         typeof data === "object" && data && "error" in data
           ? String(data.error)

@@ -283,7 +283,7 @@ function InvoiceRouteHandler({
   ) {
     return (
       <GateChallenge
-        title={meta.title}
+        title={meta.number}
         sellerName={meta.sellerName}
         boundEmail={meta.recipientEmail}
         documentType="invoice"
