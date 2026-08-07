@@ -1,12 +1,5 @@
 import { relations, sql } from "drizzle-orm"
-import {
-  jsonb,
-  pgTable,
-  real,
-  text,
-  timestamp,
-  uuid,
-} from "drizzle-orm/pg-core"
+import { index, jsonb, pgTable, real, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { agent } from "./agent"
 import { user } from "./user"
 
@@ -33,7 +26,10 @@ export const agentAction = pgTable("agent_action", {
     .$onUpdate(() => new Date())
     .defaultNow()
     .notNull(),
-})
+}, (table) => [
+  index("agent_action_agent_id_idx").on(table.agentId),
+  index("agent_action_user_id_idx").on(table.userId),
+])
 
 export const agentActionRelations = relations(agentAction, ({ one }) => ({
   agent: one(agent, {

@@ -58,7 +58,9 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
         proposalDraftId,
         organizationId: orgId,
         document: proposalDoc,
-        revision: 1,
+        contentHash: "hash-proposal-123",
+        templateId: "proposal-classic",
+        templateVersion: 1,
       })
       .returning()
     proposalSnapshotId = pSnapshot.id
@@ -112,7 +114,9 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
         invoiceDraftId,
         organizationId: orgId,
         document: invoiceDoc,
-        revision: 1,
+        contentHash: "hash-invoice-123",
+        templateId: "invoice-classic",
+        templateVersion: 1,
       })
       .returning()
     invoiceSnapshotId = iSnapshot.id
