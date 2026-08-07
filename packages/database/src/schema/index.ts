@@ -10,3 +10,5 @@ export * from "./proposal"
 export * from "./session"
 export * from "./user"
 export * from "./verification"
+export * from "./gmail"
+
