@@ -10,6 +10,18 @@ const renderPayloadSchema = z.object({
   props: z.record(z.unknown()).optional().default({}),
 })
 
+const magicLinkPropsSchema = z.object({
+  url: z.string().default(""),
+  email: z.string().default(""),
+})
+
+const invitationPropsSchema = z.object({
+  url: z.string().default(""),
+  orgName: z.string().default(""),
+  inviterName: z.string().default(""),
+  email: z.string().default(""),
+})
+
 export const Route = createFileRoute("/internal/email/render")({
   server: {
     handlers: {
@@ -32,9 +44,11 @@ export const Route = createFileRoute("/internal/email/render")({
 
           let element: React.ReactElement
           if (template === "magic-link") {
-            element = React.createElement(MagicLinkEmail, props as any)
+            const safeProps = magicLinkPropsSchema.parse(props)
+            element = React.createElement(MagicLinkEmail, safeProps)
           } else if (template === "invitation") {
-            element = React.createElement(InvitationEmail, props as any)
+            const safeProps = invitationPropsSchema.parse(props)
+            element = React.createElement(InvitationEmail, safeProps)
           } else {
             return new Response(JSON.stringify({ error: "Unknown template" }), {
               status: 400,

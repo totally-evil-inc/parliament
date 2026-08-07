@@ -98,7 +98,10 @@ function AcceptInvitePage() {
       try {
         const { error } = await authClient.signIn.magicLink({
           email,
-          callbackURL: window.location.href,
+          callbackURL: new URL(
+            window.location.pathname + window.location.search,
+            window.location.origin
+          ).toString(),
         })
         if (error) throw new Error(error.message)
         setSentMagicLinkTo(email)
@@ -164,6 +167,7 @@ function AcceptInvitePage() {
               variant="outline"
               onClick={async () => {
                 await authClient.signOut()
+                void navigate({ to: "/auth/onboarding" })
               }}
             >
               Sign Out
