@@ -164,7 +164,7 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
   }
 
   return (
-    <SheetContent side="right" className="sm:max-w-lg flex flex-col">
+    <SheetContent side="right" className="flex flex-col sm:max-w-lg">
       <SheetHeader className="border-b pb-5">
         <div className="flex items-center gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border/80 bg-background">
@@ -245,7 +245,7 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
               {integration.scopes.map((scope) => (
                 <code
                   key={scope}
-                  className="truncate rounded bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground"
+                  className="truncate rounded bg-muted px-2 py-0.5 font-mono text-muted-foreground text-xs"
                 >
                   {scope}
                 </code>
@@ -290,7 +290,7 @@ function StatusBadge({ status }: { status: IntegrationStatus }) {
       className={cn(
         status === "pending" && "border-amber-500/30 text-amber-700",
         status === "connected" &&
-          "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+          "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
       )}
     >
       {status}

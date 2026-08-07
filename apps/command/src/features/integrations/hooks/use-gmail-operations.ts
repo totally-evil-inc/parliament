@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-const AUTH_SERVER_URL = import.meta.env.VITE_BETTER_AUTH_URL || "http://localhost:4000"
+const AUTH_SERVER_URL =
+  import.meta.env.VITE_BETTER_AUTH_URL || "http://localhost:4000"
 
 export interface SendGmailPayload {
   to: string
@@ -83,13 +84,13 @@ export function useGmailThreadActivity() {
 export function useRegisterGmailWatch() {
   const queryClient = useQueryClient()
 
-  return useMutation({
-    mutationFn: async (topicName?: string) => {
+  return useMutation<any, Error, string | void>({
+    mutationFn: async (topicName?: string | void) => {
       const res = await fetch(`${AUTH_SERVER_URL}/api/gmail/watch/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ topicName }),
+        body: JSON.stringify({ topicName: topicName || undefined }),
       })
 
       if (!res.ok) {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "bun:test"
-import { generateGoogleWebComposeUrl, generateMailtoUrl } from "./mailto-generator"
+import {
+  generateGoogleWebComposeUrl,
+  generateMailtoUrl,
+} from "./mailto-generator"
 
 describe("Mailto & Web Compose Link Generator", () => {
   it("generates valid mailto URL with encoded parameters", () => {

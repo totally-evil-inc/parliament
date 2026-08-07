@@ -36,7 +36,8 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
     id: "google",
     providerId: "google",
     title: "Google Workspace & Gmail Operations",
-    description: "Audit-free Gmail dispatches, response analytics, Calendar, and Drive drops.",
+    description:
+      "Audit-free Gmail dispatches, response analytics, Calendar, and Drive drops.",
     longDescription:
       "Connect your Google Workspace account to enable direct Gmail dispatches (gmail.send), real-time client response velocity heatmaps (gmail.metadata), Google Drive invoice drops (drive.file), and read-only Google Calendar discovery call meeting detection.",
     url: "https://workspace.google.com",
@@ -53,19 +54,23 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
     features: [
       {
         label: "Direct Gmail Dispatches",
-        description: "Send proposals, invoices, and deposit follow-ups directly from your authentic Gmail address.",
+        description:
+          "Send proposals, invoices, and deposit follow-ups directly from your authentic Gmail address.",
       },
       {
         label: "Thread Activity Heatmap & Silence Detection",
-        description: "Track client response velocities and inactivity warnings using audit-free metadata.",
+        description:
+          "Track client response velocities and inactivity warnings using audit-free metadata.",
       },
       {
         label: "Google Drive PDF Drop Folder",
-        description: "Ingest client invoice PDFs placed into your Command Drops Drive folder.",
+        description:
+          "Ingest client invoice PDFs placed into your Command Drops Drive folder.",
       },
       {
         label: "Discovery Meeting Lead Detection",
-        description: "Flag client discovery calls scheduled on Google Calendar to automatically create candidate leads.",
+        description:
+          "Flag client discovery calls scheduled on Google Calendar to automatically create candidate leads.",
       },
     ],
     actions: [
