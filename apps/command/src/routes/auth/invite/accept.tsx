@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/auth/invite/accept")({
 
 function AcceptInvitePage() {
   const { id, email: invitedEmail, orgName } = Route.useSearch()
+  const navigate = useNavigate()
   const session = authClient.useSession()
   const [status, setStatus] = useState<
     | "loading"
@@ -67,15 +68,15 @@ function AcceptInvitePage() {
         setErrorMsg(error.message || "Failed to accept the invitation.")
       } else {
         setStatus("success")
-        // Redirect to homepage after 1.5 seconds
+        // Redirect to homepage after 1.5 seconds via SPA router
         setTimeout(() => {
-          window.location.assign("/")
+          void navigate({ to: "/" })
         }, 1500)
       }
     }
 
     void accept()
-  }, [id, isAuthenticated, invitedEmail, currentUserEmail, session.isPending])
+  }, [id, isAuthenticated, invitedEmail, currentUserEmail, session.isPending, navigate])
 
   const form = useForm({
     defaultValues: {

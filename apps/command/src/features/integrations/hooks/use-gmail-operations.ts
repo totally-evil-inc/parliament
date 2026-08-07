@@ -84,13 +84,13 @@ export function useGmailThreadActivity() {
 export function useRegisterGmailWatch() {
   const queryClient = useQueryClient()
 
-  return useMutation<any, Error, string | void>({
-    mutationFn: async (topicName?: string | void) => {
+  return useMutation<any, Error, string | undefined>({
+    mutationFn: async (topicName?: string) => {
       const res = await fetch(`${AUTH_SERVER_URL}/api/gmail/watch/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ topicName: topicName || undefined }),
+        body: JSON.stringify({ topicName: topicName ?? undefined }),
       })
 
       if (!res.ok) {

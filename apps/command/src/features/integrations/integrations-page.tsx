@@ -153,7 +153,13 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
   const connected = integration.status === "connected"
   const connectMutation = useConnectIntegration()
   const disconnectMutation = useDisconnectIntegration()
-  const isPending = connectMutation.isPending || disconnectMutation.isPending
+  const isConnecting =
+    connectMutation.isPending &&
+    connectMutation.variables?.id === integration.id
+  const isDisconnecting =
+    disconnectMutation.isPending &&
+    disconnectMutation.variables === integration.providerId
+  const isPending = isConnecting || isDisconnecting
 
   const handleAction = () => {
     if (connected) {
@@ -322,6 +328,7 @@ function getIntegrationCounts(integrations: Array<Integration>) {
       all: 0,
       connected: 0,
       available: 0,
+      pending: 0,
     } as Record<string, number>
   )
 }

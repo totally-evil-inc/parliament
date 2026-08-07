@@ -11,34 +11,40 @@ describe("Command App Integration Configuration & Scopes", () => {
     expect(calInt).toBeDefined()
     expect(driveInt).toBeDefined()
 
-    expect(gmailInt?.scopes).toContain(
+    const gmailScopes = gmailInt?.scopes ?? []
+    const calScopes = calInt?.scopes ?? []
+    const driveScopes = driveInt?.scopes ?? []
+
+    expect(gmailScopes).toContain(
       "https://www.googleapis.com/auth/gmail.send"
     )
-    expect(gmailInt?.scopes).toContain(
+    expect(gmailScopes).toContain(
       "https://www.googleapis.com/auth/gmail.metadata"
     )
-    expect(calInt?.scopes).toContain(
+    expect(calScopes).toContain(
       "https://www.googleapis.com/auth/calendar.events.readonly"
     )
-    expect(driveInt?.scopes).toContain(
+    expect(driveScopes).toContain(
       "https://www.googleapis.com/auth/drive.file"
     )
 
     // Ensure NO restricted scopes are included
-    expect(gmailInt?.scopes).not.toContain("https://mail.google.com/")
-    expect(gmailInt?.scopes).not.toContain(
+    expect(gmailScopes).not.toContain("https://mail.google.com/")
+    expect(gmailScopes).not.toContain(
       "https://www.googleapis.com/auth/gmail.readonly"
     )
-    expect(gmailInt?.scopes).not.toContain(
+    expect(gmailScopes).not.toContain(
       "https://www.googleapis.com/auth/gmail.modify"
     )
   })
 
   it("lists audit-free actions for Gmail integration", () => {
     const gmailInt = DEFAULT_INTEGRATIONS.find((i) => i.id === "gmail")
-    expect(gmailInt?.actions).toContain("gmail_send_email")
-    expect(gmailInt?.actions).toContain("gmail_create_draft")
-    expect(gmailInt?.actions).toContain("gmail_watch_threads")
-    expect(gmailInt?.actions).toContain("gmail_get_activity")
+    expect(gmailInt).toBeDefined()
+    const actions = gmailInt?.actions ?? []
+    expect(actions).toContain("gmail_send_email")
+    expect(actions).toContain("gmail_create_draft")
+    expect(actions).toContain("gmail_watch_threads")
+    expect(actions).toContain("gmail_get_activity")
   })
 })

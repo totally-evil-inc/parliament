@@ -74,40 +74,40 @@ export function InvitationsList({ invitations, organizationId }: Props) {
       </div>
 
       <div className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/60">
-        {invitations.map((inv) => (
-          <div
-            key={inv.id}
-            className="flex items-center justify-between gap-3 px-4 py-3"
-          >
-            <div className="min-w-0">
-              <div className="truncate font-medium text-sm">{inv.email}</div>
-              <div className="mt-0.5 flex items-center gap-2">
-                <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em]">
-                  {inv.role ?? "member"}
-                </span>
-                <span className="text-muted-foreground/50">·</span>
-                <span className="font-mono text-[10px] text-muted-foreground">
-                  Expires {formatDate(inv.expiresAt)}
-                </span>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="shrink-0 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em] hover:text-destructive"
-              disabled={
-                cancelInvitationMutation.isPending &&
-                cancelInvitationMutation.variables === inv.id
-              }
-              onClick={() => void handleCancel(inv)}
+        {invitations.map((inv) => {
+          const isRevoking =
+            cancelInvitationMutation.isPending &&
+            cancelInvitationMutation.variables === inv.id
+
+          return (
+            <div
+              key={inv.id}
+              className="flex items-center justify-between gap-3 px-4 py-3"
             >
-              {cancelInvitationMutation.isPending &&
-              cancelInvitationMutation.variables === inv.id
-                ? "Revoking…"
-                : "Revoke"}
-            </Button>
-          </div>
-        ))}
+              <div className="min-w-0">
+                <div className="truncate font-medium text-sm">{inv.email}</div>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em]">
+                    {inv.role ?? "member"}
+                  </span>
+                  <span className="text-muted-foreground/50">·</span>
+                  <span className="font-mono text-[10px] text-muted-foreground">
+                    Expires {formatDate(inv.expiresAt)}
+                  </span>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em] hover:text-destructive"
+                disabled={isRevoking}
+                onClick={() => void handleCancel(inv)}
+              >
+                {isRevoking ? "Revoking…" : "Revoke"}
+              </Button>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

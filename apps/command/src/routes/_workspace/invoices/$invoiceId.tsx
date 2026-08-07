@@ -197,7 +197,7 @@ function InvoiceEditorScreen({
 
   const [sendDialogOpen, setSendDialogOpen] = React.useState(false)
   const snapshot = store.getSnapshot()
-  const defaultClientEmail = (snapshot as any).parties?.client?.email || ""
+  const defaultClientEmail = snapshot.parties?.client?.email || ""
   const invoiceTitle = snapshot.data.title || "Untitled Invoice"
 
   const handleFinalizeAndGetShareUrl = async (): Promise<string> => {

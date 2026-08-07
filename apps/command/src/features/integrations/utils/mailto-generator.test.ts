@@ -12,20 +12,26 @@ describe("Mailto & Web Compose Link Generator", () => {
       body: "Hi John, review your proposal here: https://command.app/p/123",
     })
 
-    expect(url.startsWith("mailto:john%40acme.corp?")).toBe(true)
-    expect(url.includes("subject=Proposal%20v2%20Review")).toBe(true)
-    expect(url.includes("body=Hi%20John")).toBe(true)
+    expect(url.startsWith("mailto:")).toBe(true)
+    const queryIndex = url.indexOf("?")
+    const queryPart = queryIndex !== -1 ? url.slice(queryIndex + 1) : ""
+    const params = new URLSearchParams(queryPart)
+    expect(params.get("subject")).toBe("Proposal v2 Review")
+    expect(params.get("body")).toContain("https://command.app/p/123")
   })
 
   it("generates valid Google Web Compose URL for browser new tab dispatches", () => {
-    const url = generateGoogleWebComposeUrl({
+    const urlString = generateGoogleWebComposeUrl({
       to: "john@acme.corp",
       subject: "Invoice #101",
       body: "Payment link attached.",
     })
 
-    expect(url.startsWith("https://mail.google.com/mail/?")).toBe(true)
-    expect(url.includes("view=cm")).toBe(true)
-    expect(url.includes("to=john%40acme.corp")).toBe(true)
+    const parsed = new URL(urlString)
+    expect(parsed.origin).toBe("https://mail.google.com")
+    expect(parsed.pathname).toBe("/mail/")
+    expect(parsed.searchParams.get("view")).toBe("cm")
+    expect(parsed.searchParams.get("to")).toBe("john@acme.corp")
+    expect(parsed.searchParams.get("su")).toBe("Invoice #101")
   })
 })
