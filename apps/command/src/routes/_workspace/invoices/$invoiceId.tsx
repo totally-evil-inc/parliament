@@ -28,6 +28,7 @@ import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import * as React from "react"
 import { invoiceDraftQuery } from "@/api/invoices"
 import { useConfirm } from "@/components/confirm-dialog-provider"
+import { SendDocumentDialog } from "@/features/integrations/components/send-document-dialog"
 import { useTheme } from "@/components/theme-provider"
 import { createId } from "@/lib/create-id"
 import type {
@@ -194,6 +195,21 @@ function InvoiceEditorScreen({
     [runtime, store]
   )
 
+  const [sendDialogOpen, setSendDialogOpen] = React.useState(false)
+  const snapshot = store.getSnapshot()
+  const defaultClientEmail = (snapshot as any).parties?.client?.email || ""
+  const invoiceTitle = snapshot.title || "Untitled Invoice"
+
+  const handleFinalizeAndGetShareUrl = async (): Promise<string> => {
+    const result = await sendDraft.mutateAsync()
+    if (result.status === "sent" && result.finalized) {
+      const url = `${window.location.origin}/invoice/${result.finalized.token}`
+      setShareUrl(url)
+      return url
+    }
+    return window.location.href
+  }
+
   return (
     <div className="flex h-[calc(100svh-3rem)] min-h-0 w-full flex-col overflow-hidden bg-muted/30">
       <div className="flex min-h-12 items-center justify-between gap-3 border-b bg-background px-4">
@@ -222,13 +238,23 @@ function InvoiceEditorScreen({
           </Button>
           <Button
             type="button"
-            onClick={() => sendDraft.mutate()}
+            onClick={() => setSendDialogOpen(true)}
             disabled={saveDraft.isPending || sendDraft.isPending}
           >
-            {sendDraft.isPending ? "Sending..." : "Send"}
+            {sendDraft.isPending ? "Sending..." : "Send via Gmail"}
           </Button>
         </div>
       </div>
+
+      <SendDocumentDialog
+        open={sendDialogOpen}
+        onOpenChange={setSendDialogOpen}
+        documentType="invoice"
+        documentTitle={invoiceTitle}
+        defaultRecipientEmail={defaultClientEmail}
+        shareUrl={shareUrl || undefined}
+        onFinalizeAndGetShareUrl={handleFinalizeAndGetShareUrl}
+      />
       <DocumentSidebarProvider defaultOpen={true}>
         <div
           className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden"
