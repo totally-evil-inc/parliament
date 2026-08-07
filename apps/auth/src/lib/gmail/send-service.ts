@@ -39,31 +39,36 @@ export function buildRfc2822RawMessage(options: {
   plainText?: string
   replyTo?: string
 }): string {
+  const sanitizeHeader = (val: string) => val.replace(/[\r\n]/g, "")
   const boundary = `====_Part_${Date.now()}_${Math.random().toString(36).substring(2)}`
   const lines: string[] = [
-    `To: ${options.to}`,
-    `Subject: ${options.subject}`,
+    `To: ${sanitizeHeader(options.to)}`,
+    `Subject: ${sanitizeHeader(options.subject)}`,
     `MIME-Version: 1.0`,
   ]
 
   if (options.replyTo) {
-    lines.push(`Reply-To: ${options.replyTo}`)
+    lines.push(`Reply-To: ${sanitizeHeader(options.replyTo)}`)
   }
+
+  const plainContent = options.plainText || options.htmlText.replace(/<[^>]+>/g, "")
+  const plainBase64 = Buffer.from(plainContent, "utf-8").toString("base64")
+  const htmlBase64 = Buffer.from(options.htmlText, "utf-8").toString("base64")
 
   lines.push(
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
     ``,
     `--${boundary}`,
     `Content-Type: text/plain; charset=UTF-8`,
-    `Content-Transfer-Encoding: 7bit`,
+    `Content-Transfer-Encoding: base64`,
     ``,
-    options.plainText || options.htmlText.replace(/<[^>]+>/g, ""),
+    plainBase64,
     ``,
     `--${boundary}`,
     `Content-Type: text/html; charset=UTF-8`,
-    `Content-Transfer-Encoding: 7bit`,
+    `Content-Transfer-Encoding: base64`,
     ``,
-    options.htmlText,
+    htmlBase64,
     ``,
     `--${boundary}--`
   )

@@ -35,6 +35,14 @@ export async function getValidGoogleAccessToken(
     targetAccount.accessTokenExpiresAt.getTime() <= now.getTime() + 60000
 
   if (isExpired && targetAccount.refreshToken) {
+    const clientId = process.env.GOOGLE_CLIENT_ID
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+    if (!clientId || !clientSecret) {
+      throw new Error(
+        "Missing required GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET environment variable"
+      )
+    }
+
     logger.info(
       { userId, accountId: targetAccount.id },
       "Refreshing Google access token for user"
@@ -44,8 +52,8 @@ export async function getValidGoogleAccessToken(
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        client_id: process.env.GOOGLE_CLIENT_ID || "",
-        client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
+        client_id: clientId,
+        client_secret: clientSecret,
         grant_type: "refresh_token",
         refresh_token: targetAccount.refreshToken,
       }),
@@ -62,22 +70,35 @@ export async function getValidGoogleAccessToken(
       )
     }
 
-    const tokenData = (await refreshRes.json()) as GoogleTokenResponse
-    if (!tokenData.access_token) {
+    const tokenData = (await refreshRes.json().catch(() => null)) as GoogleTokenResponse | null
+    if (!tokenData || !tokenData.access_token) {
       throw new Error("Invalid token refresh response from Google")
     }
 
     const newExpiresAt = new Date(
       Date.now() + (tokenData.expires_in || 3600) * 1000
     )
-    await db
-      .update(account)
-      .set({
-        accessToken: tokenData.access_token,
-        accessTokenExpiresAt: newExpiresAt,
-        updatedAt: new Date(),
+    try {
+      await db.transaction(async (tx) => {
+        await tx
+          .update(account)
+          .set({
+            accessToken: tokenData.access_token,
+            accessTokenExpiresAt: newExpiresAt,
+            updatedAt: new Date(),
+          })
+          .where(eq(account.id, targetAccount.id))
       })
-      .where(eq(account.id, targetAccount.id))
+    } catch {
+      await db
+        .update(account)
+        .set({
+          accessToken: tokenData.access_token,
+          accessTokenExpiresAt: newExpiresAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(account.id, targetAccount.id))
+    }
 
     return tokenData.access_token
   }

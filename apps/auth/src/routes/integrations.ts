@@ -75,6 +75,19 @@ integrationsRouter.get("/internal/token", async (c) => {
         )
       }
     }
+  } else {
+    if (isProduction) {
+      logger.error(
+        { path: c.req.path },
+        "Harness secret not configured in production"
+      )
+      return c.json({ error: "Internal Server Error" }, 500)
+    } else {
+      logger.warn(
+        { path: c.req.path },
+        "Harness secret not configured, allowing request in non-production mode"
+      )
+    }
   }
 
   const provider = c.req.query("provider")
@@ -166,6 +179,7 @@ integrationsRouter.get("/internal/token", async (c) => {
               .set({
                 accessToken: tokenData.access_token,
                 accessTokenExpiresAt: newExpiresAt,
+                refreshToken: tokenData.refresh_token ?? targetAccount.refreshToken,
                 updatedAt: new Date(),
               })
               .where(eq(account.id, targetAccount.id))

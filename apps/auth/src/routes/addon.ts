@@ -45,8 +45,30 @@ addonRouter.get("/manifest", (c) => {
  */
 addonRouter.post("/context", async (c) => {
   try {
-    const body = await c.req.json()
+    const user = c.get("user")
+    const authHeader = c.req.header("Authorization")
+    const isProduction = process.env.NODE_ENV === "production"
+    if (isProduction && !user && !authHeader) {
+      return c.json({ error: "Unauthorized: Missing authentication context" }, 401)
+    }
+
+    const body = await c.req.json().catch(() => null)
+    if (!body || typeof body !== "object") {
+      return c.json({ error: "Bad Request: Invalid JSON payload" }, 400)
+    }
+
     const { senderEmail, messageId } = body
+    if (
+      !senderEmail ||
+      typeof senderEmail !== "string" ||
+      !messageId ||
+      typeof messageId !== "string"
+    ) {
+      return c.json(
+        { error: "Bad Request: Missing or invalid required fields (senderEmail, messageId)" },
+        400
+      )
+    }
 
     logger.info(
       { senderEmail, messageId },

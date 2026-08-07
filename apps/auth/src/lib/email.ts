@@ -20,7 +20,9 @@ export async function renderEmail(
   return data.html
 }
 
-let transporter: any = null
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+let transporter: nodemailer.Transporter | null = null
 
 export async function sendEmail({
   to,
@@ -31,6 +33,10 @@ export async function sendEmail({
   subject: string
   html: string
 }) {
+  if (!to || !EMAIL_REGEX.test(to)) {
+    throw new Error(`Invalid email recipient address: ${to}`)
+  }
+
   const apiKey = Bun.env.RESEND_API_KEY
   const smtpHost = Bun.env.SMTP_HOST
   const smtpPort = Bun.env.SMTP_PORT
@@ -40,11 +46,13 @@ export async function sendEmail({
 
   // 1. If SMTP settings are provided, use SMTP (Gmail, etc.)
   if (smtpHost && smtpUser && smtpPass) {
+    const rawPort = Number.parseInt(smtpPort || "465", 10)
+    const port = Number.isNaN(rawPort) ? 465 : rawPort
     if (!transporter) {
       transporter = nodemailer.createTransport({
         host: smtpHost,
-        port: Number(smtpPort || 465),
-        secure: Number(smtpPort || 465) === 465,
+        port,
+        secure: port === 465,
         auth: {
           user: smtpUser,
           pass: smtpPass,

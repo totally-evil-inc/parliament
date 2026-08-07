@@ -137,7 +137,9 @@ mock.module("./lib/auth", () => {
 })
 
 // Mock global fetch for email render and Resend
+let originalFetch: typeof global.fetch
 beforeAll(() => {
+  originalFetch = global.fetch
   ;(global as any).fetch = async (url: string | URL, _init?: RequestInit) => {
     if (url.toString().includes("/internal/email/render")) {
       return new Response(JSON.stringify({ html: "<h1>Rendered HTML</h1>" }), {
@@ -153,6 +155,10 @@ beforeAll(() => {
     }
     return new Response("Not Found", { status: 404 })
   }
+})
+
+afterAll(() => {
+  global.fetch = originalFetch
 })
 
 import { app } from "./index"

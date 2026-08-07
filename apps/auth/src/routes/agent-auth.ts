@@ -14,31 +14,63 @@ export const agentAuthRouter = new Hono<{
  * Stage an action proposed by an agent (called by Go Harness daemon)
  */
 agentAuthRouter.post("/stage", async (c) => {
+  const user = c.get("user")
+  const authSecret = c.req.header("X-Harness-Secret") || c.req.header("Authorization")
+  const expectedSecret = Bun.env.HARNESS_AUTH_SECRET || Bun.env.BETTER_AUTH_SECRET
+  if (!user && expectedSecret && authSecret !== expectedSecret && authSecret !== `Bearer ${expectedSecret}`) {
+    return c.json({ error: "Unauthorized: Invalid or missing harness authentication" }, 401)
+  }
+
   const body = await c.req.json().catch(() => ({}))
   const { toolName, args, reason, confidenceScore, agentId, userId } = body
 
-  if (!toolName || !args) {
-    return c.json({ error: "Bad Request: Missing toolName or args" }, 400)
+  if (!toolName || typeof toolName !== "string" || !args || typeof args !== "object") {
+    return c.json(
+      { error: "Bad Request: Missing or invalid toolName or args" },
+      400
+    )
+  }
+
+  const targetUserId = userId || user?.id
+  if (!targetUserId || typeof targetUserId !== "string") {
+    return c.json(
+      { error: "Bad Request: Target userId is required for approval staging" },
+      400
+    )
   }
 
   try {
-    // If agentId is provided, check policy
     let policySetting = "require_approval"
-    let targetUserId = userId
+    let targetAgentId = agentId
 
-    if (agentId) {
+    if (targetAgentId) {
       const records = await db
         .select()
         .from(agent)
-        .where(eq(agent.id, agentId))
+        .where(eq(agent.id, targetAgentId))
         .limit(1)
 
       if (records.length > 0) {
         const ag = records[0]
-        targetUserId = targetUserId || ag.userId
         if (ag.policy && ag.policy[toolName]) {
           policySetting = ag.policy[toolName]
         }
+      }
+    } else {
+      // Find existing agent for user or require explicit agentId
+      const existing = await db
+        .select()
+        .from(agent)
+        .where(eq(agent.userId, targetUserId))
+        .limit(1)
+
+      if (existing.length > 0) {
+        targetAgentId = existing[0].id
+      } else {
+        return c.json(
+          { error: "Bad Request: Missing agentId for staging action" },
+          400
+        )
       }
     }
 
@@ -59,39 +91,6 @@ agentAuthRouter.post("/stage", async (c) => {
 
     // Default to require_approval: stage in DB
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hour expiry
-
-    // Fallback userId lookup if not supplied
-    if (!targetUserId) {
-      const firstUser = await db.query?.user?.findFirst?.()
-      if (firstUser) {
-        targetUserId = firstUser.id
-      }
-    }
-
-    if (!targetUserId) {
-      return c.json(
-        { error: "Bad Request: No target user available for approval staging" },
-        400
-      )
-    }
-
-    // Fallback dummy agent ID if missing
-    let targetAgentId = agentId
-    if (!targetAgentId) {
-      const existingAgent = await db.select().from(agent).limit(1)
-      if (existingAgent.length > 0) {
-        targetAgentId = existingAgent[0].id
-      } else {
-        const [newAgent] = await db
-          .insert(agent)
-          .values({
-            userId: targetUserId,
-            name: "Default Harness Agent",
-          })
-          .returning()
-        targetAgentId = newAgent.id
-      }
-    }
 
     const [staged] = await db
       .insert(agentAction)

@@ -69,10 +69,22 @@ export function SendDocumentDialog({
     return window.location.href
   }
 
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  function escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;")
+  }
+
   const handleSendViaGmail = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!recipientEmail) {
-      setStatusMessage("Please enter a valid recipient email.")
+    const trimmedEmail = recipientEmail.trim()
+    if (!trimmedEmail || !EMAIL_REGEX.test(trimmedEmail)) {
+      setStatusMessage("Please enter a valid recipient email address.")
       return
     }
 
@@ -80,9 +92,10 @@ export function SendDocumentDialog({
       setStatusMessage("Finalizing document link...")
       const url = await ensureShareUrl()
 
+      const safeMessageHtml = escapeHtml(personalMessage).replace(/\n/g, "<br/>")
       const htmlBody = `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-          <p>${personalMessage.replace(/\n/g, "<br/>")}</p>
+          <p>${safeMessageHtml}</p>
           <p><a href="${url}" style="display: inline-block; padding: 10px 18px; background-color: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">View ${documentType === "proposal" ? "Proposal" : "Invoice"}</a></p>
           <p style="font-size: 12px; color: #666;">Or copy link: ${url}</p>
         </div>
@@ -90,12 +103,12 @@ export function SendDocumentDialog({
 
       setStatusMessage("Sending email via Gmail API...")
       await sendGmailMutation.mutateAsync({
-        to: recipientEmail,
+        to: trimmedEmail,
         subject,
         htmlText: htmlBody,
       })
 
-      setStatusMessage(`Successfully sent via Gmail to ${recipientEmail}!`)
+      setStatusMessage(`Successfully sent via Gmail to ${trimmedEmail}!`)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to send email"
       setStatusMessage(`Error: ${msg}`)
@@ -103,8 +116,9 @@ export function SendDocumentDialog({
   }
 
   const handleOpenInGmailWeb = async () => {
-    if (!recipientEmail) {
-      setStatusMessage("Please enter a valid recipient email.")
+    const trimmedEmail = recipientEmail.trim()
+    if (!trimmedEmail || !EMAIL_REGEX.test(trimmedEmail)) {
+      setStatusMessage("Please enter a valid recipient email address.")
       return
     }
 
@@ -112,7 +126,7 @@ export function SendDocumentDialog({
       const url = await ensureShareUrl()
       const bodyText = `${personalMessage}\n\n${url}`
       const composeUrl = generateGoogleWebComposeUrl({
-        to: recipientEmail,
+        to: trimmedEmail,
         subject,
         body: bodyText,
       })

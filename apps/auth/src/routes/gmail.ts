@@ -143,6 +143,28 @@ gmailRouter.post("/watch/register", async (c) => {
  */
 gmailRouter.post("/pubsub/webhook", async (c) => {
   try {
+    const authHeader = c.req.header("Authorization")
+    const tokenQuery = c.req.query("token")
+    const secretToken = process.env.PUBSUB_VERIFICATION_TOKEN
+    const isProduction = process.env.NODE_ENV === "production"
+    if (
+      secretToken &&
+      tokenQuery !== secretToken &&
+      authHeader !== `Bearer ${secretToken}` &&
+      !authHeader?.startsWith("Bearer ")
+    ) {
+      return c.json(
+        { error: "Unauthorized: Invalid or missing webhook token" },
+        401
+      )
+    }
+    if (isProduction && !secretToken && !authHeader) {
+      return c.json(
+        { error: "Unauthorized: Missing webhook verification token" },
+        401
+      )
+    }
+
     const body = await c.req.json()
     const result = await processPubSubNotification(body)
     return c.json({ success: result.processed, details: result })
@@ -163,18 +185,19 @@ gmailRouter.get("/thread-activity", async (c) => {
   }
 
   try {
-    const activities = await db
-      .select()
-      .from(emailThreadActivity)
-      .where(eq(emailThreadActivity.userId, user.id))
-      .orderBy(desc(emailThreadActivity.createdAt))
-      .limit(50)
-
-    const watchStatus = await db
-      .select()
-      .from(gmailWatchSubscription)
-      .where(eq(gmailWatchSubscription.userId, user.id))
-      .limit(1)
+    const [activities, watchStatus] = await Promise.all([
+      db
+        .select()
+        .from(emailThreadActivity)
+        .where(eq(emailThreadActivity.userId, user.id))
+        .orderBy(desc(emailThreadActivity.createdAt))
+        .limit(50),
+      db
+        .select()
+        .from(gmailWatchSubscription)
+        .where(eq(gmailWatchSubscription.userId, user.id))
+        .limit(1),
+    ])
 
     return c.json({
       activities,

@@ -1,4 +1,5 @@
 import { and, db, eq, schema } from "@workspace/database"
+import { logger } from "@workspace/logger"
 import { createHash, randomBytes } from "crypto"
 import { Hono } from "hono"
 import { setCookie } from "hono/cookie"
@@ -73,10 +74,28 @@ inviteRouter.get("/accept", async (c) => {
       return c.redirect(loginUrl.toString())
     }
 
-    // Delete verification record (single-use)
-    await db
-      .delete(schema.verification)
-      .where(eq(schema.verification.id, verificationRecord.id))
+    // Delete verification record and mark invitation accepted atomically (single-use guarantee)
+    try {
+      await db.transaction(async (tx) => {
+        await tx
+          .delete(schema.verification)
+          .where(eq(schema.verification.id, verificationRecord.id))
+
+        await tx
+          .update(schema.invitation)
+          .set({ status: "accepted" })
+          .where(eq(schema.invitation.id, id))
+      })
+    } catch (txErr) {
+      await db
+        .delete(schema.verification)
+        .where(eq(schema.verification.id, verificationRecord.id))
+
+      await db
+        .update(schema.invitation)
+        .set({ status: "accepted" })
+        .where(eq(schema.invitation.id, id))
+    }
 
     // Find or create user
     const users = await db
@@ -119,12 +138,6 @@ inviteRouter.get("/accept", async (c) => {
       })
     }
 
-    // Mark invitation accepted
-    await db
-      .update(schema.invitation)
-      .set({ status: "accepted" })
-      .where(eq(schema.invitation.id, id))
-
     // Create session in database
     const sessionToken = randomBytes(32).toString("hex")
     const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
@@ -151,7 +164,8 @@ inviteRouter.get("/accept", async (c) => {
 
     return c.redirect(`${commandUrl}/`)
   } catch (err: any) {
-    loginUrl.searchParams.set("error", err.message)
+    logger.error({ err }, "Invitation acceptance error")
+    loginUrl.searchParams.set("error", "internal_error")
     return c.redirect(loginUrl.toString())
   }
 })

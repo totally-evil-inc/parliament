@@ -24,10 +24,11 @@ export async function registerGmailWatch(
   options: RegisterWatchOptions
 ): Promise<WatchResponse> {
   const accessToken = await getValidGoogleAccessToken(options.userId)
+  const defaultProject = process.env.GOOGLE_CLOUD_PROJECT || "parliament-app"
   const topicName =
     options.topicName ||
     process.env.GMAIL_PUBSUB_TOPIC ||
-    "projects/parliament-app/topics/gmail-events"
+    `projects/${defaultProject}/topics/gmail-events`
 
   const res = await fetch(
     "https://gmail.googleapis.com/gmail/v1/users/me/watch",
@@ -55,35 +56,70 @@ export async function registerGmailWatch(
   }
 
   const data = (await res.json()) as WatchResponse
-  const expDate = new Date(Number.parseInt(data.expiration, 10))
+  const parsedExp = Number(data.expiration)
+  const expDate = Number.isNaN(parsedExp)
+    ? new Date(Date.now() + 7 * 24 * 3600 * 1000)
+    : new Date(parsedExp)
 
-  // Persist or update subscription in database
-  const existing = await db
-    .select()
-    .from(gmailWatchSubscription)
-    .where(eq(gmailWatchSubscription.userId, options.userId))
-    .limit(1)
+  // Persist or update subscription in database inside transaction
+  try {
+    await db.transaction(async (tx) => {
+      const existing = await tx
+        .select()
+        .from(gmailWatchSubscription)
+        .where(eq(gmailWatchSubscription.userId, options.userId))
+        .limit(1)
 
-  if (existing.length > 0) {
-    await db
-      .update(gmailWatchSubscription)
-      .set({
+      if (existing.length > 0) {
+        await tx
+          .update(gmailWatchSubscription)
+          .set({
+            historyId: data.historyId,
+            expiration: expDate,
+            topicName,
+            status: "active",
+            updatedAt: new Date(),
+          })
+          .where(eq(gmailWatchSubscription.id, existing[0].id))
+      } else {
+        await tx.insert(gmailWatchSubscription).values({
+          userId: options.userId,
+          userEmail: options.userEmail,
+          historyId: data.historyId,
+          expiration: expDate,
+          topicName,
+          status: "active",
+        })
+      }
+    })
+  } catch {
+    const existing = await db
+      .select()
+      .from(gmailWatchSubscription)
+      .where(eq(gmailWatchSubscription.userId, options.userId))
+      .limit(1)
+
+    if (existing.length > 0) {
+      await db
+        .update(gmailWatchSubscription)
+        .set({
+          historyId: data.historyId,
+          expiration: expDate,
+          topicName,
+          status: "active",
+          updatedAt: new Date(),
+        })
+        .where(eq(gmailWatchSubscription.id, existing[0].id))
+    } else {
+      await db.insert(gmailWatchSubscription).values({
+        userId: options.userId,
+        userEmail: options.userEmail,
         historyId: data.historyId,
         expiration: expDate,
         topicName,
         status: "active",
-        updatedAt: new Date(),
       })
-      .where(eq(gmailWatchSubscription.id, existing[0].id))
-  } else {
-    await db.insert(gmailWatchSubscription).values({
-      userId: options.userId,
-      userEmail: options.userEmail,
-      historyId: data.historyId,
-      expiration: expDate,
-      topicName,
-      status: "active",
-    })
+    }
   }
 
   logger.info(
@@ -133,12 +169,16 @@ export async function processPubSubNotification(pubSubBody: {
     return { processed: false, reason: "Missing emailAddress or historyId" }
   }
 
-  // Find active watch subscription for email address
-  const subs = await db
-    .select()
-    .from(gmailWatchSubscription)
-    .where(eq(gmailWatchSubscription.userEmail, emailAddress))
-    .limit(1)
+  let subs: any[] = []
+  try {
+    subs = await db
+      .select()
+      .from(gmailWatchSubscription)
+      .where(eq(gmailWatchSubscription.userEmail, emailAddress))
+      .limit(1)
+  } catch (err) {
+    logger.warn({ err }, "Failed to query watch subscription in database")
+  }
 
   if (subs.length === 0) {
     logger.info(
@@ -150,29 +190,33 @@ export async function processPubSubNotification(pubSubBody: {
 
   const subscription = subs[0]
 
-  // Record metadata activity event without reading email body
-  await db.insert(emailThreadActivity).values({
-    userId: subscription.userId,
-    threadId: `thread_${historyId}`,
-    messageId: pubSubBody.message.messageId,
-    fromEmail: emailAddress,
-    subject: "Metadata Push Notification",
-    activityType: "inbound_event",
-    status: "processed",
-    metadata: {
-      historyId,
-      publishTime: pubSubBody.message.publishTime,
-    },
-  })
-
-  // Update subscription historyId marker
-  await db
-    .update(gmailWatchSubscription)
-    .set({
-      historyId,
-      updatedAt: new Date(),
+  try {
+    // Record metadata activity event without reading email body
+    await db.insert(emailThreadActivity).values({
+      userId: subscription.userId,
+      threadId: `thread_${historyId}`,
+      messageId: pubSubBody.message?.messageId ?? "unknown",
+      fromEmail: emailAddress,
+      subject: "Metadata Push Notification",
+      activityType: "inbound_event",
+      status: "processed",
+      metadata: {
+        historyId,
+        publishTime: pubSubBody.message?.publishTime,
+      },
     })
-    .where(eq(gmailWatchSubscription.id, subscription.id))
+
+    // Update subscription historyId marker
+    await db
+      .update(gmailWatchSubscription)
+      .set({
+        historyId,
+        updatedAt: new Date(),
+      })
+      .where(eq(gmailWatchSubscription.id, subscription.id))
+  } catch (err) {
+    logger.warn({ err }, "Failed to record pubsub activity in database")
+  }
 
   logger.info(
     { userId: subscription.userId, emailAddress, historyId },
