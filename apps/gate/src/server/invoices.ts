@@ -160,7 +160,7 @@ export async function acceptPublicInvoice(
     throw new Error("Invoice link not found")
   }
 
-  if (link.status !== "active" || link.revokedAt !== null) {
+  if (link.status === "revoked" || link.revokedAt !== null) {
     throw new Error("Invoice link is revoked or unavailable")
   }
 

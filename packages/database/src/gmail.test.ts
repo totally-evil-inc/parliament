@@ -1,10 +1,5 @@
 import { describe, expect, it } from "bun:test"
 import { getTableColumns, getTableName } from "drizzle-orm"
-import {
-  emailThreadActivity,
-  gmailWatchSubscription,
-  inboundWebhookLog,
-} from "./index"
 import * as schema from "./schema"
 
 describe("Gmail schema definitions", () => {
@@ -15,15 +10,17 @@ describe("Gmail schema definitions", () => {
   })
 
   it("has correct table names", () => {
-    expect(getTableName(gmailWatchSubscription)).toBe(
+    expect(getTableName(schema.gmailWatchSubscription)).toBe(
       "gmail_watch_subscription"
     )
-    expect(getTableName(emailThreadActivity)).toBe("email_thread_activity")
-    expect(getTableName(inboundWebhookLog)).toBe("inbound_webhook_log")
+    expect(getTableName(schema.emailThreadActivity)).toBe(
+      "email_thread_activity"
+    )
+    expect(getTableName(schema.inboundWebhookLog)).toBe("inbound_webhook_log")
   })
 
   it("defines valid columns for gmailWatchSubscription", () => {
-    const columns = getTableColumns(gmailWatchSubscription)
+    const columns = getTableColumns(schema.gmailWatchSubscription)
     expect(columns.id.name).toBe("id")
     expect(columns.userId.name).toBe("user_id")
     expect(columns.userEmail.name).toBe("user_email")
@@ -36,7 +33,7 @@ describe("Gmail schema definitions", () => {
   })
 
   it("defines valid columns for emailThreadActivity", () => {
-    const columns = getTableColumns(emailThreadActivity)
+    const columns = getTableColumns(schema.emailThreadActivity)
     expect(columns.id.name).toBe("id")
     expect(columns.userId.name).toBe("user_id")
     expect(columns.threadId.name).toBe("thread_id")
@@ -53,7 +50,7 @@ describe("Gmail schema definitions", () => {
   })
 
   it("defines valid columns for inboundWebhookLog", () => {
-    const columns = getTableColumns(inboundWebhookLog)
+    const columns = getTableColumns(schema.inboundWebhookLog)
     expect(columns.id.name).toBe("id")
     expect(columns.provider.name).toBe("provider")
     expect(columns.eventType.name).toBe("event_type")

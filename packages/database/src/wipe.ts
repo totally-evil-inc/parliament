@@ -15,14 +15,16 @@ async function wipeDatabase() {
   const tables = result.map((row) => row.table_name)
 
   if (tables.length === 0) {
+    console.log("No tables found to wipe.")
     process.exit(0)
   }
 
-  const tableList = tables.map((t) => `"${t}"`).join(", ")
+  const tableIdentifiers = tables.map((t) => sql.identifier(t))
   await db.execute(
-    sql.raw(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE;`)
+    sql`TRUNCATE TABLE ${sql.join(tableIdentifiers, sql`, `)} RESTART IDENTITY CASCADE;`
   )
 
+  console.log(`Successfully wiped ${tables.length} tables.`)
   process.exit(0)
 }
 

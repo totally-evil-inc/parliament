@@ -153,7 +153,7 @@ export async function acceptPublicProposal(
     throw new Error("Proposal link not found")
   }
 
-  if (link.status !== "active" || link.revokedAt !== null) {
+  if (link.status === "revoked" || link.revokedAt !== null) {
     throw new Error("Proposal link is revoked or unavailable")
   }
 

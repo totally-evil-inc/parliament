@@ -5,6 +5,7 @@ import {
 } from "@workspace/document"
 import { renderToString } from "react-dom/server"
 import { parsePathname } from "../App"
+import { DrawnCanvas } from "./DrawnCanvas"
 import { InvoiceView } from "./InvoiceView"
 import { ProposalView } from "./ProposalView"
 import { RichTextRenderer } from "./RichTextRenderer"
@@ -386,7 +387,6 @@ describe("Document Presentation Components (apps/gate)", () => {
 
   describe("DrawnCanvas Component", () => {
     test("renders canvas element and clear button in SSR HTML", () => {
-      const { DrawnCanvas } = require("./DrawnCanvas")
       const html = renderToString(<DrawnCanvas onChange={() => {}} />)
 
       expect(html).toContain('data-testid="signature-canvas"')

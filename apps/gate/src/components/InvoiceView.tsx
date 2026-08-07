@@ -136,6 +136,15 @@ export function InvoiceView({
       return
     }
 
+    if (signatureMode === "typed" && !signatureText.trim()) {
+      setErrorMsg("Typed signature is required.")
+      return
+    }
+    if (signatureMode === "drawn" && !signatureImage) {
+      setErrorMsg("Drawn signature is required.")
+      return
+    }
+
     setErrorMsg(null)
     try {
       await onAccept({
@@ -151,8 +160,8 @@ export function InvoiceView({
         agreedTerms: true,
       })
     } catch (err: unknown) {
-      const error = err as { message?: string }
-      setErrorMsg(error?.message || "Failed to submit acceptance.")
+      const msg = err instanceof Error ? err.message : "Failed to submit acceptance."
+      setErrorMsg(msg)
     }
   }
 

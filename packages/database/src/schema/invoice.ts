@@ -90,10 +90,12 @@ export const invoiceAcceptance = pgTable(
     id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     invoiceSnapshotId: uuid("invoice_snapshot_id")
       .notNull()
-      .references(() => invoiceSnapshot.id),
+      .references(() => invoiceSnapshot.id, { onDelete: "cascade" }),
     publicLinkId: uuid("public_link_id")
       .notNull()
-      .references(() => invoicePublicLink.id),
+      .references(() => invoicePublicLink.id, { onDelete: "cascade" }),
+    organizationId: uuid("organization_id")
+      .references(() => organization.id, { onDelete: "cascade" }),
     signerName: text("signer_name").notNull(),
     signerEmail: text("signer_email").notNull(),
     signatureText: text("signature_text"),
@@ -107,6 +109,7 @@ export const invoiceAcceptance = pgTable(
   (table) => [
     index("invoice_acceptance_snapshot_id_idx").on(table.invoiceSnapshotId),
     index("invoice_acceptance_public_link_id_idx").on(table.publicLinkId),
+    index("invoice_acceptance_organization_id_idx").on(table.organizationId),
   ]
 )
 
