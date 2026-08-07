@@ -1,9 +1,15 @@
 import { createHash, timingSafeEqual } from "node:crypto"
 
+const DEFAULT_TRUSTED_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:4000",
+  "http://localhost:4100",
+]
+
 export const trustedOrigins =
   Bun.env.AUTH_TRUSTED_ORIGINS?.split(",")
     .map((origin) => origin.trim())
-    .filter(Boolean) ?? []
+    .filter(Boolean) ?? DEFAULT_TRUSTED_ORIGINS
 
 /**
  * Constant-time string comparison. Secrets are hashed first so inputs of

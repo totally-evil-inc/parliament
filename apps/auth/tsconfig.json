@@ -19,7 +19,9 @@
     "paths": {
       "@/*": ["./src/*"],
       "@workspace/database": ["../../packages/database/src/index.ts"],
-      "@workspace/database/*": ["../../packages/database/src/*"]
+      "@workspace/database/*": ["../../packages/database/src/*"],
+      "@workspace/document": ["../../packages/document/src/index.ts"],
+      "@workspace/document/*": ["../../packages/document/src/*"]
     }
   },
   "exclude": ["node_modules", "dist"]

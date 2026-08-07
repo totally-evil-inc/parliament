@@ -118,11 +118,24 @@ app.use("*", async (c, next) => {
   }
 })
 
+app.get("/health", (c) => {
+  return c.json({
+    status: "ok",
+    app: "apps/auth",
+    port,
+  })
+})
+
 app.use(
   "*",
   cors({
     origin: trustedOrigins,
-    allowHeaders: ["Content-Type", "Authorization", "x-request-id"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-request-id",
+      "x-test-session-email",
+    ],
     allowMethods: ["*"],
     exposeHeaders: ["Content-Length", "x-request-id"],
     maxAge: 600,
@@ -131,6 +144,31 @@ app.use(
 )
 
 app.use("*", async (c, next) => {
+  if (process.env.NODE_ENV === "test") {
+    const testEmail = c.req.header("x-test-session-email")
+    if (testEmail) {
+      c.set("user", {
+        id: "test-user-id",
+        email: testEmail,
+        name: "Test User",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        emailVerified: true,
+      })
+      c.set("session", {
+        id: "test-session-id",
+        userId: "test-user-id",
+        expiresAt: new Date(Date.now() + 3600000),
+        token: "test-token",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ipAddress: null,
+        userAgent: null,
+      })
+      return next()
+    }
+  }
+
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
   if (!session) {
@@ -151,6 +189,7 @@ import { inboundRouter } from "./routes/inbound"
 import { integrationsRouter } from "./routes/integrations"
 import { inviteRouter } from "./routes/invite"
 import { magicLinkRouter } from "./routes/magic-link"
+import { publicDocumentRouter } from "./routes/public-document"
 
 app.route("/auth/magic-link", magicLinkRouter)
 app.route("/auth/invite", inviteRouter)
@@ -159,6 +198,7 @@ app.route("/api/auth/agent", agentAuthRouter)
 app.route("/api/gmail/addon", addonRouter)
 app.route("/api/gmail", gmailRouter)
 app.route("/api/inbound", inboundRouter)
+app.route("/api/public", publicDocumentRouter)
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw)
@@ -168,3 +208,4 @@ export default {
   port,
   fetch: app.fetch,
 }
+

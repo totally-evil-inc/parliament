@@ -1,8 +1,6 @@
 import { z } from "zod"
-import type { InvoiceDraft } from "./invoice"
-import { invoiceDraftSchema } from "./invoice"
-import type { ProposalDraft } from "./proposal"
-import { proposalDraftSchema } from "./proposal"
+import type { InvoiceDraft, ProposalDraft } from "./schema"
+import { invoiceDraftSchema, proposalDraftSchema } from "./schema"
 
 export const proposalAcceptanceRecordSchema = z.object({
   id: z.string(),
