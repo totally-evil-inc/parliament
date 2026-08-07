@@ -12,7 +12,7 @@ describe("Mailto & Web Compose Link Generator", () => {
       body: "Hi John, review your proposal here: https://command.app/p/123",
     })
 
-    expect(url.startsWith("mailto:")).toBe(true)
+    expect(url.startsWith("mailto:john@acme.corp?")).toBe(true)
     const queryIndex = url.indexOf("?")
     const queryPart = queryIndex !== -1 ? url.slice(queryIndex + 1) : ""
     const params = new URLSearchParams(queryPart)

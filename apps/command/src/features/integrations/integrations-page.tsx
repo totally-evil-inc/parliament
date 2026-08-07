@@ -312,23 +312,25 @@ function filterIntegrations(
     return integrations
   }
 
-  return integrations.filter((integration) => integration.status === filter)
+  return integrations.filter(
+    (integration) =>
+      integration.status === filter || integration.category === filter
+  )
 }
 
-function getIntegrationCounts(integrations: Array<Integration>) {
-  return integrations.reduce(
-    (counts, integration) => {
-      counts.all += 1
-      if (integration.status in counts) {
-        counts[integration.status] += 1
-      }
-      return counts
-    },
-    {
-      all: 0,
-      connected: 0,
-      available: 0,
-      pending: 0,
-    } as Record<string, number>
-  )
+function getIntegrationCounts(
+  integrations: Array<Integration>
+): Record<IntegrationFilter, number> {
+  const initialCounts: Record<IntegrationFilter, number> = {
+    all: integrations.length,
+    connected: 0,
+    available: 0,
+  }
+
+  return integrations.reduce((counts, integration) => {
+    if (integration.status in counts) {
+      counts[integration.status as keyof typeof counts] += 1
+    }
+    return counts
+  }, initialCounts)
 }

@@ -48,16 +48,11 @@ export function SendDocumentDialog({
   const sendGmailMutation = useSendGmailEmail()
 
   React.useEffect(() => {
-    if (defaultRecipientEmail) {
-      setRecipientEmail(defaultRecipientEmail)
+    if (open) {
+      if (defaultRecipientEmail) setRecipientEmail(defaultRecipientEmail)
+      if (initialShareUrl) setActiveShareUrl(initialShareUrl)
     }
-  }, [defaultRecipientEmail])
-
-  React.useEffect(() => {
-    if (initialShareUrl) {
-      setActiveShareUrl(initialShareUrl)
-    }
-  }, [initialShareUrl])
+  }, [open, defaultRecipientEmail, initialShareUrl])
 
   const ensureShareUrl = async (): Promise<string> => {
     if (activeShareUrl) return activeShareUrl
@@ -70,15 +65,6 @@ export function SendDocumentDialog({
   }
 
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-  function escapeHtml(str: string): string {
-    return str
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;")
-  }
 
   const handleSendViaGmail = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -97,13 +83,13 @@ export function SendDocumentDialog({
         "<br/>"
       )
       const safeUrl = escapeHtml(url)
-      const htmlBody = `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-          <p>${safeMessageHtml}</p>
-          <p><a href="${safeUrl}" style="display: inline-block; padding: 10px 18px; background-color: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">View ${documentType === "proposal" ? "Proposal" : "Invoice"}</a></p>
-          <p style="font-size: 12px; color: #666;">Or copy link: ${safeUrl}</p>
-        </div>
-      `
+      const htmlBody = [
+        '<div style="font-family: sans-serif; line-height: 1.6; color: #333;">',
+        `  <p>${safeMessageHtml}</p>`,
+        `  <p><a href="${safeUrl}" style="display: inline-block; padding: 10px 18px; background-color: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">View ${documentType === "proposal" ? "Proposal" : "Invoice"}</a></p>`,
+        `  <p style="font-size: 12px; color: #666;">Or copy link: ${safeUrl}</p>`,
+        "</div>",
+      ].join("\n")
 
       setStatusMessage("Sending email via Gmail API...")
       await sendGmailMutation.mutateAsync({
@@ -251,7 +237,7 @@ export function SendDocumentDialog({
               <IconArrowBoldRight className="size-3 mr-1" />
               {sendGmailMutation.isPending
                 ? "Sending..."
-                : "Send Direct via Gmail"}
+                : "Send via Gmail API"}
             </Button>
           </DialogFooter>
         </form>
@@ -259,3 +245,13 @@ export function SendDocumentDialog({
     </Dialog>
   )
 }
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+}
+

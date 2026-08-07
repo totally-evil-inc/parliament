@@ -34,7 +34,7 @@ describe("Command App Integration Configuration & Scopes", () => {
     )
   })
 
-  it("lists audit-free actions for Gmail integration", () => {
+  it("lists supported tool actions for Gmail integration", () => {
     const gmailInt = DEFAULT_INTEGRATIONS.find((i) => i.id === "gmail")
     expect(gmailInt).toBeDefined()
     const actions = gmailInt?.actions ?? []

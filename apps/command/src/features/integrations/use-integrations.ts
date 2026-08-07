@@ -11,9 +11,12 @@ export type ConnectedAccount = {
   updatedAt: string
 }
 
+function getAuthUrl(): string {
+  return import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
+}
+
 async function fetchConnectedAccounts(): Promise<ConnectedAccount[]> {
-  const authUrl =
-    import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
+  const authUrl = getAuthUrl()
   const res = await fetch(`${authUrl}/api/auth/integrations/list`, {
     headers: {
       "Content-Type": "application/json",
@@ -68,7 +71,7 @@ export function useConnectIntegration() {
       const callbackURL = window.location.href
       // Trigger Better-Auth link account OAuth flow
       const res = await authClient.linkSocial({
-        provider: integration.providerId as any,
+        provider: integration.providerId as Parameters<typeof authClient.linkSocial>[0]["provider"],
         callbackURL,
       })
       return res
@@ -86,8 +89,7 @@ export function useDisconnectIntegration() {
 
   return useMutation({
     mutationFn: async (providerId: string) => {
-      const authUrl =
-        import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
+      const authUrl = getAuthUrl()
       const res = await fetch(`${authUrl}/api/auth/unlink-account`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

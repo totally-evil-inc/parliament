@@ -21,7 +21,7 @@ export function generateMailtoUrl(options: MailtoOptions): string {
     params.append("bcc", options.bcc)
   }
 
-  return `mailto:${encodeURIComponent(options.to)}?${params.toString().replace(/\+/g, "%20")}`
+  return `mailto:${options.to}?${params.toString().replace(/\+/g, "%20")}`
 }
 
 /**

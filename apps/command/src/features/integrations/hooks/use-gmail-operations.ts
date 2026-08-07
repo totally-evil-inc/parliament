@@ -73,7 +73,9 @@ export function useGmailThreadActivity() {
         throw new Error("Failed to fetch Gmail thread activity")
       }
 
-      return res.json()
+      return res.json().catch(() => {
+        throw new Error("Invalid JSON response from server")
+      })
     },
   })
 }
@@ -94,10 +96,13 @@ export function useRegisterGmailWatch() {
       })
 
       if (!res.ok) {
-        throw new Error("Failed to register Gmail watch")
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || "Failed to register Gmail watch")
       }
 
-      return res.json()
+      return res.json().catch(() => {
+        throw new Error("Invalid JSON response from server")
+      })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gmail-thread-activity"] })

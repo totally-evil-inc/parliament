@@ -69,9 +69,9 @@ export function GmailActivityHeatmap() {
           </p>
         ) : (
           <div className="flex flex-col gap-2">
-            {activities.slice(0, 15).map((act, index) => (
+            {activities.slice(0, 15).map((act) => (
               <div
-                key={act.id || `${act.threadId || "act"}-${index}`}
+                key={act.id || `${act.threadId}-${act.senderEmail || "unknown"}`}
                 className="flex items-center justify-between rounded border border-border/60 bg-background p-2.5 text-xs"
               >
                 <div className="flex flex-col gap-0.5">
