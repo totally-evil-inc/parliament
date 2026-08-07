@@ -22,6 +22,7 @@ app.use("*", async (c, next) => {
   const startTime = Date.now()
   const requestId = c.req.header("x-request-id") || crypto.randomUUID()
   c.set("requestId", requestId)
+  c.header("x-request-id", requestId)
 
   const logContext: Record<string, unknown> = {}
   c.set("logContext", logContext)
@@ -46,6 +47,25 @@ app.use("*", async (c, next) => {
 
     wideEvent.statusCode = c.res.status
     wideEvent.outcome = c.res.status >= 400 ? "failure" : "success"
+
+    if (c.res.status >= 400) {
+      const responseBody = await c.res
+        .clone()
+        .json()
+        .catch(() => null)
+      if (responseBody && typeof responseBody === "object") {
+        const body = responseBody as Record<string, unknown>
+        const nestedError =
+          body.error && typeof body.error === "object"
+            ? (body.error as Record<string, unknown>)
+            : null
+        wideEvent.error = {
+          code: body.code ?? nestedError?.code,
+          message: body.message ?? nestedError?.message,
+          status: body.status ?? nestedError?.status,
+        }
+      }
+    }
 
     const user = c.get("user")
     const session = c.get("session")
@@ -102,9 +122,9 @@ app.use(
   "*",
   cors({
     origin: trustedOrigins,
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "x-request-id"],
     allowMethods: ["*"],
-    exposeHeaders: ["Content-Length"],
+    exposeHeaders: ["Content-Length", "x-request-id"],
     maxAge: 600,
     credentials: true,
   })
