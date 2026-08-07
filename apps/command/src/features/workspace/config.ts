@@ -1,12 +1,12 @@
 import {
   IconBell,
+  IconConnect,
   IconFile,
   IconFolder,
   IconGear,
   IconHouse,
   IconInbox,
   IconLayers,
-  IconConnect,
   IconMoneyBill,
   IconRoadmap,
   IconUsers,

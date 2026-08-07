@@ -150,4 +150,3 @@ const footerLink = {
   color: "#9ca3af",
   textDecoration: "underline",
 }
-

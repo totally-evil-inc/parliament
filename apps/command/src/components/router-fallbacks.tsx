@@ -19,8 +19,8 @@ export function DefaultNotFound() {
           We can't find that page.
         </h1>
         <p className="mt-2 max-w-sm text-balance text-muted-foreground text-sm">
-          The link may be old, or the page may have moved. Check the URL or
-          head back to somewhere you know.
+          The link may be old, or the page may have moved. Check the URL or head
+          back to somewhere you know.
         </p>
 
         <div className="mt-8 flex items-center gap-2">

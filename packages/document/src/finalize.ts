@@ -11,9 +11,7 @@ export type ProposalSnapshotPayload = {
   calculationVersion: string | null
 }
 
-export function finalizeProposalDraft(
-  input: unknown
-): ProposalSnapshotPayload {
+export function finalizeProposalDraft(input: unknown): ProposalSnapshotPayload {
   const document = parseProposalDraft(input)
   const model = buildProposalRenderModel(document)
   const calculationVersion = document.data.pricing
@@ -106,17 +104,10 @@ function sha256Sync(ascii: string): string {
       const w15 = w[i - 15],
         w2 = w[i - 2]
       const s0 =
-        ((w15 >>> 7) | (w15 << 25)) ^
-        ((w15 >>> 18) | (w15 << 14)) ^
-        (w15 >>> 3)
+        ((w15 >>> 7) | (w15 << 25)) ^ ((w15 >>> 18) | (w15 << 14)) ^ (w15 >>> 3)
       const s1 =
-        ((w2 >>> 17) | (w2 << 15)) ^
-        ((w2 >>> 19) | (w2 << 13)) ^
-        (w2 >>> 10)
-      w[i] =
-        i < 16
-          ? w[i]
-          : (w[i - 16] + s0 + w[i - 7] + s1) | 0
+        ((w2 >>> 17) | (w2 << 15)) ^ ((w2 >>> 19) | (w2 << 13)) ^ (w2 >>> 10)
+      w[i] = i < 16 ? w[i] : (w[i - 16] + s0 + w[i - 7] + s1) | 0
 
       const a = hash[0],
         e = hash[4]

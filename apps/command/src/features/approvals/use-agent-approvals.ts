@@ -34,7 +34,10 @@ async function fetchPendingActions(): Promise<PendingAction[]> {
   })
   if (!res.ok) {
     if (res.status === 401) return []
-    const message = await parseError(res, "Failed to fetch pending agent approvals")
+    const message = await parseError(
+      res,
+      "Failed to fetch pending agent approvals"
+    )
     throw new Error(message)
   }
   const json = await res.json()
@@ -104,4 +107,3 @@ export function useRejectAction() {
     },
   })
 }
-
