@@ -112,7 +112,7 @@ function ProposalRouteHandler({
         eventType: "document.viewed",
       })
     }
-  }, [data?.status, token])
+  }, [data, eventMutation.mutate, token])
 
   // Accept mutation
   const acceptMutation = useMutation({
@@ -160,6 +160,15 @@ function ProposalRouteHandler({
   }
 
   if (error || !data || data.status === "not_found") {
+    if (error) {
+      return (
+        <StatusScreen
+          status="error"
+          documentType="proposal"
+          message={error instanceof Error ? error.message : undefined}
+        />
+      )
+    }
     return <StatusScreen status="not_found" documentType="proposal" />
   }
 
@@ -236,7 +245,7 @@ function InvoiceRouteHandler({
         eventType: "document.viewed",
       })
     }
-  }, [data?.status, token])
+  }, [data, eventMutation.mutate, token])
 
   const acceptMutation = useMutation({
     mutationFn: async (payload: AcceptancePayload) => {
@@ -282,6 +291,15 @@ function InvoiceRouteHandler({
   }
 
   if (error || !data || data.status === "not_found") {
+    if (error) {
+      return (
+        <StatusScreen
+          status="error"
+          documentType="invoice"
+          message={error instanceof Error ? error.message : undefined}
+        />
+      )
+    }
     return <StatusScreen status="not_found" documentType="invoice" />
   }
 

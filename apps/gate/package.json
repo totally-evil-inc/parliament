@@ -4,7 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --bun vite dev --port 4100",
+    "dev": "bun run src/dev.ts",
+    "dev:api": "GATE_PORT=4101 bun --env-file=.env src/index.ts",
+    "dev:client": "bun --bun vite dev --port 4100",
     "build": "vite build",
     "preview": "vite preview --port 4100",
     "typecheck": "tsc --noEmit",

@@ -49,6 +49,7 @@ app.use("*", async (c, next) => {
   const startTime = Date.now()
   const requestId = c.req.header("x-request-id") || crypto.randomUUID()
   c.set("requestId", requestId)
+  c.header("x-request-id", requestId)
   c.set("requestStartTime", startTime)
 
   const logContext: Record<string, unknown> = {}
@@ -169,11 +170,15 @@ app.get("/health", (c) => {
 // Public Proposal Endpoints
 app.get("/api/public/proposal/:token", async (c) => {
   const token = c.req.param("token")
+  const logContext = c.get("logContext")
+  logContext.documentType = "proposal"
+  logContext.tokenSuffix = token.slice(-6)
   const ipAddress =
     c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || null
   const userAgent = c.req.header("user-agent") || null
 
   const result = await getPublicProposal(token, { ipAddress, userAgent })
+  logContext.lookupStatus = result.status
 
   if (result.status === "not_found") {
     return c.json(result, 404)
@@ -235,11 +240,15 @@ app.post("/api/public/proposal/:token/accept", async (c) => {
 // Public Invoice Endpoints
 app.get("/api/public/invoice/:token", async (c) => {
   const token = c.req.param("token")
+  const logContext = c.get("logContext")
+  logContext.documentType = "invoice"
+  logContext.tokenSuffix = token.slice(-6)
   const ipAddress =
     c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || null
   const userAgent = c.req.header("user-agent") || null
 
   const result = await getPublicInvoice(token, { ipAddress, userAgent })
+  logContext.lookupStatus = result.status
 
   if (result.status === "not_found") {
     return c.json(result, 404)
@@ -393,7 +402,9 @@ const handleClientEvent = async (c: Context) => {
 app.post("/api/public/event", handleClientEvent)
 app.post("/api/public/events", handleClientEvent)
 
-export default {
-  port,
-  fetch: app.fetch,
+if (import.meta.main) {
+  Bun.serve({
+    port,
+    fetch: app.fetch,
+  })
 }

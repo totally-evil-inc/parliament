@@ -7,7 +7,7 @@ import {
 import { Clock, FileX, ShieldAlert } from "lucide-react"
 
 export type StatusScreenProps = {
-  status: "not_found" | "expired" | "unavailable"
+  status: "not_found" | "expired" | "unavailable" | "error"
   reason?: "revoked" | "expired"
   title?: string
   message?: string
@@ -39,6 +39,10 @@ export function StatusScreen({
     icon = <ShieldAlert className="mx-auto mb-3 h-12 w-12 text-destructive" />
     defaultTitle = `${docLabel} Link Unavailable`
     defaultMessage = `This ${docLabel.toLowerCase()} link is no longer active or has been revoked by the issuer.`
+  } else if (status === "error") {
+    icon = <ShieldAlert className="mx-auto mb-3 h-12 w-12 text-destructive" />
+    defaultTitle = `${docLabel} Temporarily Unavailable`
+    defaultMessage = `We couldn't load this ${docLabel.toLowerCase()} right now. Please try again or contact the sender.`
   }
 
   const finalTitle = title || defaultTitle

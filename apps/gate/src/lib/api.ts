@@ -52,16 +52,27 @@ export async function fetchPublicProposal(
 ): Promise<GetPublicProposalResult> {
   try {
     const res = await fetch(`/api/public/proposal/${encodeURIComponent(token)}`)
-    if (!res.ok && res.status !== 404 && res.status !== 400) {
-      throw new Error(`Failed to fetch proposal (${res.status})`)
-    }
     const data = await res.json().catch(() => ({ status: "not_found" }))
+    if (!res.ok && res.status !== 404 && res.status !== 400) {
+      const message =
+        typeof data === "object" && data && "error" in data
+          ? String(data.error)
+          : `Failed to fetch proposal (${res.status})`
+      const requestId = res.headers.get("x-request-id")
+      throw new Error(
+        `${message}${requestId ? ` (reference: ${requestId})` : ""}`
+      )
+    }
     return data as GetPublicProposalResult
   } catch (err: unknown) {
-    if (err instanceof Error && err.message.startsWith("Failed to fetch proposal")) {
+    if (
+      err instanceof Error &&
+      err.message.startsWith("Failed to fetch proposal")
+    ) {
       throw err
     }
-    return { status: "not_found" }
+    if (err instanceof Error) throw err
+    throw new Error("Failed to fetch proposal")
   }
 }
 
@@ -70,16 +81,27 @@ export async function fetchPublicInvoice(
 ): Promise<GetPublicInvoiceResult> {
   try {
     const res = await fetch(`/api/public/invoice/${encodeURIComponent(token)}`)
-    if (!res.ok && res.status !== 404 && res.status !== 400) {
-      throw new Error(`Failed to fetch invoice (${res.status})`)
-    }
     const data = await res.json().catch(() => ({ status: "not_found" }))
+    if (!res.ok && res.status !== 404 && res.status !== 400) {
+      const message =
+        typeof data === "object" && data && "error" in data
+          ? String(data.error)
+          : `Failed to fetch invoice (${res.status})`
+      const requestId = res.headers.get("x-request-id")
+      throw new Error(
+        `${message}${requestId ? ` (reference: ${requestId})` : ""}`
+      )
+    }
     return data as GetPublicInvoiceResult
   } catch (err: unknown) {
-    if (err instanceof Error && err.message.startsWith("Failed to fetch invoice")) {
+    if (
+      err instanceof Error &&
+      err.message.startsWith("Failed to fetch invoice")
+    ) {
       throw err
     }
-    return { status: "not_found" }
+    if (err instanceof Error) throw err
+    throw new Error("Failed to fetch invoice")
   }
 }
 
