@@ -87,14 +87,8 @@ inviteRouter.get("/accept", async (c) => {
           .where(eq(schema.invitation.id, id))
       })
     } catch (txErr) {
-      await db
-        .delete(schema.verification)
-        .where(eq(schema.verification.id, verificationRecord.id))
-
-      await db
-        .update(schema.invitation)
-        .set({ status: "accepted" })
-        .where(eq(schema.invitation.id, id))
+      logger.error({ txErr }, "Invitation acceptance transaction failed")
+      throw txErr
     }
 
     // Find or create user

@@ -1,14 +1,23 @@
 import { and, db, desc, eq } from "@workspace/database"
 import { agent, agentAction } from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
+import type { Context } from "hono"
 import { Hono } from "hono"
+import { bearerSecretMatch } from "../lib/utils"
 
 export const agentAuthRouter = new Hono<{
   Variables: {
-    user: any
-    session: any
+    user: { id: string; email: string } | null
+    session: { id: string } | null
   }
 }>()
+
+type AgentContext = Context<{
+  Variables: {
+    user: { id: string; email: string } | null
+    session: { id: string } | null
+  }
+}>
 
 const MAX_ARGS_DEPTH = 6
 const UNSAFE_ARG_KEYS = new Set(["__proto__", "constructor", "prototype"])
@@ -27,7 +36,10 @@ function sanitizeArgs(value: unknown, depth = 0): unknown {
   if (Array.isArray(value)) {
     return value.map((item) => sanitizeArgs(item, depth + 1))
   }
-  const sanitized: Record<string, unknown> = {}
+  const sanitized: Record<string, unknown> = Object.create(null) as Record<
+    string,
+    unknown
+  >
   for (const [key, item] of Object.entries(value)) {
     if (UNSAFE_ARG_KEYS.has(key)) continue
     sanitized[key] = sanitizeArgs(item, depth + 1)
@@ -36,41 +48,33 @@ function sanitizeArgs(value: unknown, depth = 0): unknown {
 }
 
 /**
- * Stage an action proposed by an agent (called by Go Harness daemon)
+ * Requires either an authenticated user session or a matching harness secret.
+ * Returns true when the request is authorized.
  */
-agentAuthRouter.post("/stage", async (c) => {
+function isAuthorized(c: AgentContext): boolean {
   const user = c.get("user")
   const authSecret =
     c.req.header("X-Harness-Secret") || c.req.header("Authorization")
   const expectedSecret =
     process.env.HARNESS_AUTH_SECRET || process.env.BETTER_AUTH_SECRET
-  const isProduction = process.env.NODE_ENV === "production"
 
-  if (user) {
-    // authenticated session: allowed
-  } else if (!expectedSecret) {
-    if (isProduction) {
-      return c.json(
-        {
-          error:
-            "Unauthorized: Harness authentication secret is not configured",
-        },
-        401
-      )
-    }
-    logger.warn(
-      { path: c.req.path },
-      "Allowing unauthenticated stage request in non-production mode"
-    )
-  } else if (
-    authSecret !== expectedSecret &&
-    authSecret !== `Bearer ${expectedSecret}`
-  ) {
+  if (user) return true
+  return Boolean(
+    expectedSecret && bearerSecretMatch(authSecret, expectedSecret)
+  )
+}
+
+/**
+ * Stage an action proposed by an agent (called by Go Harness daemon)
+ */
+agentAuthRouter.post("/stage", async (c) => {
+  if (!isAuthorized(c)) {
     return c.json(
-      { error: "Unauthorized: Invalid or missing harness authentication" },
+      { error: "Unauthorized: Missing or invalid harness authentication" },
       401
     )
   }
+  const user = c.get("user")
 
   const body = await c.req.json().catch(() => ({}))
   const { toolName, args, reason, confidenceScore, agentId, userId } = body
@@ -220,6 +224,13 @@ agentAuthRouter.get("/pending", async (c) => {
  * Check status of a specific action by ID (polled by Go Harness)
  */
 agentAuthRouter.get("/actions/:id/status", async (c) => {
+  if (!isAuthorized(c)) {
+    return c.json(
+      { error: "Unauthorized: Missing or invalid harness authentication" },
+      401
+    )
+  }
+
   const actionId = c.req.param("id")
   try {
     const records = await db

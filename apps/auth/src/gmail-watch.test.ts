@@ -1,32 +1,7 @@
 import { describe, expect, it } from "bun:test"
 import { app } from "./index"
-import { processPubSubNotification } from "./lib/gmail/watch-service"
 
-describe("Gmail Watch & Pub/Sub Webhook Engine", () => {
-  it("rejects invalid/empty Pub/Sub push notification gracefully", async () => {
-    const result = await processPubSubNotification({})
-    expect(result.processed).toBe(false)
-    expect(result.reason).toBe("Missing message.data")
-  })
-
-  it("handles valid base64 encoded Pub/Sub push payload format", async () => {
-    const payload = {
-      emailAddress: "unknown-test@example.com",
-      historyId: "99887766",
-    }
-    const base64Data = Buffer.from(JSON.stringify(payload)).toString("base64")
-
-    const result = await processPubSubNotification({
-      message: {
-        data: base64Data,
-        messageId: "msg_123",
-        publishTime: new Date().toISOString(),
-      },
-    })
-
-    expect(typeof result.processed).toBe("boolean")
-  })
-
+describe("Gmail Watch & Pub/Sub Webhook API", () => {
   it("returns 401 on /api/gmail/watch/register when unauthenticated", async () => {
     const res = await app.request("/api/gmail/watch/register", {
       method: "POST",
@@ -37,11 +12,36 @@ describe("Gmail Watch & Pub/Sub Webhook Engine", () => {
     expect(res.status).toBe(401)
   })
 
-  it("accepts /api/gmail/pubsub/webhook POST push requests", async () => {
+  it("rejects /api/gmail/pubsub/webhook push requests with an empty body", async () => {
     const res = await app.request("/api/gmail/pubsub/webhook", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({}),
+    })
+
+    expect(res.status).toBe(400)
+    const json = (await res.json()) as { error?: string }
+    expect(json.error).toContain("message.data")
+  })
+
+  it("acknowledges /api/gmail/pubsub/webhook push requests with a valid payload", async () => {
+    const base64Data = Buffer.from(
+      JSON.stringify({
+        emailAddress: "unknown-test@example.com",
+        historyId: "99887766",
+      })
+    ).toString("base64")
+
+    const res = await app.request("/api/gmail/pubsub/webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: {
+          data: base64Data,
+          messageId: "msg_123",
+          publishTime: new Date().toISOString(),
+        },
+      }),
     })
 
     expect(res.status).toBe(200)

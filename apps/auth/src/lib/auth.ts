@@ -192,6 +192,7 @@ export const auth = betterAuth({
           clientSecret: process.env.NOTION_CLIENT_SECRET as string,
           authorizationUrl: "https://api.notion.com/v1/oauth/authorize",
           tokenUrl: "https://api.notion.com/v1/oauth/token",
+          scopes: ["read_content"],
         },
       ],
     }),

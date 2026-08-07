@@ -10,6 +10,7 @@ import {
   processPubSubNotification,
   registerGmailWatch,
 } from "../lib/gmail/watch-service"
+import { bearerSecretMatch, secretsEqual } from "../lib/utils"
 
 export const gmailRouter = new Hono<{
   Variables: {
@@ -116,7 +117,20 @@ gmailRouter.post("/watch/register", async (c) => {
   }
 
   try {
-    const body = await c.req.json().catch(() => ({}))
+    const body = await c.req.json().catch(() => null)
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return c.json({ error: "Bad Request: Invalid JSON payload" }, 400)
+    }
+    if (
+      body.topicName !== undefined &&
+      (typeof body.topicName !== "string" || body.topicName.trim() === "")
+    ) {
+      return c.json(
+        { error: "Bad Request: topicName must be a non-empty string" },
+        400
+      )
+    }
+
     const result = await registerGmailWatch({
       userId: user.id,
       userEmail: user.email,
@@ -149,9 +163,8 @@ gmailRouter.post("/pubsub/webhook", async (c) => {
     const isProduction = process.env.NODE_ENV === "production"
     if (secretToken) {
       const tokenValid =
-        tokenQuery === secretToken ||
-        authHeader === secretToken ||
-        authHeader === `Bearer ${secretToken}`
+        (tokenQuery !== undefined && secretsEqual(tokenQuery, secretToken)) ||
+        (authHeader !== undefined && bearerSecretMatch(authHeader, secretToken))
       if (!tokenValid) {
         return c.json(
           { error: "Unauthorized: Invalid or missing webhook token" },
@@ -170,7 +183,16 @@ gmailRouter.post("/pubsub/webhook", async (c) => {
       )
     }
 
-    const body = await c.req.json()
+    const body = await c.req.json().catch(() => null)
+    if (
+      !body ||
+      typeof body !== "object" ||
+      typeof body.message?.data !== "string" ||
+      body.message.data === ""
+    ) {
+      return c.json({ error: "Bad Request: Missing Pub/Sub message.data" }, 400)
+    }
+
     const result = await processPubSubNotification(body)
     return c.json({ success: result.processed, details: result })
   } catch (err: unknown) {

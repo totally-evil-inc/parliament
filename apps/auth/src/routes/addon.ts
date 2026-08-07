@@ -1,5 +1,6 @@
 import { logger } from "@workspace/logger"
 import { Hono } from "hono"
+import { bearerSecretMatch } from "../lib/utils"
 
 export const addonRouter = new Hono<{
   Variables: {
@@ -48,25 +49,17 @@ addonRouter.post("/context", async (c) => {
     const user = c.get("user")
     const authHeader = c.req.header("Authorization")
     const expectedSecret =
-      process.env.ADDON_AUTH_SECRET || process.env.HARNESS_AUTH_SECRET
-    const isProduction = process.env.NODE_ENV === "production"
+      process.env.ADDON_AUTH_SECRET ||
+      process.env.HARNESS_AUTH_SECRET ||
+      process.env.BETTER_AUTH_SECRET
 
-    const secretAuthenticated = Boolean(
-      expectedSecret &&
-        (authHeader === expectedSecret ||
-          authHeader === `Bearer ${expectedSecret}`)
-    )
-
-    if (!user && !secretAuthenticated) {
-      if (isProduction || expectedSecret) {
-        return c.json(
-          { error: "Unauthorized: Missing or invalid authentication context" },
-          401
-        )
-      }
-      logger.warn(
-        { path: c.req.path },
-        "Allowing unauthenticated add-on context request in non-production mode"
+    if (
+      !user &&
+      !(expectedSecret && bearerSecretMatch(authHeader, expectedSecret))
+    ) {
+      return c.json(
+        { error: "Unauthorized: Missing or invalid authentication context" },
+        401
       )
     }
 

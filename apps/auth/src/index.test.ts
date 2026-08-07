@@ -5,6 +5,7 @@ const originalSelect = db.select
 const originalInsert = db.insert
 const originalDelete = db.delete
 const originalUpdate = db.update
+const originalTransaction = db.transaction
 
 beforeAll(() => {
   const queryBuilder = {
@@ -31,31 +32,38 @@ beforeAll(() => {
     },
   }
 
-  const mockDb = {
-    insert: () => ({
-      values: () => ({
-        returning: () => [
-          {
-            id: "mock-id",
-            email: "invited@example.com",
-            organizationId: "org-id",
-            role: "member",
-            status: "pending",
-          },
-        ],
-      }),
+  const mockDb = {} as {
+    transaction: (fn: (tx: any) => Promise<unknown>) => Promise<unknown>
+    insert: () => { values: () => { returning: () => any[] } }
+    select: () => typeof queryBuilder
+    delete: () => { where: () => object }
+    update: () => { set: () => { where: () => object } }
+  }
+  mockDb.transaction = (fn) => fn(mockDb)
+  mockDb.insert = () => ({
+    values: () => ({
+      returning: () => [
+        {
+          id: "mock-id",
+          email: "invited@example.com",
+          organizationId: "org-id",
+          role: "member",
+          status: "pending",
+        },
+      ],
     }),
-    select: () => queryBuilder,
-    delete: () => ({
+  })
+  mockDb.select = () => queryBuilder
+  mockDb.delete = () => ({
+    where: () => ({}),
+  })
+  mockDb.update = () => ({
+    set: () => ({
       where: () => ({}),
     }),
-    update: () => ({
-      set: () => ({
-        where: () => ({}),
-      }),
-    }),
-  }
+  })
 
+  db.transaction = mockDb.transaction as any
   db.select = mockDb.select as any
   db.insert = mockDb.insert as any
   db.delete = mockDb.delete as any
@@ -67,6 +75,7 @@ afterAll(() => {
   db.insert = originalInsert
   db.delete = originalDelete
   db.update = originalUpdate
+  db.transaction = originalTransaction
 })
 
 // Mock Better Auth lib

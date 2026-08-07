@@ -2,11 +2,12 @@ import { and, db, desc, eq } from "@workspace/database"
 import { account } from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 import { Hono } from "hono"
+import { bearerSecretMatch } from "../lib/utils"
 
 export const integrationsRouter = new Hono<{
   Variables: {
-    user: any
-    session: any
+    user: { id: string; email: string } | null
+    session: { id: string } | null
   }
 }>()
 
@@ -55,39 +56,29 @@ integrationsRouter.get("/internal/token", async (c) => {
 
   const expectedSecret =
     process.env.BETTER_AUTH_SECRET || process.env.HARNESS_AUTH_SECRET
-  const isProduction = process.env.NODE_ENV === "production"
 
   if (expectedSecret) {
-    if (secretHeader !== expectedSecret) {
-      if (!isProduction && !secretHeader) {
-        logger.warn(
-          { path: c.req.path },
-          "Allowing unauthenticated local loopback token request in non-production mode"
-        )
-      } else {
-        logger.error(
-          { secretHeaderProvided: !!secretHeader, path: c.req.path },
-          "Forbidden: Invalid or missing harness authorization secret"
-        )
-        return c.json(
-          { error: "Forbidden: Invalid harness authorization secret" },
-          403
-        )
-      }
+    if (!bearerSecretMatch(secretHeader, expectedSecret)) {
+      logger.error(
+        { secretHeaderProvided: !!secretHeader, path: c.req.path },
+        "Forbidden: Invalid or missing harness authorization secret"
+      )
+      return c.json(
+        { error: "Forbidden: Invalid harness authorization secret" },
+        403
+      )
     }
   } else {
-    if (isProduction) {
+    if (process.env.NODE_ENV === "production") {
       logger.error(
         { path: c.req.path },
         "Harness secret not configured in production"
       )
-      return c.json({ error: "Internal Server Error" }, 500)
-    } else {
-      logger.warn(
-        { path: c.req.path },
-        "Harness secret not configured, allowing request in non-production mode"
-      )
     }
+    return c.json(
+      { error: "Service Unavailable: Harness auth secret is not configured" },
+      503
+    )
   }
 
   const provider = c.req.query("provider")
@@ -95,6 +86,9 @@ integrationsRouter.get("/internal/token", async (c) => {
 
   if (!provider) {
     return c.json({ error: "Bad Request: Missing provider parameter" }, 400)
+  }
+  if (userId !== undefined && typeof userId !== "string") {
+    return c.json({ error: "Bad Request: userId must be a string" }, 400)
   }
 
   try {

@@ -19,6 +19,13 @@ inboundRouter.post("/reply-to", async (c) => {
   try {
     const body = await c.req.json()
     const reqHeaders = c.req.header()
+    const secret = c.req.header("x-command-webhook-secret")
+    const expectedSecret = process.env.INBOUND_WEBHOOK_SECRET
+
+    if (expectedSecret && secret !== expectedSecret) {
+      return c.json({ error: "Unauthorized webhook secret" }, 401)
+    }
+
     const {
       token,
       fromEmail,
@@ -236,7 +243,12 @@ inboundRouter.post("/drive-drop", async (c) => {
       .returning()
 
     logger.info(
-      { userId: user.id, filesFound: files.length, logId: logRecord[0]?.id, folderId: dropFolder.id },
+      {
+        userId: user.id,
+        filesFound: files.length,
+        logId: logRecord[0]?.id,
+        folderId: dropFolder.id,
+      },
       "Successfully ingested Google Drive drops folder PDFs"
     )
 
