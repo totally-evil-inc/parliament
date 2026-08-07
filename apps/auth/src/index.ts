@@ -59,18 +59,26 @@ app.use("*", async (c, next) => {
       }
     }
   } catch (error: unknown) {
-    const err = error as {
-      status?: number
-      message?: string
-      stack?: string
-      name?: string
-    }
-    wideEvent.statusCode = err.status || 500
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+          ? error
+          : "Unknown error"
+    const stack = error instanceof Error ? error.stack : undefined
+    const name = error instanceof Error ? error.name : "UnknownError"
+    const maybeStatus = (error as { status?: unknown })?.status
+    const statusCode =
+      typeof maybeStatus === "number" && maybeStatus >= 400 && maybeStatus < 600
+        ? maybeStatus
+        : 500
+
+    wideEvent.statusCode = statusCode
     wideEvent.outcome = "error"
     wideEvent.error = {
-      message: err.message || "Unknown error",
-      stack: err.stack,
-      name: err.name,
+      message,
+      stack,
+      name,
     }
     throw error
   } finally {

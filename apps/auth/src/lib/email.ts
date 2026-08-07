@@ -23,6 +23,39 @@ export async function renderEmail(
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 let transporter: nodemailer.Transporter | null = null
+let transporterConfig: string | null = null
+
+function getTransporter({
+  host,
+  port,
+  user,
+  pass,
+  secure,
+}: {
+  host: string
+  port: number
+  user: string
+  pass: string
+  secure: boolean
+}): nodemailer.Transporter {
+  const configKey = JSON.stringify({ host, port, user, secure })
+  if (!transporter || transporterConfig !== configKey) {
+    // Rebuild the transporter whenever its configuration changes so dynamic
+    // (e.g. hot-reloaded) SMTP settings never route mail through a stale pool.
+    transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      requireTLS: !secure && port !== 25,
+      auth: {
+        user,
+        pass,
+      },
+    })
+    transporterConfig = configKey
+  }
+  return transporter
+}
 
 export async function sendEmail({
   to,
@@ -48,20 +81,16 @@ export async function sendEmail({
   if (smtpHost && smtpUser && smtpPass) {
     const rawPort = Number.parseInt(smtpPort || "465", 10)
     const port = Number.isNaN(rawPort) ? 465 : rawPort
-    if (!transporter) {
-      transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port,
-        secure: port === 465,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      })
-    }
+    const smtp = getTransporter({
+      host: smtpHost,
+      port,
+      user: smtpUser,
+      pass: smtpPass,
+      secure: port === 465,
+    })
 
     try {
-      await transporter.sendMail({
+      await smtp.sendMail({
         from,
         to,
         subject,

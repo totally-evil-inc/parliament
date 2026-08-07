@@ -39,8 +39,9 @@ export function buildRfc2822RawMessage(options: {
   plainText?: string
   replyTo?: string
 }): string {
-  const sanitizeHeader = (val: string) => val.replace(/[\r\n]/g, "")
-  const boundary = `====_Part_${Date.now()}_${Math.random().toString(36).substring(2)}`
+  const sanitizeHeader = (val: string) =>
+    val.replace(/[\x00-\x1F\x7F]/g, " ").trim()
+  const boundary = `----=_Part_${crypto.randomUUID().replace(/-/g, "")}`
   const lines: string[] = [
     `To: ${sanitizeHeader(options.to)}`,
     `Subject: ${sanitizeHeader(options.subject)}`,
@@ -90,19 +91,29 @@ export async function sendGmailMessage(
   const accessToken = await getValidGoogleAccessToken(options.userId)
   const rawMessage = buildRfc2822RawMessage(options)
 
-  const res = await fetch(
-    "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        raw: rawMessage,
-      }),
-    }
-  )
+  let res: Response
+  try {
+    res = await fetch(
+      "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          raw: rawMessage,
+        }),
+      }
+    )
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown network error"
+    logger.error(
+      { err, userId: options.userId, to: options.to },
+      "Network failure while sending Gmail message"
+    )
+    throw new Error(`Failed to reach Gmail API: ${errorMsg}`)
+  }
 
   if (!res.ok) {
     const errText = await res.text()
@@ -139,21 +150,31 @@ export async function createGmailDraft(
   const accessToken = await getValidGoogleAccessToken(options.userId)
   const rawMessage = buildRfc2822RawMessage(options)
 
-  const res = await fetch(
-    "https://gmail.googleapis.com/gmail/v1/users/me/drafts",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: {
-          raw: rawMessage,
+  let res: Response
+  try {
+    res = await fetch(
+      "https://gmail.googleapis.com/gmail/v1/users/me/drafts",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         },
-      }),
-    }
-  )
+        body: JSON.stringify({
+          message: {
+            raw: rawMessage,
+          },
+        }),
+      }
+    )
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown network error"
+    logger.error(
+      { err, userId: options.userId },
+      "Network failure while creating Gmail draft"
+    )
+    throw new Error(`Failed to reach Gmail API: ${errorMsg}`)
+  }
 
   if (!res.ok) {
     const errText = await res.text()
@@ -161,7 +182,16 @@ export async function createGmailDraft(
       { status: res.status, errText, userId: options.userId },
       "Failed to create Gmail draft"
     )
-    throw new Error(`Gmail API draft error: ${res.statusText}`)
+
+    let parsedMsg = res.statusText
+    try {
+      const errJson = JSON.parse(errText)
+      if (errJson.error?.message) {
+        parsedMsg = errJson.error.message
+      }
+    } catch (_) {}
+
+    throw new Error(`Gmail API draft error: ${errText || parsedMsg}`)
   }
 
   const data = (await res.json()) as GmailDraftResponse

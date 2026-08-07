@@ -83,29 +83,16 @@ export async function getValidGoogleAccessToken(
     )
     const persistedRefreshToken =
       tokenData.refresh_token ?? targetAccount.refreshToken
-    try {
-      await db.transaction(async (tx) => {
-        await tx
-          .update(account)
-          .set({
-            accessToken: tokenData.access_token,
-            accessTokenExpiresAt: newExpiresAt,
-            refreshToken: persistedRefreshToken,
-            updatedAt: new Date(),
-          })
-          .where(eq(account.id, targetAccount.id))
+
+    await db
+      .update(account)
+      .set({
+        accessToken: tokenData.access_token,
+        accessTokenExpiresAt: newExpiresAt,
+        refreshToken: persistedRefreshToken,
+        updatedAt: new Date(),
       })
-    } catch {
-      await db
-        .update(account)
-        .set({
-          accessToken: tokenData.access_token,
-          accessTokenExpiresAt: newExpiresAt,
-          refreshToken: persistedRefreshToken,
-          updatedAt: new Date(),
-        })
-        .where(eq(account.id, targetAccount.id))
-    }
+      .where(eq(account.id, targetAccount.id))
 
     return tokenData.access_token
   }

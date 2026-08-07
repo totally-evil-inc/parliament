@@ -61,46 +61,16 @@ export async function registerGmailWatch(
     ? new Date(Date.now() + 7 * 24 * 3600 * 1000)
     : new Date(parsedExp)
 
-  // Persist or update subscription in database inside transaction
-  try {
-    await db.transaction(async (tx) => {
-      const existing = await tx
-        .select()
-        .from(gmailWatchSubscription)
-        .where(eq(gmailWatchSubscription.userId, options.userId))
-        .limit(1)
-
-      if (existing.length > 0) {
-        await tx
-          .update(gmailWatchSubscription)
-          .set({
-            historyId: data.historyId,
-            expiration: expDate,
-            topicName,
-            status: "active",
-            updatedAt: new Date(),
-          })
-          .where(eq(gmailWatchSubscription.id, existing[0].id))
-      } else {
-        await tx.insert(gmailWatchSubscription).values({
-          userId: options.userId,
-          userEmail: options.userEmail,
-          historyId: data.historyId,
-          expiration: expDate,
-          topicName,
-          status: "active",
-        })
-      }
-    })
-  } catch {
-    const existing = await db
+  // Persist or update subscription in database inside a single transaction
+  await db.transaction(async (tx) => {
+    const existing = await tx
       .select()
       .from(gmailWatchSubscription)
       .where(eq(gmailWatchSubscription.userId, options.userId))
       .limit(1)
 
     if (existing.length > 0) {
-      await db
+      await tx
         .update(gmailWatchSubscription)
         .set({
           historyId: data.historyId,
@@ -111,7 +81,7 @@ export async function registerGmailWatch(
         })
         .where(eq(gmailWatchSubscription.id, existing[0].id))
     } else {
-      await db.insert(gmailWatchSubscription).values({
+      await tx.insert(gmailWatchSubscription).values({
         userId: options.userId,
         userEmail: options.userEmail,
         historyId: data.historyId,
@@ -120,7 +90,7 @@ export async function registerGmailWatch(
         status: "active",
       })
     }
-  }
+  })
 
   logger.info(
     { userId: options.userId, historyId: data.historyId, expiration: expDate },
@@ -169,7 +139,7 @@ export async function processPubSubNotification(pubSubBody: {
     return { processed: false, reason: "Missing emailAddress or historyId" }
   }
 
-  let subs: any[] = []
+  let subs: (typeof gmailWatchSubscription.$inferSelect)[] = []
   try {
     subs = await db
       .select()
