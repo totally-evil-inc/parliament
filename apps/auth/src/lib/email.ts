@@ -38,7 +38,7 @@ function getTransporter({
   pass: string
   secure: boolean
 }): nodemailer.Transporter {
-  const configKey = JSON.stringify({ host, port, user, secure })
+  const configKey = JSON.stringify({ host, port, user, pass, secure })
   if (!transporter || transporterConfig !== configKey) {
     // Rebuild the transporter whenever its configuration changes so dynamic
     // (e.g. hot-reloaded) SMTP settings never route mail through a stale pool.
