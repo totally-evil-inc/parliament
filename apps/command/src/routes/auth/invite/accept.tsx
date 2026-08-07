@@ -1,12 +1,12 @@
+import { useForm } from "@tanstack/react-form"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { z } from "zod"
-import { useEffect, useState } from "react"
-import { authClient } from "@/lib/auth-client"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import { useForm } from "@tanstack/react-form"
-import { zodFieldValidator, fieldError } from "@/features/auth/lib/form"
+import { useEffect, useState } from "react"
+import { z } from "zod"
+import { fieldError, zodFieldValidator } from "@/features/auth/lib/form"
+import { authClient } from "@/lib/auth-client"
 import { signInSchema } from "@/utils/auth-schemas"
 
 const acceptInviteSearchSchema = z.object({
@@ -23,7 +23,14 @@ export const Route = createFileRoute("/auth/invite/accept")({
 function AcceptInvitePage() {
   const { id, email: invitedEmail, orgName } = Route.useSearch()
   const session = authClient.useSession()
-  const [status, setStatus] = useState<"loading" | "accepting" | "unauthenticated" | "email_mismatch" | "success" | "error">("loading")
+  const [status, setStatus] = useState<
+    | "loading"
+    | "accepting"
+    | "unauthenticated"
+    | "email_mismatch"
+    | "success"
+    | "error"
+  >("loading")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [sentMagicLinkTo, setSentMagicLinkTo] = useState<string | null>(null)
 
@@ -38,7 +45,12 @@ function AcceptInvitePage() {
       return
     }
 
-    if (invitedEmail && currentUserEmail && invitedEmail.trim().toLowerCase() !== currentUserEmail.trim().toLowerCase()) {
+    if (
+      invitedEmail &&
+      currentUserEmail &&
+      invitedEmail.trim().toLowerCase() !==
+        currentUserEmail.trim().toLowerCase()
+    ) {
       setStatus("email_mismatch")
       return
     }
@@ -98,11 +110,15 @@ function AcceptInvitePage() {
       </h1>
 
       {status === "loading" && (
-        <p className="mt-4 text-muted-foreground text-sm">Checking your session...</p>
+        <p className="mt-4 text-muted-foreground text-sm">
+          Checking your session...
+        </p>
       )}
 
       {status === "accepting" && (
-        <p className="mt-4 text-muted-foreground text-sm">Accepting invitation and joining workspace...</p>
+        <p className="mt-4 text-muted-foreground text-sm">
+          Accepting invitation and joining workspace...
+        </p>
       )}
 
       {status === "success" && (
@@ -125,11 +141,18 @@ function AcceptInvitePage() {
       {status === "email_mismatch" && (
         <div className="mt-4 flex flex-col gap-4 text-sm">
           <p className="text-muted-foreground">
-            You are currently signed in as <span className="text-foreground font-semibold">{currentUserEmail}</span>, 
-            but this invitation was sent to <span className="text-foreground font-semibold">{invitedEmail}</span>.
+            You are currently signed in as{" "}
+            <span className="text-foreground font-semibold">
+              {currentUserEmail}
+            </span>
+            , but this invitation was sent to{" "}
+            <span className="text-foreground font-semibold">
+              {invitedEmail}
+            </span>
+            .
           </p>
           <div className="flex gap-2">
-            <Button 
+            <Button
               variant="outline"
               onClick={async () => {
                 await authClient.signOut()
@@ -148,7 +171,8 @@ function AcceptInvitePage() {
       {status === "unauthenticated" && (
         <div className="mt-4 flex flex-col gap-4">
           <p className="text-muted-foreground text-sm">
-            To accept this invitation, please authenticate below. We will send a secure magic link to sign you in.
+            To accept this invitation, please authenticate below. We will send a
+            secure magic link to sign you in.
           </p>
 
           <form
@@ -182,14 +206,24 @@ function AcceptInvitePage() {
             </form.Field>
 
             {errorMsg ? (
-              <p className="rounded-md bg-destructive/10 px-3 py-2 text-destructive text-xs" role="alert">
+              <p
+                className="rounded-md bg-destructive/10 px-3 py-2 text-destructive text-xs"
+                role="alert"
+              >
                 {errorMsg}
               </p>
             ) : null}
 
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
               {([canSubmit, isSubmitting]) => (
-                <Button type="submit" size="lg" className="mt-2" disabled={!canSubmit || isSubmitting}>
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="mt-2"
+                  disabled={!canSubmit || isSubmitting}
+                >
                   {isSubmitting ? "Sending..." : "Send magic link"}
                 </Button>
               )}
@@ -198,7 +232,9 @@ function AcceptInvitePage() {
 
           {sentMagicLinkTo ? (
             <div className="rounded-lg border border-border/70 bg-background/40 px-3 py-2 text-muted-foreground text-sm">
-              Link sent to <span className="text-foreground">{sentMagicLinkTo}</span>. Open your inbox to continue.
+              Link sent to{" "}
+              <span className="text-foreground">{sentMagicLinkTo}</span>. Open
+              your inbox to continue.
             </div>
           ) : null}
         </div>

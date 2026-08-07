@@ -1,4 +1,4 @@
-import { useQueryClient, useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { useConfirm } from "@/components/confirm-dialog-provider"
@@ -95,10 +95,16 @@ export function InvitationsList({ invitations, organizationId }: Props) {
               variant="ghost"
               size="sm"
               className="shrink-0 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em] hover:text-destructive"
-              disabled={cancelInvitationMutation.isPending && cancelInvitationMutation.variables === inv.id}
+              disabled={
+                cancelInvitationMutation.isPending &&
+                cancelInvitationMutation.variables === inv.id
+              }
               onClick={() => void handleCancel(inv)}
             >
-              {cancelInvitationMutation.isPending && cancelInvitationMutation.variables === inv.id ? "Revoking…" : "Revoke"}
+              {cancelInvitationMutation.isPending &&
+              cancelInvitationMutation.variables === inv.id
+                ? "Revoking…"
+                : "Revoke"}
             </Button>
           </div>
         ))}

@@ -14,7 +14,7 @@ import {
 export const gmailRouter = new Hono<{
   Variables: {
     user: { id: string; email: string } | null
-    session: Record<string, unknown> | null
+    session: { id: string } | null
     logContext: Record<string, unknown>
   }
 }>()

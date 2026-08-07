@@ -42,9 +42,7 @@ export function MagicLinkEmail({ url, email }: MagicLinkEmailProps) {
             This link is valid for 15 minutes and can only be used once.
           </Text>
           <Section style={divider} />
-          <Text style={footer}>
-            Parliament Inc. • Secure Passwordless Auth
-          </Text>
+          <Text style={footer}>Parliament Inc. • Secure Passwordless Auth</Text>
         </Container>
       </Body>
     </Html>

@@ -18,11 +18,20 @@ export const inboundRouter = new Hono<{
 inboundRouter.post("/reply-to", async (c) => {
   try {
     const body = await c.req.json()
-    const headers = c.req.header()
-    const { token, fromEmail, subject, textBody, workspaceId = "default" } = body
+    const reqHeaders = c.req.header()
+    const {
+      token,
+      fromEmail,
+      subject,
+      textBody,
+      workspaceId = "default",
+    } = body
 
     if (!fromEmail || !subject) {
-      return c.json({ error: "Missing required fields: fromEmail, subject" }, 400)
+      return c.json(
+        { error: "Missing required fields: fromEmail, subject" },
+        400
+      )
     }
 
     const logRecord = await db
@@ -37,7 +46,7 @@ inboundRouter.post("/reply-to", async (c) => {
           textBody,
           workspaceId,
         },
-        headers,
+        headers: reqHeaders,
       })
       .returning()
 
@@ -88,7 +97,11 @@ inboundRouter.post("/apps-script", async (c) => {
       .returning()
 
     logger.info(
-      { logId: logRecord[0]?.id, workspaceId, attachmentCount: attachments.length },
+      {
+        logId: logRecord[0]?.id,
+        workspaceId,
+        attachmentCount: attachments.length,
+      },
       "Successfully processed Google Apps Script inbound webhook bridge payload"
     )
 
@@ -117,7 +130,9 @@ inboundRouter.post("/drive-drop", async (c) => {
     const accessToken = await getValidGoogleAccessToken(user.id)
 
     // Search for files in app-created "Command Drops" folder or created by this app
-    const query = encodeURIComponent("mimeType = 'application/pdf' and trashed = false")
+    const query = encodeURIComponent(
+      "mimeType = 'application/pdf' and trashed = false"
+    )
     const driveRes = await fetch(
       `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name,createdTime,size)&pageSize=20`,
       {
@@ -129,8 +144,14 @@ inboundRouter.post("/drive-drop", async (c) => {
 
     if (!driveRes.ok) {
       const errText = await driveRes.text()
-      logger.error({ status: driveRes.status, errText, userId: user.id }, "Failed to query Google Drive API")
-      return c.json({ error: `Google Drive API error: ${driveRes.statusText}` }, 500)
+      logger.error(
+        { status: driveRes.status, errText, userId: user.id },
+        "Failed to query Google Drive API"
+      )
+      return c.json(
+        { error: `Google Drive API error: ${driveRes.statusText}` },
+        500
+      )
     }
 
     const driveData: any = await driveRes.json()
@@ -161,7 +182,10 @@ inboundRouter.post("/drive-drop", async (c) => {
     })
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error"
-    logger.error({ err, userId: user.id }, "Failed to process Google Drive drop folder scan")
+    logger.error(
+      { err, userId: user.id },
+      "Failed to process Google Drive drop folder scan"
+    )
     return c.json({ error: errorMsg }, 500)
   }
 })

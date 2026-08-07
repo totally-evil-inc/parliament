@@ -45,7 +45,7 @@ describe("Gmail Watch & Pub/Sub Webhook Engine", () => {
     })
 
     expect(res.status).toBe(200)
-    const json: any = await res.json()
+    const json = (await res.json()) as { success?: boolean }
     expect(typeof json.success).toBe("boolean")
   })
 

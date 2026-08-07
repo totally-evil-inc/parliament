@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router"
 import { render } from "@react-email/render"
+import { createFileRoute } from "@tanstack/react-router"
 import React from "react"
-import { MagicLinkEmail } from "../../../features/email/templates/MagicLinkEmail"
 import { InvitationEmail } from "../../../features/email/templates/InvitationEmail"
+import { MagicLinkEmail } from "../../../features/email/templates/MagicLinkEmail"
 
 export const Route = createFileRoute("/internal/email/render")({
   server: {

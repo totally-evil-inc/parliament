@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import {
   Sheet,
   SheetContent,
@@ -25,13 +26,21 @@ import {
   TabsTrigger,
 } from "@workspace/ui/components/tabs"
 import { cn } from "@workspace/ui/lib/utils"
-import { IconArrowBoldRight, IconBolt, IconCircleCheck, IconCodeEditor, IconGear } from "nucleo-glass"
+import {
+  IconArrowBoldRight,
+  IconBolt,
+  IconCircleCheck,
+  IconCodeEditor,
+  IconGear,
+} from "nucleo-glass"
 import * as React from "react"
 import { PageHeader } from "@/components/page-header"
 import type { Integration, IntegrationStatus } from "./data"
 import { integrationCategories } from "./data"
-import { useConnectIntegration, useDisconnectIntegration } from "./use-integrations"
-import { ScrollArea } from "@workspace/ui/components/scroll-area"
+import {
+  useConnectIntegration,
+  useDisconnectIntegration,
+} from "./use-integrations"
 
 type IntegrationFilter = (typeof integrationCategories)[number]["value"]
 
@@ -208,7 +217,8 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
             <h3 className="font-medium text-sm">Agent Actions</h3>
           </div>
           <p className="text-muted-foreground text-xs/relaxed">
-            These are the tool calls the AI agent can invoke on your behalf when this integration is connected.
+            These are the tool calls the AI agent can invoke on your behalf when
+            this integration is connected.
           </p>
           <div className="flex flex-wrap gap-1.5">
             {integration.actions.map((action) => (
@@ -275,7 +285,8 @@ function StatusBadge({ status }: { status: IntegrationStatus }) {
       variant={status === "connected" ? "secondary" : "outline"}
       className={cn(
         status === "pending" && "border-amber-500/30 text-amber-700",
-        status === "connected" && "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+        status === "connected" &&
+          "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
       )}
     >
       {status}

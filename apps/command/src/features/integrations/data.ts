@@ -51,19 +51,23 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
     features: [
       {
         label: "Calendar Reading",
-        description: "List upcoming events and check your schedule for free/busy slots.",
+        description:
+          "List upcoming events and check your schedule for free/busy slots.",
       },
       {
         label: "Event Creation",
-        description: "Create new calendar events with title, time, description, and attendees.",
+        description:
+          "Create new calendar events with title, time, description, and attendees.",
       },
       {
         label: "Event Management",
-        description: "Update or delete existing events by event ID or natural language search.",
+        description:
+          "Update or delete existing events by event ID or natural language search.",
       },
       {
         label: "Identity",
-        description: "Read your Google account email and profile for contextual personalization.",
+        description:
+          "Read your Google account email and profile for contextual personalization.",
       },
     ],
     actions: [
@@ -77,7 +81,8 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
     id: "github",
     providerId: "github",
     title: "GitHub",
-    description: "Repository access, pull request creation, and code issue inspection.",
+    description:
+      "Repository access, pull request creation, and code issue inspection.",
     longDescription:
       "Allow the AI Agent to interact with your GitHub repositories. It can open pull requests, create or comment on issues, browse repository contents, and read CI/CD run statuses.",
     url: "https://github.com",
@@ -87,15 +92,18 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
     features: [
       {
         label: "Pull Requests",
-        description: "Create, list, and comment on pull requests across your repositories.",
+        description:
+          "Create, list, and comment on pull requests across your repositories.",
       },
       {
         label: "Issues",
-        description: "Open, search, and update GitHub issues with labels and assignees.",
+        description:
+          "Open, search, and update GitHub issues with labels and assignees.",
       },
       {
         label: "Repository Browsing",
-        description: "Read file contents, directory trees, and commit histories.",
+        description:
+          "Read file contents, directory trees, and commit histories.",
       },
       {
         label: "Organization Access",
@@ -114,7 +122,8 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
     id: "linear",
     providerId: "linear",
     title: "Linear",
-    description: "Sync tasks, create issue tickets, and manage project backlogs.",
+    description:
+      "Sync tasks, create issue tickets, and manage project backlogs.",
     longDescription:
       "Connect Linear to allow the AI Agent to create and manage issues, update issue statuses, and query your team's project cycles and backlogs. Ideal for keeping engineering workflows in sync with agent-driven tasks.",
     url: "https://linear.app",
@@ -124,15 +133,18 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
     features: [
       {
         label: "Issue Creation",
-        description: "Create new issues with titles, descriptions, priorities, and assignees.",
+        description:
+          "Create new issues with titles, descriptions, priorities, and assignees.",
       },
       {
         label: "Issue Queries",
-        description: "Search and list issues by project, team, label, or status.",
+        description:
+          "Search and list issues by project, team, label, or status.",
       },
       {
         label: "Status Updates",
-        description: "Transition issues between workflow states (e.g. In Progress → Done).",
+        description:
+          "Transition issues between workflow states (e.g. In Progress → Done).",
       },
       {
         label: "Project & Cycle Overview",
@@ -159,19 +171,23 @@ export const DEFAULT_INTEGRATIONS: Array<Integration> = [
     features: [
       {
         label: "Page Search",
-        description: "Search across your Notion workspace for specific pages or content.",
+        description:
+          "Search across your Notion workspace for specific pages or content.",
       },
       {
         label: "Database Queries",
-        description: "Query Notion databases with filters and sorts to retrieve structured data.",
+        description:
+          "Query Notion databases with filters and sorts to retrieve structured data.",
       },
       {
         label: "Page Creation",
-        description: "Create new pages inside Notion with rich content and nested blocks.",
+        description:
+          "Create new pages inside Notion with rich content and nested blocks.",
       },
       {
         label: "Block Appending",
-        description: "Append new content blocks (text, tables, checklists) to existing pages.",
+        description:
+          "Append new content blocks (text, tables, checklists) to existing pages.",
       },
     ],
     actions: [

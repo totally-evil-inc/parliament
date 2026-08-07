@@ -12,7 +12,11 @@ import {
 import { IconCircleCheck, IconDeleteX } from "nucleo-glass"
 import { PageHeader } from "@/components/page-header"
 import type { PendingAction } from "./use-agent-approvals"
-import { useApproveAction, usePendingApprovals, useRejectAction } from "./use-agent-approvals"
+import {
+  useApproveAction,
+  usePendingApprovals,
+  useRejectAction,
+} from "./use-agent-approvals"
 
 export function ApprovalsPage() {
   const { data: pendingActions, isLoading } = usePendingApprovals()
@@ -28,7 +32,9 @@ export function ApprovalsPage() {
 
       <div className="flex flex-1 flex-col gap-5 p-6 md:p-8">
         {isLoading ? (
-          <div className="text-muted-foreground text-sm">Loading pending agent requests...</div>
+          <div className="text-muted-foreground text-sm">
+            Loading pending agent requests...
+          </div>
         ) : !pendingActions || pendingActions.length === 0 ? (
           <Card className="flex flex-col items-center justify-center p-12 text-center">
             <div className="rounded-full bg-emerald-500/10 p-3 text-emerald-600">
@@ -36,7 +42,8 @@ export function ApprovalsPage() {
             </div>
             <h3 className="mt-4 font-semibold text-lg">All Caught Up</h3>
             <p className="mt-1 text-muted-foreground text-sm">
-              No pending staged actions requiring Human-in-the-Loop (HITL) approval.
+              No pending staged actions requiring Human-in-the-Loop (HITL)
+              approval.
             </p>
           </Card>
         ) : (
@@ -47,7 +54,9 @@ export function ApprovalsPage() {
                 action={action}
                 onApprove={() => approveMutation.mutate(action.id)}
                 onReject={() => rejectMutation.mutate(action.id)}
-                isPending={approveMutation.isPending || rejectMutation.isPending}
+                isPending={
+                  approveMutation.isPending || rejectMutation.isPending
+                }
               />
             ))}
           </div>
@@ -72,11 +81,16 @@ function ApprovalCard({
     <Card className="flex flex-col">
       <CardHeader>
         <div>
-          <CardTitle className="font-mono text-base">{action.toolName}</CardTitle>
+          <CardTitle className="font-mono text-base">
+            {action.toolName}
+          </CardTitle>
           <CardDescription className="mt-1">{action.reason}</CardDescription>
         </div>
         <CardAction>
-          <Badge variant="outline" className="border-amber-500/30 text-amber-600 bg-amber-500/10">
+          <Badge
+            variant="outline"
+            className="border-amber-500/30 text-amber-600 bg-amber-500/10"
+          >
             {(action.confidenceScore * 100).toFixed(0)}% Confidence
           </Badge>
         </CardAction>

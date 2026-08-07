@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { authClient } from "@/lib/auth-client"
 import type { Integration } from "./data"
 import { DEFAULT_INTEGRATIONS } from "./data"
@@ -12,7 +12,8 @@ export type ConnectedAccount = {
 }
 
 async function fetchConnectedAccounts(): Promise<ConnectedAccount[]> {
-  const authUrl = import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
+  const authUrl =
+    import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
   const res = await fetch(`${authUrl}/api/auth/integrations/list`, {
     headers: {
       "Content-Type": "application/json",
@@ -30,14 +31,21 @@ async function fetchConnectedAccounts(): Promise<ConnectedAccount[]> {
 }
 
 export function useIntegrations() {
-  const { data: accounts, isLoading, isError, refetch } = useQuery({
+  const {
+    data: accounts,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["integrations", "connected-accounts"],
     queryFn: fetchConnectedAccounts,
     staleTime: 10_000,
   })
 
   const mergedIntegrations: Integration[] = DEFAULT_INTEGRATIONS.map((item) => {
-    const isConnected = accounts?.some((acc) => acc.providerId === item.providerId)
+    const isConnected = accounts?.some(
+      (acc) => acc.providerId === item.providerId
+    )
     return {
       ...item,
       status: isConnected ? "connected" : "available",
@@ -66,7 +74,9 @@ export function useConnectIntegration() {
       return res
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["integrations", "connected-accounts"] })
+      void queryClient.invalidateQueries({
+        queryKey: ["integrations", "connected-accounts"],
+      })
     },
   })
 }
@@ -76,7 +86,8 @@ export function useDisconnectIntegration() {
 
   return useMutation({
     mutationFn: async (providerId: string) => {
-      const authUrl = import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
+      const authUrl =
+        import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
       const res = await fetch(`${authUrl}/api/auth/unlink-account`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -89,7 +100,9 @@ export function useDisconnectIntegration() {
       return res.json()
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["integrations", "connected-accounts"] })
+      void queryClient.invalidateQueries({
+        queryKey: ["integrations", "connected-accounts"],
+      })
     },
   })
 }

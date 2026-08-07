@@ -14,7 +14,8 @@ export type PendingAction = {
 }
 
 async function fetchPendingActions(): Promise<PendingAction[]> {
-  const authUrl = import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
+  const authUrl =
+    import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
   const res = await fetch(`${authUrl}/api/auth/agent/pending`, {
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -40,19 +41,25 @@ export function useApproveAction() {
 
   return useMutation({
     mutationFn: async (actionId: string) => {
-      const authUrl = import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
-      const res = await fetch(`${authUrl}/api/auth/agent/actions/${actionId}/approve`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      })
+      const authUrl =
+        import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
+      const res = await fetch(
+        `${authUrl}/api/auth/agent/actions/${actionId}/approve`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      )
       if (!res.ok) {
         throw new Error("Failed to approve action")
       }
       return res.json()
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["agent-approvals", "pending"] })
+      void queryClient.invalidateQueries({
+        queryKey: ["agent-approvals", "pending"],
+      })
     },
   })
 }
@@ -62,19 +69,25 @@ export function useRejectAction() {
 
   return useMutation({
     mutationFn: async (actionId: string) => {
-      const authUrl = import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
-      const res = await fetch(`${authUrl}/api/auth/agent/actions/${actionId}/reject`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      })
+      const authUrl =
+        import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
+      const res = await fetch(
+        `${authUrl}/api/auth/agent/actions/${actionId}/reject`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      )
       if (!res.ok) {
         throw new Error("Failed to reject action")
       }
       return res.json()
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["agent-approvals", "pending"] })
+      void queryClient.invalidateQueries({
+        queryKey: ["agent-approvals", "pending"],
+      })
     },
   })
 }

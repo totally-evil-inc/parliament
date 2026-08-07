@@ -81,8 +81,7 @@ app.use("*", async (c, next) => {
 
     if (
       wideEvent.outcome === "error" ||
-      (typeof wideEvent.statusCode === "number" &&
-        wideEvent.statusCode >= 500)
+      (typeof wideEvent.statusCode === "number" && wideEvent.statusCode >= 500)
     ) {
       logger.error(wideEvent)
     } else {
@@ -117,6 +116,7 @@ app.use("*", async (c, next) => {
   return next()
 })
 
+import { addonRouter } from "./routes/addon"
 import { agentAuthRouter } from "./routes/agent-auth"
 import { gmailRouter } from "./routes/gmail"
 import { inboundRouter } from "./routes/inbound"
@@ -128,6 +128,7 @@ app.route("/auth/magic-link", magicLinkRouter)
 app.route("/auth/invite", inviteRouter)
 app.route("/api/auth/integrations", integrationsRouter)
 app.route("/api/auth/agent", agentAuthRouter)
+app.route("/api/gmail/addon", addonRouter)
 app.route("/api/gmail", gmailRouter)
 app.route("/api/inbound", inboundRouter)
 
