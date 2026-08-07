@@ -107,7 +107,7 @@ export function useDisconnectIntegration() {
   return useMutation({
     mutationFn: async (providerId: string) => {
       const authUrl = getAuthUrl()
-      const res = await fetch(`${authUrl}/api/auth/unlink-account`, {
+      const res = await fetch(`${authUrl}/api/auth/integrations/disconnect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ providerId }),

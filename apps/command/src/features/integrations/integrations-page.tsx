@@ -34,6 +34,7 @@ import {
   IconGear,
 } from "nucleo-glass"
 import * as React from "react"
+import { useConfirm } from "@/components/confirm-dialog-provider"
 import { PageHeader } from "@/components/page-header"
 import { GmailActivityHeatmap } from "./components/gmail-activity-heatmap"
 import type { Integration, IntegrationStatus } from "./data"
@@ -159,6 +160,7 @@ function IntegrationCard({ integration }: { integration: Integration }) {
 }
 
 function IntegrationSheet({ integration }: { integration: Integration }) {
+  const confirm = useConfirm()
   const connected = integration.status === "connected"
   const comingSoon = integration.status === "coming_soon"
   const connectMutation = useConnectIntegration()
@@ -171,12 +173,29 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
     disconnectMutation.variables === integration.providerId
   const isPending = isConnecting || isDisconnecting
 
-  const handleAction = () => {
+  const handleAction = async () => {
     if (comingSoon) return
     if (connected) {
-      disconnectMutation.mutate(integration.providerId)
+      const ok = await confirm({
+        title: `Disconnect ${integration.title}?`,
+        description: `Are you sure you want to disconnect ${integration.title}? The AI Agent will no longer be able to perform automated operations on your behalf for this service.`,
+        confirmLabel: "Disconnect Integration",
+        cancelLabel: "Cancel",
+        variant: "destructive",
+      })
+      if (ok) {
+        disconnectMutation.mutate(integration.providerId)
+      }
     } else {
-      connectMutation.mutate(integration)
+      const ok = await confirm({
+        title: `Connect ${integration.title}?`,
+        description: `You are about to connect your ${integration.title} account using OAuth. Would you like to proceed?`,
+        confirmLabel: "Connect Account",
+        cancelLabel: "Cancel",
+      })
+      if (ok) {
+        connectMutation.mutate(integration)
+      }
     }
   }
 

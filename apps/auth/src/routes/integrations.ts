@@ -1,4 +1,4 @@
-import { and, db, desc, eq } from "@workspace/database"
+import { and, db, desc, eq, inArray } from "@workspace/database"
 import { account } from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 import { Hono } from "hono"
@@ -39,6 +39,55 @@ integrationsRouter.get("/list", async (c) => {
       "Failed to fetch user integration accounts"
     )
     return c.json({ error: "Failed to fetch integration accounts" }, 500)
+  }
+})
+
+/**
+ * Disconnect/Unlink integration account for the authenticated user
+ */
+integrationsRouter.post("/disconnect", async (c) => {
+  const user = c.get("user")
+  if (!user) {
+    return c.json({ error: "Unauthorized" }, 401)
+  }
+
+  try {
+    const { providerId } = await c.req.json()
+    if (!providerId || typeof providerId !== "string") {
+      return c.json({ error: "Bad Request: providerId is required" }, 400)
+    }
+
+    const targetProviders = [providerId]
+    if (
+      ["gmail", "google-calendar", "google-drive", "google"].includes(
+        providerId
+      )
+    ) {
+      targetProviders.push("gmail", "google-calendar", "google-drive", "google")
+    }
+
+    const deleted = await db
+      .delete(account)
+      .where(
+        and(
+          eq(account.userId, user.id),
+          inArray(account.providerId, targetProviders)
+        )
+      )
+      .returning({ id: account.id })
+
+    logger.info(
+      { userId: user.id, providerId, deletedCount: deleted.length },
+      "User disconnected integration account"
+    )
+
+    return c.json({ success: true, count: deleted.length })
+  } catch (err: any) {
+    logger.error(
+      { err, userId: user.id },
+      "Failed to disconnect integration account"
+    )
+    return c.json({ error: "Failed to disconnect integration account" }, 500)
   }
 })
 
