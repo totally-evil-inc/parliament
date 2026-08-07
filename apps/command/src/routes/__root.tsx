@@ -12,9 +12,16 @@ import katexCss from "katex/dist/katex.min.css?url"
 import { ConfirmDialogProvider } from "@/components/confirm-dialog-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 
+import {
+  DefaultErrorComponent,
+  DefaultNotFound,
+} from "@/components/router-fallbacks"
+
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
+  notFoundComponent: DefaultNotFound,
+  errorComponent: DefaultErrorComponent,
   head: () => ({
     meta: [
       {

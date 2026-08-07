@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SplatRouteImport } from './routes/$'
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
@@ -28,6 +29,11 @@ import { Route as WorkspaceSettingsTabRouteImport } from './routes/_workspace/se
 import { Route as WorkspaceProposalsProposalIdRouteImport } from './routes/_workspace/proposals/$proposalId'
 import { Route as WorkspaceInvoicesInvoiceIdRouteImport } from './routes/_workspace/invoices/$invoiceId'
 
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -124,6 +130,7 @@ const WorkspaceInvoicesInvoiceIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof WorkspaceIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
+  '/$': typeof SplatRoute
   '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/approvals': typeof WorkspaceApprovalsRoute
   '/documents/print': typeof DocumentsPrintRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteRouteWithChildren
+  '/$': typeof SplatRoute
   '/approvals': typeof WorkspaceApprovalsRoute
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_workspace': typeof WorkspaceRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
+  '/$': typeof SplatRoute
   '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/_workspace/approvals': typeof WorkspaceApprovalsRoute
   '/documents/print': typeof DocumentsPrintRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/$'
     | '/settings'
     | '/approvals'
     | '/documents/print'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/$'
     | '/approvals'
     | '/documents/print'
     | '/proposal/$publicToken'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_workspace'
     | '/auth'
+    | '/$'
     | '/_workspace/settings'
     | '/_workspace/approvals'
     | '/documents/print'
@@ -242,6 +254,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   WorkspaceRouteRoute: typeof WorkspaceRouteRouteWithChildren
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
+  SplatRoute: typeof SplatRoute
   DocumentsPrintRoute: typeof DocumentsPrintRoute
   ProposalPublicTokenRoute: typeof ProposalPublicTokenRoute
   InternalEmailRenderRoute: typeof InternalEmailRenderRoute
@@ -249,6 +262,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -439,6 +459,7 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   WorkspaceRouteRoute: WorkspaceRouteRouteWithChildren,
   AuthRouteRoute: AuthRouteRouteWithChildren,
+  SplatRoute: SplatRoute,
   DocumentsPrintRoute: DocumentsPrintRoute,
   ProposalPublicTokenRoute: ProposalPublicTokenRoute,
   InternalEmailRenderRoute: InternalEmailRenderRoute,

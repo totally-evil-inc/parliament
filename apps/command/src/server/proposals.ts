@@ -212,7 +212,7 @@ export const listProposalDrafts = createServerFn({ method: "GET" })
 
 export const getProposalDraft = createServerFn({ method: "GET" })
   .middleware([requireAuth])
-  .inputValidator(proposalIdSchema)
+  .validator(proposalIdSchema)
   .handler(async ({ context, data }) => {
     const organizationId = await requireActiveOrganization(context.auth)
     const draft = await selectDraft(data.id, organizationId)
@@ -222,7 +222,7 @@ export const getProposalDraft = createServerFn({ method: "GET" })
 
 export const createProposalDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(createProposalDraftSchema)
+  .validator(createProposalDraftSchema)
   .handler(async ({ context, data }) => {
     const organizationId = await requireActiveOrganization(context.auth)
     const userId = getUserId(context.auth)
@@ -254,7 +254,7 @@ export const createProposalDraft = createServerFn({ method: "POST" })
 
 export const saveProposalDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(saveProposalDraftSchema)
+  .validator(saveProposalDraftSchema)
   .handler(async ({ context, data }): Promise<SaveProposalDraftResult> => {
     const organizationId = await requireActiveOrganization(context.auth)
     const current = await selectDraft(data.id, organizationId)
@@ -295,7 +295,7 @@ export const saveProposalDraft = createServerFn({ method: "POST" })
 
 export const finalizeProposalDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(finalizeProposalDraftSchema)
+  .validator(finalizeProposalDraftSchema)
   .handler(async ({ context, data }): Promise<FinalizeProposalDraftResult> => {
     const organizationId = await requireActiveOrganization(context.auth)
     const userId = getUserId(context.auth)
@@ -346,7 +346,7 @@ export const finalizeProposalDraft = createServerFn({ method: "POST" })
   })
 
 export const getPublicProposal = createServerFn({ method: "GET" })
-  .inputValidator(publicTokenSchema)
+  .validator(publicTokenSchema)
   .handler(async ({ data }): Promise<PublicProposalResult> => {
     const link = await findPublicLink(data.token)
     if (!link) return { status: "not_found" }
@@ -375,7 +375,7 @@ export const getPublicProposal = createServerFn({ method: "GET" })
   })
 
 export const acceptPublicProposal = createServerFn({ method: "POST" })
-  .inputValidator(acceptPublicProposalSchema)
+  .validator(acceptPublicProposalSchema)
   .handler(async ({ data }) => {
     const link = await findPublicLink(data.token)
     if (!link) throw new Error("Proposal link not found")
@@ -537,7 +537,7 @@ function toJsonValue(value: unknown): JsonValue {
 
 export const deleteProposalDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const organizationId = await requireActiveOrganization(context.auth)
 

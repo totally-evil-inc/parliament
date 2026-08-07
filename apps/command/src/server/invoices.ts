@@ -183,7 +183,7 @@ export const listInvoiceDrafts = createServerFn({ method: "GET" })
 
 export const getInvoiceDraft = createServerFn({ method: "GET" })
   .middleware([requireAuth])
-  .inputValidator(invoiceIdSchema)
+  .validator(invoiceIdSchema)
   .handler(async ({ context, data }) => {
     const organizationId = await requireActiveOrganization(context.auth)
     const draft = await selectDraft(data.id, organizationId)
@@ -193,7 +193,7 @@ export const getInvoiceDraft = createServerFn({ method: "GET" })
 
 export const createInvoiceDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(createInvoiceDraftSchema)
+  .validator(createInvoiceDraftSchema)
   .handler(async ({ context, data }) => {
     const organizationId = await requireActiveOrganization(context.auth)
     const userId = getUserId(context.auth)
@@ -225,7 +225,7 @@ export const createInvoiceDraft = createServerFn({ method: "POST" })
 
 export const saveInvoiceDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(saveInvoiceDraftSchema)
+  .validator(saveInvoiceDraftSchema)
   .handler(async ({ context, data }): Promise<SaveInvoiceDraftResult> => {
     const organizationId = await requireActiveOrganization(context.auth)
     const current = await selectDraft(data.id, organizationId)
@@ -266,7 +266,7 @@ export const saveInvoiceDraft = createServerFn({ method: "POST" })
 
 export const finalizeInvoiceDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(finalizeInvoiceDraftSchema)
+  .validator(finalizeInvoiceDraftSchema)
   .handler(async ({ context, data }): Promise<FinalizeInvoiceDraftResult> => {
     const organizationId = await requireActiveOrganization(context.auth)
     const userId = getUserId(context.auth)
@@ -317,7 +317,7 @@ export const finalizeInvoiceDraft = createServerFn({ method: "POST" })
   })
 
 export const getPublicInvoice = createServerFn({ method: "GET" })
-  .inputValidator(publicTokenSchema)
+  .validator(publicTokenSchema)
   .handler(async ({ data }): Promise<PublicInvoiceResult> => {
     const link = await findPublicLink(data.token)
     if (!link) return { status: "not_found" }
@@ -433,7 +433,7 @@ function toJsonValue(value: unknown): JsonValue {
 
 export const deleteInvoiceDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const organizationId = await requireActiveOrganization(context.auth)
 

@@ -6,7 +6,7 @@ import {
   IconHouse,
   IconInbox,
   IconLayers,
-  IconLink,
+  IconConnect,
   IconMoneyBill,
   IconRoadmap,
   IconUsers,
@@ -48,7 +48,7 @@ export const workspaceConfig = {
     { icon: IconUsers, label: "People" },
     { icon: IconFile, label: "Proposals", to: "/proposals" },
     { icon: IconMoneyBill, label: "Invoices", to: "/invoices" },
-    { icon: IconLink, label: "Integrations", to: "/integrations" },
+    { icon: IconConnect, label: "Integrations", to: "/integrations" },
     { icon: IconGear, label: "Settings", to: "/settings" },
   ],
 } satisfies WorkspaceConfig
