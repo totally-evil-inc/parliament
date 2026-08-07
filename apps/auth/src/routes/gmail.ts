@@ -147,21 +147,26 @@ gmailRouter.post("/pubsub/webhook", async (c) => {
     const tokenQuery = c.req.query("token")
     const secretToken = process.env.PUBSUB_VERIFICATION_TOKEN
     const isProduction = process.env.NODE_ENV === "production"
-    if (
-      secretToken &&
-      tokenQuery !== secretToken &&
-      authHeader !== `Bearer ${secretToken}` &&
-      !authHeader?.startsWith("Bearer ")
-    ) {
-      return c.json(
-        { error: "Unauthorized: Invalid or missing webhook token" },
-        401
-      )
-    }
-    if (isProduction && !secretToken && !authHeader) {
+    if (secretToken) {
+      const tokenValid =
+        tokenQuery === secretToken ||
+        authHeader === secretToken ||
+        authHeader === `Bearer ${secretToken}`
+      if (!tokenValid) {
+        return c.json(
+          { error: "Unauthorized: Invalid or missing webhook token" },
+          401
+        )
+      }
+    } else if (isProduction) {
       return c.json(
         { error: "Unauthorized: Missing webhook verification token" },
         401
+      )
+    } else {
+      logger.warn(
+        { path: c.req.path },
+        "Allowing unauthenticated Pub/Sub webhook request in non-production mode"
       )
     }
 

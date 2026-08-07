@@ -144,9 +144,58 @@ inboundRouter.post("/drive-drop", async (c) => {
   try {
     const accessToken = await getValidGoogleAccessToken(user.id)
 
-    // Search for PDF files inside or named after "Command Drops" folder
+    // Locate the "Command Drops" folder first, then restrict the scan to it
+    const folderQuery = encodeURIComponent(
+      "mimeType = 'application/vnd.google-apps.folder' and name = 'Command Drops' and trashed = false"
+    )
+    const folderRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${folderQuery}&fields=files(id,name)&pageSize=10`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    if (!folderRes.ok) {
+      const errText = await folderRes.text()
+      logger.error(
+        { status: folderRes.status, errText, userId: user.id },
+        "Failed to locate Command Drops folder in Google Drive"
+      )
+      return c.json(
+        { error: `Google Drive API error: ${folderRes.statusText}` },
+        500
+      )
+    }
+
+    interface GoogleDriveFilesResponse {
+      files?: Array<{
+        id: string
+        name: string
+        createdTime?: string
+        size?: string
+      }>
+    }
+    const folderData = (await folderRes.json()) as GoogleDriveFilesResponse
+    const dropFolder = folderData.files?.[0]
+
+    if (!dropFolder) {
+      logger.info(
+        { userId: user.id },
+        "No Command Drops folder found; skipping Drive drop scan"
+      )
+      return c.json({
+        success: true,
+        filesIngested: 0,
+        files: [],
+        folder: null,
+      })
+    }
+
+    // Search for invoice PDFs inside the Command Drops folder only
     const query = encodeURIComponent(
-      "name contains 'Command Drops' and mimeType = 'application/pdf' and trashed = false"
+      `'${dropFolder.id}' in parents and mimeType = 'application/pdf' and trashed = false`
     )
     const driveRes = await fetch(
       `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name,createdTime,size)&pageSize=20`,
@@ -169,14 +218,6 @@ inboundRouter.post("/drive-drop", async (c) => {
       )
     }
 
-    interface GoogleDriveFilesResponse {
-      files?: Array<{
-        id: string
-        name: string
-        createdTime?: string
-        size?: string
-      }>
-    }
     const driveData = (await driveRes.json()) as GoogleDriveFilesResponse
     const files = driveData.files || []
 
@@ -187,6 +228,7 @@ inboundRouter.post("/drive-drop", async (c) => {
         eventType: "pdf_scan",
         payload: {
           workspaceId: user.id,
+          folderId: dropFolder.id,
           filesCount: files.length,
           files,
         },
@@ -194,7 +236,7 @@ inboundRouter.post("/drive-drop", async (c) => {
       .returning()
 
     logger.info(
-      { userId: user.id, filesFound: files.length, logId: logRecord[0]?.id },
+      { userId: user.id, filesFound: files.length, logId: logRecord[0]?.id, folderId: dropFolder.id },
       "Successfully ingested Google Drive drops folder PDFs"
     )
 
@@ -202,6 +244,7 @@ inboundRouter.post("/drive-drop", async (c) => {
       success: true,
       filesIngested: files.length,
       files,
+      folder: dropFolder,
     })
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error"

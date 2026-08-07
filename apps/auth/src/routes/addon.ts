@@ -47,11 +47,26 @@ addonRouter.post("/context", async (c) => {
   try {
     const user = c.get("user")
     const authHeader = c.req.header("Authorization")
+    const expectedSecret =
+      process.env.ADDON_AUTH_SECRET || process.env.HARNESS_AUTH_SECRET
     const isProduction = process.env.NODE_ENV === "production"
-    if (isProduction && !user && !authHeader) {
-      return c.json(
-        { error: "Unauthorized: Missing authentication context" },
-        401
+
+    const secretAuthenticated = Boolean(
+      expectedSecret &&
+        (authHeader === expectedSecret ||
+          authHeader === `Bearer ${expectedSecret}`)
+    )
+
+    if (!user && !secretAuthenticated) {
+      if (isProduction || expectedSecret) {
+        return c.json(
+          { error: "Unauthorized: Missing or invalid authentication context" },
+          401
+        )
+      }
+      logger.warn(
+        { path: c.req.path },
+        "Allowing unauthenticated add-on context request in non-production mode"
       )
     }
 

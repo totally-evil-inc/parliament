@@ -10,6 +10,31 @@ export const agentAuthRouter = new Hono<{
   }
 }>()
 
+const MAX_ARGS_DEPTH = 6
+const UNSAFE_ARG_KEYS = new Set(["__proto__", "constructor", "prototype"])
+
+/**
+ * Recursively validate that `args` is a JSON-safe plain object and strip keys
+ * that could enable prototype pollution when persisted or re-hydrated.
+ */
+function sanitizeArgs(value: unknown, depth = 0): unknown {
+  if (depth > MAX_ARGS_DEPTH) {
+    throw new Error("args exceeds maximum nesting depth")
+  }
+  if (value === null || typeof value !== "object") {
+    return value
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeArgs(item, depth + 1))
+  }
+  const sanitized: Record<string, unknown> = {}
+  for (const [key, item] of Object.entries(value)) {
+    if (UNSAFE_ARG_KEYS.has(key)) continue
+    sanitized[key] = sanitizeArgs(item, depth + 1)
+  }
+  return sanitized
+}
+
 /**
  * Stage an action proposed by an agent (called by Go Harness daemon)
  */
@@ -18,7 +43,7 @@ agentAuthRouter.post("/stage", async (c) => {
   const authSecret =
     c.req.header("X-Harness-Secret") || c.req.header("Authorization")
   const expectedSecret =
-    Bun.env.HARNESS_AUTH_SECRET || Bun.env.BETTER_AUTH_SECRET
+    process.env.HARNESS_AUTH_SECRET || process.env.BETTER_AUTH_SECRET
   if (
     !user &&
     expectedSecret &&
@@ -42,6 +67,16 @@ agentAuthRouter.post("/stage", async (c) => {
   ) {
     return c.json(
       { error: "Bad Request: Missing or invalid toolName or args" },
+      400
+    )
+  }
+
+  let safeArgs: unknown
+  try {
+    safeArgs = sanitizeArgs(args)
+  } catch {
+    return c.json(
+      { error: "Bad Request: args must be a JSON-safe object" },
       400
     )
   }
@@ -113,7 +148,7 @@ agentAuthRouter.post("/stage", async (c) => {
         agentId: targetAgentId,
         userId: targetUserId,
         toolName,
-        args,
+        args: safeArgs,
         reason: reason || "Proposed tool action requiring HITL approval",
         confidenceScore: confidenceScore ?? 0.9,
         status: "pending",
@@ -187,7 +222,7 @@ agentAuthRouter.get("/actions/:id/status", async (c) => {
       status: act.status,
       approvedAt: act.approvedAt,
     })
-  } catch (err: any) {
+  } catch {
     return c.json({ error: "Failed to check action status" }, 500)
   }
 })
