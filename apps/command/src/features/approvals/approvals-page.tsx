@@ -48,17 +48,23 @@ export function ApprovalsPage() {
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {pendingActions.map((action) => (
-              <ApprovalCard
-                key={action.id}
-                action={action}
-                onApprove={() => approveMutation.mutate(action.id)}
-                onReject={() => rejectMutation.mutate(action.id)}
-                isPending={
-                  approveMutation.isPending || rejectMutation.isPending
-                }
-              />
-            ))}
+            {pendingActions.map((action) => {
+              const isApproving =
+                approveMutation.isPending &&
+                approveMutation.variables === action.id
+              const isRejecting =
+                rejectMutation.isPending &&
+                rejectMutation.variables === action.id
+              return (
+                <ApprovalCard
+                  key={action.id}
+                  action={action}
+                  onApprove={() => approveMutation.mutate(action.id)}
+                  onReject={() => rejectMutation.mutate(action.id)}
+                  isPending={isApproving || isRejecting}
+                />
+              )
+            })}
           </div>
         )}
       </div>
