@@ -8,7 +8,7 @@ import {
 import {
   buildInvoiceRenderModel,
   buildProposalRenderModel,
-} from "@workspace/document"
+} from "@workspace/document/render"
 import "@workspace/ui/globals.css"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
