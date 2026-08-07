@@ -70,7 +70,9 @@ export async function getValidGoogleAccessToken(
       )
     }
 
-    const tokenData = (await refreshRes.json().catch(() => null)) as GoogleTokenResponse | null
+    const tokenData = (await refreshRes
+      .json()
+      .catch(() => null)) as GoogleTokenResponse | null
     if (!tokenData || !tokenData.access_token) {
       throw new Error("Invalid token refresh response from Google")
     }

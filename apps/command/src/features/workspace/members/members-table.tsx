@@ -140,7 +140,8 @@ export function MembersTable({
     try {
       await updateRoleMutation.mutateAsync({ memberId: member.id, role })
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to update member role"
+      const msg =
+        err instanceof Error ? err.message : "Failed to update member role"
       console.error(err)
       window.alert(msg)
     }

@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
-import { IconBolt, IconCircleCheck, IconGear } from "nucleo-glass"
+import { IconBolt, IconCircleCheck } from "nucleo-glass"
 import {
   useGmailThreadActivity,
   useRegisterGmailWatch,
@@ -76,48 +76,47 @@ export function GmailActivityHeatmap() {
               >
                 <div className="flex flex-col gap-0.5">
                   <span className="font-medium">
-                    {act.fromEmail || act.senderEmail || "Unknown Sender"}
+                    {act.senderEmail || "Unknown Sender"}
                   </span>
                   <span className="text-muted-foreground text-[11px]">
                     {act.subject || "No subject"}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  {act.isSilent ? (
-                    <Badge
-                      variant="outline"
-                      className="border-amber-500/30 text-amber-600 text-[10px]"
-                    >
-                      Inactive (Last activity &gt; 5d)
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className="border-emerald-500/30 text-emerald-600 text-[10px]"
-                    >
-                      <IconCircleCheck className="size-3 mr-1 inline" />
-                      Active Thread
-                    </Badge>
-                  )}
-                </div>
+                {act.isSilent ? (
+                  <Badge
+                    variant="outline"
+                    className="border-amber-500/30 text-amber-600 text-[10px]"
+                  >
+                    Inactive (Last activity &gt; 5d)
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-500/30 text-emerald-600 text-[10px]"
+                  >
+                    <IconCircleCheck className="size-3 mr-1 inline" />
+                    Active
+                  </Badge>
+                )}
               </div>
             ))}
           </div>
         )}
 
-        <div className="pt-2">
+        <div className="mt-4 flex items-center justify-between border-t pt-3">
+          <span className="text-muted-foreground text-xs">
+            Push Notification Watch Status:
+          </span>
           <Button
-            type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="w-full text-xs"
             disabled={registerWatchMutation.isPending}
-            onClick={() => registerWatchMutation.mutate()}
+            onClick={() => registerWatchMutation.mutate(undefined)}
+            className="text-xs"
           >
-            <IconGear className="size-3 mr-1.5" />
             {registerWatchMutation.isPending
-              ? "Syncing..."
-              : "Re-sync Real-time Pub/Sub Watcher"}
+              ? "Renewing Watch..."
+              : "Renew Gmail Watch Subscription"}
           </Button>
         </div>
       </CardContent>

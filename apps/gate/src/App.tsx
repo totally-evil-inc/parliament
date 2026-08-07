@@ -184,7 +184,10 @@ function ProposalRouteHandler({
       }}
       onSendOtp={async (email) => {
         try {
-          return await sendOtpMutation.mutateAsync({ publicLinkId: data.linkId, email })
+          return await sendOtpMutation.mutateAsync({
+            publicLinkId: data.linkId,
+            email,
+          })
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : "Failed to send OTP"
           return { success: false, error: msg }
@@ -198,7 +201,8 @@ function ProposalRouteHandler({
             code,
           })
         } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : "Failed to verify OTP"
+          const msg =
+            err instanceof Error ? err.message : "Failed to verify OTP"
           return { success: false, error: msg }
         }
       }}
@@ -309,7 +313,10 @@ function InvoiceRouteHandler({
       }}
       onSendOtp={async (email) => {
         try {
-          return await sendOtpMutation.mutateAsync({ publicLinkId: data.linkId, email })
+          return await sendOtpMutation.mutateAsync({
+            publicLinkId: data.linkId,
+            email,
+          })
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : "Failed to send OTP"
           return { success: false, error: msg }
@@ -323,7 +330,8 @@ function InvoiceRouteHandler({
             code,
           })
         } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : "Failed to verify OTP"
+          const msg =
+            err instanceof Error ? err.message : "Failed to verify OTP"
           return { success: false, error: msg }
         }
       }}

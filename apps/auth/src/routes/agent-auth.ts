@@ -15,16 +15,31 @@ export const agentAuthRouter = new Hono<{
  */
 agentAuthRouter.post("/stage", async (c) => {
   const user = c.get("user")
-  const authSecret = c.req.header("X-Harness-Secret") || c.req.header("Authorization")
-  const expectedSecret = Bun.env.HARNESS_AUTH_SECRET || Bun.env.BETTER_AUTH_SECRET
-  if (!user && expectedSecret && authSecret !== expectedSecret && authSecret !== `Bearer ${expectedSecret}`) {
-    return c.json({ error: "Unauthorized: Invalid or missing harness authentication" }, 401)
+  const authSecret =
+    c.req.header("X-Harness-Secret") || c.req.header("Authorization")
+  const expectedSecret =
+    Bun.env.HARNESS_AUTH_SECRET || Bun.env.BETTER_AUTH_SECRET
+  if (
+    !user &&
+    expectedSecret &&
+    authSecret !== expectedSecret &&
+    authSecret !== `Bearer ${expectedSecret}`
+  ) {
+    return c.json(
+      { error: "Unauthorized: Invalid or missing harness authentication" },
+      401
+    )
   }
 
   const body = await c.req.json().catch(() => ({}))
   const { toolName, args, reason, confidenceScore, agentId, userId } = body
 
-  if (!toolName || typeof toolName !== "string" || !args || typeof args !== "object") {
+  if (
+    !toolName ||
+    typeof toolName !== "string" ||
+    !args ||
+    typeof args !== "object"
+  ) {
     return c.json(
       { error: "Bad Request: Missing or invalid toolName or args" },
       400

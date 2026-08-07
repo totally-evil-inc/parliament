@@ -95,18 +95,25 @@ export function InviteTeammatesForm({
       try {
         const results = await Promise.allSettled(
           validChips.map(async (chip) => {
-            await inviteMutation.mutateAsync({ email: chip.email, role: chip.role })
+            await inviteMutation.mutateAsync({
+              email: chip.email,
+              role: chip.role,
+            })
             return chip.uid
           })
         )
 
         const successfulUids = results
-          .filter((r): r is PromiseFulfilledResult<number> => r.status === "fulfilled")
+          .filter(
+            (r): r is PromiseFulfilledResult<number> => r.status === "fulfilled"
+          )
           .map((r) => r.value)
 
         setChips((prev) => prev.filter((c) => !successfulUids.includes(c.uid)))
 
-        const failedCount = results.filter((r) => r.status === "rejected").length
+        const failedCount = results.filter(
+          (r) => r.status === "rejected"
+        ).length
         if (failedCount > 0) {
           throw new Error(`Failed to send ${failedCount} invitation(s).`)
         }

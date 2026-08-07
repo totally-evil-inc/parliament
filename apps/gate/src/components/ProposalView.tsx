@@ -48,7 +48,9 @@ export function ProposalView({
   isSubmitting = false,
   appTheme = "light",
 }: ProposalViewProps) {
-  const template = useState(() => getDocumentTemplate(proposal.template, appTheme))[0]
+  const template = useState(() =>
+    getDocumentTemplate(proposal.template, appTheme)
+  )[0]
   const templateStyle = useState(() => getDocumentTemplateStyle(template))[0]
 
   // Form states
@@ -157,7 +159,8 @@ export function ProposalView({
         agreedTerms: true,
       })
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to submit acceptance."
+      const msg =
+        err instanceof Error ? err.message : "Failed to submit acceptance."
       setErrorMsg(msg)
     }
   }

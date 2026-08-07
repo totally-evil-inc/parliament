@@ -94,8 +94,9 @@ export const invoiceAcceptance = pgTable(
     publicLinkId: uuid("public_link_id")
       .notNull()
       .references(() => invoicePublicLink.id, { onDelete: "cascade" }),
-    organizationId: uuid("organization_id")
-      .references(() => organization.id, { onDelete: "cascade" }),
+    organizationId: uuid("organization_id").references(() => organization.id, {
+      onDelete: "cascade",
+    }),
     signerName: text("signer_name").notNull(),
     signerEmail: text("signer_email").notNull(),
     signatureText: text("signature_text"),

@@ -76,7 +76,14 @@ function AcceptInvitePage() {
     }
 
     void accept()
-  }, [id, isAuthenticated, invitedEmail, currentUserEmail, session.isPending, navigate])
+  }, [
+    id,
+    isAuthenticated,
+    invitedEmail,
+    currentUserEmail,
+    session.isPending,
+    navigate,
+  ])
 
   const form = useForm({
     defaultValues: {

@@ -229,7 +229,11 @@ app.post("/api/public/otp/send", async (c) => {
     email?: string
   }
 
-  if (!body.publicLinkId || !body.email || !EMAIL_REGEX.test(body.email.trim())) {
+  if (
+    !body.publicLinkId ||
+    !body.email ||
+    !EMAIL_REGEX.test(body.email.trim())
+  ) {
     return c.json(
       { success: false, error: "Valid publicLinkId and email are required" },
       400
@@ -255,7 +259,12 @@ app.post("/api/public/otp/verify", async (c) => {
     code?: string
   }
 
-  if (!body.publicLinkId || !body.email || !body.code || !EMAIL_REGEX.test(body.email.trim())) {
+  if (
+    !body.publicLinkId ||
+    !body.email ||
+    !body.code ||
+    !EMAIL_REGEX.test(body.email.trim())
+  ) {
     return c.json(
       {
         success: false,
@@ -266,7 +275,11 @@ app.post("/api/public/otp/verify", async (c) => {
   }
 
   try {
-    const result = await verifyOtp(body.publicLinkId, body.email.trim(), body.code.trim())
+    const result = await verifyOtp(
+      body.publicLinkId,
+      body.email.trim(),
+      body.code.trim()
+    )
     if (!result.success) {
       return c.json(result, 400)
     }

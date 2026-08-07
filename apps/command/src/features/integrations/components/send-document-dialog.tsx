@@ -92,7 +92,10 @@ export function SendDocumentDialog({
       setStatusMessage("Finalizing document link...")
       const url = await ensureShareUrl()
 
-      const safeMessageHtml = escapeHtml(personalMessage).replace(/\n/g, "<br/>")
+      const safeMessageHtml = escapeHtml(personalMessage).replace(
+        /\n/g,
+        "<br/>"
+      )
       const htmlBody = `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
           <p>${safeMessageHtml}</p>

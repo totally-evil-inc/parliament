@@ -201,18 +201,19 @@ function ProposalEditorScreen({
 
   const [sendDialogOpen, setSendDialogOpen] = React.useState(false)
   const snapshot = store.getSnapshot()
-  const defaultClientEmail = snapshot.parties?.client?.email || ""
+  const defaultClientEmail = snapshot.data.customer?.email || ""
   const proposalTitle = snapshot.data.title || "Untitled Proposal"
 
-  const handleFinalizeAndGetShareUrl = React.useCallback(async (): Promise<string> => {
-    const result = await sendDraft.mutateAsync()
-    if (result.status === "sent" && result.finalized) {
-      const url = `${window.location.origin}/proposal/${result.finalized.token}`
-      setShareUrl(url)
-      return url
-    }
-    return window.location.href
-  }, [sendDraft])
+  const handleFinalizeAndGetShareUrl =
+    React.useCallback(async (): Promise<string> => {
+      const result = await sendDraft.mutateAsync()
+      if (result.status === "sent" && result.finalized) {
+        const url = `${window.location.origin}/proposal/${result.finalized.token}`
+        setShareUrl(url)
+        return url
+      }
+      return window.location.href
+    }, [sendDraft])
 
   return (
     <div className="flex h-[calc(100svh-3rem)] min-h-0 w-full flex-col overflow-hidden bg-muted/30">

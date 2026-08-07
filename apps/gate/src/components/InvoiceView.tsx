@@ -60,7 +60,9 @@ export function InvoiceView({
   isSubmitting = false,
   appTheme = "light",
 }: InvoiceViewProps) {
-  const template = useState(() => getDocumentTemplate(invoice.template, appTheme))[0]
+  const template = useState(() =>
+    getDocumentTemplate(invoice.template, appTheme)
+  )[0]
   const templateStyle = useState(() => getDocumentTemplateStyle(template))[0]
   const effectiveAccepted = propsAccepted ?? null
 
@@ -160,7 +162,8 @@ export function InvoiceView({
         agreedTerms: true,
       })
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to submit acceptance."
+      const msg =
+        err instanceof Error ? err.message : "Failed to submit acceptance."
       setErrorMsg(msg)
     }
   }

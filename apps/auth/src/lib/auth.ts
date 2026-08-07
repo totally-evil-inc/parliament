@@ -142,7 +142,8 @@ export const auth = betterAuth({
           providerId: "gmail",
           clientId: process.env.GOOGLE_CLIENT_ID as string,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-          authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth?access_type=offline",
+          authorizationUrl:
+            "https://accounts.google.com/o/oauth2/v2/auth?access_type=offline",
           tokenUrl: "https://oauth2.googleapis.com/token",
           scopes: [
             "https://www.googleapis.com/auth/userinfo.email",
@@ -155,7 +156,8 @@ export const auth = betterAuth({
           providerId: "google-calendar",
           clientId: process.env.GOOGLE_CLIENT_ID as string,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-          authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth?access_type=offline",
+          authorizationUrl:
+            "https://accounts.google.com/o/oauth2/v2/auth?access_type=offline",
           tokenUrl: "https://oauth2.googleapis.com/token",
           scopes: [
             "https://www.googleapis.com/auth/userinfo.email",
@@ -167,7 +169,8 @@ export const auth = betterAuth({
           providerId: "google-drive",
           clientId: process.env.GOOGLE_CLIENT_ID as string,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-          authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth?access_type=offline",
+          authorizationUrl:
+            "https://accounts.google.com/o/oauth2/v2/auth?access_type=offline",
           tokenUrl: "https://oauth2.googleapis.com/token",
           scopes: [
             "https://www.googleapis.com/auth/userinfo.email",

@@ -49,7 +49,10 @@ addonRouter.post("/context", async (c) => {
     const authHeader = c.req.header("Authorization")
     const isProduction = process.env.NODE_ENV === "production"
     if (isProduction && !user && !authHeader) {
-      return c.json({ error: "Unauthorized: Missing authentication context" }, 401)
+      return c.json(
+        { error: "Unauthorized: Missing authentication context" },
+        401
+      )
     }
 
     const body = await c.req.json().catch(() => null)
@@ -65,7 +68,10 @@ addonRouter.post("/context", async (c) => {
       typeof messageId !== "string"
     ) {
       return c.json(
-        { error: "Bad Request: Missing or invalid required fields (senderEmail, messageId)" },
+        {
+          error:
+            "Bad Request: Missing or invalid required fields (senderEmail, messageId)",
+        },
         400
       )
     }

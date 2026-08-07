@@ -15,18 +15,14 @@ describe("Command App Integration Configuration & Scopes", () => {
     const calScopes = calInt?.scopes ?? []
     const driveScopes = driveInt?.scopes ?? []
 
-    expect(gmailScopes).toContain(
-      "https://www.googleapis.com/auth/gmail.send"
-    )
+    expect(gmailScopes).toContain("https://www.googleapis.com/auth/gmail.send")
     expect(gmailScopes).toContain(
       "https://www.googleapis.com/auth/gmail.metadata"
     )
     expect(calScopes).toContain(
       "https://www.googleapis.com/auth/calendar.events.readonly"
     )
-    expect(driveScopes).toContain(
-      "https://www.googleapis.com/auth/drive.file"
-    )
+    expect(driveScopes).toContain("https://www.googleapis.com/auth/drive.file")
 
     // Ensure NO restricted scopes are included
     expect(gmailScopes).not.toContain("https://mail.google.com/")

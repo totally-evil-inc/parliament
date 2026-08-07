@@ -179,7 +179,8 @@ integrationsRouter.get("/internal/token", async (c) => {
               .set({
                 accessToken: tokenData.access_token,
                 accessTokenExpiresAt: newExpiresAt,
-                refreshToken: tokenData.refresh_token ?? targetAccount.refreshToken,
+                refreshToken:
+                  tokenData.refresh_token ?? targetAccount.refreshToken,
                 updatedAt: new Date(),
               })
               .where(eq(account.id, targetAccount.id))

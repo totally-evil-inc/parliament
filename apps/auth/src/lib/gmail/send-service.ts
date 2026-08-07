@@ -51,7 +51,8 @@ export function buildRfc2822RawMessage(options: {
     lines.push(`Reply-To: ${sanitizeHeader(options.replyTo)}`)
   }
 
-  const plainContent = options.plainText || options.htmlText.replace(/<[^>]+>/g, "")
+  const plainContent =
+    options.plainText || options.htmlText.replace(/<[^>]+>/g, "")
   const plainBase64 = Buffer.from(plainContent, "utf-8").toString("base64")
   const htmlBase64 = Buffer.from(options.htmlText, "utf-8").toString("base64")
 
