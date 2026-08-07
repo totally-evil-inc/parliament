@@ -2,7 +2,13 @@ import { db } from "@workspace/database"
 import { logger } from "@workspace/logger"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { genericOAuth, jwt, magicLink, organization } from "better-auth/plugins"
+import {
+  emailOTP,
+  genericOAuth,
+  jwt,
+  magicLink,
+  organization,
+} from "better-auth/plugins"
 
 import { renderEmail, sendEmail } from "./email"
 import { trustedOrigins } from "./utils"
@@ -65,6 +71,33 @@ export const auth = betterAuth({
    * Plugins
    */
   plugins: [
+    emailOTP({
+      async sendVerificationOTP({ email, otp, type }) {
+        try {
+          const html = `<div style="font-family: sans-serif; padding: 20px; color: #111;">
+            <h2 style="margin-bottom: 12px;">Verification Code</h2>
+            <p style="margin-bottom: 16px;">Your verification code to view the document is:</p>
+            <div style="font-size: 28px; font-weight: bold; letter-spacing: 4px; padding: 12px 16px; background-color: #f4f4f5; border-radius: 8px; display: inline-block;">${otp}</div>
+            <p style="margin-top: 16px; font-size: 12px; color: #666;">This code will expire in 10 minutes.</p>
+          </div>`
+          await sendEmail({
+            to: email,
+            subject: `Your verification code: ${otp}`,
+            html,
+          })
+        } catch (err) {
+          logger.error(
+            { err, email, type },
+            "Failed to send verification OTP email"
+          )
+          throw err
+        }
+      },
+      otpLength: 6,
+      expiresIn: 600,
+      disableSignUp: false,
+      allowedAttempts: 5,
+    }),
     organization({
       async sendInvitationEmail(data) {
         try {
