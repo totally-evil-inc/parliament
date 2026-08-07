@@ -50,83 +50,112 @@ export type ClientEventResponse = {
 export async function fetchPublicProposal(
   token: string
 ): Promise<GetPublicProposalResult> {
-  const res = await fetch(`/api/public/proposal/${encodeURIComponent(token)}`)
-  if (!res.ok && res.status !== 404 && res.status !== 400) {
-    throw new Error(`Failed to fetch proposal (${res.status})`)
+  try {
+    const res = await fetch(`/api/public/proposal/${encodeURIComponent(token)}`)
+    if (!res.ok && res.status !== 404 && res.status !== 400) {
+      throw new Error(`Failed to fetch proposal (${res.status})`)
+    }
+    const data = await res.json().catch(() => ({ status: "not_found" }))
+    return data as GetPublicProposalResult
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.startsWith("Failed to fetch proposal")) {
+      throw err
+    }
+    return { status: "not_found" }
   }
-  const data = await res.json().catch(() => ({ status: "not_found" }))
-  return data as GetPublicProposalResult
 }
 
 export async function fetchPublicInvoice(
   token: string
 ): Promise<GetPublicInvoiceResult> {
-  const res = await fetch(`/api/public/invoice/${encodeURIComponent(token)}`)
-  if (!res.ok && res.status !== 404 && res.status !== 400) {
-    throw new Error(`Failed to fetch invoice (${res.status})`)
+  try {
+    const res = await fetch(`/api/public/invoice/${encodeURIComponent(token)}`)
+    if (!res.ok && res.status !== 404 && res.status !== 400) {
+      throw new Error(`Failed to fetch invoice (${res.status})`)
+    }
+    const data = await res.json().catch(() => ({ status: "not_found" }))
+    return data as GetPublicInvoiceResult
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.startsWith("Failed to fetch invoice")) {
+      throw err
+    }
+    return { status: "not_found" }
   }
-  const data = await res.json().catch(() => ({ status: "not_found" }))
-  return data as GetPublicInvoiceResult
 }
 
 export async function submitProposalAcceptance(
   token: string,
   payload: AcceptancePayload
 ): Promise<AcceptanceResponse<ProposalAcceptanceRecord>> {
-  const res = await fetch(
-    `/api/public/proposal/${encodeURIComponent(token)}/accept`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+  try {
+    const res = await fetch(
+      `/api/public/proposal/${encodeURIComponent(token)}/accept`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    )
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      return {
+        success: false,
+        error: data.error || "Failed to submit proposal acceptance",
+      }
     }
-  )
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    return {
-      success: false,
-      error: data.error || "Failed to submit proposal acceptance",
-    }
+    return data
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Network error"
+    return { success: false, error: errorMsg }
   }
-  return data
 }
 
 export async function submitInvoiceAcceptance(
   token: string,
   payload: AcceptancePayload
 ): Promise<AcceptanceResponse<InvoiceAcceptanceRecord>> {
-  const res = await fetch(
-    `/api/public/invoice/${encodeURIComponent(token)}/accept`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+  try {
+    const res = await fetch(
+      `/api/public/invoice/${encodeURIComponent(token)}/accept`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    )
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      return {
+        success: false,
+        error: data.error || "Failed to submit invoice acceptance",
+      }
     }
-  )
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    return {
-      success: false,
-      error: data.error || "Failed to submit invoice acceptance",
-    }
+    return data
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Network error"
+    return { success: false, error: errorMsg }
   }
-  return data
 }
 
 export async function sendOtp(
   publicLinkId: string,
   email: string
 ): Promise<OtpSendResponse> {
-  const res = await fetch("/api/public/otp/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ publicLinkId, email }),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    return { success: false, error: data.error || "Failed to send OTP" }
+  try {
+    const res = await fetch("/api/public/otp/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publicLinkId, email }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      return { success: false, error: data.error || "Failed to send OTP" }
+    }
+    return data
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Network error"
+    return { success: false, error: errorMsg }
   }
-  return data
 }
 
 export async function verifyOtp(
@@ -134,29 +163,39 @@ export async function verifyOtp(
   email: string,
   code: string
 ): Promise<OtpVerifyResponse> {
-  const res = await fetch("/api/public/otp/verify", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ publicLinkId, email, code }),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    return { success: false, error: data.error || "Failed to verify OTP" }
+  try {
+    const res = await fetch("/api/public/otp/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publicLinkId, email, code }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      return { success: false, error: data.error || "Failed to verify OTP" }
+    }
+    return data
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Network error"
+    return { success: false, error: errorMsg }
   }
-  return data
 }
 
 export async function recordClientEvent(
   payload: ClientEventPayload
 ): Promise<ClientEventResponse> {
-  const res = await fetch("/api/public/event", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    return { success: false, error: data.error || "Failed to record event" }
+  try {
+    const res = await fetch("/api/public/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      return { success: false, error: data.error || "Failed to record event" }
+    }
+    return data
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Network error"
+    return { success: false, error: errorMsg }
   }
-  return data
 }

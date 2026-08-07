@@ -257,6 +257,12 @@ describe("Milestone 3 Empirical Challenge & Stress Tests (apps/gate)", () => {
 
     if (orgId) {
       await db
+        .delete(schema.publicLinkOtp)
+        .where(eq(schema.publicLinkOtp.email, "multiotp@example.com"))
+      await db
+        .delete(schema.publicLinkOtp)
+        .where(eq(schema.publicLinkOtp.email, "user@example.com"))
+      await db
         .delete(schema.organization)
         .where(eq(schema.organization.id, orgId))
     }

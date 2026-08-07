@@ -60,10 +60,8 @@ export function InvoiceView({
   isSubmitting = false,
   appTheme = "light",
 }: InvoiceViewProps) {
-  const template = useState(() =>
-    getDocumentTemplate(invoice.template, appTheme)
-  )[0]
-  const templateStyle = useState(() => getDocumentTemplateStyle(template))[0]
+  const template = getDocumentTemplate(invoice.template, appTheme)
+  const templateStyle = getDocumentTemplateStyle(template)
   const effectiveAccepted = propsAccepted ?? null
 
   // Form state
@@ -83,6 +81,14 @@ export function InvoiceView({
   const [otpVerified, setOtpVerified] = useState(false)
   const [otpLoading, setOtpLoading] = useState(false)
   const [otpMsg, setOtpMsg] = useState<string | null>(null)
+
+  const handleSignerEmailChange = (newEmail: string) => {
+    setSignerEmail(newEmail)
+    setOtpSent(false)
+    setOtpVerified(false)
+    setOtpCode("")
+    setOtpMsg(null)
+  }
 
   const handleSendOtp = async () => {
     if (!signerEmail.trim()) {
@@ -527,7 +533,7 @@ export function InvoiceView({
                           type="email"
                           placeholder="john@example.com"
                           value={signerEmail}
-                          onChange={(e) => setSignerEmail(e.target.value)}
+                          onChange={(e) => handleSignerEmailChange(e.target.value)}
                           required
                         />
                       </div>
@@ -617,6 +623,7 @@ export function InvoiceView({
                             ) : (
                               <div className="flex items-center gap-2">
                                 <Input
+                                  aria-label="Verification code"
                                   placeholder="6-digit code"
                                   value={otpCode}
                                   onChange={(e) => setOtpCode(e.target.value)}

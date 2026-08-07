@@ -48,10 +48,8 @@ export function ProposalView({
   isSubmitting = false,
   appTheme = "light",
 }: ProposalViewProps) {
-  const template = useState(() =>
-    getDocumentTemplate(proposal.template, appTheme)
-  )[0]
-  const templateStyle = useState(() => getDocumentTemplateStyle(template))[0]
+  const template = getDocumentTemplate(proposal.template, appTheme)
+  const templateStyle = getDocumentTemplateStyle(template)
 
   // Form states
   const [signerName, setSignerName] = useState(propsAccepted?.signerName ?? "")
@@ -74,6 +72,14 @@ export function ProposalView({
   )
   const [otpLoading, setOtpLoading] = useState(false)
   const [otpMsg, setOtpMsg] = useState<string | null>(null)
+
+  const handleSignerEmailChange = (newEmail: string) => {
+    setSignerEmail(newEmail)
+    setOtpSent(false)
+    setOtpVerified(false)
+    setOtpCode("")
+    setOtpMsg(null)
+  }
 
   const effectiveAccepted = propsAccepted ?? null
 
@@ -621,7 +627,7 @@ export function ProposalView({
                           type="email"
                           placeholder="john@example.com"
                           value={signerEmail}
-                          onChange={(e) => setSignerEmail(e.target.value)}
+                          onChange={(e) => handleSignerEmailChange(e.target.value)}
                           required
                         />
                       </div>
@@ -711,6 +717,7 @@ export function ProposalView({
                             ) : (
                               <div className="flex items-center gap-2">
                                 <Input
+                                  aria-label="Verification code"
                                   placeholder="6-digit code"
                                   value={otpCode}
                                   onChange={(e) => setOtpCode(e.target.value)}

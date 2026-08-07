@@ -196,6 +196,18 @@ describe("Milestone 3 Token Validation & Backend API (apps/gate)", () => {
 
     if (orgId) {
       await db
+        .delete(schema.publicLinkOtp)
+        .where(eq(schema.publicLinkOtp.email, "otpuser@example.com"))
+      await db
+        .delete(schema.publicLinkOtp)
+        .where(eq(schema.publicLinkOtp.email, "otpverify@example.com"))
+      await db
+        .delete(schema.publicLinkOtp)
+        .where(eq(schema.publicLinkOtp.email, "otpexpired@example.com"))
+      await db
+        .delete(schema.publicLinkOtp)
+        .where(eq(schema.publicLinkOtp.email, "apiotp@example.com"))
+      await db
         .delete(schema.organization)
         .where(eq(schema.organization.id, orgId))
     }

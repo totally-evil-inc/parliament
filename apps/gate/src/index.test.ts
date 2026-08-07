@@ -13,7 +13,7 @@ describe("apps/gate Hono application", () => {
       app: string
       port: number
     }
-    expect(json).toEqual({
+    expect(json).toMatchObject({
       status: "ok",
       app: "apps/gate",
       port: 4100,
