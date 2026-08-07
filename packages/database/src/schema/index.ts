@@ -1,6 +1,7 @@
 export * from "./account"
 export * from "./agent"
 export * from "./agent-action"
+export * from "./gmail"
 export * from "./invitation"
 export * from "./invoice"
 export * from "./jwks"
@@ -10,5 +11,3 @@ export * from "./proposal"
 export * from "./session"
 export * from "./user"
 export * from "./verification"
-export * from "./gmail"
-

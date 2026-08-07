@@ -69,11 +69,14 @@ app.use("*", async (c, next) => {
     throw error
   } finally {
     wideEvent.durationMs = Date.now() - startTime
-    
+
     // Merge any custom log context set during request lifecycle
     Object.assign(wideEvent, c.get("logContext"))
 
-    if (wideEvent.outcome === "error" || (wideEvent.statusCode && wideEvent.statusCode >= 500)) {
+    if (
+      wideEvent.outcome === "error" ||
+      (wideEvent.statusCode && wideEvent.statusCode >= 500)
+    ) {
       logger.error(wideEvent)
     } else {
       logger.info(wideEvent)
@@ -107,15 +110,17 @@ app.use("*", async (c, next) => {
   return next()
 })
 
-import { magicLinkRouter } from "./routes/magic-link"
-import { inviteRouter } from "./routes/invite"
-import { integrationsRouter } from "./routes/integrations"
 import { agentAuthRouter } from "./routes/agent-auth"
+import { gmailRouter } from "./routes/gmail"
+import { integrationsRouter } from "./routes/integrations"
+import { inviteRouter } from "./routes/invite"
+import { magicLinkRouter } from "./routes/magic-link"
 
 app.route("/auth/magic-link", magicLinkRouter)
 app.route("/auth/invite", inviteRouter)
 app.route("/api/auth/integrations", integrationsRouter)
 app.route("/api/auth/agent", agentAuthRouter)
+app.route("/api/gmail", gmailRouter)
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw)

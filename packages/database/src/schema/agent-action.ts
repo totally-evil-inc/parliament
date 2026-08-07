@@ -1,5 +1,12 @@
 import { relations, sql } from "drizzle-orm"
-import { jsonb, pgTable, real, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import {
+  jsonb,
+  pgTable,
+  real,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core"
 import { agent } from "./agent"
 import { user } from "./user"
 
@@ -15,7 +22,10 @@ export const agentAction = pgTable("agent_action", {
   args: jsonb("args").notNull(),
   reason: text("reason").notNull(),
   confidenceScore: real("confidence_score").default(0.9).notNull(),
-  status: text("status").$type<"pending" | "approved" | "rejected" | "expired">().default("pending").notNull(),
+  status: text("status")
+    .$type<"pending" | "approved" | "rejected" | "expired">()
+    .default("pending")
+    .notNull(),
   approvedAt: timestamp("approved_at"),
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

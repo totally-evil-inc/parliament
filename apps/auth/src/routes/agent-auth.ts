@@ -1,4 +1,4 @@
-import { db, eq, and, desc } from "@workspace/database"
+import { and, db, desc, eq } from "@workspace/database"
 import { agent, agentAction } from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 import { Hono } from "hono"
@@ -43,7 +43,10 @@ agentAuthRouter.post("/stage", async (c) => {
     }
 
     if (policySetting === "forbidden") {
-      return c.json({ error: "Forbidden: Tool execution is blocked by agent policy" }, 403)
+      return c.json(
+        { error: "Forbidden: Tool execution is blocked by agent policy" },
+        403
+      )
     }
 
     if (policySetting === "always_allow") {
@@ -66,7 +69,10 @@ agentAuthRouter.post("/stage", async (c) => {
     }
 
     if (!targetUserId) {
-      return c.json({ error: "Bad Request: No target user available for approval staging" }, 400)
+      return c.json(
+        { error: "Bad Request: No target user available for approval staging" },
+        400
+      )
     }
 
     // Fallback dummy agent ID if missing
@@ -101,7 +107,10 @@ agentAuthRouter.post("/stage", async (c) => {
       })
       .returning()
 
-    logger.info({ actionId: staged.id, toolName, userId: targetUserId }, "Staged high-risk action for HITL approval")
+    logger.info(
+      { actionId: staged.id, toolName, userId: targetUserId },
+      "Staged high-risk action for HITL approval"
+    )
 
     return c.json({
       id: staged.id,
@@ -127,12 +136,17 @@ agentAuthRouter.get("/pending", async (c) => {
     const pendingList = await db
       .select()
       .from(agentAction)
-      .where(and(eq(agentAction.userId, user.id), eq(agentAction.status, "pending")))
+      .where(
+        and(eq(agentAction.userId, user.id), eq(agentAction.status, "pending"))
+      )
       .orderBy(desc(agentAction.createdAt))
 
     return c.json({ pending: pendingList })
   } catch (err: any) {
-    logger.error({ err, userId: user.id }, "Error fetching pending agent actions")
+    logger.error(
+      { err, userId: user.id },
+      "Error fetching pending agent actions"
+    )
     return c.json({ error: "Failed to fetch pending actions" }, 500)
   }
 })

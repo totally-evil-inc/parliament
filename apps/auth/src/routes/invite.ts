@@ -1,7 +1,7 @@
+import { and, db, eq, schema } from "@workspace/database"
+import { createHash, randomBytes } from "crypto"
 import { Hono } from "hono"
 import { setCookie } from "hono/cookie"
-import { createHash, randomBytes } from "crypto"
-import { db, schema, eq, and } from "@workspace/database"
 import { auth } from "../lib/auth"
 
 export const inviteRouter = new Hono<{
@@ -66,7 +66,10 @@ inviteRouter.get("/accept", async (c) => {
 
     const inv = invitations[0]
     if (!inv || inv.status !== "pending") {
-      loginUrl.searchParams.set("error", "invitation_not_found_or_already_accepted")
+      loginUrl.searchParams.set(
+        "error",
+        "invitation_not_found_or_already_accepted"
+      )
       return c.redirect(loginUrl.toString())
     }
 

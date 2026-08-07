@@ -1,4 +1,4 @@
-import { db, eq, and, desc } from "@workspace/database"
+import { and, db, desc, eq } from "@workspace/database"
 import { account } from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 import { Hono } from "hono"
@@ -33,7 +33,10 @@ integrationsRouter.get("/list", async (c) => {
 
     return c.json({ accounts: userAccounts })
   } catch (err: any) {
-    logger.error({ err, userId: user.id }, "Failed to fetch user integration accounts")
+    logger.error(
+      { err, userId: user.id },
+      "Failed to fetch user integration accounts"
+    )
     return c.json({ error: "Failed to fetch integration accounts" }, 500)
   }
 })
@@ -46,21 +49,30 @@ integrationsRouter.get("/internal/token", async (c) => {
   const rawAuthHeader = c.req.header("authorization") || ""
   const secretHeader =
     c.req.header("x-harness-secret") ||
-    (rawAuthHeader.toLowerCase().startsWith("bearer ") ? rawAuthHeader.slice(7) : rawAuthHeader)
+    (rawAuthHeader.toLowerCase().startsWith("bearer ")
+      ? rawAuthHeader.slice(7)
+      : rawAuthHeader)
 
-  const expectedSecret = process.env.BETTER_AUTH_SECRET || process.env.HARNESS_AUTH_SECRET
+  const expectedSecret =
+    process.env.BETTER_AUTH_SECRET || process.env.HARNESS_AUTH_SECRET
   const isProduction = process.env.NODE_ENV === "production"
 
   if (expectedSecret) {
     if (secretHeader !== expectedSecret) {
       if (!isProduction && !secretHeader) {
-        logger.warn({ path: c.req.path }, "Allowing unauthenticated local loopback token request in non-production mode")
+        logger.warn(
+          { path: c.req.path },
+          "Allowing unauthenticated local loopback token request in non-production mode"
+        )
       } else {
         logger.error(
           { secretHeaderProvided: !!secretHeader, path: c.req.path },
           "Forbidden: Invalid or missing harness authorization secret"
         )
-        return c.json({ error: "Forbidden: Invalid harness authorization secret" }, 403)
+        return c.json(
+          { error: "Forbidden: Invalid harness authorization secret" },
+          403
+        )
       }
     }
   }
@@ -86,7 +98,10 @@ integrationsRouter.get("/internal/token", async (c) => {
       .limit(1)
 
     if (records.length === 0) {
-      return c.json({ error: `No account connected for provider: ${provider}` }, 404)
+      return c.json(
+        { error: `No account connected for provider: ${provider}` },
+        404
+      )
     }
 
     const targetAccount = records[0]
@@ -94,10 +109,18 @@ integrationsRouter.get("/internal/token", async (c) => {
     // Check token expiration and perform refresh if necessary
     const now = new Date()
     const isExpired =
-      !targetAccount.accessTokenExpiresAt || targetAccount.accessTokenExpiresAt.getTime() <= now.getTime() + 60000
+      !targetAccount.accessTokenExpiresAt ||
+      targetAccount.accessTokenExpiresAt.getTime() <= now.getTime() + 60000
 
-    if (isExpired && targetAccount.refreshToken && targetAccount.providerId === "google") {
-      logger.info({ provider, accountId: targetAccount.id }, "Google access token expired/nearing expiry. Refreshing...")
+    if (
+      isExpired &&
+      targetAccount.refreshToken &&
+      targetAccount.providerId === "google"
+    ) {
+      logger.info(
+        { provider, accountId: targetAccount.id },
+        "Google access token expired/nearing expiry. Refreshing..."
+      )
       try {
         const refreshRes = await fetch("https://oauth2.googleapis.com/token", {
           method: "POST",
@@ -113,7 +136,9 @@ integrationsRouter.get("/internal/token", async (c) => {
         if (refreshRes.ok) {
           const tokenData: any = await refreshRes.json()
           if (tokenData.access_token) {
-            const newExpiresAt = new Date(Date.now() + (tokenData.expires_in || 3600) * 1000)
+            const newExpiresAt = new Date(
+              Date.now() + (tokenData.expires_in || 3600) * 1000
+            )
             await db
               .update(account)
               .set({
@@ -125,14 +150,23 @@ integrationsRouter.get("/internal/token", async (c) => {
 
             targetAccount.accessToken = tokenData.access_token
             targetAccount.accessTokenExpiresAt = newExpiresAt
-            logger.info({ provider, accountId: targetAccount.id }, "Successfully refreshed Google access token")
+            logger.info(
+              { provider, accountId: targetAccount.id },
+              "Successfully refreshed Google access token"
+            )
           }
         } else {
           const errText = await refreshRes.text()
-          logger.error({ status: refreshRes.status, errText }, "Google token refresh failed")
+          logger.error(
+            { status: refreshRes.status, errText },
+            "Google token refresh failed"
+          )
         }
       } catch (refreshErr) {
-        logger.error({ refreshErr, accountId: targetAccount.id }, "Exception during Google token refresh")
+        logger.error(
+          { refreshErr, accountId: targetAccount.id },
+          "Exception during Google token refresh"
+        )
       }
     }
 

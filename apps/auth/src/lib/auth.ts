@@ -2,7 +2,7 @@ import { db } from "@workspace/database"
 import { logger } from "@workspace/logger"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { jwt, organization, magicLink, genericOAuth } from "better-auth/plugins"
+import { genericOAuth, jwt, magicLink, organization } from "better-auth/plugins"
 
 import { renderEmail, sendEmail } from "./email"
 import { trustedOrigins } from "./utils"
@@ -23,7 +23,10 @@ export const auth = betterAuth({
    * Global Error Logger
    */
   onError: (error: any, ctx: any) => {
-    logger.error({ err: error, path: ctx.request.url }, "Better Auth error occurred")
+    logger.error(
+      { err: error, path: ctx.request.url },
+      "Better Auth error occurred"
+    )
   },
 
   /**
@@ -41,8 +44,10 @@ export const auth = betterAuth({
       scope: [
         "https://www.googleapis.com/auth/userinfo.email",
         "https://www.googleapis.com/auth/userinfo.profile",
-        "https://www.googleapis.com/auth/calendar",
-        "https://www.googleapis.com/auth/calendar.events",
+        "https://www.googleapis.com/auth/gmail.send",
+        "https://www.googleapis.com/auth/gmail.metadata",
+        "https://www.googleapis.com/auth/calendar.events.readonly",
+        "https://www.googleapis.com/auth/drive.file",
       ],
     },
     github: {
@@ -77,7 +82,8 @@ export const auth = betterAuth({
     organization({
       async sendInvitationEmail(data) {
         try {
-          const commandUrl = Bun.env.COMMAND_SERVER_URL ?? "http://localhost:3000"
+          const commandUrl =
+            Bun.env.COMMAND_SERVER_URL ?? "http://localhost:3000"
           const inviteUrl = `${commandUrl}/auth/invite/accept?id=${data.invitation.id}&email=${encodeURIComponent(data.email)}&orgName=${encodeURIComponent(data.organization.name)}`
           const html = await renderEmail("invitation", {
             url: inviteUrl,
@@ -91,7 +97,10 @@ export const auth = betterAuth({
             html,
           })
         } catch (err) {
-          logger.error({ err, email: data.email }, "Failed to render or send invitation email")
+          logger.error(
+            { err, email: data.email },
+            "Failed to render or send invitation email"
+          )
           throw err
         }
       },
@@ -109,7 +118,10 @@ export const auth = betterAuth({
             html,
           })
         } catch (err) {
-          logger.error({ err, email }, "Failed to render or send magic link email")
+          logger.error(
+            { err, email },
+            "Failed to render or send magic link email"
+          )
           throw err
         }
       },

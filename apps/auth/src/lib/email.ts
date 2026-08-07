@@ -26,7 +26,11 @@ export async function sendEmail({
   to,
   subject,
   html,
-}: { to: string; subject: string; html: string }) {
+}: {
+  to: string
+  subject: string
+  html: string
+}) {
   const apiKey = Bun.env.RESEND_API_KEY
   const smtpHost = Bun.env.SMTP_HOST
   const smtpPort = Bun.env.SMTP_PORT

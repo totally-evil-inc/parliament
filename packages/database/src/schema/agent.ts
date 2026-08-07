@@ -8,10 +8,15 @@ export const agent = pgTable("agent", {
   userId: uuid("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  orgId: uuid("org_id").references(() => organization.id, { onDelete: "cascade" }),
+  orgId: uuid("org_id").references(() => organization.id, {
+    onDelete: "cascade",
+  }),
   name: text("name").notNull(),
   secretHash: text("secret_hash"),
-  policy: jsonb("policy").$type<Record<string, "always_allow" | "require_approval" | "forbidden">>(),
+  policy:
+    jsonb("policy").$type<
+      Record<string, "always_allow" | "require_approval" | "forbidden">
+    >(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .$onUpdate(() => new Date())
