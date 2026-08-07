@@ -46,9 +46,25 @@ export function useIntegrations() {
   })
 
   const mergedIntegrations: Integration[] = DEFAULT_INTEGRATIONS.map((item) => {
+    const isGoogleIntegration = [
+      "gmail",
+      "google-calendar",
+      "google-drive",
+      "google",
+    ].includes(item.providerId)
+
+    if (!isGoogleIntegration) {
+      return {
+        ...item,
+        status: "coming_soon",
+      }
+    }
+
     const isConnected = accounts?.some(
-      (acc) => acc.providerId === item.providerId
+      (acc) =>
+        acc.providerId === item.providerId || acc.providerId === "google"
     )
+
     return {
       ...item,
       status: isConnected ? "connected" : "available",
