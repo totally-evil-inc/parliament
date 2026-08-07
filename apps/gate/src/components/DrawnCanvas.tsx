@@ -75,6 +75,7 @@ export function DrawnCanvas({ onChange, disabled = false }: DrawnCanvasProps) {
   }
 
   const clearCanvas = () => {
+    setIsDrawing(false)
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext("2d")

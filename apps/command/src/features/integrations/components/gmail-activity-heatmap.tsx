@@ -88,7 +88,7 @@ export function GmailActivityHeatmap() {
                       variant="outline"
                       className="border-amber-500/30 text-amber-600 text-[10px]"
                     >
-                      Client Inactive (&gt;5d)
+                      Inactive (Last activity &gt; 5d)
                     </Badge>
                   ) : (
                     <Badge

@@ -112,7 +112,7 @@ function ProposalRouteHandler({
         eventType: "document.viewed",
       })
     }
-  }, [data?.status, token, data, eventMutation.mutate])
+  }, [data?.status, token])
 
   // Accept mutation
   const acceptMutation = useMutation({
@@ -183,14 +183,24 @@ function ProposalRouteHandler({
         await acceptMutation.mutateAsync(payload)
       }}
       onSendOtp={async (email) => {
-        return sendOtpMutation.mutateAsync({ publicLinkId: data.linkId, email })
+        try {
+          return await sendOtpMutation.mutateAsync({ publicLinkId: data.linkId, email })
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Failed to send OTP"
+          return { success: false, error: msg }
+        }
       }}
       onVerifyOtp={async (email, code) => {
-        return verifyOtpMutation.mutateAsync({
-          publicLinkId: data.linkId,
-          email,
-          code,
-        })
+        try {
+          return await verifyOtpMutation.mutateAsync({
+            publicLinkId: data.linkId,
+            email,
+            code,
+          })
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Failed to verify OTP"
+          return { success: false, error: msg }
+        }
       }}
       isSubmitting={acceptMutation.isPending}
     />
@@ -221,7 +231,7 @@ function InvoiceRouteHandler({
         eventType: "document.viewed",
       })
     }
-  }, [data?.status, token, eventMutation.mutate, data])
+  }, [data?.status, token])
 
   const acceptMutation = useMutation({
     mutationFn: (payload: AcceptancePayload) =>
@@ -298,14 +308,24 @@ function InvoiceRouteHandler({
         await acceptMutation.mutateAsync(payload)
       }}
       onSendOtp={async (email) => {
-        return sendOtpMutation.mutateAsync({ publicLinkId: data.linkId, email })
+        try {
+          return await sendOtpMutation.mutateAsync({ publicLinkId: data.linkId, email })
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Failed to send OTP"
+          return { success: false, error: msg }
+        }
       }}
       onVerifyOtp={async (email, code) => {
-        return verifyOtpMutation.mutateAsync({
-          publicLinkId: data.linkId,
-          email,
-          code,
-        })
+        try {
+          return await verifyOtpMutation.mutateAsync({
+            publicLinkId: data.linkId,
+            email,
+            code,
+          })
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Failed to verify OTP"
+          return { success: false, error: msg }
+        }
       }}
       isSubmitting={acceptMutation.isPending}
     />
