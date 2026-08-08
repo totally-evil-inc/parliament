@@ -5,6 +5,7 @@ import {
   getDocumentTemplateStyle,
   type ProposalRenderModel,
 } from "@workspace/document"
+import type { ProposalAcceptanceRecord } from "@workspace/document/public-api"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -19,7 +20,6 @@ import { Label } from "@workspace/ui/components/label"
 import { CheckCircle2, FileCheck, Lock, ShieldCheck } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
-import type { ProposalAcceptanceRecord } from "@workspace/document/public-api"
 import type { AcceptancePayload } from "../lib/api"
 import { DrawnCanvas } from "./DrawnCanvas"
 import { RichTextRenderer } from "./RichTextRenderer"

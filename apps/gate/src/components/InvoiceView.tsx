@@ -5,6 +5,7 @@ import {
   getDocumentTemplateStyle,
   type InvoiceRenderModel,
 } from "@workspace/document"
+import type { InvoiceAcceptanceRecord } from "@workspace/document/public-api"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -26,7 +27,6 @@ import {
 } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
-import type { InvoiceAcceptanceRecord } from "@workspace/document/public-api"
 import type { AcceptancePayload } from "../lib/api"
 import { DrawnCanvas } from "./DrawnCanvas"
 import { RichTextRenderer } from "./RichTextRenderer"

@@ -81,12 +81,16 @@ export async function fetchPublicProposal(
       }
     )
     const data = await res.json().catch(() => ({ status: "not_found" }))
-    if (
-      !res.ok &&
-      res.status !== 404 &&
-      res.status !== 400 &&
-      res.status !== 403
-    ) {
+    if (res.status === 401 || res.status === 403) {
+      return {
+        status: "forbidden",
+        error:
+          typeof data === "object" && data && "error" in data
+            ? String(data.error)
+            : "Verification required",
+      }
+    }
+    if (!res.ok && res.status !== 404 && res.status !== 400) {
       const message =
         typeof data === "object" && data && "error" in data
           ? String(data.error)
@@ -125,12 +129,16 @@ export async function fetchPublicInvoice(
       }
     )
     const data = await res.json().catch(() => ({ status: "not_found" }))
-    if (
-      !res.ok &&
-      res.status !== 404 &&
-      res.status !== 400 &&
-      res.status !== 403
-    ) {
+    if (res.status === 401 || res.status === 403) {
+      return {
+        status: "forbidden",
+        error:
+          typeof data === "object" && data && "error" in data
+            ? String(data.error)
+            : "Verification required",
+      }
+    }
+    if (!res.ok && res.status !== 404 && res.status !== 400) {
       const message =
         typeof data === "object" && data && "error" in data
           ? String(data.error)

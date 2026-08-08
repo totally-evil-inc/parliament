@@ -326,12 +326,18 @@ export const finalizeProposalDraft = createServerFn({ method: "POST" })
         .returning()
       if (!snapshot) throw new Error("Failed to create proposal snapshot")
 
+      const parsedDoc = safeParseProposalDraft(current.document)
+      const recipientEmail =
+        data.recipientEmail ||
+        (parsedDoc.success ? parsedDoc.data.data.customer?.email : null) ||
+        null
+
       await tx.insert(schema.proposalPublicLink).values({
         proposalSnapshotId: snapshot.id,
         organizationId,
         token,
         status: "active",
-        recipientEmail: data.recipientEmail ?? null,
+        recipientEmail,
       })
 
       const [draft] = await tx

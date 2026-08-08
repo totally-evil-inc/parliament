@@ -161,12 +161,8 @@ function ProposalRouteHandler({
     )
   }
 
-  // Require verification if forbidden or error
-  if (
-    !proposalData ||
-    proposalData.status === "forbidden" ||
-    (docError && docError.message.includes("401"))
-  ) {
+  // Require verification if forbidden, missing session, or unauthenticated error
+  if (!proposalData || proposalData.status === "forbidden" || docError) {
     return (
       <GateChallenge
         title={meta.title}
@@ -196,11 +192,7 @@ function ProposalRouteHandler({
   }
 
   return (
-    <StatusScreen
-      status="error"
-      documentType="proposal"
-      message={docError instanceof Error ? docError.message : undefined}
-    />
+    <StatusScreen status="error" documentType="proposal" />
   )
 }
 
@@ -276,11 +268,7 @@ function InvoiceRouteHandler({
     )
   }
 
-  if (
-    !invoiceData ||
-    invoiceData.status === "forbidden" ||
-    (docError && docError.message.includes("401"))
-  ) {
+  if (!invoiceData || invoiceData.status === "forbidden" || docError) {
     return (
       <GateChallenge
         title={meta.number}
@@ -318,11 +306,7 @@ function InvoiceRouteHandler({
   }
 
   return (
-    <StatusScreen
-      status="error"
-      documentType="invoice"
-      message={docError instanceof Error ? docError.message : undefined}
-    />
+    <StatusScreen status="error" documentType="invoice" />
   )
 }
 

@@ -139,7 +139,7 @@ function InvoiceEditorScreen({
   })
 
   const sendDraft = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (recipientEmail?: string) => {
       runtime.flush()
       const saved = await saveInvoiceDraft({
         data: {
@@ -156,6 +156,7 @@ function InvoiceEditorScreen({
         data: {
           id: savedResult.draft.id,
           revision: savedResult.draft.revision,
+          recipientEmail,
         },
       })
       return {
@@ -202,8 +203,8 @@ function InvoiceEditorScreen({
   const invoiceTitle = snapshot.data?.title || "Untitled Invoice"
 
   const handleFinalizeAndGetShareUrl =
-    React.useCallback(async (): Promise<string> => {
-      const result = await sendDraft.mutateAsync()
+    React.useCallback(async (recipientEmail?: string): Promise<string> => {
+      const result = await sendDraft.mutateAsync(recipientEmail)
       if (result.status === "sent" && result.finalized) {
         const url = buildPublicLink("invoice", result.finalized.token)
         setShareUrl(url)

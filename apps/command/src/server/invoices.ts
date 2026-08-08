@@ -297,12 +297,18 @@ export const finalizeInvoiceDraft = createServerFn({ method: "POST" })
         .returning()
       if (!snapshot) throw new Error("Failed to create invoice snapshot")
 
+      const parsedDoc = safeParseInvoiceDraft(current.document)
+      const recipientEmail =
+        data.recipientEmail ||
+        (parsedDoc.success ? parsedDoc.data.data.customer?.email : null) ||
+        null
+
       await tx.insert(schema.invoicePublicLink).values({
         invoiceSnapshotId: snapshot.id,
         organizationId,
         token,
         status: "active",
-        recipientEmail: data.recipientEmail ?? null,
+        recipientEmail,
       })
 
       const [draft] = await tx

@@ -6,6 +6,7 @@ import {
 import { renderToString } from "react-dom/server"
 import { parsePathname } from "../App"
 import { DrawnCanvas } from "./DrawnCanvas"
+import { GateChallenge } from "./GateChallenge"
 import { InvoiceView } from "./InvoiceView"
 import { ProposalView } from "./ProposalView"
 import { RichTextRenderer } from "./RichTextRenderer"
@@ -301,6 +302,42 @@ describe("Document Presentation Components (apps/gate)", () => {
       )
       expect(html).toContain("Proposal Link Unavailable")
       expect(html).toContain("revoked by the issuer")
+    })
+  })
+
+  describe("GateChallenge", () => {
+    test("renders unchangeable bound email and Request OTP action", () => {
+      const html = renderToString(
+        <GateChallenge
+          title="Mobile App Proposal"
+          sellerName="Acme Corp"
+          boundEmail="recipient@example.com"
+          documentType="proposal"
+          onVerified={() => {}}
+        />
+      )
+
+      expect(html).toContain("Verification Required")
+      expect(html).toContain("Acme Corp")
+      expect(html).toContain("recipient@example.com")
+      expect(html).toContain("Unchangeable")
+      expect(html).toContain("Request OTP")
+      expect(html).not.toContain('placeholder="you@company.com"')
+    })
+
+    test("displays fallback text when boundEmail is null/missing", () => {
+      const html = renderToString(
+        <GateChallenge
+          title="Invoice #101"
+          sellerName="Beta Ltd"
+          boundEmail={null}
+          documentType="invoice"
+          onVerified={() => {}}
+        />
+      )
+
+      expect(html).toContain("No recipient email bound")
+      expect(html).toContain("Request OTP")
     })
   })
 

@@ -139,7 +139,7 @@ function ProposalEditorScreen({
   })
 
   const sendDraft = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (recipientEmail?: string) => {
       runtime.flush()
       const saved = await saveProposalDraft({
         data: {
@@ -156,6 +156,7 @@ function ProposalEditorScreen({
         data: {
           id: savedResult.draft.id,
           revision: savedResult.draft.revision,
+          recipientEmail,
         },
       })
       return {
@@ -204,8 +205,8 @@ function ProposalEditorScreen({
   const proposalTitle = snapshot.data.title || "Untitled Proposal"
 
   const handleFinalizeAndGetShareUrl =
-    React.useCallback(async (): Promise<string> => {
-      const result = await sendDraft.mutateAsync()
+    React.useCallback(async (recipientEmail?: string): Promise<string> => {
+      const result = await sendDraft.mutateAsync(recipientEmail)
       if (result.status === "sent" && result.finalized) {
         const url = buildPublicLink("proposal", result.finalized.token)
         setShareUrl(url)
