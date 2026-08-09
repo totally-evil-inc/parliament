@@ -54,6 +54,7 @@ publicDocumentRouter.get("/proposal/:token", async (c) => {
 
   const result = await getPublicProposal(token, {
     sessionEmail: user.email,
+    userId: user.id,
     ipAddress,
     userAgent,
   })
@@ -153,6 +154,7 @@ publicDocumentRouter.get("/invoice/:token", async (c) => {
 
   const result = await getPublicInvoice(token, {
     sessionEmail: user.email,
+    userId: user.id,
     ipAddress,
     userAgent,
   })

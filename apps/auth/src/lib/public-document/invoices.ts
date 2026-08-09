@@ -1,4 +1,4 @@
-import { db, desc, eq, schema } from "@workspace/database"
+import { and, db, desc, eq, schema } from "@workspace/database"
 import type { InvoiceDraft } from "@workspace/document/schema"
 import { parseInvoiceDraft } from "@workspace/document/schema"
 
@@ -100,6 +100,7 @@ export async function getPublicInvoice(
   token: string,
   options: {
     sessionEmail: string
+    userId?: string | null
     ipAddress?: string | null
     userAgent?: string | null
   }
@@ -136,19 +137,54 @@ export async function getPublicInvoice(
   }
 
   const sessionEmail = options.sessionEmail.trim().toLowerCase()
-  if (link.recipientEmail) {
-    if (link.recipientEmail.trim().toLowerCase() !== sessionEmail) {
-      return {
-        status: "forbidden",
-        error: `This document was sent to ${link.recipientEmail}. You are currently verified as ${options.sessionEmail}.`,
+  const UUID_REGEX =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+  let isMember = false
+  if (options.userId && UUID_REGEX.test(options.userId)) {
+    const [member] = await db
+      .select({ id: schema.member.id })
+      .from(schema.member)
+      .where(
+        and(
+          eq(schema.member.organizationId, link.organizationId),
+          eq(schema.member.userId, options.userId)
+        )
+      )
+      .limit(1)
+    if (member) isMember = true
+  }
+
+  if (!isMember && sessionEmail) {
+    const [member] = await db
+      .select({ id: schema.member.id })
+      .from(schema.member)
+      .innerJoin(schema.user, eq(schema.user.id, schema.member.userId))
+      .where(
+        and(
+          eq(schema.member.organizationId, link.organizationId),
+          eq(schema.user.email, sessionEmail)
+        )
+      )
+      .limit(1)
+    if (member) isMember = true
+  }
+
+  if (!isMember) {
+    if (link.recipientEmail) {
+      if (link.recipientEmail.trim().toLowerCase() !== sessionEmail) {
+        return {
+          status: "forbidden",
+          error: `This document was sent to ${link.recipientEmail}. You are currently verified as ${options.sessionEmail}.`,
+        }
       }
+    } else {
+      // Bind link recipient email on first access by a client recipient
+      await db
+        .update(schema.invoicePublicLink)
+        .set({ recipientEmail: sessionEmail })
+        .where(eq(schema.invoicePublicLink.id, link.id))
     }
-  } else {
-    // Bind link recipient email on first access
-    await db
-      .update(schema.invoicePublicLink)
-      .set({ recipientEmail: sessionEmail })
-      .where(eq(schema.invoicePublicLink.id, link.id))
   }
 
   const document = parseInvoiceDraft(link.document)
