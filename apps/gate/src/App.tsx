@@ -191,9 +191,7 @@ function ProposalRouteHandler({
     )
   }
 
-  return (
-    <StatusScreen status="error" documentType="proposal" />
-  )
+  return <StatusScreen status="error" documentType="proposal" />
 }
 
 function InvoiceRouteHandler({
@@ -305,9 +303,7 @@ function InvoiceRouteHandler({
     )
   }
 
-  return (
-    <StatusScreen status="error" documentType="invoice" />
-  )
+  return <StatusScreen status="error" documentType="invoice" />
 }
 
 export function App() {

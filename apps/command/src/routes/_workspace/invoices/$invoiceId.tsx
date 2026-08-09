@@ -1,3 +1,5 @@
+import { Share01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import {
   useMutation,
   useQueryClient,
@@ -181,8 +183,14 @@ function InvoiceEditorScreen({
     },
   })
 
+  const [sendDialogOpen, setSendDialogOpen] = React.useState(false)
+
   const handleAction = React.useCallback(
     (actionId: string) => {
+      if (actionId === "send") {
+        setSendDialogOpen(true)
+        return
+      }
       if (actionId !== "export") return
       runtime.flush()
       const draft = store.getSnapshot()
@@ -197,13 +205,12 @@ function InvoiceEditorScreen({
     [runtime, store]
   )
 
-  const [sendDialogOpen, setSendDialogOpen] = React.useState(false)
   const snapshot = store.getSnapshot()
   const defaultClientEmail = snapshot.data?.customer?.email || ""
   const invoiceTitle = snapshot.data?.title || "Untitled Invoice"
 
-  const handleFinalizeAndGetShareUrl =
-    React.useCallback(async (recipientEmail?: string): Promise<string> => {
+  const handleFinalizeAndGetShareUrl = React.useCallback(
+    async (recipientEmail?: string): Promise<string> => {
       const result = await sendDraft.mutateAsync(recipientEmail)
       if (result.status === "sent" && result.finalized) {
         const url = buildPublicLink("invoice", result.finalized.token)
@@ -213,7 +220,9 @@ function InvoiceEditorScreen({
       throw new Error(
         "Unable to create invoice link. Finalize the document before sending it."
       )
-    }, [sendDraft])
+    },
+    [sendDraft]
+  )
 
   return (
     <div className="flex h-[calc(100svh-3rem)] min-h-0 w-full flex-col overflow-hidden bg-muted/30">
@@ -245,8 +254,10 @@ function InvoiceEditorScreen({
             type="button"
             onClick={() => setSendDialogOpen(true)}
             disabled={saveDraft.isPending || sendDraft.isPending}
+            className="gap-1.5"
           >
-            {sendDraft.isPending ? "Sending..." : "Send via Gmail"}
+            <HugeiconsIcon icon={Share01Icon} className="h-4 w-4" />
+            {sendDraft.isPending ? "Sending..." : "Send"}
           </Button>
         </div>
       </div>
