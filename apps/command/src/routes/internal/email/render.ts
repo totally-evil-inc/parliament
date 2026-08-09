@@ -2,11 +2,12 @@ import { render } from "@react-email/render"
 import { createFileRoute } from "@tanstack/react-router"
 import React from "react"
 import { z } from "zod"
+import { DocumentDispatchEmail } from "../../../features/email/templates/DocumentDispatchEmail"
 import { InvitationEmail } from "../../../features/email/templates/InvitationEmail"
 import { MagicLinkEmail } from "../../../features/email/templates/MagicLinkEmail"
 
 const renderPayloadSchema = z.object({
-  template: z.enum(["magic-link", "invitation"]),
+  template: z.enum(["magic-link", "invitation", "document"]),
   props: z.record(z.unknown()).optional().default({}),
 })
 
@@ -20,6 +21,14 @@ const invitationPropsSchema = z.object({
   orgName: z.string().default(""),
   inviterName: z.string().default(""),
   email: z.string().default(""),
+})
+
+const documentPropsSchema = z.object({
+  documentType: z.enum(["proposal", "invoice"]).default("proposal"),
+  documentTitle: z.string().default(""),
+  personalMessage: z.string().optional().default(""),
+  shareUrl: z.string().default(""),
+  recipientEmail: z.string().optional().default(""),
 })
 
 export const Route = createFileRoute("/internal/email/render")({
@@ -49,6 +58,9 @@ export const Route = createFileRoute("/internal/email/render")({
           } else if (template === "invitation") {
             const safeProps = invitationPropsSchema.parse(props)
             element = React.createElement(InvitationEmail, safeProps)
+          } else if (template === "document") {
+            const safeProps = documentPropsSchema.parse(props)
+            element = React.createElement(DocumentDispatchEmail, safeProps)
           } else {
             return new Response(JSON.stringify({ error: "Unknown template" }), {
               status: 400,

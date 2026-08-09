@@ -1,5 +1,6 @@
 import { Share01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { render } from "@react-email/render"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -11,6 +12,7 @@ import {
 } from "@workspace/ui/components/dialog"
 import { IconCircleCheck, IconGear } from "nucleo-glass"
 import * as React from "react"
+import { DocumentDispatchEmail } from "../../email/templates/DocumentDispatchEmail"
 import { useSendGmailEmail } from "../hooks/use-gmail-operations"
 import { generateGoogleWebComposeUrl } from "../utils/mailto-generator"
 
@@ -119,18 +121,16 @@ export function SendDocumentDialog({
       setStatusMessage("Finalizing document link...")
       const url = await ensureShareUrl(trimmedEmail)
 
-      const safeMessageHtml = escapeHtml(personalMessage).replace(
-        /\n/g,
-        "<br/>"
+      setStatusMessage("Rendering template...")
+      const htmlBody = await render(
+        React.createElement(DocumentDispatchEmail, {
+          documentType,
+          documentTitle,
+          personalMessage: personalMessage.trim(),
+          shareUrl: url,
+          recipientEmail: trimmedEmail,
+        })
       )
-      const safeUrl = escapeHtml(url)
-      const htmlBody = [
-        '<div style="font-family: sans-serif; line-height: 1.6; color: #333;">',
-        `  <p>${safeMessageHtml}</p>`,
-        `  <p><a href="${safeUrl}" style="display: inline-block; padding: 10px 18px; background-color: #0066ff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">View ${documentType === "proposal" ? "Proposal" : "Invoice"}</a></p>`,
-        `  <p style="font-size: 12px; color: #666;">Or copy link: ${safeUrl}</p>`,
-        "</div>",
-      ].join("\n")
 
       setStatusMessage("Sending email via Gmail API...")
       await sendGmailMutation.mutateAsync({
@@ -346,13 +346,4 @@ export function SendDocumentDialog({
       </DialogContent>
     </Dialog>
   )
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;")
 }
