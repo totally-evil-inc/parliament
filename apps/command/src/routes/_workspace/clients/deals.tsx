@@ -3,7 +3,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { formatMoneyMinor } from "@workspace/document/calculate"
 import type { DealStage } from "@workspace/document/schema"
+import { Badge } from "@workspace/ui/components/badge"
+import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
 import { toast } from "@workspace/ui/components/sonner"
 import { getErrorMessage } from "../../../lib/error-formatter"
 import {
@@ -126,9 +136,9 @@ export function DealsKanbanRoute() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">Deal Pipeline</h1>
-            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary border border-primary/20">
+            <Badge variant="secondary" className="px-2 py-0.5 text-xs font-semibold">
               {metrics.activeCount} Deals
-            </span>
+            </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             Track opportunities, stage transitions, and 1-click convert deals into durable proposals.
@@ -137,12 +147,12 @@ export function DealsKanbanRoute() {
 
         <div className="flex items-center gap-3">
           <div className="relative">
-            <input
+            <Input
               type="text"
               placeholder="Search deals..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-1.5 text-sm rounded-md border border-input bg-card placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary w-48 lg:w-64"
+              className="w-48 lg:w-64"
             />
             {searchQuery && (
               <button
@@ -154,19 +164,20 @@ export function DealsKanbanRoute() {
               </button>
             )}
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => setIsCreating(true)}
-            className="px-4 py-2 bg-primary text-primary-foreground font-medium text-sm rounded-md shadow-sm hover:bg-primary/90 transition-all flex items-center gap-1.5"
+            size="sm"
+            className="gap-1"
           >
             <span>+</span> New Deal
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* KPI Stats Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col gap-1">
+        <div className="p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Total Pipeline Value
           </span>
@@ -174,7 +185,7 @@ export function DealsKanbanRoute() {
             {formatMoneyMinor(metrics.totalPipeline, "USD", "en-US")}
           </span>
         </div>
-        <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col gap-1">
+        <div className="p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Closed Won Value
           </span>
@@ -182,7 +193,7 @@ export function DealsKanbanRoute() {
             {formatMoneyMinor(metrics.wonTotal, "USD", "en-US")}
           </span>
         </div>
-        <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col gap-1">
+        <div className="p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Win Rate
           </span>
@@ -190,7 +201,7 @@ export function DealsKanbanRoute() {
             {metrics.winRate}%
           </span>
         </div>
-        <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col gap-1">
+        <div className="p-4 rounded-xl border border-border bg-card shadow-xs flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Active Pipeline Count
           </span>
@@ -206,13 +217,15 @@ export function DealsKanbanRoute() {
           <div className="w-full max-w-md p-6 rounded-xl border border-border bg-card shadow-xl flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 className="text-lg font-bold text-foreground">Create New Deal</h3>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setIsCreating(false)}
-                className="text-muted-foreground hover:text-foreground text-sm"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
               >
                 ✕
-              </button>
+              </Button>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -220,12 +233,11 @@ export function DealsKanbanRoute() {
                 <label className="text-xs font-medium text-muted-foreground block mb-1">
                   Deal Title *
                 </label>
-                <input
+                <Input
                   type="text"
                   placeholder="e.g. Enterprise Web Application"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
 
@@ -233,32 +245,32 @@ export function DealsKanbanRoute() {
                 <label className="text-xs font-medium text-muted-foreground block mb-1">
                   Estimated Value (USD)
                 </label>
-                <input
+                <Input
                   type="number"
                   placeholder="5000"
                   value={newValue}
                   onChange={(e) => setNewValue(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => setIsCreating(false)}
-                className="px-4 py-2 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                size="sm"
                 disabled={createDealMutation.isPending || !newTitle.trim()}
                 onClick={() => createDealMutation.mutate()}
-                className="px-4 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
                 {createDealMutation.isPending ? "Creating..." : "Save Deal"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -320,48 +332,58 @@ export function DealsKanbanRoute() {
                             {formatMoneyMinor(dealItem.valueMinorUnits, dealItem.currency || "USD", "en-US")}
                           </span>
 
-                          {/* Stage Selector Dropdown */}
-                          <select
+                          {/* Refactored Stage Select Dropdown using @workspace/ui Select */}
+                          <Select
                             value={dealItem.stage}
-                            onChange={(e) =>
-                              updateStageMutation.mutate({
-                                id: dealItem.id,
-                                stage: e.target.value as DealStage,
-                              })
-                            }
-                            className="text-[10px] px-1.5 py-0.5 rounded border border-input bg-background font-medium focus:outline-none hover:bg-muted"
+                            onValueChange={(val) => {
+                              if (val) {
+                                updateStageMutation.mutate({
+                                  id: dealItem.id,
+                                  stage: val as DealStage,
+                                })
+                              }
+                            }}
                           >
-                            {STAGES.map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {s.label}
-                              </option>
-                            ))}
-                          </select>
+                            <SelectTrigger size="sm" className="h-6 text-[10px] px-2 py-0">
+                              <SelectValue placeholder="Stage" />
+                            </SelectTrigger>
+                            <SelectContent align="end">
+                              {STAGES.map((s) => (
+                                <SelectItem key={s.id} value={s.id} className="text-xs">
+                                  {s.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         {/* Convert to Proposal Button */}
                         {!dealItem.proposalId ? (
-                          <button
+                          <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             disabled={convertMutation.isPending}
                             onClick={() => convertMutation.mutate(dealItem.id)}
-                            className="mt-1 w-full py-1.5 text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 rounded-md border border-primary/20 transition-all flex items-center justify-center gap-1 shadow-2xs"
+                            className="mt-1 w-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
                           >
                             ⚡ 1-Click Convert to Proposal
-                          </button>
+                          </Button>
                         ) : (
-                          <button
+                          <Button
                             type="button"
+                            variant="secondary"
+                            size="sm"
                             onClick={() =>
                               navigate({
                                 to: "/proposals/$proposalId",
                                 params: { proposalId: dealItem.proposalId as string },
                               })
                             }
-                            className="mt-1 w-full py-1.5 text-xs font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md transition-all flex items-center justify-center gap-1"
+                            className="mt-1 w-full text-xs font-semibold"
                           >
                             📄 View Linked Proposal
-                          </button>
+                          </Button>
                         )}
                       </div>
                     ))}

@@ -2,6 +2,8 @@ import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { formatMoneyMinor } from "@workspace/document/calculate"
+import { Badge } from "@workspace/ui/components/badge"
+import { Button } from "@workspace/ui/components/button"
 import { toast } from "@workspace/ui/components/sonner"
 import { getErrorMessage } from "../../lib/error-formatter"
 import { getCustomerDetailsServerFn, updateCustomerServerFn } from "../../server/customers"
@@ -100,9 +102,9 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
                       <h2 className="text-xl font-bold text-foreground leading-tight">
                         {data.customer.name}
                       </h2>
-                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                      <Badge variant="outline" className="px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
                         {data.customer.status}
-                      </span>
+                      </Badge>
                     </div>
                     {data.customer.website && (
                       <a
@@ -117,32 +119,36 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
                   </div>
                 </div>
 
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={onClose}
-                  className="text-muted-foreground hover:text-foreground text-sm"
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                 >
                   ✕
-                </button>
+                </Button>
               </div>
 
               {/* Quick Actions Bar */}
               <div className="flex items-center gap-2 pt-2">
-                <button
+                <Button
                   type="button"
+                  size="sm"
                   onClick={() => createDealMutation.mutate()}
                   disabled={createDealMutation.isPending}
-                  className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-md hover:bg-primary/90 transition-all flex items-center gap-1"
+                  className="gap-1"
                 >
                   ➕ New Deal
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => toggleArchiveMutation.mutate()}
-                  className="px-3 py-1.5 border border-border text-xs font-medium rounded-md hover:bg-muted transition-colors"
                 >
                   {data.customer.isArchived ? "Unarchive Client" : "Archive Client"}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -243,9 +249,9 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
                             <span className="text-xs text-muted-foreground">{c.email}</span>
                           </div>
                           {c.isPrimary && (
-                            <span className="px-2 py-0.5 text-[9px] font-bold uppercase rounded bg-primary/10 text-primary">
+                            <Badge variant="secondary" className="px-2 py-0.5 text-[9px] font-bold uppercase">
                               Primary
-                            </span>
+                            </Badge>
                           )}
                         </div>
                       ))}
@@ -278,13 +284,14 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
                           </span>
                         </div>
                       </div>
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
+                        size="sm"
                         onClick={() => navigate({ to: "/clients/deals" })}
-                        className="px-3 py-1.5 text-xs font-semibold bg-muted hover:bg-muted/80 rounded-md transition-colors"
                       >
                         View in Pipeline
-                      </button>
+                      </Button>
                     </div>
                   ))
                 ) : (
@@ -314,18 +321,19 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
                           </span>
                         </div>
                       </div>
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="sm"
                         onClick={() =>
                           navigate({
                             to: "/proposals/$proposalId",
                             params: { proposalId: prop.id },
                           })
                         }
-                        className="px-3 py-1.5 text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 rounded-md transition-colors"
                       >
                         Open Editor
-                      </button>
+                      </Button>
                     </div>
                   ))
                 ) : (

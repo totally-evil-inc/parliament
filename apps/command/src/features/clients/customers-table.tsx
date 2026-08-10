@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react"
 import { formatMoneyMinor } from "@workspace/document/calculate"
 import type { CustomerStatus } from "@workspace/document/schema"
+import { Badge } from "@workspace/ui/components/badge"
+import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
 
 type CustomerRow = {
   id: string
@@ -51,61 +54,53 @@ export function CustomersTable({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-3">
         {/* Status Filter Tabs */}
         <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border">
-          <button
+          <Button
             type="button"
+            variant={statusFilter === "all" ? "secondary" : "ghost"}
+            size="sm"
             onClick={() => setStatusFilter("all")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-              statusFilter === "all"
-                ? "bg-card text-foreground shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className="h-7 text-xs px-3 font-semibold"
           >
             All Clients ({customers.length})
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={statusFilter === "active" ? "secondary" : "ghost"}
+            size="sm"
             onClick={() => setStatusFilter("active")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-              statusFilter === "active"
-                ? "bg-card text-foreground shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className="h-7 text-xs px-3 font-semibold"
           >
             Active
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={statusFilter === "lead" ? "secondary" : "ghost"}
+            size="sm"
             onClick={() => setStatusFilter("lead")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-              statusFilter === "lead"
-                ? "bg-card text-foreground shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className="h-7 text-xs px-3 font-semibold"
           >
             Leads
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={statusFilter === "inactive" ? "secondary" : "ghost"}
+            size="sm"
             onClick={() => setStatusFilter("inactive")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-              statusFilter === "inactive"
-                ? "bg-card text-foreground shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className="h-7 text-xs px-3 font-semibold"
           >
             Inactive
-          </button>
+          </Button>
         </div>
 
         {/* Search & Add Client Button */}
         <div className="flex items-center gap-3">
           <div className="relative">
-            <input
+            <Input
               type="text"
               placeholder="Search clients..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-1.5 text-sm rounded-md border border-input bg-card placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary w-48 lg:w-64"
+              className="w-48 lg:w-64"
             />
             {searchQuery && (
               <button
@@ -117,13 +112,14 @@ export function CustomersTable({
               </button>
             )}
           </div>
-          <button
+          <Button
             type="button"
+            size="sm"
             onClick={onNewClient}
-            className="px-4 py-2 bg-primary text-primary-foreground text-xs font-semibold rounded-md shadow-xs hover:bg-primary/90 transition-all flex items-center gap-1"
+            className="gap-1"
           >
             <span>+</span> Add Client
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -141,13 +137,14 @@ export function CustomersTable({
               {searchQuery ? "No clients match your filter criteria." : "Get started by adding your first client."}
             </p>
           </div>
-          <button
+          <Button
             type="button"
+            size="sm"
             onClick={onNewClient}
-            className="mt-2 px-4 py-2 bg-primary text-primary-foreground text-xs font-semibold rounded-md shadow-xs"
+            className="mt-2"
           >
             + Add Client
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-card">
@@ -188,7 +185,7 @@ export function CustomersTable({
                   </td>
 
                   <td className="py-3.5 px-4">
-                    <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-md border ${
+                    <Badge variant="outline" className={`px-2 py-0.5 text-[10px] font-bold uppercase ${
                       cust.status === "active"
                         ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                         : cust.status === "lead"
@@ -196,7 +193,7 @@ export function CustomersTable({
                         : "bg-muted text-muted-foreground border-border"
                     }`}>
                       {cust.status}
-                    </span>
+                    </Badge>
                   </td>
 
                   <td className="py-3.5 px-4 text-muted-foreground">
