@@ -267,11 +267,17 @@ describe("Milestone 1 schema extensions", () => {
     expect(companyCols.id.notNull).toBe(true)
     expect(companyCols.organizationId.notNull).toBe(true)
     expect(companyCols.name.notNull).toBe(true)
+    expect(companyCols.billingEmail.name).toBe("billing_email")
+    expect(companyCols.vatNumber.name).toBe("vat_number")
+    expect(companyCols.status.name).toBe("status")
+    expect(companyCols.isArchived.name).toBe("is_archived")
 
     const contactCols = getTableColumns(schema.contact)
     expect(contactCols.id.notNull).toBe(true)
     expect(contactCols.organizationId.notNull).toBe(true)
     expect(contactCols.email.notNull).toBe(true)
+    expect(contactCols.title.name).toBe("title")
+    expect(contactCols.isPrimary.name).toBe("is_primary")
 
     const proposalCols = getTableColumns(schema.proposal)
     expect(proposalCols.id.notNull).toBe(true)
@@ -288,4 +294,3 @@ describe("Milestone 1 schema extensions", () => {
     expect(versionCols.hash.notNull).toBe(true)
   })
 })
-
