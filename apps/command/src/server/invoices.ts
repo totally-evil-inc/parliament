@@ -14,6 +14,7 @@ import { calculateInvoicePricing } from "@workspace/document/calculate"
 import { finalizeInvoiceDraft as buildSnapshotPayload } from "@workspace/document/finalize"
 import { createInvoiceDraftFromBlueprint } from "@workspace/document/invoice"
 import { safeParseInvoiceDraft } from "@workspace/document/schema"
+import { stripHtml } from "@workspace/document/text"
 import { z } from "zod"
 import type { JsonValue } from "./api-client"
 import { requireAuth } from "./auth"
@@ -248,7 +249,7 @@ export const saveInvoiceDraft = createServerFn({ method: "POST" })
     const [row] = await db
       .update(schema.invoiceDraft)
       .set({
-        title: document.data.title || "Untitled invoice",
+        title: stripHtml(document.data.title) || "Untitled invoice",
         document,
         revision: nextRevision,
         updatedAt: new Date(),

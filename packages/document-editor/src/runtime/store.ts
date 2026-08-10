@@ -8,6 +8,7 @@ import {
   parseInvoiceDraft,
   parseProposalDraft,
 } from "@workspace/document/schema"
+import { stripHtml } from "@workspace/document/text"
 
 type Listener = () => void
 
@@ -128,6 +129,8 @@ export function createBaseDraftStore<
   }
 }
 
+
+
 export type ProposalDraftCommands = {
   setTitle(value: string): void
   setIssueDate(value: string): void
@@ -166,9 +169,10 @@ export function createProposalDraftStore(
 
   const commands: ProposalDraftCommands = {
     setTitle(value) {
+      const cleanTitle = stripHtml(value)
       base.getBeforeStructuredChange()?.()
       base.commit(
-        (current) => ({ ...current, data: { ...current.data, title: value } }),
+        (current) => ({ ...current, data: { ...current.data, title: cleanTitle } }),
         { coalesceKey: "title" }
       )
     },
@@ -281,9 +285,10 @@ export function createInvoiceDraftStore(
 
   const commands: InvoiceDraftCommands = {
     setTitle(value) {
+      const cleanTitle = stripHtml(value)
       base.getBeforeStructuredChange()?.()
       base.commit(
-        (current) => ({ ...current, data: { ...current.data, title: value } }),
+        (current) => ({ ...current, data: { ...current.data, title: cleanTitle } }),
         { coalesceKey: "title" }
       )
     },

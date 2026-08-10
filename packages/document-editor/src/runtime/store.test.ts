@@ -69,3 +69,11 @@ test("invoice store supports invoice-specific fields and operations", () => {
   )
   expect(store.getSnapshot().data.dueDate).toBe("2026-08-30")
 })
+
+test("setTitle strips HTML paragraph tags from title", () => {
+  const store = createProposalDraftStore(
+    createProposalDraft({ id: "proposal-1" })
+  )
+  store.commands.setTitle("<p>Web Redesign Proposal</p>")
+  expect(store.getSnapshot().data.title).toBe("Web Redesign Proposal")
+})

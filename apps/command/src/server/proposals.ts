@@ -14,6 +14,7 @@ import { calculateProposalPricing } from "@workspace/document/calculate"
 import { finalizeProposalDraft as buildSnapshotPayload } from "@workspace/document/finalize"
 import { createProposalDraftFromBlueprint } from "@workspace/document/proposal"
 import { safeParseProposalDraft } from "@workspace/document/schema"
+import { stripHtml } from "@workspace/document/text"
 import { z } from "zod"
 import type { JsonValue } from "./api-client"
 import { requireAuth } from "./auth"
@@ -277,7 +278,7 @@ export const saveProposalDraft = createServerFn({ method: "POST" })
     const [row] = await db
       .update(schema.proposalDraft)
       .set({
-        title: document.data.title || "Untitled proposal",
+        title: stripHtml(document.data.title) || "Untitled proposal",
         document,
         revision: nextRevision,
         updatedAt: new Date(),
