@@ -19,7 +19,7 @@ describe("Deal Domain Models & Schemas", () => {
       id: "019fecc1-a5fb-7cd8-93f8-4b3f218f6d91",
       organizationId: "019fecc1-a4fd-7086-b102-f7f5d78e9f82",
       title: "Enterprise Web Redesign",
-      stage: "proposal_sent",
+      stage: "proposal_sent" as const,
       valueMinorUnits: 1500000, // $15,000.00 in cents
       currency: "USD",
       createdAt: "2026-08-10T12:00:00.000Z",

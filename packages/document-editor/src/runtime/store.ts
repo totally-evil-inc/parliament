@@ -129,8 +129,6 @@ export function createBaseDraftStore<
   }
 }
 
-
-
 export type ProposalDraftCommands = {
   setTitle(value: string): void
   setIssueDate(value: string): void
@@ -172,7 +170,10 @@ export function createProposalDraftStore(
       const cleanTitle = stripHtml(value)
       base.getBeforeStructuredChange()?.()
       base.commit(
-        (current) => ({ ...current, data: { ...current.data, title: cleanTitle } }),
+        (current) => ({
+          ...current,
+          data: { ...current.data, title: cleanTitle },
+        }),
         { coalesceKey: "title" }
       )
     },
@@ -288,7 +289,10 @@ export function createInvoiceDraftStore(
       const cleanTitle = stripHtml(value)
       base.getBeforeStructuredChange()?.()
       base.commit(
-        (current) => ({ ...current, data: { ...current.data, title: cleanTitle } }),
+        (current) => ({
+          ...current,
+          data: { ...current.data, title: cleanTitle },
+        }),
         { coalesceKey: "title" }
       )
     },

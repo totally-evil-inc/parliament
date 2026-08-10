@@ -31,7 +31,7 @@ describe("Customer Domain Models & Schemas", () => {
       state: "CA",
       zip: "94105",
       country: "USA",
-      status: "active",
+      status: "active" as const,
       preferredCurrency: "USD",
       defaultPaymentTerms: 30,
       isArchived: false,

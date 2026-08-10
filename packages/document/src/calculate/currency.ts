@@ -20,7 +20,9 @@ export function convertCurrencyMinorUnits({
   const toRate = exchangeRates.rates[toCurrency]
 
   if (!fromRate || !toRate) {
-    throw new Error(`Missing exchange rate for ${fromCurrency} or ${toCurrency}`)
+    throw new Error(
+      `Missing exchange rate for ${fromCurrency} or ${toCurrency}`
+    )
   }
 
   const baseAmount = amountMinorUnits / fromRate

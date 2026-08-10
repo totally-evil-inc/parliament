@@ -22,6 +22,8 @@ function getDb(): DrizzleDatabase {
           process.env.DATABASE_URL ||
           "postgres://postgres:postgres@localhost:5432/parliament",
         max: 10,
+        idle_timeout: 5,
+        connect_timeout: 10,
       },
       schema,
       logger: new DrizzlePinoLogger(),
