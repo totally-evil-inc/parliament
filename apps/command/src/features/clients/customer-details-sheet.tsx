@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { formatMoneyMinor } from "@workspace/document/calculate"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@workspace/ui/components/sheet"
 import { toast } from "@workspace/ui/components/sonner"
 import { getErrorMessage } from "../../lib/error-formatter"
 import { getCustomerDetailsServerFn, updateCustomerServerFn } from "../../server/customers"
@@ -19,13 +20,15 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<"overview" | "deals" | "proposals">("overview")
 
+  const isOpen = Boolean(customerId)
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["customer-details", customerId],
     queryFn: async () => {
       if (!customerId) return null
       return await getCustomerDetailsServerFn({ data: { id: customerId } })
     },
-    enabled: Boolean(customerId),
+    enabled: isOpen,
   })
 
   const createDealMutation = useMutation({
@@ -73,11 +76,9 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
     },
   })
 
-  if (!customerId) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-background/80 backdrop-blur-sm">
-      <div className="w-full max-w-2xl h-full bg-card border-l border-border shadow-2xl flex flex-col p-6 overflow-y-auto gap-6 animate-in slide-in-from-right">
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="right" className="w-full max-w-2xl sm:max-w-2xl p-6 overflow-y-auto gap-6 border-l border-border bg-card shadow-2xl">
         {isLoading || !data ? (
           <div className="flex items-center justify-center p-12 text-muted-foreground text-sm">
             {error ? (
@@ -91,7 +92,7 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
         ) : (
           <>
             {/* Header section */}
-            <div className="flex flex-col gap-4 border-b border-border pb-4">
+            <SheetHeader className="p-0 border-b border-border pb-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary font-bold text-lg flex items-center justify-center border border-primary/20">
@@ -99,9 +100,9 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-bold text-foreground leading-tight">
+                      <SheetTitle className="text-xl font-bold text-foreground leading-tight">
                         {data.customer.name}
-                      </h2>
+                      </SheetTitle>
                       <Badge variant="outline" className="px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
                         {data.customer.status}
                       </Badge>
@@ -118,20 +119,10 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
                     )}
                   </div>
                 </div>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={onClose}
-                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                >
-                  ✕
-                </Button>
               </div>
 
               {/* Quick Actions Bar */}
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-2 pt-3">
                 <Button
                   type="button"
                   size="sm"
@@ -150,7 +141,7 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
                   {data.customer.isArchived ? "Unarchive Client" : "Archive Client"}
                 </Button>
               </div>
-            </div>
+            </SheetHeader>
 
             {/* Navigation Tabs */}
             <div className="flex items-center gap-4 border-b border-border text-sm font-medium">
@@ -345,7 +336,7 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
             )}
           </>
         )}
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   )
 }

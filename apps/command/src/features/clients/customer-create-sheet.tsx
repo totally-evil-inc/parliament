@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@workspace/ui/components/sheet"
 import { toast } from "@workspace/ui/components/sonner"
 import { getErrorMessage } from "../../lib/error-formatter"
 import { createCustomerServerFn } from "../../server/customers"
@@ -70,30 +71,19 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
     },
   })
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-background/80 backdrop-blur-sm">
-      <div className="w-full max-w-lg h-full bg-card border-l border-border shadow-2xl flex flex-col p-6 overflow-y-auto gap-6 animate-in slide-in-from-right">
-        <div className="flex items-center justify-between border-b border-border pb-4">
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="right" className="w-full max-w-lg sm:max-w-lg p-6 overflow-y-auto gap-6 border-l border-border bg-card shadow-2xl">
+        <SheetHeader className="p-0 border-b border-border pb-4">
           <div>
-            <h2 className="text-lg font-bold text-foreground">Add New Client</h2>
-            <p className="text-xs text-muted-foreground">
+            <SheetTitle className="text-lg font-bold text-foreground">Add New Client</SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
               Register a customer profile for billing, proposals, and deals.
             </p>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-          >
-            ✕
-          </Button>
-        </div>
+        </SheetHeader>
 
-        <div className="flex flex-col gap-4 flex-1">
+        <div className="flex flex-col gap-4 flex-1 my-2">
           <div>
             <label className="text-xs font-medium text-muted-foreground block mb-1">
               Company Name *
@@ -256,7 +246,7 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
             {createMutation.isPending ? "Creating..." : "Save Client"}
           </Button>
         </div>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   )
 }
