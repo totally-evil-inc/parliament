@@ -466,3 +466,63 @@ export function parseInvoiceDraft(input: unknown): InvoiceDraft {
 export function safeParseInvoiceDraft(input: unknown) {
   return invoiceDraftSchema.safeParse(input)
 }
+
+export const proposalStatusEnumSchema = z.enum([
+  "draft",
+  "sent",
+  "viewed",
+  "accepted",
+  "declined",
+  "archived",
+])
+
+export const proposalPersistedSchema = z
+  .object({
+    id: idSchema,
+    organizationId: idSchema,
+    companyId: idSchema.nullable().optional(),
+    contactId: idSchema.nullable().optional(),
+    title: z.string().min(1),
+    status: proposalStatusEnumSchema,
+    currency: z.string().regex(/^[A-Z]{3}$/, "Expected an ISO 4217 currency"),
+    subtotalMinorUnits: z.number().int(),
+    taxMinorUnits: z.number().int(),
+    totalMinorUnits: z.number().int(),
+    portalToken: z.string().nullable().optional(),
+    metadata: z.record(z.unknown()).optional(),
+    createdById: idSchema.nullable().optional(),
+    createdAt: z.string().or(z.date()),
+    updatedAt: z.string().or(z.date()),
+  })
+  .strict()
+
+export type ProposalPersisted = z.infer<typeof proposalPersistedSchema>
+
+export const proposalVersionSchema = z
+  .object({
+    id: idSchema,
+    proposalId: idSchema,
+    organizationId: idSchema,
+    versionNumber: z.number().int().positive(),
+    content: z.array(documentBlockSchema),
+    proposalDraft: proposalDraftSchema,
+    hash: z.string().min(1),
+    createdById: idSchema.nullable().optional(),
+    createdAt: z.string().or(z.date()),
+  })
+  .strict()
+
+export type ProposalVersion = z.infer<typeof proposalVersionSchema>
+
+export const createProposalInputSchema = z
+  .object({
+    title: z.string().min(1),
+    companyId: idSchema.optional(),
+    contactId: idSchema.optional(),
+    currency: z.string().regex(/^[A-Z]{3}$/).default("USD"),
+    draft: proposalDraftSchema.optional(),
+  })
+  .strict()
+
+export type CreateProposalInput = z.infer<typeof createProposalInputSchema>
+
