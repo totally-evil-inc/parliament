@@ -1,11 +1,15 @@
 import { formatMoneyMinor } from "@workspace/document/calculate"
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
 import {
+  Bar,
+  BarChart,
+  Cell,
   type ChartConfig,
   ChartContainer,
   ChartTooltip,
+  XAxis,
+  YAxis,
 } from "@workspace/ui/components/chart"
-import { Bar, BarChart, Cell, XAxis, YAxis } from "recharts"
 
 type Props = {
   monthlyData: Array<{

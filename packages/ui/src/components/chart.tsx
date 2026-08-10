@@ -361,10 +361,21 @@ function getPayloadConfigFromPayload(
 }
 
 export {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  Cell,
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
   ChartStyle,
   ChartTooltip,
   ChartTooltipContent,
+  Line,
+  LineChart,
+  RechartsPrimitive,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
 }
