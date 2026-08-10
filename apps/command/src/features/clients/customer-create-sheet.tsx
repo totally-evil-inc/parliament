@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { CustomerStatus } from "@workspace/document/schema"
+import { toast } from "@workspace/ui/components/sonner"
+import { getErrorMessage } from "../../lib/error-formatter"
 import { createCustomerServerFn } from "../../server/customers"
 
 type Props = {
@@ -41,10 +43,10 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
       })
     },
     onSuccess: () => {
+      toast.success("Client created successfully!")
       queryClient.invalidateQueries({ queryKey: ["customers"] })
       queryClient.invalidateQueries({ queryKey: ["customer-analytics"] })
       onClose()
-      // reset form
       setName("")
       setBillingEmail("")
       setPhone("")
@@ -53,6 +55,9 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
       setAddressLine1("")
       setCity("")
       setCountry("")
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Failed to create client"))
     },
   })
 

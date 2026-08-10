@@ -3,7 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { formatMoneyMinor } from "@workspace/document/calculate"
 import type { DealStage } from "@workspace/document/schema"
-import { ScrollArea, ScrollBar } from "@workspace/ui/components/scroll-area"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
+import { toast } from "@workspace/ui/components/sonner"
+import { getErrorMessage } from "../../../lib/error-formatter"
 import {
   convertDealToProposalServerFn,
   createDealServerFn,
@@ -69,7 +71,11 @@ export function DealsKanbanRoute() {
       return await updateDealStageServerFn({ data: { id, stage } })
     },
     onSuccess: () => {
+      toast.success("Deal stage updated")
       queryClient.invalidateQueries({ queryKey: ["deals"] })
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Failed to update deal stage"))
     },
   })
 
@@ -78,9 +84,13 @@ export function DealsKanbanRoute() {
       return await convertDealToProposalServerFn({ data: { id: dealId } })
     },
     onSuccess: (res) => {
+      toast.success("1-Click Proposal Created! Redirecting...")
       queryClient.invalidateQueries({ queryKey: ["deals"] })
       queryClient.invalidateQueries({ queryKey: ["proposals"] })
       navigate({ to: "/proposals/$proposalId", params: { proposalId: res.proposalId } })
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Failed to convert deal to proposal"))
     },
   })
 
@@ -98,10 +108,14 @@ export function DealsKanbanRoute() {
       })
     },
     onSuccess: () => {
+      toast.success("Deal created successfully!")
       setNewTitle("")
       setNewValue("5000")
       setIsCreating(false)
       queryClient.invalidateQueries({ queryKey: ["deals"] })
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Failed to create deal"))
     },
   })
 

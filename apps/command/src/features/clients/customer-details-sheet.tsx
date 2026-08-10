@@ -2,8 +2,10 @@ import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { formatMoneyMinor } from "@workspace/document/calculate"
-import { createDealServerFn } from "../../server/deals"
+import { toast } from "@workspace/ui/components/sonner"
+import { getErrorMessage } from "../../lib/error-formatter"
 import { getCustomerDetailsServerFn, updateCustomerServerFn } from "../../server/customers"
+import { createDealServerFn } from "../../server/deals"
 
 type Props = {
   customerId: string | null
@@ -15,7 +17,7 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<"overview" | "deals" | "proposals">("overview")
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["customer-details", customerId],
     queryFn: async () => {
       if (!customerId) return null
@@ -38,9 +40,13 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
       })
     },
     onSuccess: () => {
+      toast.success("New deal created successfully!")
       queryClient.invalidateQueries({ queryKey: ["customer-details", customerId] })
       queryClient.invalidateQueries({ queryKey: ["deals"] })
       navigate({ to: "/clients/deals" })
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Failed to create deal"))
     },
   })
 
@@ -54,9 +60,14 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
         },
       })
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
+      const isArchived = res?.isArchived
+      toast.success(isArchived ? "Client archived successfully" : "Client unarchived successfully")
       queryClient.invalidateQueries({ queryKey: ["customer-details", customerId] })
       queryClient.invalidateQueries({ queryKey: ["customers"] })
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Failed to update client status"))
     },
   })
 
@@ -67,7 +78,13 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
       <div className="w-full max-w-2xl h-full bg-card border-l border-border shadow-2xl flex flex-col p-6 overflow-y-auto gap-6 animate-in slide-in-from-right">
         {isLoading || !data ? (
           <div className="flex items-center justify-center p-12 text-muted-foreground text-sm">
-            Loading client profile...
+            {error ? (
+              <span className="text-destructive font-medium">
+                {getErrorMessage(error, "Unable to load client profile")}
+              </span>
+            ) : (
+              "Loading client profile..."
+            )}
           </div>
         ) : (
           <>
