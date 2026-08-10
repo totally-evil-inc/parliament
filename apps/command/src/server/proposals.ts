@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from "node:crypto"
+import { createHash, randomBytes, randomUUID } from "node:crypto"
 import { createServerFn } from "@tanstack/react-start"
 import {
   and,
@@ -15,6 +15,7 @@ import { finalizeProposalDraft as buildSnapshotPayload } from "@workspace/docume
 import { createProposalDraftFromBlueprint } from "@workspace/document/proposal"
 import { safeParseProposalDraft } from "@workspace/document/schema"
 import { stripHtml } from "@workspace/document/text"
+import { logWideEvent } from "@workspace/logger"
 import { z } from "zod"
 import type { JsonValue } from "./api-client"
 import { requireAuth } from "./auth"
@@ -258,7 +259,9 @@ export const saveProposalDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .validator(saveProposalDraftSchema)
   .handler(async ({ context, data }): Promise<SaveProposalDraftResult> => {
+    const startTime = Date.now()
     const organizationId = await requireActiveOrganization(context.auth)
+    const userId = getUserId(context.auth)
     const current = await selectDraft(data.id, organizationId)
     if (!current) throw new Error("Proposal draft not found")
     if (current.revision !== data.revision) {
@@ -275,25 +278,105 @@ export const saveProposalDraft = createServerFn({ method: "POST" })
       revision: nextRevision,
       updatedAt: new Date().toISOString(),
     }
-    const [row] = await db
-      .update(schema.proposalDraft)
-      .set({
-        title: stripHtml(document.data.title) || "Untitled proposal",
-        document,
-        revision: nextRevision,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(schema.proposalDraft.id, data.id),
-          eq(schema.proposalDraft.organizationId, organizationId)
-        )
-      )
-      .returning()
 
-    if (!row) throw new Error("Failed to save proposal draft")
-    return { status: "saved", draft: serializeDraft(row) }
+    let subtotalMinor = 0
+    let taxMinor = 0
+    let totalMinor = 0
+    let currency = "USD"
+    if (parsed.data.data.pricing) {
+      try {
+        const calc = calculateProposalPricing(parsed.data.data.pricing)
+        subtotalMinor = calc.subtotalMinor
+        taxMinor = calc.taxMinor
+        totalMinor = calc.totalMinor
+        currency = parsed.data.data.pricing.currency
+      } catch (_e) {
+        // ignore
+      }
+    }
+
+    const contentHash = createHash("sha256")
+      .update(JSON.stringify(parsed.data.composition.blocks))
+      .digest("hex")
+
+    const resultRow = await db.transaction(async (tx) => {
+      await tx
+        .insert(schema.proposal)
+        .values({
+          id: data.id,
+          organizationId,
+          title: stripHtml(document.data.title) || "Untitled proposal",
+          status: "draft",
+          currency,
+          subtotalMinorUnits: subtotalMinor,
+          taxMinorUnits: taxMinor,
+          totalMinorUnits: totalMinor,
+          createdById: userId,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [schema.proposal.id],
+          set: {
+            title: stripHtml(document.data.title) || "Untitled proposal",
+            currency,
+            subtotalMinorUnits: subtotalMinor,
+            taxMinorUnits: taxMinor,
+            totalMinorUnits: totalMinor,
+            updatedAt: new Date(),
+          },
+        })
+
+      await tx.insert(schema.proposalVersion).values({
+        proposalId: data.id,
+        organizationId,
+        versionNumber: nextRevision,
+        content: parsed.data.composition.blocks,
+        proposalDraft: document,
+        hash: contentHash,
+        createdById: userId,
+      })
+
+      const [row] = await tx
+        .update(schema.proposalDraft)
+        .set({
+          title: stripHtml(document.data.title) || "Untitled proposal",
+          document,
+          revision: nextRevision,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(schema.proposalDraft.id, data.id),
+            eq(schema.proposalDraft.organizationId, organizationId)
+          )
+        )
+        .returning()
+
+      if (!row) throw new Error("Failed to save proposal draft")
+      return row
+    })
+
+    logWideEvent({
+      event: "document.proposal.saved",
+      durationMs: Date.now() - startTime,
+      organizationId,
+      userId: userId ?? undefined,
+      entityId: data.id,
+      outcome: "success",
+      metadata: {
+        revision: nextRevision,
+        totalMinorUnits: totalMinor,
+        currency,
+      },
+    })
+
+    return { status: "saved", draft: serializeDraft(resultRow) }
   })
+
+export const saveProposalServerFn = saveProposalDraft
+export const getProposalServerFn = getProposalDraft
+export const listProposalsServerFn = listProposalDrafts
+
 
 export const finalizeProposalDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
