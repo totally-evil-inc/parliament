@@ -190,7 +190,7 @@ describe("Milestone 1 schema extensions", () => {
       }
     })
 
-    expect(proposalFks).toHaveLength(2)
+    expect(proposalFks).toHaveLength(3)
     expect(proposalFks).toContainEqual({
       localCol: "proposal_snapshot_id",
       foreignTable: "proposal_snapshot",
@@ -199,6 +199,11 @@ describe("Milestone 1 schema extensions", () => {
     expect(proposalFks).toContainEqual({
       localCol: "public_link_id",
       foreignTable: "proposal_public_link",
+      foreignCol: "id",
+    })
+    expect(proposalFks).toContainEqual({
+      localCol: "organization_id",
+      foreignTable: "organization",
       foreignCol: "id",
     })
 
@@ -246,4 +251,41 @@ describe("Milestone 1 schema extensions", () => {
     expect(otpIndexes).toContain("public_link_otp_public_link_id_idx")
     expect(otpIndexes).toContain("public_link_otp_email_idx")
   })
+
+  it("verifies company, contact, proposal, and proposalVersion schema tables", () => {
+    expect(schema.company).toBeDefined()
+    expect(schema.contact).toBeDefined()
+    expect(schema.proposal).toBeDefined()
+    expect(schema.proposalVersion).toBeDefined()
+
+    expect(getTableName(schema.company)).toBe("company")
+    expect(getTableName(schema.contact)).toBe("contact")
+    expect(getTableName(schema.proposal)).toBe("proposal")
+    expect(getTableName(schema.proposalVersion)).toBe("proposal_version")
+
+    const companyCols = getTableColumns(schema.company)
+    expect(companyCols.id.notNull).toBe(true)
+    expect(companyCols.organizationId.notNull).toBe(true)
+    expect(companyCols.name.notNull).toBe(true)
+
+    const contactCols = getTableColumns(schema.contact)
+    expect(contactCols.id.notNull).toBe(true)
+    expect(contactCols.organizationId.notNull).toBe(true)
+    expect(contactCols.email.notNull).toBe(true)
+
+    const proposalCols = getTableColumns(schema.proposal)
+    expect(proposalCols.id.notNull).toBe(true)
+    expect(proposalCols.organizationId.notNull).toBe(true)
+    expect(proposalCols.subtotalMinorUnits.notNull).toBe(true)
+    expect(proposalCols.taxMinorUnits.notNull).toBe(true)
+    expect(proposalCols.totalMinorUnits.notNull).toBe(true)
+
+    const versionCols = getTableColumns(schema.proposalVersion)
+    expect(versionCols.id.notNull).toBe(true)
+    expect(versionCols.proposalId.notNull).toBe(true)
+    expect(versionCols.organizationId.notNull).toBe(true)
+    expect(versionCols.versionNumber.notNull).toBe(true)
+    expect(versionCols.hash.notNull).toBe(true)
+  })
 })
+

@@ -191,6 +191,10 @@ export const proposalAcceptance = pgTable(
     publicLinkId: uuid("public_link_id")
       .notNull()
       .references(() => proposalPublicLink.id),
+    organizationId: uuid("organization_id").references(
+      () => organization.id,
+      { onDelete: "cascade" }
+    ),
     signerName: text("signer_name").notNull(),
     signerEmail: text("signer_email").notNull(),
     signatureText: text("signature_text"),
@@ -204,6 +208,7 @@ export const proposalAcceptance = pgTable(
   (table) => [
     index("proposal_acceptance_snapshot_id_idx").on(table.proposalSnapshotId),
     index("proposal_acceptance_public_link_id_idx").on(table.publicLinkId),
+    index("proposal_acceptance_organization_id_idx").on(table.organizationId),
   ]
 )
 
@@ -217,6 +222,10 @@ export const proposalEvent = pgTable(
     publicLinkId: uuid("public_link_id").references(
       () => proposalPublicLink.id
     ),
+    organizationId: uuid("organization_id").references(
+      () => organization.id,
+      { onDelete: "cascade" }
+    ),
     eventType: text("event_type").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     metadata: jsonb("metadata"),
@@ -224,6 +233,7 @@ export const proposalEvent = pgTable(
   (table) => [
     index("proposal_event_snapshot_id_idx").on(table.proposalSnapshotId),
     index("proposal_event_public_link_id_idx").on(table.publicLinkId),
+    index("proposal_event_organization_id_idx").on(table.organizationId),
     index("proposal_event_type_idx").on(table.eventType),
   ]
 )
@@ -297,3 +307,36 @@ export const proposalPublicLinkRelations = relations(
     events: many(proposalEvent),
   })
 )
+
+export const proposalAcceptanceRelations = relations(
+  proposalAcceptance,
+  ({ one }) => ({
+    proposalSnapshot: one(proposalSnapshot, {
+      fields: [proposalAcceptance.proposalSnapshotId],
+      references: [proposalSnapshot.id],
+    }),
+    publicLink: one(proposalPublicLink, {
+      fields: [proposalAcceptance.publicLinkId],
+      references: [proposalPublicLink.id],
+    }),
+    organization: one(organization, {
+      fields: [proposalAcceptance.organizationId],
+      references: [organization.id],
+    }),
+  })
+)
+
+export const proposalEventRelations = relations(proposalEvent, ({ one }) => ({
+  proposalSnapshot: one(proposalSnapshot, {
+    fields: [proposalEvent.proposalSnapshotId],
+    references: [proposalSnapshot.id],
+  }),
+  publicLink: one(proposalPublicLink, {
+    fields: [proposalEvent.publicLinkId],
+    references: [proposalPublicLink.id],
+  }),
+  organization: one(organization, {
+    fields: [proposalEvent.organizationId],
+    references: [organization.id],
+  }),
+}))
