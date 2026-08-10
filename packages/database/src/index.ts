@@ -1,4 +1,3 @@
-import "dotenv/config"
 import { logger as pinoLogger } from "@workspace/logger"
 import type { Logger as DrizzleLogger } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/bun-sql"
