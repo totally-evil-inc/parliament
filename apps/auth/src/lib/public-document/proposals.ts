@@ -207,6 +207,7 @@ export async function getPublicProposal(
   await db.insert(schema.proposalEvent).values({
     proposalSnapshotId: link.proposalSnapshotId,
     publicLinkId: link.id,
+    organizationId: link.organizationId,
     eventType: "link.opened",
     metadata: {
       tokenSuffix,
@@ -257,6 +258,7 @@ export async function acceptPublicProposal(
     .select({
       id: schema.proposalPublicLink.id,
       proposalSnapshotId: schema.proposalPublicLink.proposalSnapshotId,
+      organizationId: schema.proposalPublicLink.organizationId,
       status: schema.proposalPublicLink.status,
       revokedAt: schema.proposalPublicLink.revokedAt,
       expiresAt: schema.proposalPublicLink.expiresAt,
@@ -295,6 +297,7 @@ export async function acceptPublicProposal(
       .values({
         proposalSnapshotId: link.proposalSnapshotId,
         publicLinkId: link.id,
+        organizationId: link.organizationId,
         signerName: input.signerName,
         signerEmail: input.signerEmail,
         signatureText: input.signatureText ?? null,
@@ -313,6 +316,7 @@ export async function acceptPublicProposal(
     await tx.insert(schema.proposalEvent).values({
       proposalSnapshotId: link.proposalSnapshotId,
       publicLinkId: link.id,
+      organizationId: link.organizationId,
       eventType: "signature.completed",
       metadata: {
         acceptanceId: row.id,

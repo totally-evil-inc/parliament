@@ -25,7 +25,7 @@ export function useProposalPersistence({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isFirstRender = useRef(true)
 
-  const mutation = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationFn: async (payload: { id: string; revision: number; document: unknown }) => {
       setSaveState("saving")
       return await saveProposalDraft({ data: payload })
@@ -49,13 +49,13 @@ export function useProposalPersistence({
       clearTimeout(timerRef.current)
     }
     timerRef.current = setTimeout(() => {
-      mutation.mutate({
+      mutate({
         id: proposalId,
         revision,
         document,
       })
     }, debounceMs)
-  }, [proposalId, revision, document, debounceMs, mutation])
+  }, [proposalId, revision, document, debounceMs, mutate])
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -75,8 +75,8 @@ export function useProposalPersistence({
     saveState,
     saveNow: () => {
       if (timerRef.current) clearTimeout(timerRef.current)
-      mutation.mutate({ id: proposalId, revision, document })
+      mutate({ id: proposalId, revision, document })
     },
-    isSaving: mutation.isPending,
+    isSaving: isPending,
   }
 }

@@ -61,6 +61,7 @@ export async function recordClientEvent(
       .select({
         id: schema.proposalPublicLink.id,
         proposalSnapshotId: schema.proposalPublicLink.proposalSnapshotId,
+        organizationId: schema.proposalPublicLink.organizationId,
       })
       .from(schema.proposalPublicLink)
       .where(eq(schema.proposalPublicLink.token, input.token))
@@ -75,6 +76,7 @@ export async function recordClientEvent(
       .values({
         proposalSnapshotId: link.proposalSnapshotId,
         publicLinkId: link.id,
+        organizationId: link.organizationId,
         eventType: input.eventType,
         metadata: meta,
       })
