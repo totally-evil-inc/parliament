@@ -9,13 +9,12 @@ import {
   IconLayers,
   IconMoneyBill,
   IconRoadmap,
-  IconUsers,
 } from "nucleo-glass"
 import type React from "react"
 
 export type WorkspaceRouteNavItem = {
   label: string
-  to: "/" | "/integrations" | "/proposals" | "/invoices" | "/settings" | "/clients/deals"
+  to: "/" | "/integrations" | "/proposals" | "/invoices" | "/settings" | "/clients" | "/clients/deals"
   icon: React.ComponentType<{ className?: string }>
   badge?: number
 }
@@ -43,6 +42,7 @@ export const workspaceConfig = {
   primaryNav: [
     { icon: IconHouse, label: "Home", to: "/" },
     { icon: IconInbox, label: "Inbox", badge: 4 },
+    { icon: IconFolder, label: "Clients Directory", to: "/clients" },
     { icon: IconLayers, label: "Deals Pipeline", to: "/clients/deals" },
     { icon: IconFile, label: "Proposals", to: "/proposals" },
     { icon: IconMoneyBill, label: "Invoices", to: "/invoices" },
