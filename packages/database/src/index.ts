@@ -10,15 +10,40 @@ class DrizzlePinoLogger implements DrizzleLogger {
   }
 }
 
-const db = drizzle({
-  connection: {
-    url:
-      process.env.DATABASE_URL ||
-      "postgres://postgres:postgres@localhost:5432/parliament",
-    max: 10,
+type DrizzleDatabase = ReturnType<typeof drizzle<typeof schema>>
+
+let _db: DrizzleDatabase | null = null
+
+function getDb(): DrizzleDatabase {
+  if (!_db) {
+    _db = drizzle({
+      connection: {
+        url:
+          process.env.DATABASE_URL ||
+          "postgres://postgres:postgres@localhost:5432/parliament",
+        max: 10,
+      },
+      schema,
+      logger: new DrizzlePinoLogger(),
+    })
+  }
+  return _db
+}
+
+export const db = new Proxy({} as DrizzleDatabase, {
+  get(_target, prop, receiver) {
+    const instance = getDb()
+    const value = Reflect.get(instance, prop, receiver)
+    if (typeof value === "function") {
+      return value.bind(instance)
+    }
+    return value
   },
-  schema,
-  logger: new DrizzlePinoLogger(),
+  set(_target, prop, value) {
+    const instance = getDb()
+    Reflect.set(instance, prop, value)
+    return true
+  },
 })
 
 export {
@@ -35,4 +60,4 @@ export {
   sql,
 } from "drizzle-orm"
 export * from "./schema"
-export { db, schema }
+export { schema }
