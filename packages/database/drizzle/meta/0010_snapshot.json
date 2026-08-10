@@ -1,6 +1,6 @@
 {
-  "id": "b29aa607-5d40-4169-91e5-a3e0a4ae6bb2",
-  "prevId": "d0db0c94-0d7c-4a5d-b5ae-00fe8058510b",
+  "id": "228f8023-7466-47dc-ae63-878aa120b843",
+  "prevId": "ce1c957d-98c4-4396-aeb3-48ad00dae889",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -110,8 +110,12 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -241,8 +245,12 @@
           "name": "agent_action_agent_id_agent_id_fk",
           "tableFrom": "agent_action",
           "tableTo": "agent",
-          "columnsFrom": ["agent_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -250,8 +258,12 @@
           "name": "agent_action_user_id_user_id_fk",
           "tableFrom": "agent_action",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -355,8 +367,12 @@
           "name": "agent_user_id_user_id_fk",
           "tableFrom": "agent",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -364,8 +380,12 @@
           "name": "agent_org_id_organization_id_fk",
           "tableFrom": "agent",
           "tableTo": "organization",
-          "columnsFrom": ["org_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -476,8 +496,12 @@
           "name": "company_organization_id_organization_id_fk",
           "tableFrom": "company",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -599,8 +623,12 @@
           "name": "contact_organization_id_organization_id_fk",
           "tableFrom": "contact",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -608,8 +636,499 @@
           "name": "contact_company_id_company_id_fk",
           "tableFrom": "contact",
           "tableTo": "company",
-          "columnsFrom": ["company_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.client_activity": {
+      "name": "client_activity",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deal_id": {
+          "name": "deal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "activity_type": {
+          "name": "activity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_client_activity_org": {
+          "name": "idx_client_activity_org",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_client_activity_deal": {
+          "name": "idx_client_activity_deal",
+          "columns": [
+            {
+              "expression": "deal_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "client_activity_organization_id_organization_id_fk": {
+          "name": "client_activity_organization_id_organization_id_fk",
+          "tableFrom": "client_activity",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "client_activity_deal_id_deal_id_fk": {
+          "name": "client_activity_deal_id_deal_id_fk",
+          "tableFrom": "client_activity",
+          "tableTo": "deal",
+          "columnsFrom": [
+            "deal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "client_activity_created_by_id_user_id_fk": {
+          "name": "client_activity_created_by_id_user_id_fk",
+          "tableFrom": "client_activity",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.client_task": {
+      "name": "client_task",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deal_id": {
+          "name": "deal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "due_date": {
+          "name": "due_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assigned_to_id": {
+          "name": "assigned_to_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_client_task_org": {
+          "name": "idx_client_task_org",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_client_task_deal": {
+          "name": "idx_client_task_deal",
+          "columns": [
+            {
+              "expression": "deal_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "client_task_organization_id_organization_id_fk": {
+          "name": "client_task_organization_id_organization_id_fk",
+          "tableFrom": "client_task",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "client_task_deal_id_deal_id_fk": {
+          "name": "client_task_deal_id_deal_id_fk",
+          "tableFrom": "client_task",
+          "tableTo": "deal",
+          "columnsFrom": [
+            "deal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "client_task_assigned_to_id_user_id_fk": {
+          "name": "client_task_assigned_to_id_user_id_fk",
+          "tableFrom": "client_task",
+          "tableTo": "user",
+          "columnsFrom": [
+            "assigned_to_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.deal": {
+      "name": "deal",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuidv7()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_id": {
+          "name": "contact_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "proposal_id": {
+          "name": "proposal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage": {
+          "name": "stage",
+          "type": "deal_stage",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'lead'"
+        },
+        "value_minor_units": {
+          "name": "value_minor_units",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'USD'"
+        },
+        "expected_close_date": {
+          "name": "expected_close_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_deal_org": {
+          "name": "idx_deal_org",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_deal_company": {
+          "name": "idx_deal_company",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_deal_stage": {
+          "name": "idx_deal_stage",
+          "columns": [
+            {
+              "expression": "stage",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "deal_organization_id_organization_id_fk": {
+          "name": "deal_organization_id_organization_id_fk",
+          "tableFrom": "deal",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "deal_company_id_company_id_fk": {
+          "name": "deal_company_id_company_id_fk",
+          "tableFrom": "deal",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "deal_contact_id_contact_id_fk": {
+          "name": "deal_contact_id_contact_id_fk",
+          "tableFrom": "deal",
+          "tableTo": "contact",
+          "columnsFrom": [
+            "contact_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "deal_proposal_id_proposal_id_fk": {
+          "name": "deal_proposal_id_proposal_id_fk",
+          "tableFrom": "deal",
+          "tableTo": "proposal",
+          "columnsFrom": [
+            "proposal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "deal_created_by_id_user_id_fk": {
+          "name": "deal_created_by_id_user_id_fk",
+          "tableFrom": "deal",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -744,8 +1263,12 @@
           "name": "email_thread_activity_user_id_user_id_fk",
           "tableFrom": "email_thread_activity",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -856,8 +1379,12 @@
           "name": "gmail_watch_subscription_user_id_user_id_fk",
           "tableFrom": "gmail_watch_subscription",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1062,8 +1589,12 @@
           "name": "invitation_organization_id_organization_id_fk",
           "tableFrom": "invitation",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1071,8 +1602,12 @@
           "name": "invitation_inviter_id_user_id_fk",
           "tableFrom": "invitation",
           "tableTo": "user",
-          "columnsFrom": ["inviter_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "inviter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1221,8 +1756,12 @@
           "name": "invoice_acceptance_invoice_snapshot_id_invoice_snapshot_id_fk",
           "tableFrom": "invoice_acceptance",
           "tableTo": "invoice_snapshot",
-          "columnsFrom": ["invoice_snapshot_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "invoice_snapshot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1230,8 +1769,12 @@
           "name": "invoice_acceptance_public_link_id_invoice_public_link_id_fk",
           "tableFrom": "invoice_acceptance",
           "tableTo": "invoice_public_link",
-          "columnsFrom": ["public_link_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "public_link_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1239,8 +1782,12 @@
           "name": "invoice_acceptance_organization_id_organization_id_fk",
           "tableFrom": "invoice_acceptance",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1352,8 +1899,12 @@
           "name": "invoice_draft_organization_id_organization_id_fk",
           "tableFrom": "invoice_draft",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1361,8 +1912,12 @@
           "name": "invoice_draft_created_by_user_id_user_id_fk",
           "tableFrom": "invoice_draft",
           "tableTo": "user",
-          "columnsFrom": ["created_by_user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1468,8 +2023,12 @@
           "name": "invoice_event_invoice_snapshot_id_invoice_snapshot_id_fk",
           "tableFrom": "invoice_event",
           "tableTo": "invoice_snapshot",
-          "columnsFrom": ["invoice_snapshot_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "invoice_snapshot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1477,8 +2036,12 @@
           "name": "invoice_event_public_link_id_invoice_public_link_id_fk",
           "tableFrom": "invoice_event",
           "tableTo": "invoice_public_link",
-          "columnsFrom": ["public_link_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "public_link_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1588,8 +2151,12 @@
           "name": "invoice_public_link_invoice_snapshot_id_invoice_snapshot_id_fk",
           "tableFrom": "invoice_public_link",
           "tableTo": "invoice_snapshot",
-          "columnsFrom": ["invoice_snapshot_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "invoice_snapshot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1597,8 +2164,12 @@
           "name": "invoice_public_link_organization_id_organization_id_fk",
           "tableFrom": "invoice_public_link",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1608,7 +2179,9 @@
         "invoice_public_link_token_unique": {
           "name": "invoice_public_link_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -1719,8 +2292,12 @@
           "name": "invoice_snapshot_invoice_draft_id_invoice_draft_id_fk",
           "tableFrom": "invoice_snapshot",
           "tableTo": "invoice_draft",
-          "columnsFrom": ["invoice_draft_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "invoice_draft_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1728,8 +2305,12 @@
           "name": "invoice_snapshot_organization_id_organization_id_fk",
           "tableFrom": "invoice_snapshot",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1737,8 +2318,12 @@
           "name": "invoice_snapshot_created_by_user_id_user_id_fk",
           "tableFrom": "invoice_snapshot",
           "tableTo": "user",
-          "columnsFrom": ["created_by_user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1867,8 +2452,12 @@
           "name": "member_organization_id_organization_id_fk",
           "tableFrom": "member",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1876,8 +2465,12 @@
           "name": "member_user_id_user_id_fk",
           "tableFrom": "member",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1943,7 +2536,9 @@
         "organization_slug_unique": {
           "name": "organization_slug_unique",
           "nullsNotDistinct": false,
-          "columns": ["slug"]
+          "columns": [
+            "slug"
+          ]
         }
       },
       "policies": {},
@@ -2210,8 +2805,12 @@
           "name": "proposal_organization_id_organization_id_fk",
           "tableFrom": "proposal",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2219,8 +2818,12 @@
           "name": "proposal_company_id_company_id_fk",
           "tableFrom": "proposal",
           "tableTo": "company",
-          "columnsFrom": ["company_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2228,8 +2831,12 @@
           "name": "proposal_contact_id_contact_id_fk",
           "tableFrom": "proposal",
           "tableTo": "contact",
-          "columnsFrom": ["contact_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "contact_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2237,8 +2844,12 @@
           "name": "proposal_created_by_id_user_id_fk",
           "tableFrom": "proposal",
           "tableTo": "user",
-          "columnsFrom": ["created_by_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2271,6 +2882,12 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "signer_name": {
           "name": "signer_name",
@@ -2359,6 +2976,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "proposal_acceptance_organization_id_idx": {
+          "name": "proposal_acceptance_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -2366,8 +2998,12 @@
           "name": "proposal_acceptance_proposal_snapshot_id_proposal_snapshot_id_fk",
           "tableFrom": "proposal_acceptance",
           "tableTo": "proposal_snapshot",
-          "columnsFrom": ["proposal_snapshot_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "proposal_snapshot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2375,9 +3011,26 @@
           "name": "proposal_acceptance_public_link_id_proposal_public_link_id_fk",
           "tableFrom": "proposal_acceptance",
           "tableTo": "proposal_public_link",
-          "columnsFrom": ["public_link_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "public_link_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "proposal_acceptance_organization_id_organization_id_fk": {
+          "name": "proposal_acceptance_organization_id_organization_id_fk",
+          "tableFrom": "proposal_acceptance",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -2488,8 +3141,12 @@
           "name": "proposal_draft_organization_id_organization_id_fk",
           "tableFrom": "proposal_draft",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2497,8 +3154,12 @@
           "name": "proposal_draft_created_by_user_id_user_id_fk",
           "tableFrom": "proposal_draft",
           "tableTo": "user",
-          "columnsFrom": ["created_by_user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2528,6 +3189,12 @@
         },
         "public_link_id": {
           "name": "public_link_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organization_id": {
+          "name": "organization_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
@@ -2583,6 +3250,21 @@
           "method": "btree",
           "with": {}
         },
+        "proposal_event_organization_id_idx": {
+          "name": "proposal_event_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "proposal_event_type_idx": {
           "name": "proposal_event_type_idx",
           "columns": [
@@ -2604,8 +3286,12 @@
           "name": "proposal_event_proposal_snapshot_id_proposal_snapshot_id_fk",
           "tableFrom": "proposal_event",
           "tableTo": "proposal_snapshot",
-          "columnsFrom": ["proposal_snapshot_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "proposal_snapshot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2613,9 +3299,26 @@
           "name": "proposal_event_public_link_id_proposal_public_link_id_fk",
           "tableFrom": "proposal_event",
           "tableTo": "proposal_public_link",
-          "columnsFrom": ["public_link_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "public_link_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "proposal_event_organization_id_organization_id_fk": {
+          "name": "proposal_event_organization_id_organization_id_fk",
+          "tableFrom": "proposal_event",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -2724,8 +3427,12 @@
           "name": "proposal_public_link_proposal_snapshot_id_proposal_snapshot_id_fk",
           "tableFrom": "proposal_public_link",
           "tableTo": "proposal_snapshot",
-          "columnsFrom": ["proposal_snapshot_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "proposal_snapshot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2733,8 +3440,12 @@
           "name": "proposal_public_link_organization_id_organization_id_fk",
           "tableFrom": "proposal_public_link",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2744,7 +3455,9 @@
         "proposal_public_link_token_unique": {
           "name": "proposal_public_link_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -2855,8 +3568,12 @@
           "name": "proposal_snapshot_proposal_draft_id_proposal_draft_id_fk",
           "tableFrom": "proposal_snapshot",
           "tableTo": "proposal_draft",
-          "columnsFrom": ["proposal_draft_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "proposal_draft_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2864,8 +3581,12 @@
           "name": "proposal_snapshot_organization_id_organization_id_fk",
           "tableFrom": "proposal_snapshot",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2873,8 +3594,12 @@
           "name": "proposal_snapshot_created_by_user_id_user_id_fk",
           "tableFrom": "proposal_snapshot",
           "tableTo": "user",
-          "columnsFrom": ["created_by_user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2989,8 +3714,12 @@
           "name": "proposal_version_proposal_id_proposal_id_fk",
           "tableFrom": "proposal_version",
           "tableTo": "proposal",
-          "columnsFrom": ["proposal_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "proposal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2998,8 +3727,12 @@
           "name": "proposal_version_organization_id_organization_id_fk",
           "tableFrom": "proposal_version",
           "tableTo": "organization",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3007,8 +3740,12 @@
           "name": "proposal_version_created_by_id_user_id_fk",
           "tableFrom": "proposal_version",
           "tableTo": "user",
-          "columnsFrom": ["created_by_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3101,8 +3838,12 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3110,8 +3851,12 @@
           "name": "session_active_organization_id_organization_id_fk",
           "tableFrom": "session",
           "tableTo": "organization",
-          "columnsFrom": ["active_organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "active_organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3121,7 +3866,9 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -3184,7 +3931,9 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
@@ -3259,10 +4008,29 @@
     }
   },
   "enums": {
+    "public.deal_stage": {
+      "name": "deal_stage",
+      "schema": "public",
+      "values": [
+        "lead",
+        "discovery",
+        "proposal_sent",
+        "negotiation",
+        "closed_won",
+        "closed_lost"
+      ]
+    },
     "public.proposal_status": {
       "name": "proposal_status",
       "schema": "public",
-      "values": ["draft", "sent", "viewed", "accepted", "declined", "archived"]
+      "values": [
+        "draft",
+        "sent",
+        "viewed",
+        "accepted",
+        "declined",
+        "archived"
+      ]
     }
   },
   "schemas": {},

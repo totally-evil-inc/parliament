@@ -1,20 +1,11 @@
 import { relations, sql } from "drizzle-orm"
-import {
-  index,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-} from "drizzle-orm/pg-core"
+import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { organization } from "./organization"
 
 export const company = pgTable(
   "company",
   {
-    id: uuid("id")
-      .default(sql`uuidv7()`)
-      .primaryKey()
-      .notNull(),
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),

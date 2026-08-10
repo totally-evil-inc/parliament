@@ -31,10 +31,7 @@ export const proposalStatusEnum = pgEnum("proposal_status", [
 export const proposal = pgTable(
   "proposal",
   {
-    id: uuid("id")
-      .default(sql`uuidv7()`)
-      .primaryKey()
-      .notNull(),
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
@@ -76,10 +73,7 @@ export const proposal = pgTable(
 export const proposalVersion = pgTable(
   "proposal_version",
   {
-    id: uuid("id")
-      .default(sql`uuidv7()`)
-      .primaryKey()
-      .notNull(),
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     proposalId: uuid("proposal_id")
       .notNull()
       .references(() => proposal.id, { onDelete: "cascade" }),
@@ -191,10 +185,9 @@ export const proposalAcceptance = pgTable(
     publicLinkId: uuid("public_link_id")
       .notNull()
       .references(() => proposalPublicLink.id),
-    organizationId: uuid("organization_id").references(
-      () => organization.id,
-      { onDelete: "cascade" }
-    ),
+    organizationId: uuid("organization_id").references(() => organization.id, {
+      onDelete: "cascade",
+    }),
     signerName: text("signer_name").notNull(),
     signerEmail: text("signer_email").notNull(),
     signatureText: text("signature_text"),
@@ -222,10 +215,9 @@ export const proposalEvent = pgTable(
     publicLinkId: uuid("public_link_id").references(
       () => proposalPublicLink.id
     ),
-    organizationId: uuid("organization_id").references(
-      () => organization.id,
-      { onDelete: "cascade" }
-    ),
+    organizationId: uuid("organization_id").references(() => organization.id, {
+      onDelete: "cascade",
+    }),
     eventType: text("event_type").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     metadata: jsonb("metadata"),
