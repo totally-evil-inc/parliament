@@ -15,7 +15,7 @@ import type React from "react"
 
 export type WorkspaceRouteNavItem = {
   label: string
-  to: "/" | "/integrations" | "/proposals" | "/invoices" | "/settings"
+  to: "/" | "/integrations" | "/proposals" | "/invoices" | "/settings" | "/clients/deals"
   icon: React.ComponentType<{ className?: string }>
   badge?: number
 }
@@ -43,9 +43,7 @@ export const workspaceConfig = {
   primaryNav: [
     { icon: IconHouse, label: "Home", to: "/" },
     { icon: IconInbox, label: "Inbox", badge: 4 },
-    { icon: IconBell, label: "Activity" },
-    { icon: IconLayers, label: "Projects" },
-    { icon: IconUsers, label: "People" },
+    { icon: IconLayers, label: "Deals Pipeline", to: "/clients/deals" },
     { icon: IconFile, label: "Proposals", to: "/proposals" },
     { icon: IconMoneyBill, label: "Invoices", to: "/invoices" },
     { icon: IconConnect, label: "Integrations", to: "/integrations" },
