@@ -38,6 +38,35 @@ export const integrationCategories = [
 
 export const DEFAULT_INTEGRATIONS: Array<Integration> = [
   {
+    id: "cal",
+    providerId: "cal",
+    title: "Cal.com Scheduling",
+    description:
+      "Automated booking webhooks and discovery call stage advancement.",
+    longDescription:
+      "Connect Cal.com to sync discovery call bookings directly with your deal pipeline. Automatically advances deals from Lead to Discovery when meetings are booked and handles cancellation rollbacks.",
+    url: "https://cal.com",
+    category: "productivity",
+    status: "available",
+    features: [
+      {
+        label: "Automated Deal Advancement",
+        description:
+          "Automatically advances deal stage from Lead to Discovery when a customer books a call.",
+      },
+      {
+        label: "Cancellation Rollbacks",
+        description:
+          "Rolls back deal stage from Discovery to Lead when a scheduled booking is cancelled.",
+      },
+    ],
+    actions: [
+      "cal_process_webhook",
+      "cal_booking_created",
+      "cal_booking_cancelled",
+    ],
+  },
+  {
     id: "gmail",
     providerId: "gmail",
     title: "Gmail & Email Operations",
