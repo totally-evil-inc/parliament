@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { stripHtml } from "./text"
 
 const idSchema = z.string().trim().min(1)
 const dateOnlySchema = z
@@ -369,6 +370,11 @@ export const documentAssetSchema = z
   })
   .strict()
 
+const cleanTitleSchema = z.preprocess(
+  (val) => (typeof val === "string" ? stripHtml(val) : val),
+  z.string()
+)
+
 export const proposalDraftSchema = z
   .object({
     id: idSchema,
@@ -381,7 +387,7 @@ export const proposalDraftSchema = z
     template: documentTemplateSchema,
     data: z
       .object({
-        title: z.string(),
+        title: cleanTitleSchema,
         issueDate: dateOnlySchema,
         validUntil: dateOnlySchema.optional(),
         seller: partySchema,
@@ -432,7 +438,7 @@ export const invoiceDraftSchema = z
     template: documentTemplateSchema,
     data: z
       .object({
-        title: z.string(),
+        title: cleanTitleSchema,
         invoiceNumber: z.string(),
         issueDate: dateOnlySchema,
         dueDate: dateOnlySchema,

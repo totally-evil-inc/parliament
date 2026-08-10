@@ -43,7 +43,10 @@ export function MagicLinkEmail({ url, email }: MagicLinkEmailProps) {
           </Text>
           <Section style={divider} />
           <Text style={footer}>
-            Parliament Inc. • Secure Passwordless Auth
+            Parliament Inc. • Secure Passwordless Auth • Need help?{" "}
+            <Link style={footerLink} href="mailto:support@parliament.dev">
+              Contact Support
+            </Link>
           </Text>
         </Container>
       </Body>
@@ -141,4 +144,9 @@ const footer = {
   fontSize: "12px",
   textAlign: "center" as const,
   margin: 0,
+}
+
+const footerLink = {
+  color: "#9ca3af",
+  textDecoration: "underline",
 }

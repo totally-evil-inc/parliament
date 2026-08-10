@@ -9,8 +9,9 @@ function richText(node: RichTextNode): string {
     .join(node.type === "paragraph" ? " " : "\n")
 }
 
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, "")
+export function stripHtml(html: string): string {
+  if (!html) return ""
+  return html.replace(/<[^>]*>/g, "").trim()
 }
 
 function blockText(

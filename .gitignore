@@ -35,3 +35,4 @@ ideation
 # Misc
 .DS_Store
 *.pem
+.agents/

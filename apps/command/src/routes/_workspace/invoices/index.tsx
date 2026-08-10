@@ -39,6 +39,7 @@ import type { DateRange } from "react-day-picker"
 import { invoiceDraftsQuery } from "@/api/invoices"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { PageHeader } from "@/components/page-header"
+import { buildPublicLink } from "@/lib/public-links"
 import type {
   InvoiceDraftListItem,
   PersistedInvoiceDraft,
@@ -549,7 +550,10 @@ function InvoicesRoute() {
                                   <DropdownMenuItem
                                     render={
                                       <a
-                                        href={`${window.location.origin}/invoice/${invoice.publicToken}`}
+                                        href={buildPublicLink(
+                                          "invoice",
+                                          invoice.publicToken
+                                        )}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="cursor-pointer text-xs"

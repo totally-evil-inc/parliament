@@ -38,6 +38,7 @@ import { proposalDraftsQuery } from "@/api/proposals"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { PageHeader } from "@/components/page-header"
 import { useProposalsFilter } from "@/hooks/use-proposals-filter"
+import { buildPublicLink } from "@/lib/public-links"
 import type {
   PersistedProposalDraft,
   ProposalDraftListItem,
@@ -527,12 +528,13 @@ function ProposalsRoute() {
                               {proposal.publicToken && (
                                 <DropdownMenuItem
                                   render={
-                                    <Link
-                                      to="/proposal/$publicToken"
-                                      params={{
-                                        publicToken: proposal.publicToken,
-                                      }}
+                                    <a
+                                      href={buildPublicLink(
+                                        "proposal",
+                                        proposal.publicToken!
+                                      )}
                                       target="_blank"
+                                      rel="noreferrer"
                                       className="cursor-pointer text-xs"
                                     />
                                   }
@@ -544,7 +546,10 @@ function ProposalsRoute() {
                                 <DropdownMenuItem
                                   className="cursor-pointer text-xs"
                                   onClick={() => {
-                                    const shareUrl = `${window.location.origin}/proposal/${proposal.publicToken}`
+                                    const shareUrl = buildPublicLink(
+                                      "proposal",
+                                      proposal.publicToken!
+                                    )
                                     navigator.clipboard.writeText(shareUrl)
                                   }}
                                 >

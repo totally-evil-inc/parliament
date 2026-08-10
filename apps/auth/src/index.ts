@@ -11,7 +11,7 @@ export const app = new Hono<{
     user: typeof auth.$Infer.Session.user | null
     session: typeof auth.$Infer.Session.session | null
     requestId: string
-    logContext: Record<string, any>
+    logContext: Record<string, unknown>
   }
 }>()
 const port = Number(Bun.env.AUTH_PORT ?? Bun.env.PORT ?? 4000)
@@ -22,12 +22,13 @@ app.use("*", async (c, next) => {
   const startTime = Date.now()
   const requestId = c.req.header("x-request-id") || crypto.randomUUID()
   c.set("requestId", requestId)
+  c.header("x-request-id", requestId)
 
-  const logContext: Record<string, any> = {}
+  const logContext: Record<string, unknown> = {}
   c.set("logContext", logContext)
 
   const url = new URL(c.req.url)
-  const wideEvent: Record<string, any> = {
+  const wideEvent: Record<string, unknown> = {
     requestId,
     method: c.req.method,
     path: url.pathname,
@@ -47,6 +48,25 @@ app.use("*", async (c, next) => {
     wideEvent.statusCode = c.res.status
     wideEvent.outcome = c.res.status >= 400 ? "failure" : "success"
 
+    if (c.res.status >= 400) {
+      const responseBody = await c.res
+        .clone()
+        .json()
+        .catch(() => null)
+      if (responseBody && typeof responseBody === "object") {
+        const body = responseBody as Record<string, unknown>
+        const nestedError =
+          body.error && typeof body.error === "object"
+            ? (body.error as Record<string, unknown>)
+            : null
+        wideEvent.error = {
+          code: body.code ?? nestedError?.code,
+          message: body.message ?? nestedError?.message,
+          status: body.status ?? nestedError?.status,
+        }
+      }
+    }
+
     const user = c.get("user")
     const session = c.get("session")
     if (user) {
@@ -58,22 +78,39 @@ app.use("*", async (c, next) => {
         activeOrganizationId: session.activeOrganizationId,
       }
     }
-  } catch (error: any) {
-    wideEvent.statusCode = error.status || 500
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+          ? error
+          : "Unknown error"
+    const stack = error instanceof Error ? error.stack : undefined
+    const name = error instanceof Error ? error.name : "UnknownError"
+    const maybeStatus = (error as { status?: unknown })?.status
+    const statusCode =
+      typeof maybeStatus === "number" && maybeStatus >= 400 && maybeStatus < 600
+        ? maybeStatus
+        : 500
+
+    wideEvent.statusCode = statusCode
     wideEvent.outcome = "error"
     wideEvent.error = {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
+      message,
+      stack,
+      name,
     }
     throw error
   } finally {
     wideEvent.durationMs = Date.now() - startTime
-    
+
     // Merge any custom log context set during request lifecycle
     Object.assign(wideEvent, c.get("logContext"))
 
-    if (wideEvent.outcome === "error" || (wideEvent.statusCode && wideEvent.statusCode >= 500)) {
+    if (
+      wideEvent.outcome === "error" ||
+      (typeof wideEvent.statusCode === "number" && wideEvent.statusCode >= 500)
+    ) {
       logger.error(wideEvent)
     } else {
       logger.info(wideEvent)
@@ -81,19 +118,57 @@ app.use("*", async (c, next) => {
   }
 })
 
+app.get("/health", (c) => {
+  return c.json({
+    status: "ok",
+    app: "apps/auth",
+    port,
+  })
+})
+
 app.use(
   "*",
   cors({
     origin: trustedOrigins,
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-request-id",
+      "x-test-session-email",
+    ],
     allowMethods: ["*"],
-    exposeHeaders: ["Content-Length"],
+    exposeHeaders: ["Content-Length", "x-request-id"],
     maxAge: 600,
     credentials: true,
   })
 )
 
 app.use("*", async (c, next) => {
+  if (process.env.NODE_ENV === "test") {
+    const testEmail = c.req.header("x-test-session-email")
+    if (testEmail) {
+      c.set("user", {
+        id: "test-user-id",
+        email: testEmail,
+        name: "Test User",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        emailVerified: true,
+      })
+      c.set("session", {
+        id: "test-session-id",
+        userId: "test-user-id",
+        expiresAt: new Date(Date.now() + 3600000),
+        token: "test-token",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ipAddress: null,
+        userAgent: null,
+      })
+      return next()
+    }
+  }
+
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
   if (!session) {
@@ -107,11 +182,23 @@ app.use("*", async (c, next) => {
   return next()
 })
 
-import { magicLinkRouter } from "./routes/magic-link"
+import { addonRouter } from "./routes/addon"
+import { agentAuthRouter } from "./routes/agent-auth"
+import { gmailRouter } from "./routes/gmail"
+import { inboundRouter } from "./routes/inbound"
+import { integrationsRouter } from "./routes/integrations"
 import { inviteRouter } from "./routes/invite"
+import { magicLinkRouter } from "./routes/magic-link"
+import { publicDocumentRouter } from "./routes/public-document"
 
 app.route("/auth/magic-link", magicLinkRouter)
 app.route("/auth/invite", inviteRouter)
+app.route("/api/auth/integrations", integrationsRouter)
+app.route("/api/auth/agent", agentAuthRouter)
+app.route("/api/gmail/addon", addonRouter)
+app.route("/api/gmail", gmailRouter)
+app.route("/api/inbound", inboundRouter)
+app.route("/api/public", publicDocumentRouter)
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw)

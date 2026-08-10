@@ -1,4 +1,3 @@
-import { cn } from "@workspace/ui/lib/utils"
 import {
   Sidebar,
   SidebarContent,
@@ -8,6 +7,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@workspace/ui/components/sidebar"
+import { cn } from "@workspace/ui/lib/utils"
 import type {
   WorkspaceNavItem,
   WorkspaceUserProfile,

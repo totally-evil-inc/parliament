@@ -10,11 +10,17 @@ import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import appCss from "@workspace/ui/globals.css?url"
 import katexCss from "katex/dist/katex.min.css?url"
 import { ConfirmDialogProvider } from "@/components/confirm-dialog-provider"
+import {
+  DefaultErrorComponent,
+  DefaultNotFound,
+} from "@/components/router-fallbacks"
 import { ThemeProvider } from "@/components/theme-provider"
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
+  notFoundComponent: DefaultNotFound,
+  errorComponent: DefaultErrorComponent,
   head: () => ({
     meta: [
       {

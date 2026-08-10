@@ -8,6 +8,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import type { NodeViewProps } from "@tiptap/react"
 import { NodeViewWrapper } from "@tiptap/react"
 import type { PartySnapshot } from "@workspace/document/schema"
+import { stripHtml } from "@workspace/document/text"
 import { Button } from "@workspace/ui/components/button"
 import { Calendar } from "@workspace/ui/components/calendar"
 import {
@@ -22,7 +23,11 @@ import {
   useDocumentDraftCommands,
   useDocumentEditorHost,
 } from "../runtime/react"
-import { CanvasRichTextArea, CanvasTextField } from "./canvas-fields"
+import {
+  CanvasRichTextArea,
+  CanvasTextArea,
+  CanvasTextField,
+} from "./canvas-fields"
 
 const dateFormatter = new Intl.DateTimeFormat("en-KE", {
   day: "numeric",
@@ -226,15 +231,16 @@ function TitleField({
   onChange: (value: string) => void
   kind: "proposal" | "invoice"
 }) {
+  const cleanValue = stripHtml(value)
   return (
-    <CanvasRichTextArea
+    <CanvasTextArea
       aria-label={kind === "proposal" ? "Proposal title" : "Invoice title"}
       className="min-h-12 font-bold text-4xl leading-[1.08] tracking-tight [font-family:var(--document-heading-font-family)]"
       placeholder={
         kind === "proposal" ? "Proposal title..." : "Invoice title..."
       }
-      value={value}
-      onValueChange={onChange}
+      value={cleanValue}
+      onValueChange={(val) => onChange(stripHtml(val))}
     />
   )
 }

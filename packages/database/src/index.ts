@@ -13,7 +13,10 @@ class DrizzlePinoLogger implements DrizzleLogger {
 
 const db = drizzle({
   connection: {
-    url: process.env.DATABASE_URL!,
+    url:
+      process.env.DATABASE_URL ||
+      "postgres://postgres:postgres@localhost:5432/parliament",
+    max: 10,
   },
   schema,
   logger: new DrizzlePinoLogger(),
@@ -28,7 +31,9 @@ export {
   inArray,
   isNotNull,
   isNull,
+  ne,
   or,
   sql,
 } from "drizzle-orm"
+export * from "./schema"
 export { db, schema }

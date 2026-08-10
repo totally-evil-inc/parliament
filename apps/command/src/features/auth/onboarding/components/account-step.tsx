@@ -29,10 +29,7 @@ export function AccountStep({
         Use a secure magic link, or continue with a social provider.
       </p>
 
-      <OnboardingMagicLinkForm
-        pending={pending}
-        onError={onError}
-      />
+      <OnboardingMagicLinkForm pending={pending} onError={onError} />
 
       <AuthSeparator />
       <OnboardingOAuthButtons onError={onError} />
@@ -76,7 +73,10 @@ function OnboardingMagicLinkForm({
           },
           body: JSON.stringify({
             email,
-            callbackURL: window.location.origin + "/auth/onboarding/?step=account",
+            callbackURL: new URL(
+              "/auth/onboarding/?step=account",
+              window.location.origin
+            ).toString(),
           }),
         })
 
@@ -149,8 +149,10 @@ function OnboardingOAuthButtons({
   onError: (message: string | null) => void
 }) {
   const callbackURL = useMemo(() => {
-    if (typeof window === "undefined") return "/auth/onboarding/?step=account"
-    return `${window.location.origin}/auth/onboarding/?step=account`
+    return new URL(
+      "/auth/onboarding/?step=account",
+      window.location.origin
+    ).toString()
   }, [])
 
   const signInWithProvider = async (provider: "google" | "apple") => {

@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm"
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -73,6 +74,7 @@ export const invoicePublicLink = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     token: text("token").notNull().unique(),
     status: text("status").default("active").notNull(),
+    recipientEmail: text("recipient_email"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     revokedAt: timestamp("revoked_at"),
     expiresAt: timestamp("expires_at"),
@@ -80,6 +82,36 @@ export const invoicePublicLink = pgTable(
   (table) => [
     index("invoice_public_link_snapshot_id_idx").on(table.invoiceSnapshotId),
     index("invoice_public_link_organization_id_idx").on(table.organizationId),
+  ]
+)
+
+export const invoiceAcceptance = pgTable(
+  "invoice_acceptance",
+  {
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
+    invoiceSnapshotId: uuid("invoice_snapshot_id")
+      .notNull()
+      .references(() => invoiceSnapshot.id, { onDelete: "cascade" }),
+    publicLinkId: uuid("public_link_id")
+      .notNull()
+      .references(() => invoicePublicLink.id, { onDelete: "cascade" }),
+    organizationId: uuid("organization_id").references(() => organization.id, {
+      onDelete: "cascade",
+    }),
+    signerName: text("signer_name").notNull(),
+    signerEmail: text("signer_email").notNull(),
+    signatureText: text("signature_text"),
+    signatureImage: text("signature_image"),
+    otpVerified: boolean("otp_verified").notNull().default(false),
+    agreedTerms: boolean("agreed_terms").notNull(),
+    acceptedAt: timestamp("accepted_at").defaultNow().notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+  },
+  (table) => [
+    index("invoice_acceptance_snapshot_id_idx").on(table.invoiceSnapshotId),
+    index("invoice_acceptance_public_link_id_idx").on(table.publicLinkId),
+    index("invoice_acceptance_organization_id_idx").on(table.organizationId),
   ]
 )
 
@@ -125,6 +157,7 @@ export const invoiceSnapshotRelations = relations(
       references: [invoiceDraft.id],
     }),
     publicLinks: many(invoicePublicLink),
+    acceptances: many(invoiceAcceptance),
     events: many(invoiceEvent),
   })
 )
@@ -136,6 +169,7 @@ export const invoicePublicLinkRelations = relations(
       fields: [invoicePublicLink.invoiceSnapshotId],
       references: [invoiceSnapshot.id],
     }),
+    acceptances: many(invoiceAcceptance),
     events: many(invoiceEvent),
   })
 )

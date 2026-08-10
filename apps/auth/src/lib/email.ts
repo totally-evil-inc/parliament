@@ -20,13 +20,56 @@ export async function renderEmail(
   return data.html
 }
 
-let transporter: any = null
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+let transporter: nodemailer.Transporter | null = null
+let transporterConfig: string | null = null
+
+function getTransporter({
+  host,
+  port,
+  user,
+  pass,
+  secure,
+}: {
+  host: string
+  port: number
+  user: string
+  pass: string
+  secure: boolean
+}): nodemailer.Transporter {
+  const configKey = JSON.stringify({ host, port, user, pass, secure })
+  if (!transporter || transporterConfig !== configKey) {
+    // Rebuild the transporter whenever its configuration changes so dynamic
+    // (e.g. hot-reloaded) SMTP settings never route mail through a stale pool.
+    transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      requireTLS: !secure && port !== 25,
+      auth: {
+        user,
+        pass,
+      },
+    })
+    transporterConfig = configKey
+  }
+  return transporter
+}
 
 export async function sendEmail({
   to,
   subject,
   html,
-}: { to: string; subject: string; html: string }) {
+}: {
+  to: string
+  subject: string
+  html: string
+}) {
+  if (!to || !EMAIL_REGEX.test(to)) {
+    throw new Error(`Invalid email recipient address: ${to}`)
+  }
+
   const apiKey = Bun.env.RESEND_API_KEY
   const smtpHost = Bun.env.SMTP_HOST
   const smtpPort = Bun.env.SMTP_PORT
@@ -36,20 +79,18 @@ export async function sendEmail({
 
   // 1. If SMTP settings are provided, use SMTP (Gmail, etc.)
   if (smtpHost && smtpUser && smtpPass) {
-    if (!transporter) {
-      transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: Number(smtpPort || 465),
-        secure: Number(smtpPort || 465) === 465,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      })
-    }
+    const rawPort = Number.parseInt(smtpPort || "465", 10)
+    const port = Number.isNaN(rawPort) ? 465 : rawPort
+    const smtp = getTransporter({
+      host: smtpHost,
+      port,
+      user: smtpUser,
+      pass: smtpPass,
+      secure: port === 465,
+    })
 
     try {
-      await transporter.sendMail({
+      await smtp.sendMail({
         from,
         to,
         subject,

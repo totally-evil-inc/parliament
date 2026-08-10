@@ -14,6 +14,7 @@ import { calculateProposalPricing } from "@workspace/document/calculate"
 import { finalizeProposalDraft as buildSnapshotPayload } from "@workspace/document/finalize"
 import { createProposalDraftFromBlueprint } from "@workspace/document/proposal"
 import { safeParseProposalDraft } from "@workspace/document/schema"
+import { stripHtml } from "@workspace/document/text"
 import { z } from "zod"
 import type { JsonValue } from "./api-client"
 import { requireAuth } from "./auth"
@@ -31,6 +32,7 @@ const saveProposalDraftSchema = z.object({
 const finalizeProposalDraftSchema = z.object({
   id: z.string().uuid(),
   revision: z.number().int().nonnegative(),
+  recipientEmail: z.string().trim().email().optional(),
 })
 const publicTokenSchema = z.object({ token: z.string().min(16) })
 const acceptPublicProposalSchema = publicTokenSchema.extend({
@@ -212,7 +214,7 @@ export const listProposalDrafts = createServerFn({ method: "GET" })
 
 export const getProposalDraft = createServerFn({ method: "GET" })
   .middleware([requireAuth])
-  .inputValidator(proposalIdSchema)
+  .validator(proposalIdSchema)
   .handler(async ({ context, data }) => {
     const organizationId = await requireActiveOrganization(context.auth)
     const draft = await selectDraft(data.id, organizationId)
@@ -222,7 +224,7 @@ export const getProposalDraft = createServerFn({ method: "GET" })
 
 export const createProposalDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(createProposalDraftSchema)
+  .validator(createProposalDraftSchema)
   .handler(async ({ context, data }) => {
     const organizationId = await requireActiveOrganization(context.auth)
     const userId = getUserId(context.auth)
@@ -254,7 +256,7 @@ export const createProposalDraft = createServerFn({ method: "POST" })
 
 export const saveProposalDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(saveProposalDraftSchema)
+  .validator(saveProposalDraftSchema)
   .handler(async ({ context, data }): Promise<SaveProposalDraftResult> => {
     const organizationId = await requireActiveOrganization(context.auth)
     const current = await selectDraft(data.id, organizationId)
@@ -276,7 +278,7 @@ export const saveProposalDraft = createServerFn({ method: "POST" })
     const [row] = await db
       .update(schema.proposalDraft)
       .set({
-        title: document.data.title || "Untitled proposal",
+        title: stripHtml(document.data.title) || "Untitled proposal",
         document,
         revision: nextRevision,
         updatedAt: new Date(),
@@ -295,7 +297,7 @@ export const saveProposalDraft = createServerFn({ method: "POST" })
 
 export const finalizeProposalDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(finalizeProposalDraftSchema)
+  .validator(finalizeProposalDraftSchema)
   .handler(async ({ context, data }): Promise<FinalizeProposalDraftResult> => {
     const organizationId = await requireActiveOrganization(context.auth)
     const userId = getUserId(context.auth)
@@ -325,11 +327,18 @@ export const finalizeProposalDraft = createServerFn({ method: "POST" })
         .returning()
       if (!snapshot) throw new Error("Failed to create proposal snapshot")
 
+      const parsedDoc = safeParseProposalDraft(current.document)
+      const recipientEmail =
+        data.recipientEmail ||
+        (parsedDoc.success ? parsedDoc.data.data.customer?.email : null) ||
+        null
+
       await tx.insert(schema.proposalPublicLink).values({
         proposalSnapshotId: snapshot.id,
         organizationId,
         token,
         status: "active",
+        recipientEmail,
       })
 
       const [draft] = await tx
@@ -346,7 +355,7 @@ export const finalizeProposalDraft = createServerFn({ method: "POST" })
   })
 
 export const getPublicProposal = createServerFn({ method: "GET" })
-  .inputValidator(publicTokenSchema)
+  .validator(publicTokenSchema)
   .handler(async ({ data }): Promise<PublicProposalResult> => {
     const link = await findPublicLink(data.token)
     if (!link) return { status: "not_found" }
@@ -375,7 +384,7 @@ export const getPublicProposal = createServerFn({ method: "GET" })
   })
 
 export const acceptPublicProposal = createServerFn({ method: "POST" })
-  .inputValidator(acceptPublicProposalSchema)
+  .validator(acceptPublicProposalSchema)
   .handler(async ({ data }) => {
     const link = await findPublicLink(data.token)
     if (!link) throw new Error("Proposal link not found")
@@ -520,7 +529,10 @@ function serializeAcceptance(
     signerName: row.signerName,
     signerEmail: row.signerEmail,
     signatureText: row.signatureText,
-    acceptedAt: row.acceptedAt.toISOString(),
+    acceptedAt:
+      row.acceptedAt instanceof Date
+        ? row.acceptedAt.toISOString()
+        : String(row.acceptedAt),
   }
 }
 
@@ -534,7 +546,7 @@ function toJsonValue(value: unknown): JsonValue {
 
 export const deleteProposalDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const organizationId = await requireActiveOrganization(context.auth)
 

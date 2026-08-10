@@ -6,7 +6,33 @@ import {
   readDraft,
   writeDraft,
 } from "@/features/auth/onboarding/onboarding-draft"
-import { authClient } from "@/lib/auth-client"
+import { authClient, getLastAuthRequestId } from "@/lib/auth-client"
+
+function describeOrganizationError(error: unknown): string {
+  const details = error as {
+    message?: unknown
+    code?: unknown
+    status?: unknown
+  }
+  const message =
+    typeof details?.message === "string" && details.message.trim()
+      ? details.message.trim()
+      : "The authentication service did not return a useful error."
+  const status =
+    typeof details?.status === "number" || typeof details?.status === "string"
+      ? `HTTP ${details.status}`
+      : null
+  const code = typeof details?.code === "string" ? details.code : null
+  const requestId = getLastAuthRequestId()
+  const context = [status, code].filter(Boolean).join(" · ")
+  const reference = requestId ? ` Reference: ${requestId}.` : ""
+
+  if (/failed to fetch|network|fetch/i.test(message)) {
+    return `The Auth service is unreachable. Confirm apps/auth is running on port 4000.${reference}`
+  }
+
+  return `Could not create the organization${context ? ` (${context})` : ""}: ${message}.${reference}`
+}
 
 export type OnboardingStep = (typeof ONBOARDING_STEP_IDS)[number]
 
@@ -57,9 +83,7 @@ export function useOnboardingFlow(step: OnboardingStep) {
       setPendingOrganization(false)
 
       if (error) {
-        const message =
-          error.message || "We could not create that organization yet."
-        setStatus(message)
+        setStatus(describeOrganizationError(error))
         goToStep("organization")
         return null
       }

@@ -45,6 +45,7 @@ function getForwardedHeaders(request: Request) {
 
   for (const name of [
     "cookie",
+    "x-request-id",
     "user-agent",
     "x-forwarded-for",
     "x-forwarded-host",

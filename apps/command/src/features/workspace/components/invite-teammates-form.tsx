@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form"
-import { useQueryClient, useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -11,7 +11,6 @@ import { cn } from "@workspace/ui/lib/utils"
 import { IconArrowBoldRight, IconCircleCheck, IconDeleteX } from "nucleo-glass"
 import type { ClipboardEvent, KeyboardEvent } from "react"
 import { useRef, useState } from "react"
-
 
 type Role = "admin" | "member"
 
@@ -94,12 +93,30 @@ export function InviteTeammatesForm({
       setServerError(null)
 
       try {
-        await Promise.all(
-          validChips.map((chip) =>
-            inviteMutation.mutateAsync({ email: chip.email, role: chip.role })
-          )
+        const results = await Promise.allSettled(
+          validChips.map(async (chip) => {
+            await inviteMutation.mutateAsync({
+              email: chip.email,
+              role: chip.role,
+            })
+            return chip.uid
+          })
         )
-        setChips([])
+
+        const successfulUids = results
+          .filter(
+            (r): r is PromiseFulfilledResult<number> => r.status === "fulfilled"
+          )
+          .map((r) => r.value)
+
+        setChips((prev) => prev.filter((c) => !successfulUids.includes(c.uid)))
+
+        const failedCount = results.filter(
+          (r) => r.status === "rejected"
+        ).length
+        if (failedCount > 0) {
+          throw new Error(`Failed to send ${failedCount} invitation(s).`)
+        }
         onSuccess?.()
       } catch (err: any) {
         setServerError(err.message || "Failed to send invitations.")

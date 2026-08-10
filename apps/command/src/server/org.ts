@@ -3,7 +3,7 @@ import { db, eq, schema } from "@workspace/database"
 import { z } from "zod"
 
 export const checkOrgSlug = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ slug: z.string().min(1) }))
+  .validator(z.object({ slug: z.string().min(1) }))
   .handler(async ({ data }) => {
     const rows = await db
       .select({ id: schema.organization.id })

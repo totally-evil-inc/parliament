@@ -14,6 +14,7 @@ import { calculateInvoicePricing } from "@workspace/document/calculate"
 import { finalizeInvoiceDraft as buildSnapshotPayload } from "@workspace/document/finalize"
 import { createInvoiceDraftFromBlueprint } from "@workspace/document/invoice"
 import { safeParseInvoiceDraft } from "@workspace/document/schema"
+import { stripHtml } from "@workspace/document/text"
 import { z } from "zod"
 import type { JsonValue } from "./api-client"
 import { requireAuth } from "./auth"
@@ -31,6 +32,7 @@ const saveInvoiceDraftSchema = z.object({
 const finalizeInvoiceDraftSchema = z.object({
   id: z.string().uuid(),
   revision: z.number().int().nonnegative(),
+  recipientEmail: z.string().trim().email().optional(),
 })
 const publicTokenSchema = z.object({ token: z.string().min(16) })
 
@@ -183,7 +185,7 @@ export const listInvoiceDrafts = createServerFn({ method: "GET" })
 
 export const getInvoiceDraft = createServerFn({ method: "GET" })
   .middleware([requireAuth])
-  .inputValidator(invoiceIdSchema)
+  .validator(invoiceIdSchema)
   .handler(async ({ context, data }) => {
     const organizationId = await requireActiveOrganization(context.auth)
     const draft = await selectDraft(data.id, organizationId)
@@ -193,7 +195,7 @@ export const getInvoiceDraft = createServerFn({ method: "GET" })
 
 export const createInvoiceDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(createInvoiceDraftSchema)
+  .validator(createInvoiceDraftSchema)
   .handler(async ({ context, data }) => {
     const organizationId = await requireActiveOrganization(context.auth)
     const userId = getUserId(context.auth)
@@ -225,7 +227,7 @@ export const createInvoiceDraft = createServerFn({ method: "POST" })
 
 export const saveInvoiceDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(saveInvoiceDraftSchema)
+  .validator(saveInvoiceDraftSchema)
   .handler(async ({ context, data }): Promise<SaveInvoiceDraftResult> => {
     const organizationId = await requireActiveOrganization(context.auth)
     const current = await selectDraft(data.id, organizationId)
@@ -247,7 +249,7 @@ export const saveInvoiceDraft = createServerFn({ method: "POST" })
     const [row] = await db
       .update(schema.invoiceDraft)
       .set({
-        title: document.data.title || "Untitled invoice",
+        title: stripHtml(document.data.title) || "Untitled invoice",
         document,
         revision: nextRevision,
         updatedAt: new Date(),
@@ -266,7 +268,7 @@ export const saveInvoiceDraft = createServerFn({ method: "POST" })
 
 export const finalizeInvoiceDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(finalizeInvoiceDraftSchema)
+  .validator(finalizeInvoiceDraftSchema)
   .handler(async ({ context, data }): Promise<FinalizeInvoiceDraftResult> => {
     const organizationId = await requireActiveOrganization(context.auth)
     const userId = getUserId(context.auth)
@@ -296,11 +298,18 @@ export const finalizeInvoiceDraft = createServerFn({ method: "POST" })
         .returning()
       if (!snapshot) throw new Error("Failed to create invoice snapshot")
 
+      const parsedDoc = safeParseInvoiceDraft(current.document)
+      const recipientEmail =
+        data.recipientEmail ||
+        (parsedDoc.success ? parsedDoc.data.data.customer?.email : null) ||
+        null
+
       await tx.insert(schema.invoicePublicLink).values({
         invoiceSnapshotId: snapshot.id,
         organizationId,
         token,
         status: "active",
+        recipientEmail,
       })
 
       const [draft] = await tx
@@ -317,7 +326,7 @@ export const finalizeInvoiceDraft = createServerFn({ method: "POST" })
   })
 
 export const getPublicInvoice = createServerFn({ method: "GET" })
-  .inputValidator(publicTokenSchema)
+  .validator(publicTokenSchema)
   .handler(async ({ data }): Promise<PublicInvoiceResult> => {
     const link = await findPublicLink(data.token)
     if (!link) return { status: "not_found" }
@@ -433,7 +442,7 @@ function toJsonValue(value: unknown): JsonValue {
 
 export const deleteInvoiceDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const organizationId = await requireActiveOrganization(context.auth)
 

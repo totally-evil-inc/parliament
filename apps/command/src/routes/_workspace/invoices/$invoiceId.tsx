@@ -1,3 +1,5 @@
+import { Share01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import {
   useMutation,
   useQueryClient,
@@ -29,7 +31,9 @@ import * as React from "react"
 import { invoiceDraftQuery } from "@/api/invoices"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { useTheme } from "@/components/theme-provider"
+import { SendDocumentDialog } from "@/features/integrations/components/send-document-dialog"
 import { createId } from "@/lib/create-id"
+import { buildPublicLink } from "@/lib/public-links"
 import type {
   FinalizeInvoiceDraftResult,
   PersistedInvoiceDraft,
@@ -137,7 +141,7 @@ function InvoiceEditorScreen({
   })
 
   const sendDraft = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (recipientEmail?: string) => {
       runtime.flush()
       const saved = await saveInvoiceDraft({
         data: {
@@ -154,6 +158,7 @@ function InvoiceEditorScreen({
         data: {
           id: savedResult.draft.id,
           revision: savedResult.draft.revision,
+          recipientEmail,
         },
       })
       return {
@@ -172,14 +177,20 @@ function InvoiceEditorScreen({
       store.commands.replace(parseInvoiceDraft(result.finalized.draft.document))
       setServerRevision(result.finalized.draft.revision)
       setStatus(result.finalized.draft.status)
-      setShareUrl(`${window.location.origin}/invoice/${result.finalized.token}`)
+      setShareUrl(buildPublicLink("invoice", result.finalized.token))
       setMessage("Sent")
       await queryClient.invalidateQueries({ queryKey: ["invoices"] })
     },
   })
 
+  const [sendDialogOpen, setSendDialogOpen] = React.useState(false)
+
   const handleAction = React.useCallback(
     (actionId: string) => {
+      if (actionId === "send") {
+        setSendDialogOpen(true)
+        return
+      }
       if (actionId !== "export") return
       runtime.flush()
       const draft = store.getSnapshot()
@@ -192,6 +203,25 @@ function InvoiceEditorScreen({
       )
     },
     [runtime, store]
+  )
+
+  const snapshot = store.getSnapshot()
+  const defaultClientEmail = snapshot.data?.customer?.email || ""
+  const invoiceTitle = snapshot.data?.title || "Untitled Invoice"
+
+  const handleFinalizeAndGetShareUrl = React.useCallback(
+    async (recipientEmail?: string): Promise<string> => {
+      const result = await sendDraft.mutateAsync(recipientEmail)
+      if (result.status === "sent" && result.finalized) {
+        const url = buildPublicLink("invoice", result.finalized.token)
+        setShareUrl(url)
+        return url
+      }
+      throw new Error(
+        "Unable to create invoice link. Finalize the document before sending it."
+      )
+    },
+    [sendDraft]
   )
 
   return (
@@ -222,13 +252,25 @@ function InvoiceEditorScreen({
           </Button>
           <Button
             type="button"
-            onClick={() => sendDraft.mutate()}
+            onClick={() => setSendDialogOpen(true)}
             disabled={saveDraft.isPending || sendDraft.isPending}
+            className="gap-1.5"
           >
+            <HugeiconsIcon icon={Share01Icon} className="h-4 w-4" />
             {sendDraft.isPending ? "Sending..." : "Send"}
           </Button>
         </div>
       </div>
+
+      <SendDocumentDialog
+        open={sendDialogOpen}
+        onOpenChange={setSendDialogOpen}
+        documentType="invoice"
+        documentTitle={invoiceTitle}
+        defaultRecipientEmail={defaultClientEmail}
+        shareUrl={shareUrl || undefined}
+        onFinalizeAndGetShareUrl={handleFinalizeAndGetShareUrl}
+      />
       <DocumentSidebarProvider defaultOpen={true}>
         <div
           className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden"

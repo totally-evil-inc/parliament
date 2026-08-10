@@ -18,7 +18,8 @@
     "./calculate": "./src/calculate.ts",
     "./finalize": "./src/finalize.ts",
     "./render": "./src/render.ts",
-    "./text": "./src/text.ts"
+    "./text": "./src/text.ts",
+    "./public-api": "./src/public-api.ts"
   },
   "dependencies": {
     "zod": "^3.25.76"

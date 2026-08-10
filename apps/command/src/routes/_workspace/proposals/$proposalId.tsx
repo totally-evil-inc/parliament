@@ -1,3 +1,5 @@
+import { Share01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import {
   useMutation,
   useQueryClient,
@@ -29,7 +31,9 @@ import * as React from "react"
 import { proposalDraftQuery } from "@/api/proposals"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { useTheme } from "@/components/theme-provider"
+import { SendDocumentDialog } from "@/features/integrations/components/send-document-dialog"
 import { createId } from "@/lib/create-id"
+import { buildPublicLink } from "@/lib/public-links"
 import type {
   FinalizeProposalDraftResult,
   PersistedProposalDraft,
@@ -137,7 +141,7 @@ function ProposalEditorScreen({
   })
 
   const sendDraft = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (recipientEmail?: string) => {
       runtime.flush()
       const saved = await saveProposalDraft({
         data: {
@@ -154,6 +158,7 @@ function ProposalEditorScreen({
         data: {
           id: savedResult.draft.id,
           revision: savedResult.draft.revision,
+          recipientEmail,
         },
       })
       return {
@@ -174,16 +179,20 @@ function ProposalEditorScreen({
       )
       setServerRevision(result.finalized.draft.revision)
       setStatus(result.finalized.draft.status)
-      setShareUrl(
-        `${window.location.origin}/proposal/${result.finalized.token}`
-      )
+      setShareUrl(buildPublicLink("proposal", result.finalized.token))
       setMessage("Sent")
       await queryClient.invalidateQueries({ queryKey: ["proposals"] })
     },
   })
 
+  const [sendDialogOpen, setSendDialogOpen] = React.useState(false)
+
   const handleAction = React.useCallback(
     (actionId: string) => {
+      if (actionId === "send") {
+        setSendDialogOpen(true)
+        return
+      }
       if (actionId !== "export") return
       runtime.flush()
       const draft = store.getSnapshot()
@@ -196,6 +205,25 @@ function ProposalEditorScreen({
       )
     },
     [runtime, store]
+  )
+
+  const snapshot = store.getSnapshot()
+  const defaultClientEmail = snapshot.data.customer?.email || ""
+  const proposalTitle = snapshot.data.title || "Untitled Proposal"
+
+  const handleFinalizeAndGetShareUrl = React.useCallback(
+    async (recipientEmail?: string): Promise<string> => {
+      const result = await sendDraft.mutateAsync(recipientEmail)
+      if (result.status === "sent" && result.finalized) {
+        const url = buildPublicLink("proposal", result.finalized.token)
+        setShareUrl(url)
+        return url
+      }
+      throw new Error(
+        "Unable to create proposal link. Finalize the document before sending it."
+      )
+    },
+    [sendDraft]
   )
 
   return (
@@ -226,13 +254,25 @@ function ProposalEditorScreen({
           </Button>
           <Button
             type="button"
-            onClick={() => sendDraft.mutate()}
+            onClick={() => setSendDialogOpen(true)}
             disabled={saveDraft.isPending || sendDraft.isPending}
+            className="gap-1.5"
           >
+            <HugeiconsIcon icon={Share01Icon} className="h-4 w-4" />
             {sendDraft.isPending ? "Sending..." : "Send"}
           </Button>
         </div>
       </div>
+
+      <SendDocumentDialog
+        open={sendDialogOpen}
+        onOpenChange={setSendDialogOpen}
+        documentType="proposal"
+        documentTitle={proposalTitle}
+        defaultRecipientEmail={defaultClientEmail}
+        shareUrl={shareUrl || undefined}
+        onFinalizeAndGetShareUrl={handleFinalizeAndGetShareUrl}
+      />
       <DocumentSidebarProvider defaultOpen={true}>
         <div
           className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden"
