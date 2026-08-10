@@ -9,14 +9,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import {
   Sheet,
+  SheetClose,
   SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from "@workspace/ui/components/sheet"
 import {
@@ -37,6 +40,7 @@ import * as React from "react"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { PageHeader } from "@/components/page-header"
 import { GmailActivityHeatmap } from "./components/gmail-activity-heatmap"
+import { IntegrationPreviewCarousel } from "./components/integration-preview-carousel"
 import type { Integration, IntegrationStatus } from "./data"
 import { integrationCategories } from "./data"
 import {
@@ -199,7 +203,7 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
     }
   }
 
-  let buttonText = `Connect ${integration.title}`
+  let buttonText = "Configure"
   if (comingSoon) {
     buttonText = "Coming Soon"
   } else if (connected) {
@@ -211,139 +215,259 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
   return (
     <SheetContent
       side="right"
+      showCloseButton={false}
       className="flex flex-col gap-0 p-0 sm:max-w-xl md:max-w-2xl"
     >
-      <SheetHeader className="space-y-4 border-b bg-muted/20 px-6 py-6">
-        <div className="flex items-center gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-border/80 bg-background shadow-xs">
-            <img
-              alt=""
-              src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(integration.url)}&sz=64`}
-              className="size-7 rounded-md"
-            />
-          </div>
-          <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <SheetTitle className="font-semibold text-xl tracking-tight">
-                {integration.title}
-              </SheetTitle>
-              <StatusBadge status={integration.status} />
-            </div>
-            <span className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-              {integration.category.replace("-", " ")}
-            </span>
-          </div>
+      {/* Top Header Control & Navigation Bar */}
+      <div className="flex items-center justify-between border-b bg-background px-6 py-4">
+        <div className="flex items-center gap-1.5 font-medium text-xs">
+          <span className="text-muted-foreground">Integrations</span>
+          <span className="text-muted-foreground/60">/</span>
+          <span className="font-semibold text-foreground tracking-tight">
+            {integration.title}
+          </span>
         </div>
-        <SheetDescription className="pt-1 font-normal text-muted-foreground/90 text-sm leading-relaxed">
-          {integration.longDescription}
-        </SheetDescription>
-      </SheetHeader>
+
+        <div className="flex items-center gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="size-8 rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                />
+              }
+            >
+              <IconDotsVertical className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={() =>
+                  navigator.clipboard.writeText(window.location.href)
+                }
+              >
+                Copy Link
+              </DropdownMenuItem>
+              {integration.documentationUrl && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.open(integration.documentationUrl, "_blank")
+                  }
+                >
+                  View Documentation
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {integration.documentationUrl && (
+            <a
+              href={integration.documentationUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title="Open documentation"
+            >
+              <IconExternalLink className="size-4" />
+            </a>
+          )}
+
+          <SheetClose
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="size-8 rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              />
+            }
+          >
+            <IconClose className="size-4" />
+            <span className="sr-only">Close</span>
+          </SheetClose>
+        </div>
+      </div>
 
       <ScrollArea className="flex-1 overflow-y-auto">
-        <div className="flex flex-col gap-8 p-6 md:p-8">
-          {/* Features Section */}
-          <section className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <IconBolt className="size-4 text-primary" />
-              <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide">
-                Key Features
-              </h3>
+        <div className="flex flex-col gap-6 py-6">
+          {/* Main Hero Header */}
+          <div className="flex items-start justify-between gap-4 px-6">
+            <div className="flex items-center gap-4">
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl border border-border/80 bg-background shadow-xs">
+                <img
+                  alt=""
+                  src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(integration.url)}&sz=64`}
+                  className="size-8 rounded-md"
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <h2 className="font-bold text-2xl text-foreground tracking-tight">
+                  {integration.title}
+                </h2>
+                <span className="font-medium text-muted-foreground text-sm">
+                  By {integration.author}
+                </span>
+              </div>
             </div>
-            <div className="grid gap-3">
-              {integration.features.map((feature) => (
-                <div
-                  key={feature.label}
-                  className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-card p-4 transition-colors hover:border-border"
-                >
-                  <div className="flex items-center gap-2">
-                    <IconCircleCheck className="size-4 shrink-0 text-emerald-500" />
-                    <span className="font-medium text-foreground text-sm">
-                      {feature.label}
-                    </span>
-                  </div>
-                  <p className="pl-6 text-muted-foreground text-sm leading-relaxed">
-                    {feature.description}
-                  </p>
+
+            <Button
+              type="button"
+              variant={comingSoon ? "secondary" : "default"}
+              className={cn(
+                "h-9.5 rounded-xl px-4.5 font-semibold text-xs transition-all shadow-xs",
+                !comingSoon &&
+                  "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+              )}
+              disabled={isPending || comingSoon}
+              onClick={handleAction}
+            >
+              <IconChainLink className="mr-1.5 size-3.5" />
+              {buttonText}
+            </Button>
+          </div>
+
+          {/* Badges Metadata */}
+          <div className="flex flex-wrap items-center gap-2 px-6">
+            <span className="rounded-md bg-muted/80 px-2.5 py-1 font-semibold text-[10px] text-muted-foreground tracking-wider uppercase">
+              {integration.category.replace("-", " ")}
+            </span>
+            <span className="rounded-md bg-muted/80 px-2.5 py-1 font-semibold text-[10px] text-muted-foreground tracking-wider uppercase">
+              {integration.actions.length} STEPS
+            </span>
+            <StatusBadge status={integration.status} />
+          </div>
+
+          {/* Short Description */}
+          <p className="px-6 font-normal text-muted-foreground/90 text-sm leading-relaxed">
+            {integration.description}
+          </p>
+
+          {/* Screenshots & Visual Preview Carousel */}
+          {integration.previews && integration.previews.length > 0 && (
+            <div className="px-6">
+              <IntegrationPreviewCarousel previews={integration.previews} />
+            </div>
+          )}
+
+          <div className="flex flex-col gap-8 px-6 pt-2">
+            {/* Overview Section */}
+            <section className="flex flex-col gap-2.5">
+              <h3 className="font-semibold text-foreground text-sm tracking-tight">
+                Overview
+              </h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                {integration.overview ?? integration.longDescription}
+                {(integration.documentationUrl || integration.url) && (
+                  <a
+                    href={integration.documentationUrl ?? integration.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ml-1 font-medium text-primary hover:underline"
+                  >
+                    Documentation.
+                  </a>
+                )}
+              </p>
+            </section>
+
+            {/* How it works Section */}
+            {integration.howItWorks && (
+              <section className="flex flex-col gap-2.5">
+                <h3 className="font-semibold text-foreground text-sm tracking-tight">
+                  How it works
+                </h3>
+                <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
+                  {integration.howItWorks
+                    .split("\n\n")
+                    .map((paragraph, index) => (
+                      <p key={index}>{paragraph}</p>
+                    ))}
                 </div>
-              ))}
-            </div>
-          </section>
+              </section>
+            )}
 
-          {/* Agent Actions Section */}
-          <section className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <IconCodeEditor className="size-4 text-primary" />
-              <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide">
-                Agent Actions
-              </h3>
-            </div>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              These are the tool calls the AI agent can invoke on your behalf
-              when this integration is active:
-            </p>
-            <div className="flex flex-wrap gap-2 pt-1">
-              {integration.actions.map((action) => (
-                <Badge
-                  key={action}
-                  variant="outline"
-                  className="rounded-md border-border/80 bg-background px-3 py-1 font-mono text-xs shadow-2xs"
-                >
-                  {action}
-                </Badge>
-              ))}
-            </div>
-          </section>
-
-          {/* Scopes Section */}
-          {integration.scopes && integration.scopes.length > 0 && (
+            {/* Key Features Section */}
             <section className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <IconGear className="size-4 text-primary" />
+                <IconBolt className="size-4 text-primary" />
                 <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide">
-                  OAuth Scopes Requested
+                  Key Features
                 </h3>
               </div>
-              <div className="flex flex-col gap-2">
-                {integration.scopes.map((scope) => (
-                  <code
-                    key={scope}
-                    className="truncate rounded-md border border-border/40 bg-muted/60 px-3 py-2 font-mono text-muted-foreground text-xs leading-normal"
+              <div className="grid gap-3">
+                {integration.features.map((feature) => (
+                  <div
+                    key={feature.label}
+                    className="flex flex-col gap-1.5 rounded-xl border border-border/60 bg-card p-4 transition-colors hover:border-border"
                   >
-                    {scope}
-                  </code>
+                    <div className="flex items-center gap-2">
+                      <IconCircleCheck className="size-4 shrink-0 text-emerald-500" />
+                      <span className="font-medium text-foreground text-sm">
+                        {feature.label}
+                      </span>
+                    </div>
+                    <p className="pl-6 text-muted-foreground text-sm leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
                 ))}
               </div>
             </section>
-          )}
 
-          {/* Gmail Activity Heatmap */}
-          {integration.id === "gmail" && connected && <GmailActivityHeatmap />}
+            {/* Agent Actions Section */}
+            <section className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <IconCodeEditor className="size-4 text-primary" />
+                <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide">
+                  Agent Actions
+                </h3>
+              </div>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                These are the tool calls the AI agent can invoke on your behalf
+                when this integration is active:
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {integration.actions.map((action) => (
+                  <Badge
+                    key={action}
+                    variant="outline"
+                    className="rounded-md border-border/80 bg-background px-3 py-1 font-mono text-xs shadow-2xs"
+                  >
+                    {action}
+                  </Badge>
+                ))}
+              </div>
+            </section>
+
+            {/* OAuth Scopes Requested Section */}
+            {integration.scopes && integration.scopes.length > 0 && (
+              <section className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <IconGear className="size-4 text-primary" />
+                  <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide">
+                    OAuth Scopes Requested
+                  </h3>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {integration.scopes.map((scope) => (
+                    <code
+                      key={scope}
+                      className="truncate rounded-md border border-border/40 bg-muted/60 px-3 py-2 font-mono text-muted-foreground text-xs leading-normal"
+                    >
+                      {scope}
+                    </code>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Gmail Activity Heatmap */}
+            {integration.id === "gmail" && connected && (
+              <GmailActivityHeatmap />
+            )}
+          </div>
         </div>
       </ScrollArea>
-
-      <SheetFooter className="border-t bg-background p-6">
-        <Button
-          type="button"
-          variant={comingSoon ? "secondary" : connected ? "outline" : "default"}
-          className="h-11 w-full font-medium text-sm"
-          disabled={isPending || comingSoon}
-          onClick={handleAction}
-        >
-          {comingSoon ? (
-            "Coming Soon"
-          ) : connected ? (
-            <>
-              <IconGear data-icon="inline-start" className="size-4" />
-              {buttonText}
-            </>
-          ) : (
-            <>
-              <IconArrowBoldRight data-icon="inline-start" className="size-4" />
-              {buttonText}
-            </>
-          )}
-        </Button>
-      </SheetFooter>
     </SheetContent>
   )
 }
@@ -403,4 +527,74 @@ function getIntegrationCounts(
     }
     return counts
   }, initialCounts)
+}
+
+function IconDotsVertical(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <circle cx="12" cy="5" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="12" cy="19" r="1" />
+    </svg>
+  )
+}
+
+function IconExternalLink(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M15 3h6v6" />
+      <path d="M10 14L21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </svg>
+  )
+}
+
+function IconClose(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M18 6L6 18" />
+      <path d="M6 6l12 12" />
+    </svg>
+  )
+}
+
+function IconChainLink(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  )
 }
