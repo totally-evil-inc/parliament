@@ -256,7 +256,7 @@ export function DealsKanbanRoute() {
           Loading deals pipeline...
         </div>
       ) : (
-        <ScrollArea className="w-full flex-1 overflow-hidden">
+        <ScrollArea orientation="horizontal" className="w-full flex-1">
           <div className="flex gap-4 pb-4 pt-1 min-w-max">
             {STAGES.map((col) => {
               const colDeals = filteredDeals.filter((d) => d.stage === col.id)
@@ -362,7 +362,6 @@ export function DealsKanbanRoute() {
               )
             })}
           </div>
-          <ScrollBar orientation="horizontal" />
         </ScrollArea>
       )}
     </div>
