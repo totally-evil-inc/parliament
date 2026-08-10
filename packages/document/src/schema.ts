@@ -519,10 +519,16 @@ export const createProposalInputSchema = z
     title: z.string().min(1),
     companyId: idSchema.optional(),
     contactId: idSchema.optional(),
-    currency: z.string().regex(/^[A-Z]{3}$/).default("USD"),
+    currency: z
+      .string()
+      .regex(/^[A-Z]{3}$/)
+      .default("USD"),
     draft: proposalDraftSchema.optional(),
   })
   .strict()
 
 export type CreateProposalInput = z.infer<typeof createProposalInputSchema>
+
+export * from "./schema/deal"
+export * from "./schema/customer"
 
