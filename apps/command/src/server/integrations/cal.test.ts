@@ -10,6 +10,7 @@ describe("Cal.com Webhook & Cancellation Rollback Handler", () => {
       validOrgId
     )
     expect(res.status).toBe("ignored")
+    expect(res.reason).toBe("missing attendee data")
   })
 
   it("handles unsupported events gracefully", async () => {
@@ -22,5 +23,29 @@ describe("Cal.com Webhook & Cancellation Rollback Handler", () => {
     )
     expect(res.status).toBe("ignored")
     expect(res.reason).toBe("unsupported event")
+  })
+
+  it("returns no_matching_deal when attendee email does not match any contact", async () => {
+    const res = await processCalComWebhook(
+      {
+        triggerEvent: "BOOKING_CREATED",
+        payload: { attendees: [{ email: "unknown@example.com" }] },
+      },
+      validOrgId
+    )
+    expect(res.status).toBe("no_matching_deal")
+    expect(res.reason).toBe("contact not found for attendee email")
+  })
+
+  it("returns no_matching_deal when cancellation attendee email has no contact", async () => {
+    const res = await processCalComWebhook(
+      {
+        triggerEvent: "BOOKING_CANCELLED",
+        payload: { attendees: [{ email: "unknown@example.com" }] },
+      },
+      validOrgId
+    )
+    expect(res.status).toBe("no_matching_deal")
+    expect(res.reason).toBe("contact not found for attendee email")
   })
 })

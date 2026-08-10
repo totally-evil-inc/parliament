@@ -1,5 +1,4 @@
 import { and, db, eq, schema } from "@workspace/database"
-import type { DealStage } from "@workspace/document/schema"
 import { logWideEvent } from "@workspace/logger"
 
 export interface CalComAttendee {
@@ -32,7 +31,7 @@ export async function processCalComWebhook(
 
   const attendeeEmail = eventData.attendees[0].email
 
-  // Find contact linked to attendee email
+  // Find contact linked to attendee email within organization
   const [contactRow] = await db
     .select({ id: schema.contact.id, companyId: schema.contact.companyId })
     .from(schema.contact)
@@ -47,40 +46,32 @@ export async function processCalComWebhook(
   const contactId = contactRow?.id
 
   if (triggerEvent === "BOOKING_CREATED") {
-    let dealToUpdate = null
-
-    if (contactId) {
-      ;[dealToUpdate] = await db
-        .select({ id: schema.deal.id, stage: schema.deal.stage })
-        .from(schema.deal)
-        .where(
-          and(
-            eq(schema.deal.organizationId, organizationId),
-            eq(schema.deal.contactId, contactId),
-            eq(schema.deal.stage, "lead")
-          )
-        )
-        .limit(1)
+    if (!contactId) {
+      return { status: "no_matching_deal", reason: "contact not found for attendee email" }
     }
 
-    if (!dealToUpdate) {
-      ;[dealToUpdate] = await db
-        .select({ id: schema.deal.id, stage: schema.deal.stage })
-        .from(schema.deal)
-        .where(
-          and(
-            eq(schema.deal.organizationId, organizationId),
-            eq(schema.deal.stage, "lead")
-          )
+    const [dealToUpdate] = await db
+      .select({ id: schema.deal.id, stage: schema.deal.stage })
+      .from(schema.deal)
+      .where(
+        and(
+          eq(schema.deal.organizationId, organizationId),
+          eq(schema.deal.contactId, contactId),
+          eq(schema.deal.stage, "lead")
         )
-        .limit(1)
-    }
+      )
+      .limit(1)
 
     if (dealToUpdate) {
       await db
         .update(schema.deal)
         .set({ stage: "discovery", updatedAt: new Date() })
-        .where(eq(schema.deal.id, dealToUpdate.id))
+        .where(
+          and(
+            eq(schema.deal.id, dealToUpdate.id),
+            eq(schema.deal.organizationId, organizationId)
+          )
+        )
 
       logWideEvent({
         event: "client.deal.booking_created",
@@ -102,40 +93,32 @@ export async function processCalComWebhook(
   }
 
   if (triggerEvent === "BOOKING_CANCELLED") {
-    let dealToRollback = null
-
-    if (contactId) {
-      ;[dealToRollback] = await db
-        .select({ id: schema.deal.id, stage: schema.deal.stage })
-        .from(schema.deal)
-        .where(
-          and(
-            eq(schema.deal.organizationId, organizationId),
-            eq(schema.deal.contactId, contactId),
-            eq(schema.deal.stage, "discovery")
-          )
-        )
-        .limit(1)
+    if (!contactId) {
+      return { status: "no_matching_deal", reason: "contact not found for attendee email" }
     }
 
-    if (!dealToRollback) {
-      ;[dealToRollback] = await db
-        .select({ id: schema.deal.id, stage: schema.deal.stage })
-        .from(schema.deal)
-        .where(
-          and(
-            eq(schema.deal.organizationId, organizationId),
-            eq(schema.deal.stage, "discovery")
-          )
+    const [dealToRollback] = await db
+      .select({ id: schema.deal.id, stage: schema.deal.stage })
+      .from(schema.deal)
+      .where(
+        and(
+          eq(schema.deal.organizationId, organizationId),
+          eq(schema.deal.contactId, contactId),
+          eq(schema.deal.stage, "discovery")
         )
-        .limit(1)
-    }
+      )
+      .limit(1)
 
     if (dealToRollback) {
       await db
         .update(schema.deal)
         .set({ stage: "lead", updatedAt: new Date() })
-        .where(eq(schema.deal.id, dealToRollback.id))
+        .where(
+          and(
+            eq(schema.deal.id, dealToRollback.id),
+            eq(schema.deal.organizationId, organizationId)
+          )
+        )
 
       logWideEvent({
         event: "client.deal.stage_rolled_back",
