@@ -15,15 +15,29 @@ export function ClientsHubRoute() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
-  const { data: customers = [], isLoading: isCustomersLoading } = useQuery({
+  const {
+    data: customers = [],
+    isLoading: isCustomersLoading,
+    error: customersError,
+    refetch: refetchCustomers,
+  } = useQuery({
     queryKey: ["customers"],
     queryFn: async () => await listCustomersServerFn(),
   })
 
-  const { data: analytics, isLoading: isAnalyticsLoading } = useQuery({
+  const {
+    data: analytics,
+    isLoading: isAnalyticsLoading,
+    error: analyticsError,
+    refetch: refetchAnalytics,
+  } = useQuery({
     queryKey: ["customer-analytics"],
     queryFn: async () => await getCustomerAnalyticsServerFn(),
   })
+
+  const hasError = Boolean(customersError || analyticsError)
+  const errorMessage =
+    (customersError as Error)?.message || (analyticsError as Error)?.message || "Failed to load clients"
 
   return (
     <div className="flex flex-col h-full min-h-screen bg-background text-foreground p-6 gap-6">
@@ -41,6 +55,25 @@ export function ClientsHubRoute() {
           </p>
         </div>
       </div>
+
+      {hasError && (
+        <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span>⚠️</span>
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              refetchCustomers()
+              refetchAnalytics()
+            }}
+            className="px-3 py-1 bg-destructive text-destructive-foreground font-medium text-xs rounded-md shadow-xs"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Top Collapsible Insights Bar */}
       {analytics && (
