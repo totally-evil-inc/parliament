@@ -78,6 +78,13 @@
       "when": 1786383860377,
       "tag": "0010_dizzy_obadiah_stane",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786383999999,
+      "tag": "0011_customer_crm_enhancements",
+      "breakpoints": true
     }
   ]
 }
