@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { formatMoneyMinor } from "@workspace/document/calculate"
 import type { DealStage } from "@workspace/document/schema"
+import { ScrollArea, ScrollBar } from "@workspace/ui/components/scroll-area"
 import {
   convertDealToProposalServerFn,
   createDealServerFn,
@@ -30,7 +31,6 @@ export function DealsKanbanRoute() {
   const [searchQuery, setSearchQuery] = useState("")
   const [newTitle, setNewTitle] = useState("")
   const [newValue, setNewValue] = useState("5000")
-  const [newCompany, setNewCompany] = useState("")
   const [isCreating, setIsCreating] = useState(false)
 
   const { data: deals = [], isLoading } = useQuery({
@@ -100,7 +100,6 @@ export function DealsKanbanRoute() {
     onSuccess: () => {
       setNewTitle("")
       setNewValue("5000")
-      setNewCompany("")
       setIsCreating(false)
       queryClient.invalidateQueries({ queryKey: ["deals"] })
     },
@@ -251,117 +250,120 @@ export function DealsKanbanRoute() {
         </div>
       )}
 
-      {/* Kanban Board Columns */}
+      {/* Kanban Board ScrollArea */}
       {isLoading ? (
         <div className="flex items-center justify-center p-12 text-muted-foreground text-sm">
           Loading deals pipeline...
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 flex-1">
-          {STAGES.map((col) => {
-            const colDeals = filteredDeals.filter((d) => d.stage === col.id)
-            const colTotal = colDeals.reduce((sum, d) => sum + (d.valueMinorUnits || 0), 0)
+        <ScrollArea className="w-full flex-1 overflow-hidden">
+          <div className="flex gap-4 pb-4 pt-1 min-w-max">
+            {STAGES.map((col) => {
+              const colDeals = filteredDeals.filter((d) => d.stage === col.id)
+              const colTotal = colDeals.reduce((sum, d) => sum + (d.valueMinorUnits || 0), 0)
 
-            return (
-              <div
-                key={col.id}
-                className="flex flex-col bg-muted/30 rounded-xl border border-border/80 p-3 gap-3"
-              >
-                {/* Column Header */}
-                <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-md border ${col.badgeBg}`}>
-                      {col.label}
-                    </span>
-                    <span className="text-xs text-muted-foreground font-semibold">
-                      ({colDeals.length})
+              return (
+                <div
+                  key={col.id}
+                  className="w-80 shrink-0 flex flex-col bg-muted/30 rounded-xl border border-border/80 p-3.5 gap-3"
+                >
+                  {/* Column Header */}
+                  <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-md border ${col.badgeBg}`}>
+                        {col.label}
+                      </span>
+                      <span className="text-xs text-muted-foreground font-semibold">
+                        ({colDeals.length})
+                      </span>
+                    </div>
+                    <span className="text-xs font-mono font-medium text-foreground">
+                      {formatMoneyMinor(colTotal, "USD", "en-US")}
                     </span>
                   </div>
-                  <span className="text-xs font-mono font-medium text-foreground">
-                    {formatMoneyMinor(colTotal, "USD", "en-US")}
-                  </span>
-                </div>
 
-                {/* Column Deals List */}
-                <div className="flex flex-col gap-3 flex-1 overflow-y-auto min-h-[200px]">
-                  {colDeals.map((dealItem) => (
-                    <div
-                      key={dealItem.id}
-                      className={`p-3.5 rounded-lg bg-card border border-border ${col.borderAccent} border-l-4 shadow-sm flex flex-col gap-2.5 transition-all hover:shadow-md hover:border-primary/40`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="font-semibold text-sm leading-snug text-foreground">
-                          {dealItem.title}
-                        </span>
+                  {/* Column Deals List */}
+                  <div className="flex flex-col gap-3 flex-1 overflow-y-auto min-h-[220px]">
+                    {colDeals.map((dealItem) => (
+                      <div
+                        key={dealItem.id}
+                        className={`p-3.5 rounded-lg bg-card border border-border ${col.borderAccent} border-l-4 shadow-sm flex flex-col gap-2.5 transition-all hover:shadow-md hover:border-primary/40`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-semibold text-sm leading-snug text-foreground whitespace-normal">
+                            {dealItem.title}
+                          </span>
+                        </div>
+
+                        {dealItem.companyName && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            🏢 {dealItem.companyName}
+                          </span>
+                        )}
+
+                        <div className="flex items-center justify-between mt-1 pt-2 border-t border-border/40">
+                          <span className="font-mono text-xs font-semibold text-foreground">
+                            {formatMoneyMinor(dealItem.valueMinorUnits, dealItem.currency || "USD", "en-US")}
+                          </span>
+
+                          {/* Stage Selector Dropdown */}
+                          <select
+                            value={dealItem.stage}
+                            onChange={(e) =>
+                              updateStageMutation.mutate({
+                                id: dealItem.id,
+                                stage: e.target.value as DealStage,
+                              })
+                            }
+                            className="text-[10px] px-1.5 py-0.5 rounded border border-input bg-background font-medium focus:outline-none hover:bg-muted"
+                          >
+                            {STAGES.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Convert to Proposal Button */}
+                        {!dealItem.proposalId ? (
+                          <button
+                            type="button"
+                            disabled={convertMutation.isPending}
+                            onClick={() => convertMutation.mutate(dealItem.id)}
+                            className="mt-1 w-full py-1.5 text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 rounded-md border border-primary/20 transition-all flex items-center justify-center gap-1 shadow-2xs"
+                          >
+                            ⚡ 1-Click Convert to Proposal
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate({
+                                to: "/proposals/$proposalId",
+                                params: { proposalId: dealItem.proposalId as string },
+                              })
+                            }
+                            className="mt-1 w-full py-1.5 text-xs font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md transition-all flex items-center justify-center gap-1"
+                          >
+                            📄 View Linked Proposal
+                          </button>
+                        )}
                       </div>
+                    ))}
 
-                      {dealItem.companyName && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          🏢 {dealItem.companyName}
-                        </span>
-                      )}
-
-                      <div className="flex items-center justify-between mt-1 pt-2 border-t border-border/40">
-                        <span className="font-mono text-xs font-semibold text-foreground">
-                          {formatMoneyMinor(dealItem.valueMinorUnits, dealItem.currency || "USD", "en-US")}
-                        </span>
-
-                        {/* Stage Selector Dropdown */}
-                        <select
-                          value={dealItem.stage}
-                          onChange={(e) =>
-                            updateStageMutation.mutate({
-                              id: dealItem.id,
-                              stage: e.target.value as DealStage,
-                            })
-                          }
-                          className="text-[10px] px-1.5 py-0.5 rounded border border-input bg-background font-medium focus:outline-none hover:bg-muted"
-                        >
-                          {STAGES.map((s) => (
-                            <option key={s.id} value={s.id}>
-                              {s.label}
-                            </option>
-                          ))}
-                        </select>
+                    {colDeals.length === 0 && (
+                      <div className="p-4 text-center text-xs text-muted-foreground/60 border border-dashed border-border/50 rounded-lg my-auto">
+                        No deals in stage
                       </div>
-
-                      {/* Convert to Proposal Button */}
-                      {!dealItem.proposalId ? (
-                        <button
-                          type="button"
-                          disabled={convertMutation.isPending}
-                          onClick={() => convertMutation.mutate(dealItem.id)}
-                          className="mt-1 w-full py-1.5 text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 rounded-md border border-primary/20 transition-all flex items-center justify-center gap-1 shadow-2xs"
-                        >
-                          ⚡ 1-Click Convert to Proposal
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            navigate({
-                              to: "/proposals/$proposalId",
-                              params: { proposalId: dealItem.proposalId as string },
-                            })
-                          }
-                          className="mt-1 w-full py-1.5 text-xs font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md transition-all flex items-center justify-center gap-1"
-                        >
-                          📄 View Linked Proposal
-                        </button>
-                      )}
-                    </div>
-                  ))}
-
-                  {colDeals.length === 0 && (
-                    <div className="p-4 text-center text-xs text-muted-foreground/60 border border-dashed border-border/50 rounded-lg my-auto">
-                      No deals in stage
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       )}
     </div>
   )
