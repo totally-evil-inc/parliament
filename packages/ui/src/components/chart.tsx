@@ -1,6 +1,17 @@
 import { cn } from "@workspace/ui/lib/utils"
 import * as React from "react"
-import type { TooltipValueType } from "recharts"
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  Cell,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts"
 import * as RechartsPrimitive from "recharts"
 
 // Format: { THEME_NAME: CSS_SELECTOR }

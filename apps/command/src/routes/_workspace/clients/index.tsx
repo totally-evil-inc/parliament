@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_workspace/clients/")({
   component: ClientsHubRoute,
 })
 
-export function ClientsHubRoute() {
+function ClientsHubRoute() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 

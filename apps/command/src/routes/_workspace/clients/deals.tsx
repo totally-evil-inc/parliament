@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_workspace/clients/deals")({
   component: DealsKanbanRoute,
 })
 
-export function DealsKanbanRoute() {
+function DealsKanbanRoute() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
