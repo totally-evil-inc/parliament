@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { formatMoneyMinor } from "@workspace/document/calculate"
@@ -14,27 +14,55 @@ export const Route = createFileRoute("/_workspace/clients/deals")({
   component: DealsKanbanRoute,
 })
 
-const STAGES: Array<{ id: DealStage; label: string; color: string }> = [
-  { id: "lead", label: "Lead / Incoming", color: "border-l-blue-500" },
-  { id: "discovery", label: "Discovery", color: "border-l-amber-500" },
-  { id: "proposal_sent", label: "Proposal Sent", color: "border-l-purple-500" },
-  { id: "negotiation", label: "Negotiation", color: "border-l-indigo-500" },
-  { id: "closed_won", label: "Closed Won", color: "border-l-emerald-500" },
-  { id: "closed_lost", label: "Closed Lost", color: "border-l-rose-500" },
+const STAGES: Array<{ id: DealStage; label: string; badgeBg: string; borderAccent: string }> = [
+  { id: "lead", label: "Lead / Incoming", badgeBg: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20", borderAccent: "border-l-blue-500" },
+  { id: "discovery", label: "Discovery", badgeBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20", borderAccent: "border-l-amber-500" },
+  { id: "proposal_sent", label: "Proposal Sent", badgeBg: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20", borderAccent: "border-l-purple-500" },
+  { id: "negotiation", label: "Negotiation", badgeBg: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20", borderAccent: "border-l-indigo-500" },
+  { id: "closed_won", label: "Closed Won", badgeBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20", borderAccent: "border-l-emerald-500" },
+  { id: "closed_lost", label: "Closed Lost", badgeBg: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20", borderAccent: "border-l-rose-500" },
 ]
 
 export function DealsKanbanRoute() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
+  const [searchQuery, setSearchQuery] = useState("")
   const [newTitle, setNewTitle] = useState("")
   const [newValue, setNewValue] = useState("5000")
+  const [newCompany, setNewCompany] = useState("")
   const [isCreating, setIsCreating] = useState(false)
 
   const { data: deals = [], isLoading } = useQuery({
     queryKey: ["deals"],
     queryFn: async () => await listDealsServerFn(),
   })
+
+  const filteredDeals = useMemo(() => {
+    if (!searchQuery.trim()) return deals
+    const query = searchQuery.toLowerCase()
+    return deals.filter(
+      (d) =>
+        d.title.toLowerCase().includes(query) ||
+        (d.companyName && d.companyName.toLowerCase().includes(query)) ||
+        (d.contactEmail && d.contactEmail.toLowerCase().includes(query))
+    )
+  }, [deals, searchQuery])
+
+  // Summary Metrics
+  const metrics = useMemo(() => {
+    const totalPipeline = deals
+      .filter((d) => d.stage !== "closed_lost")
+      .reduce((sum, d) => sum + (d.valueMinorUnits || 0), 0)
+    const wonTotal = deals
+      .filter((d) => d.stage === "closed_won")
+      .reduce((sum, d) => sum + (d.valueMinorUnits || 0), 0)
+    const totalCount = deals.length
+    const wonCount = deals.filter((d) => d.stage === "closed_won").length
+    const winRate = totalCount > 0 ? Math.round((wonCount / totalCount) * 100) : 0
+
+    return { totalPipeline, wonTotal, winRate, activeCount: totalCount }
+  }, [deals])
 
   const updateStageMutation = useMutation({
     mutationFn: async ({ id, stage }: { id: string; stage: DealStage }) => {
@@ -72,6 +100,7 @@ export function DealsKanbanRoute() {
     onSuccess: () => {
       setNewTitle("")
       setNewValue("5000")
+      setNewCompany("")
       setIsCreating(false)
       queryClient.invalidateQueries({ queryKey: ["deals"] })
     },
@@ -80,47 +109,145 @@ export function DealsKanbanRoute() {
   return (
     <div className="flex flex-col h-full min-h-screen bg-background text-foreground p-6 gap-6">
       {/* Header section */}
-      <div className="flex items-center justify-between border-b border-border pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Deal Pipeline</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">Deal Pipeline</h1>
+            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary border border-primary/20">
+              {metrics.activeCount} Deals
+            </span>
+          </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage lead progress and convert deals into active persisted proposals.
+            Track opportunities, stage transitions, and 1-click convert deals into durable proposals.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsCreating(!isCreating)}
-          className="px-4 py-2 bg-primary text-primary-foreground font-medium text-sm rounded-md shadow hover:bg-primary/90 transition-colors"
-        >
-          {isCreating ? "Cancel" : "+ New Deal"}
-        </button>
-      </div>
 
-      {/* New Deal Creation Box */}
-      {isCreating && (
-        <div className="p-4 rounded-lg border border-border bg-card shadow-sm flex flex-wrap items-center gap-4">
-          <input
-            type="text"
-            placeholder="Deal Title (e.g. Acme Website Redesign)"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            className="flex-1 min-w-[240px] px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-          <input
-            type="number"
-            placeholder="Estimated Amount (USD)"
-            value={newValue}
-            onChange={(e) => setNewValue(e.target.value)}
-            className="w-40 px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search deals..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-3 py-1.5 text-sm rounded-md border border-input bg-card placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary w-48 lg:w-64"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </button>
+            )}
+          </div>
           <button
             type="button"
-            disabled={createDealMutation.isPending || !newTitle.trim()}
-            onClick={() => createDealMutation.mutate()}
-            className="px-4 py-2 bg-primary text-primary-foreground font-medium text-sm rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            onClick={() => setIsCreating(true)}
+            className="px-4 py-2 bg-primary text-primary-foreground font-medium text-sm rounded-md shadow-sm hover:bg-primary/90 transition-all flex items-center gap-1.5"
           >
-            {createDealMutation.isPending ? "Creating..." : "Save Deal"}
+            <span>+</span> New Deal
           </button>
+        </div>
+      </div>
+
+      {/* KPI Stats Bar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Total Pipeline Value
+          </span>
+          <span className="text-xl font-bold font-mono text-foreground">
+            {formatMoneyMinor(metrics.totalPipeline, "USD", "en-US")}
+          </span>
+        </div>
+        <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Closed Won Value
+          </span>
+          <span className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+            {formatMoneyMinor(metrics.wonTotal, "USD", "en-US")}
+          </span>
+        </div>
+        <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Win Rate
+          </span>
+          <span className="text-xl font-bold text-foreground">
+            {metrics.winRate}%
+          </span>
+        </div>
+        <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Active Pipeline Count
+          </span>
+          <span className="text-xl font-bold text-foreground">
+            {metrics.activeCount}
+          </span>
+        </div>
+      </div>
+
+      {/* New Deal Modal Dialog */}
+      {isCreating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md p-6 rounded-xl border border-border bg-card shadow-xl flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-lg font-bold text-foreground">Create New Deal</h3>
+              <button
+                type="button"
+                onClick={() => setIsCreating(false)}
+                className="text-muted-foreground hover:text-foreground text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Deal Title *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Enterprise Web Application"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Estimated Value (USD)
+                </label>
+                <input
+                  type="number"
+                  placeholder="5000"
+                  value={newValue}
+                  onChange={(e) => setNewValue(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setIsCreating(false)}
+                className="px-4 py-2 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={createDealMutation.isPending || !newTitle.trim()}
+                onClick={() => createDealMutation.mutate()}
+                className="px-4 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                {createDealMutation.isPending ? "Creating..." : "Save Deal"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -132,49 +259,54 @@ export function DealsKanbanRoute() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 flex-1">
           {STAGES.map((col) => {
-            const colDeals = deals.filter((d) => d.stage === col.id)
+            const colDeals = filteredDeals.filter((d) => d.stage === col.id)
             const colTotal = colDeals.reduce((sum, d) => sum + (d.valueMinorUnits || 0), 0)
 
             return (
               <div
                 key={col.id}
-                className="flex flex-col bg-muted/40 rounded-lg border border-border p-3 gap-3"
+                className="flex flex-col bg-muted/30 rounded-xl border border-border/80 p-3 gap-3"
               >
                 {/* Column Header */}
-                <div className="flex items-center justify-between border-b border-border pb-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    {col.label} ({colDeals.length})
-                  </span>
-                  <span className="text-xs font-medium text-foreground">
+                <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-md border ${col.badgeBg}`}>
+                      {col.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground font-semibold">
+                      ({colDeals.length})
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono font-medium text-foreground">
                     {formatMoneyMinor(colTotal, "USD", "en-US")}
                   </span>
                 </div>
 
                 {/* Column Deals List */}
-                <div className="flex flex-col gap-3 flex-1 overflow-y-auto">
+                <div className="flex flex-col gap-3 flex-1 overflow-y-auto min-h-[200px]">
                   {colDeals.map((dealItem) => (
                     <div
                       key={dealItem.id}
-                      className={`p-3 rounded-md bg-card border border-border ${col.color} border-l-4 shadow-sm flex flex-col gap-2 transition-all hover:shadow-md`}
+                      className={`p-3.5 rounded-lg bg-card border border-border ${col.borderAccent} border-l-4 shadow-sm flex flex-col gap-2.5 transition-all hover:shadow-md hover:border-primary/40`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <span className="font-semibold text-sm leading-tight text-foreground">
+                        <span className="font-semibold text-sm leading-snug text-foreground">
                           {dealItem.title}
                         </span>
                       </div>
 
                       {dealItem.companyName && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                           🏢 {dealItem.companyName}
                         </span>
                       )}
 
-                      <div className="flex items-center justify-between mt-1 pt-2 border-t border-border/50">
-                        <span className="font-mono text-xs font-medium text-foreground">
+                      <div className="flex items-center justify-between mt-1 pt-2 border-t border-border/40">
+                        <span className="font-mono text-xs font-semibold text-foreground">
                           {formatMoneyMinor(dealItem.valueMinorUnits, dealItem.currency || "USD", "en-US")}
                         </span>
-                        
-                        {/* Stage Selector */}
+
+                        {/* Stage Selector Dropdown */}
                         <select
                           value={dealItem.stage}
                           onChange={(e) =>
@@ -183,7 +315,7 @@ export function DealsKanbanRoute() {
                               stage: e.target.value as DealStage,
                             })
                           }
-                          className="text-[10px] px-1.5 py-0.5 rounded border border-input bg-background font-medium focus:outline-none"
+                          className="text-[10px] px-1.5 py-0.5 rounded border border-input bg-background font-medium focus:outline-none hover:bg-muted"
                         >
                           {STAGES.map((s) => (
                             <option key={s.id} value={s.id}>
@@ -199,9 +331,9 @@ export function DealsKanbanRoute() {
                           type="button"
                           disabled={convertMutation.isPending}
                           onClick={() => convertMutation.mutate(dealItem.id)}
-                          className="mt-1 w-full py-1 text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/20 rounded border border-primary/20 transition-colors flex items-center justify-center gap-1"
+                          className="mt-1 w-full py-1.5 text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 rounded-md border border-primary/20 transition-all flex items-center justify-center gap-1 shadow-2xs"
                         >
-                          ⚡ Convert to Proposal
+                          ⚡ 1-Click Convert to Proposal
                         </button>
                       ) : (
                         <button
@@ -212,17 +344,17 @@ export function DealsKanbanRoute() {
                               params: { proposalId: dealItem.proposalId as string },
                             })
                           }
-                          className="mt-1 w-full py-1 text-[11px] font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded transition-colors flex items-center justify-center gap-1"
+                          className="mt-1 w-full py-1.5 text-xs font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md transition-all flex items-center justify-center gap-1"
                         >
-                          📄 View Proposal
+                          📄 View Linked Proposal
                         </button>
                       )}
                     </div>
                   ))}
 
                   {colDeals.length === 0 && (
-                    <div className="p-4 text-center text-xs text-muted-foreground/60 border border-dashed border-border/60 rounded-md">
-                      No deals
+                    <div className="p-4 text-center text-xs text-muted-foreground/60 border border-dashed border-border/50 rounded-lg my-auto">
+                      No deals in stage
                     </div>
                   )}
                 </div>
