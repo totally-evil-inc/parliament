@@ -4,15 +4,111 @@ import {
   index,
   integer,
   jsonb,
+  pgEnum,
   pgTable,
   text,
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core"
 
+import { company } from "./company"
+import { contact } from "./contact"
 import { organization } from "./organization"
 import { user } from "./user"
 
+export const proposalStatusEnum = pgEnum("proposal_status", [
+  "draft",
+  "sent",
+  "viewed",
+  "accepted",
+  "declined",
+  "archived",
+])
+
+/**
+ * Proposal Entity (Phase 1 Baseline - Document-First Durability)
+ */
+export const proposal = pgTable(
+  "proposal",
+  {
+    id: uuid("id")
+      .default(sql`uuidv7()`)
+      .primaryKey()
+      .notNull(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    companyId: uuid("company_id").references(() => company.id, {
+      onDelete: "set null",
+    }),
+    contactId: uuid("contact_id").references(() => contact.id, {
+      onDelete: "set null",
+    }),
+    title: text("title").notNull(),
+    status: proposalStatusEnum("status").default("draft").notNull(),
+    currency: text("currency").default("USD").notNull(),
+    subtotalMinorUnits: integer("subtotal_minor_units").default(0).notNull(),
+    taxMinorUnits: integer("tax_minor_units").default(0).notNull(),
+    totalMinorUnits: integer("total_minor_units").default(0).notNull(),
+    portalToken: text("portal_token"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+    createdById: uuid("created_by_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_proposal_org").on(table.organizationId),
+    index("idx_proposal_company").on(table.companyId),
+    index("idx_proposal_status").on(table.status),
+    index("idx_proposal_portal_token").on(table.portalToken),
+  ]
+)
+
+/**
+ * Immutable Proposal Version History
+ */
+export const proposalVersion = pgTable(
+  "proposal_version",
+  {
+    id: uuid("id")
+      .default(sql`uuidv7()`)
+      .primaryKey()
+      .notNull(),
+    proposalId: uuid("proposal_id")
+      .notNull()
+      .references(() => proposal.id, { onDelete: "cascade" }),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    versionNumber: integer("version_number").notNull(),
+    content: jsonb("content").notNull(), // Raw TipTap DocumentBlock[] array
+    proposalDraft: jsonb("proposal_draft").notNull(), // Structured Zod ProposalDraft
+    hash: text("hash").notNull(), // SHA-256 fingerprint of content
+    createdById: uuid("created_by_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_proposal_version_lookup").on(
+      table.proposalId,
+      table.versionNumber
+    ),
+    index("idx_proposal_version_org").on(table.organizationId),
+  ]
+)
+
+/**
+ * Legacy Draft & Snapshot Tables (Maintained for Backward Compatibility)
+ */
 export const proposalDraft = pgTable(
   "proposal_draft",
   {
@@ -130,6 +226,36 @@ export const proposalEvent = pgTable(
     index("proposal_event_public_link_id_idx").on(table.publicLinkId),
     index("proposal_event_type_idx").on(table.eventType),
   ]
+)
+
+export const proposalRelations = relations(proposal, ({ one, many }) => ({
+  organization: one(organization, {
+    fields: [proposal.organizationId],
+    references: [organization.id],
+  }),
+  company: one(company, {
+    fields: [proposal.companyId],
+    references: [company.id],
+  }),
+  contact: one(contact, {
+    fields: [proposal.contactId],
+    references: [contact.id],
+  }),
+  versions: many(proposalVersion),
+}))
+
+export const proposalVersionRelations = relations(
+  proposalVersion,
+  ({ one }) => ({
+    proposal: one(proposal, {
+      fields: [proposalVersion.proposalId],
+      references: [proposal.id],
+    }),
+    organization: one(organization, {
+      fields: [proposalVersion.organizationId],
+      references: [organization.id],
+    }),
+  })
 )
 
 export const proposalDraftRelations = relations(
