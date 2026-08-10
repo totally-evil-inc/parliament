@@ -18,7 +18,7 @@ import { stripHtml } from "@workspace/document/text"
 import { logWideEvent } from "@workspace/logger"
 import { z } from "zod"
 import type { JsonValue } from "./api-client"
-import { requireAuth } from "./auth"
+import { getUserId, requireActiveOrganization, requireAuth } from "./auth"
 import type { AuthenticatedCommandAuthContext } from "./auth-context"
 
 const proposalIdSchema = z.object({ id: z.string().uuid() })
@@ -377,7 +377,6 @@ export const saveProposalServerFn = saveProposalDraft
 export const getProposalServerFn = getProposalDraft
 export const listProposalsServerFn = listProposalDrafts
 
-
 export const finalizeProposalDraft = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .validator(finalizeProposalDraftSchema)
@@ -511,31 +510,7 @@ export const acceptPublicProposal = createServerFn({ method: "POST" })
     return { accepted: acceptance }
   })
 
-async function requireActiveOrganization(
-  auth: AuthenticatedCommandAuthContext
-) {
-  const organizationId = auth.session.session?.activeOrganizationId
-  const userId = getUserId(auth)
-  if (!organizationId || !userId) throw new Error("Unauthorized")
 
-  const rows = await db
-    .select({ id: schema.member.id })
-    .from(schema.member)
-    .where(
-      and(
-        eq(schema.member.organizationId, organizationId),
-        eq(schema.member.userId, userId)
-      )
-    )
-    .limit(1)
-
-  if (rows.length === 0) throw new Error("Unauthorized")
-  return organizationId
-}
-
-function getUserId(auth: AuthenticatedCommandAuthContext) {
-  return typeof auth.user.id === "string" ? auth.user.id : null
-}
 
 async function selectDraft(id: string, organizationId: string) {
   const [row] = await db
