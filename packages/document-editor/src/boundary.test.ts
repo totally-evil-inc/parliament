@@ -6,8 +6,8 @@ test("the editor package never imports application modules", async () => {
   for await (const path of glob.scan({ cwd: `${import.meta.dir}/..` })) {
     if (path.endsWith("boundary.test.ts")) continue
     const source = await Bun.file(`${import.meta.dir}/../${path}`).text()
-    expect(source).not.toContain('from "@/')
-    expect(source).not.toContain("apps/command")
+    expect(source).not.toMatch(/from\s+['"]@\//)
+    expect(source).not.toMatch(/@workspace\/command|apps\/command/)
   }
 })
 
@@ -17,6 +17,6 @@ test("the command app does not own TipTap runtime imports", async () => {
 
   for await (const path of glob.scan({ cwd: appRoot })) {
     const source = await Bun.file(`${appRoot}/${path}`).text()
-    expect(source).not.toContain('from "@tiptap/')
+    expect(source).not.toMatch(/@tiptap\//)
   }
 })
