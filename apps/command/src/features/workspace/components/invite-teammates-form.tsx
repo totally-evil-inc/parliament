@@ -1,3 +1,8 @@
+import {
+  ArrowRightIcon,
+  CheckCircleIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@workspace/ui/components/button"
@@ -8,11 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { cn } from "@workspace/ui/lib/utils"
-import {
-  ArrowRightIcon,
-  CheckCircleIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline"
 import type { ClipboardEvent, KeyboardEvent } from "react"
 import { useRef, useState } from "react"
 

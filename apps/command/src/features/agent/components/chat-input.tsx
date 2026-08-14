@@ -1,3 +1,10 @@
+import {
+  ArrowUpIcon,
+  BuildingLibraryIcon,
+  SparklesIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline"
+import { StopIcon } from "@heroicons/react/24/solid"
 import { Button } from "@workspace/ui/components/button"
 import {
   Select,
@@ -8,13 +15,6 @@ import {
 } from "@workspace/ui/components/select"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
-import {
-  ArrowUpIcon,
-  BuildingLibraryIcon,
-  SparklesIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline"
-import { StopIcon } from "@heroicons/react/24/solid"
 import type React from "react"
 import { useRef, useState } from "react"
 import { useConfirm } from "@/components/confirm-dialog-provider"

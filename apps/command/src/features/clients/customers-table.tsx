@@ -1,9 +1,9 @@
+import { PlusIcon, UsersIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { formatMoneyMinor } from "@workspace/document/calculate"
 import type { CustomerStatus } from "@workspace/document/schema"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { PlusIcon, UsersIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { useMemo, useState } from "react"
 
 type CustomerRow = {

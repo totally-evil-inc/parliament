@@ -1,23 +1,9 @@
-import { Link, useRouterState } from "@tanstack/react-router"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@workspace/ui/components/breadcrumb"
-import { Separator } from "@workspace/ui/components/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@workspace/ui/components/sidebar"
+import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar"
 import type { ReactNode } from "react"
-import * as React from "react"
 import { workspaceConfig } from "@/features/workspace/config"
 import { authClient } from "@/lib/auth-client"
 import { AppSidebar } from "./app-sidebar"
+import { HeaderProvider, HeaderSlot } from "./header-portal"
 import { WorkspaceProvider } from "./workspace-provider"
 
 type AppShellProps = {
@@ -47,72 +33,20 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <SidebarProvider defaultOpen={false}>
       <WorkspaceProvider>
-        <AppSidebar
-          variant="floating"
-          primaryNav={workspaceConfig.primaryNav}
-          user={user}
-        />
-        <SidebarInset className="flex h-svh min-w-0 flex-col overflow-hidden">
-          <header className="flex h-12 shrink-0 items-center gap-2 border-border/60 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumbs />
-          </header>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
-            {children}
-          </div>
-        </SidebarInset>
+        <HeaderProvider>
+          <AppSidebar
+            variant="floating"
+            primaryNav={workspaceConfig.primaryNav}
+            user={user}
+          />
+          <SidebarInset className="flex h-svh min-w-0 flex-col overflow-hidden">
+            <HeaderSlot />
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
+              {children}
+            </div>
+          </SidebarInset>
+        </HeaderProvider>
       </WorkspaceProvider>
     </SidebarProvider>
-  )
-}
-
-function Breadcrumbs() {
-  const routerState = useRouterState()
-  const pathnames = routerState.location.pathname
-    .split("/")
-    .filter((x) => x && x !== "_workspace")
-
-  if (pathnames.length === 0) {
-    return (
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbPage>Home</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-    )
-  }
-
-  return (
-    <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink render={<Link to="/" />}>Home</BreadcrumbLink>
-        </BreadcrumbItem>
-        {pathnames.map((value, index) => {
-          const last = index === pathnames.length - 1
-          const to = `/${pathnames.slice(0, index + 1).join("/")}`
-          const label =
-            value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, " ")
-
-          return (
-            <React.Fragment key={to}>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                {last ? (
-                  <BreadcrumbPage>{label}</BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink render={<Link to={to} />}>
-                    {label}
-                  </BreadcrumbLink>
-                )}
-              </BreadcrumbItem>
-            </React.Fragment>
-          )
-        })}
-      </BreadcrumbList>
-    </Breadcrumb>
   )
 }

@@ -1,3 +1,8 @@
+import {
+  BoltIcon,
+  DocumentTextIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline"
 import { useNavigate } from "@tanstack/react-router"
 import { formatMoneyMinor } from "@workspace/document/calculate"
 import type { DealStage } from "@workspace/document/schema"
@@ -11,11 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import {
-  BoltIcon,
-  DocumentTextIcon,
-  UsersIcon,
-} from "@heroicons/react/24/outline"
 import { useMemo, useState } from "react"
 
 type DealRow = {

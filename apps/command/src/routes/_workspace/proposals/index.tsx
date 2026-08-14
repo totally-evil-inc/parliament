@@ -1,4 +1,17 @@
 import {
+  AdjustmentsHorizontalIcon,
+  BanknotesIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  EllipsisHorizontalIcon,
+  ListBulletIcon,
+  MagnifyingGlassIcon,
+  NoSymbolIcon,
+  PlusIcon,
+  Squares2X2Icon,
+} from "@heroicons/react/24/outline"
+import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
@@ -22,23 +35,11 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
-import {
-  AdjustmentsHorizontalIcon,
-  BanknotesIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  EllipsisHorizontalIcon,
-  ListBulletIcon,
-  MagnifyingGlassIcon,
-  NoSymbolIcon,
-  PlusIcon,
-  Squares2X2Icon,
-} from "@heroicons/react/24/outline"
 import { proposalDraftsQuery } from "@/api/proposals"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { PageHeader } from "@/components/page-header"
 import { useProposalsFilter } from "@/hooks/use-proposals-filter"
+import { AppHeader } from "@/layouts/header-portal"
 import { buildPublicLink } from "@/lib/public-links"
 import type {
   PersistedProposalDraft,
@@ -184,6 +185,7 @@ function ProposalsRoute() {
 
   return (
     <div className="flex flex-col h-full min-h-0 flex-1 overflow-hidden">
+      <AppHeader />
       <PageHeader
         title="Proposals"
         description="Track proposed value, acceptance and pipeline."

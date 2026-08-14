@@ -1,4 +1,17 @@
 import {
+  AdjustmentsHorizontalIcon,
+  BanknotesIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  EllipsisHorizontalIcon,
+  ListBulletIcon,
+  MagnifyingGlassIcon,
+  NoSymbolIcon,
+  PlusIcon,
+  Squares2X2Icon,
+} from "@heroicons/react/24/outline"
+import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
@@ -22,24 +35,12 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
-import {
-  AdjustmentsHorizontalIcon,
-  BanknotesIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  EllipsisHorizontalIcon,
-  ListBulletIcon,
-  MagnifyingGlassIcon,
-  NoSymbolIcon,
-  PlusIcon,
-  Squares2X2Icon,
-} from "@heroicons/react/24/outline"
 import * as React from "react"
 import type { DateRange } from "react-day-picker"
 import { invoiceDraftsQuery } from "@/api/invoices"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { PageHeader } from "@/components/page-header"
+import { AppHeader } from "@/layouts/header-portal"
 import { buildPublicLink } from "@/lib/public-links"
 import type {
   InvoiceDraftListItem,
@@ -222,6 +223,7 @@ function InvoicesRoute() {
 
   return (
     <div className="flex flex-col h-full min-h-0 flex-1 overflow-hidden">
+      <AppHeader />
       <PageHeader
         title="Invoices"
         description="Manage and track bills, payments, and receivables."

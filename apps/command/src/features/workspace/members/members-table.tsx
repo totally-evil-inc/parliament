@@ -1,3 +1,9 @@
+import {
+  EllipsisVerticalIcon,
+  EnvelopeIcon,
+  LockClosedIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Badge } from "@workspace/ui/components/badge"
@@ -24,12 +30,6 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
-import {
-  EllipsisVerticalIcon,
-  EnvelopeIcon,
-  LockClosedIcon,
-  TrashIcon,
-} from "@heroicons/react/24/outline"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { authClient } from "@/lib/auth-client"
 

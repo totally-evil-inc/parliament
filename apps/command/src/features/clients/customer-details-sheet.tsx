@@ -1,3 +1,4 @@
+import { GlobeAltIcon, PlusIcon } from "@heroicons/react/24/outline"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { formatMoneyMinor } from "@workspace/document/calculate"
@@ -10,7 +11,6 @@ import {
   SheetTitle,
 } from "@workspace/ui/components/sheet"
 import { toast } from "@workspace/ui/components/sonner"
-import { GlobeAltIcon, PlusIcon } from "@heroicons/react/24/outline"
 import { useState } from "react"
 import { getErrorMessage } from "../../lib/error-formatter"
 import {

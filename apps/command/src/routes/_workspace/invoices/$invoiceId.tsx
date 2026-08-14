@@ -26,11 +26,14 @@ import {
 import { createInvoiceDraftStore } from "@workspace/document-editor/store"
 import { Button } from "@workspace/ui/components/button"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
+import { Separator } from "@workspace/ui/components/separator"
+import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 import * as React from "react"
 import { invoiceDraftQuery } from "@/api/invoices"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { useTheme } from "@/components/theme-provider"
 import { SendDocumentDialog } from "@/features/integrations/components/send-document-dialog"
+import { HeaderPortal } from "@/layouts/header-portal"
 import { createId } from "@/lib/create-id"
 import { buildPublicLink } from "@/lib/public-links"
 import type {
@@ -224,42 +227,57 @@ function InvoiceEditorScreen({
   )
 
   return (
-    <div className="flex h-[calc(100svh-3rem)] min-h-0 w-full flex-col overflow-hidden bg-muted/30">
-      <div className="flex min-h-12 items-center justify-between gap-3 border-b bg-background px-4">
-        <div className="min-w-0 text-muted-foreground text-xs">
-          <span className="font-medium text-foreground">{status}</span>
-          {message ? <span className="ml-3">{message}</span> : null}
-          {shareUrl ? (
-            <a
-              className="ml-3 text-primary underline underline-offset-4"
-              href={shareUrl}
-              target="_blank"
-              rel="noreferrer"
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-muted/30">
+      <HeaderPortal>
+        <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-border/60 border-b bg-background px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <div className="min-w-0 truncate text-xs">
+              <span className="font-medium text-foreground">
+                {invoiceTitle}
+              </span>
+              <span className="ml-2 rounded border border-border bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground uppercase">
+                {status}
+              </span>
+              {message ? (
+                <span className="ml-3 text-muted-foreground">{message}</span>
+              ) : null}
+              {shareUrl ? (
+                <a
+                  className="ml-3 text-primary underline underline-offset-4"
+                  href={shareUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {shareUrl}
+                </a>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => saveDraft.mutate()}
+              disabled={saveDraft.isPending || sendDraft.isPending}
             >
-              {shareUrl}
-            </a>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => saveDraft.mutate()}
-            disabled={saveDraft.isPending || sendDraft.isPending}
-          >
-            {saveDraft.isPending ? "Saving..." : "Save"}
-          </Button>
-          <Button
-            type="button"
-            onClick={() => setSendDialogOpen(true)}
-            disabled={saveDraft.isPending || sendDraft.isPending}
-            className="gap-1.5"
-          >
-            <PaperAirplaneIcon className="h-4 w-4" />
-            {sendDraft.isPending ? "Sending..." : "Send"}
-          </Button>
-        </div>
-      </div>
+              {saveDraft.isPending ? "Saving..." : "Save"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setSendDialogOpen(true)}
+              disabled={saveDraft.isPending || sendDraft.isPending}
+              className="gap-1.5"
+            >
+              <PaperAirplaneIcon className="h-4 w-4" />
+              {sendDraft.isPending ? "Sending..." : "Send"}
+            </Button>
+          </div>
+        </header>
+      </HeaderPortal>
 
       <SendDocumentDialog
         open={sendDialogOpen}

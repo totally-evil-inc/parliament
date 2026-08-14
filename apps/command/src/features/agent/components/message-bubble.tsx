@@ -1,4 +1,5 @@
 import { Shimmer } from "@workspace/ui/components/shimmer"
+import type { TaskStatus } from "@workspace/ui/components/task"
 import type React from "react"
 import { extractThinkingAndContent } from "./command-center-page"
 import {
@@ -11,7 +12,6 @@ import {
   ToolCallCard,
   type ToolCallItem,
 } from "./elements"
-import type { TaskStatus } from "@workspace/ui/components/task"
 import { OpenUIMessage } from "./openui-message"
 
 export interface MessageBubbleProps {

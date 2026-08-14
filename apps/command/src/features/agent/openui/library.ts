@@ -1,9 +1,9 @@
-import { createLibrary, defineComponent } from "@openuidev/react-lang"
 import {
   CheckCircleIcon,
   MapPinIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline"
+import { createLibrary, defineComponent } from "@openuidev/react-lang"
 import React from "react"
 import { z } from "zod"
 

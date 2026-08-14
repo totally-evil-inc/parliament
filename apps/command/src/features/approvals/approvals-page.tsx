@@ -1,3 +1,4 @@
+import { CheckCircleIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -9,8 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
-import { CheckCircleIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { PageHeader } from "@/components/page-header"
+import { AppHeader } from "@/layouts/header-portal"
 import type { PendingAction } from "./use-agent-approvals"
 import {
   useApproveAction,
@@ -25,6 +26,7 @@ export function ApprovalsPage() {
 
   return (
     <>
+      <AppHeader />
       <PageHeader
         title="Agent Action Approvals"
         description="Review and authorize high-risk actions requested by autonomous AI agents before execution."

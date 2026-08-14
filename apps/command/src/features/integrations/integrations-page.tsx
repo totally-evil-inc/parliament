@@ -1,3 +1,14 @@
+import {
+  ArrowRightIcon,
+  ArrowTopRightOnSquareIcon,
+  BoltIcon,
+  CheckCircleIcon,
+  CodeBracketIcon,
+  Cog6ToothIcon,
+  EllipsisVerticalIcon,
+  LinkIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -29,20 +40,10 @@ import {
   TabsTrigger,
 } from "@workspace/ui/components/tabs"
 import { cn } from "@workspace/ui/lib/utils"
-import {
-  ArrowRightIcon,
-  ArrowTopRightOnSquareIcon,
-  BoltIcon,
-  CheckCircleIcon,
-  CodeBracketIcon,
-  Cog6ToothIcon,
-  EllipsisVerticalIcon,
-  LinkIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline"
 import * as React from "react"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { PageHeader } from "@/components/page-header"
+import { AppHeader } from "@/layouts/header-portal"
 import { GmailActivityHeatmap } from "./components/gmail-activity-heatmap"
 import { IntegrationPreviewCarousel } from "./components/integration-preview-carousel"
 import type { Integration, IntegrationStatus } from "./data"
@@ -66,6 +67,7 @@ export function IntegrationsPage({ integrations }: IntegrationsPageProps) {
 
   return (
     <>
+      <AppHeader />
       <PageHeader
         title="Integrations"
         description="Connect Parliament to external services managed by Better-Auth to enable AI Agent task execution across Gmail, Calendar, Drive, GitHub, Linear, and Notion."

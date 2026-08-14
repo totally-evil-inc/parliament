@@ -13,6 +13,7 @@ import {
   workspaceSettingsTabs,
 } from "@/features/workspace/settings"
 import { SettingsProvider } from "@/features/workspace/settings/settings-provider"
+import { AppHeader } from "@/layouts/header-portal"
 
 export const Route = createFileRoute("/_workspace/settings")({
   component: SettingsLayout,
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/_workspace/settings")({
 function SettingsLayout() {
   return (
     <SettingsProvider>
+      <AppHeader />
       <PageHeader
         title="Workspace settings"
         description="Manage workspace identity, account access, billing, and developer keys."

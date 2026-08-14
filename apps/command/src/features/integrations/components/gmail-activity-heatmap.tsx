@@ -1,3 +1,4 @@
+import { BoltIcon, CheckCircleIcon } from "@heroicons/react/24/outline"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -6,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
-import { BoltIcon, CheckCircleIcon } from "@heroicons/react/24/outline"
 import {
   useGmailThreadActivity,
   useRegisterGmailWatch,

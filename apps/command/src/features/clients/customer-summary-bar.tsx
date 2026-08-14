@@ -1,5 +1,3 @@
-import { formatMoneyMinor } from "@workspace/document/calculate"
-import type { CustomerAnalytics } from "@workspace/document/schema"
 import {
   BoltIcon,
   ChevronDownIcon,
@@ -8,6 +6,8 @@ import {
   SparklesIcon,
   TrophyIcon,
 } from "@heroicons/react/24/outline"
+import { formatMoneyMinor } from "@workspace/document/calculate"
+import type { CustomerAnalytics } from "@workspace/document/schema"
 import { useState } from "react"
 
 type Props = {

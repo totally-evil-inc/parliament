@@ -1,3 +1,4 @@
+import { ArrowUpTrayIcon } from "@heroicons/react/24/outline"
 import { Button } from "@workspace/ui/components/button"
 import {
   Field,
@@ -11,7 +12,6 @@ import {
   NativeSelectOption,
 } from "@workspace/ui/components/native-select"
 import { Switch } from "@workspace/ui/components/switch"
-import { ArrowUpTrayIcon } from "@heroicons/react/24/outline"
 import { useId } from "react"
 import { SettingsSection } from "./settings-section"
 

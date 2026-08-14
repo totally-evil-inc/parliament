@@ -1,14 +1,17 @@
-import { useNavigate } from "@tanstack/react-router"
-import { Button } from "@workspace/ui/components/button"
-import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import {
   ArrowDownIcon,
   BookmarkIcon,
   BuildingLibraryIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline"
+import { useNavigate } from "@tanstack/react-router"
+import { Button } from "@workspace/ui/components/button"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
+import { Separator } from "@workspace/ui/components/separator"
+import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 import type React from "react"
 import { useEffect, useRef, useState } from "react"
+import { HeaderPortal } from "@/layouts/header-portal"
 import { useCommandChatContext } from "../context/command-chat-context"
 import { normalizeAssistantMessage } from "../normalization"
 import { ChatInput } from "./chat-input"
@@ -226,48 +229,52 @@ export const CommandCenterPage: React.FC = () => {
 
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
-      {/* Header */}
-      <header className="flex shrink-0 items-center justify-between border-border border-b bg-card/50 px-6 py-3 backdrop-blur-md">
-        <div className="flex items-center gap-3 truncate pr-4">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 font-bold text-primary text-xs">
-            <BuildingLibraryIcon className="size-4 text-primary" />
+      {/* Contextual App Header via Portal */}
+      <HeaderPortal>
+        <header className="flex h-12 shrink-0 items-center justify-between border-border/60 border-b bg-card/50 px-4 backdrop-blur-md">
+          <div className="flex min-w-0 items-center gap-2.5 truncate pr-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-1 h-4" />
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/10 font-bold text-primary text-xs">
+              <BuildingLibraryIcon className="size-3.5 text-primary" />
+            </div>
+            <div className="min-w-0 truncate">
+              <h1 className="truncate font-semibold text-foreground text-sm">
+                {activeTitle || "Parliament Command Agent"}
+              </h1>
+            </div>
+            {threadId ? (
+              <span className="hidden rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground sm:inline-flex">
+                Active
+              </span>
+            ) : null}
           </div>
-          <div className="truncate">
-            <h1 className="truncate font-semibold text-foreground text-sm">
-              {activeTitle || "Parliament Command Agent"}
-            </h1>
-            <p className="truncate text-[11px] text-muted-foreground">
-              {threadId
-                ? "Active Conversation"
-                : "Autonomous sales & proposal operations center"}
-            </p>
-          </div>
-        </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          {threadId && (
+          <div className="flex shrink-0 items-center gap-2">
+            {threadId && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate({ to: "/" })}
+                className="flex h-8 items-center gap-1.5 px-2.5 text-xs"
+                title="Start a new conversation"
+              >
+                <SparklesIcon className="size-3.5" />
+                <span className="hidden sm:inline">New Chat</span>
+              </Button>
+            )}
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={() => navigate({ to: "/" })}
-              className="flex h-8 items-center gap-1.5 px-2.5 text-xs"
-              title="Start a new conversation"
+              onClick={() => setHistoryOpen(true)}
+              className="flex h-8 items-center gap-1.5 px-3 text-xs"
             >
-              <SparklesIcon className="size-3.5" />
-              <span>New Chat</span>
+              <BookmarkIcon className="size-3.5" />
+              <span>History</span>
             </Button>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setHistoryOpen(true)}
-            className="flex h-8 items-center gap-1.5 px-3 text-xs"
-          >
-            <BookmarkIcon className="size-3.5" />
-            <span>History</span>
-          </Button>
-        </div>
-      </header>
+          </div>
+        </header>
+      </HeaderPortal>
 
       {/* Message Feed with ScrollArea */}
       <ScrollArea className="min-h-0 w-full flex-1" onScroll={handleScroll}>
@@ -325,7 +332,6 @@ export const CommandCenterPage: React.FC = () => {
                   />
                 )
               })}
-
 
               {/* Feed-level Error Banner when no assistant message was generated */}
               {chatError &&
