@@ -1,5 +1,6 @@
 import { cn } from "@workspace/ui/lib/utils"
 import * as React from "react"
+import * as RechartsPrimitive from "recharts"
 import {
   Area,
   AreaChart,
@@ -12,7 +13,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import * as RechartsPrimitive from "recharts"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
