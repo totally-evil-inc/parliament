@@ -21,7 +21,9 @@
       "@workspace/database": ["../../packages/database/src/index.ts"],
       "@workspace/database/*": ["../../packages/database/src/*"],
       "@workspace/document": ["../../packages/document/src/index.ts"],
-      "@workspace/document/*": ["../../packages/document/src/*"]
+      "@workspace/document/*": ["../../packages/document/src/*"],
+      "@workspace/agent": ["../../packages/agent/src/index.ts"],
+      "@workspace/agent/*": ["../../packages/agent/src/*"]
     }
   },
   "exclude": ["node_modules", "dist"]

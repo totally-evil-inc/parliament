@@ -4,12 +4,29 @@ const DEFAULT_TRUSTED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:4000",
   "http://localhost:4100",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:4000",
+  "http://127.0.0.1:4100",
 ]
 
 export const trustedOrigins =
   Bun.env.AUTH_TRUSTED_ORIGINS?.split(",")
     .map((origin) => origin.trim())
     .filter(Boolean) ?? DEFAULT_TRUSTED_ORIGINS
+
+export function isAllowedOrigin(origin: string | undefined | null): boolean {
+  if (!origin) return true
+  if (trustedOrigins.includes(origin)) return true
+  try {
+    const url = new URL(origin)
+    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+      return true
+    }
+  } catch {
+    // ignore parse error
+  }
+  return false
+}
 
 /**
  * Constant-time string comparison. Secrets are hashed first so inputs of
