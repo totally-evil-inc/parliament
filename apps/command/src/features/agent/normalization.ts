@@ -1,4 +1,9 @@
-import type { ToolCallItem } from "./components/elements"
+import type { TaskStatus } from "@workspace/ui/components/task"
+import type {
+  ChainOfThoughtStepItem,
+  TaskItemData,
+  ToolCallItem,
+} from "./components/elements"
 import { extractOpenUI } from "./openui/parser"
 
 export interface NormalizedAssistantTurn {
@@ -7,6 +12,12 @@ export interface NormalizedAssistantTurn {
   text: string
   thinking: string
   tools: ToolCallItem[]
+  chainOfThought?: ChainOfThoughtStepItem[]
+  tasks?: Array<{
+    title: string
+    status?: TaskStatus
+    items?: TaskItemData[]
+  }>
   openui?: { source: string; complete: boolean }
 }
 
@@ -17,8 +28,14 @@ const toolNames: Record<string, string> = {
   get_customer: "Opening customer details",
   create_proposal: "Preparing a proposal",
   send_email: "Preparing an email",
+  gmail_send_email: "Dispatching Gmail email",
+  gmail_create_draft: "Creating Gmail draft",
+  gcal_list_events: "Checking Google Calendar",
+  gcal_create_event: "Scheduling Google Calendar event",
+  gcal_cancel_event: "Canceling Google Calendar event",
   schedule_event: "Checking the calendar",
   ask_clarifying_questions: "Requesting clarification",
+  askClarifyingQuestions: "Requesting clarification",
 }
 
 function objectValue(value: unknown): Record<string, unknown> {
@@ -99,8 +116,8 @@ export function normalizeAssistantMessage(
   }
 
   const thinking = parts
-    .filter((p: any) => p?.type === "thinking")
-    .map((p: any) => p.content ?? p.thinking ?? "")
+    .filter((p: any) => p?.type === "thinking" || p?.type === "reasoning")
+    .map((p: any) => p.content ?? p.thinking ?? p.reasoning ?? "")
     .join("")
   const calls = new Map<string, ToolCallItem>()
 
@@ -121,6 +138,11 @@ export function normalizeAssistantMessage(
             tc.needsApproval || tc.approval?.needsApproval
           ),
           approvalId: tc.approval?.id,
+          errorText:
+            tc.errorText ??
+            (tc.status === "error"
+              ? String(tc.result ?? "Tool execution failed")
+              : undefined),
         })
       }
     }
@@ -174,6 +196,11 @@ export function normalizeAssistantMessage(
           part.approval?.needsApproval ?? existing?.needsApproval
         ),
         approvalId: part.approval?.id ?? existing?.approvalId,
+        errorText:
+          part.errorText ??
+          (part.state === "output-error"
+            ? String(part.output ?? "Tool execution failed")
+            : undefined),
       })
     }
     if (part?.type === "tool-result") {
@@ -200,26 +227,60 @@ export function normalizeAssistantMessage(
         result: part.content ?? part.output ?? part.result,
         status:
           part.error || part.state === "output-error" ? "error" : "completed",
+        errorText:
+          part.error || part.state === "output-error"
+            ? String(part.content ?? part.output ?? "Tool execution failed")
+            : undefined,
       })
     }
   }
+
+  // Parse chain-of-thought steps if present
+  const chainOfThought: ChainOfThoughtStepItem[] | undefined = Array.isArray(
+    message?.chainOfThought
+  )
+    ? message.chainOfThought
+    : undefined
+
+  // Parse tasks if present
+  const tasks = Array.isArray(message?.tasks) ? message.tasks : undefined
+
   const hasQuestionnaire = [...calls.values()].some((call) =>
     call.name.toLowerCase().includes("clarifying_question")
   )
   const ui = extractOpenUI(hasQuestionnaire ? "" : text)
+  const rawProse = hasQuestionnaire ? "" : ui.prose
+  const sanitizedProse = stripLeakedFunctionCalls(rawProse)
+
   return {
     id: message?.id,
     role: message?.role ?? "assistant",
     // The questionnaire widget is the canonical rendering. Suppress the
     // model's repeated plaintext list so users do not see the same questions
     // twice (and so the form remains the only interactive surface).
-    text: hasQuestionnaire ? "" : ui.prose,
+    text: sanitizedProse,
     thinking,
     tools: [...calls.values()],
+    chainOfThought,
+    tasks,
     openui: ui.hasOpenUI
       ? { source: ui.program, complete: ui.isComplete }
       : undefined,
   }
+}
+
+export function stripLeakedFunctionCalls(rawText: string): string {
+  if (!rawText) return ""
+  return rawText
+    .replace(
+      /Here is a JSON for a function call with its proper arguments[^\n]*:\s*```(?:json)?\s*\{[\s\S]*?\}\s*```\s*(?:This function call will[^\n.]*\.?)?/gi,
+      ""
+    )
+    .replace(
+      /```(?:json)?\s*\{\s*"name"\s*:\s*"[a-zA-Z0-9_-]+"\s*,\s*"(?:parameters|arguments|args)"\s*:[\s\S]*?\}\s*```/gi,
+      ""
+    )
+    .trim()
 }
 
 export function toolLabel(name: string): string {

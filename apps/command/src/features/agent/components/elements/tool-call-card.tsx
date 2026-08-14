@@ -1,3 +1,11 @@
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+  ToolOutput,
+  type ToolState,
+} from "@workspace/ui/components/tool"
 import type React from "react"
 import { ApprovalCard } from "../approval-card"
 import { QuestionnaireCard } from "../questionnaire-card"
@@ -10,6 +18,8 @@ export interface ToolCallItem {
   status?: string
   needsApproval?: boolean
   approvalId?: string
+  state?: ToolState
+  errorText?: string
 }
 
 export interface ToolCallCardProps {
@@ -18,30 +28,22 @@ export interface ToolCallCardProps {
   onRejectTool?: (toolCallId: string) => void
 }
 
-function formatToolArguments(args: Record<string, unknown>): string {
-  const entries = Object.entries(args).filter(
-    ([, value]) => value !== undefined
-  )
-  if (entries.length === 0) return "Working with the requested information"
-  return entries
-    .slice(0, 3)
-    .map(([key, value]) => `${humanize(key)}: ${formatValue(value)}`)
-    .join(" · ")
-}
-
-function formatToolResult(result: unknown): string {
-  if (typeof result === "string") return result
-  if (result === null || result === undefined) return "Completed"
-  if (Array.isArray(result))
-    return `${result.length} result${result.length === 1 ? "" : "s"} found`
-  if (typeof result === "object") {
-    const record = result as Record<string, unknown>
-    const count = record.count ?? record.total ?? record.totalCount
-    if (typeof count === "number")
-      return `${count} result${count === 1 ? "" : "s"} found`
-    return "Information retrieved"
+function mapToToolState(item: ToolCallItem): ToolState {
+  if (item.state) return item.state
+  if (
+    item.needsApproval &&
+    item.status !== "approved" &&
+    item.status !== "rejected"
+  ) {
+    return "approval-requested"
   }
-  return String(result)
+  if (item.status === "approved") return "approval-responded"
+  if (item.status === "rejected") return "output-denied"
+  if (item.status === "running") return "input-available"
+  if (item.status === "error" || item.errorText) return "output-error"
+  if (item.status === "completed" || item.result !== undefined)
+    return "output-available"
+  return "output-available"
 }
 
 function toolDisplayName(value: string): string {
@@ -52,8 +54,14 @@ function toolDisplayName(value: string): string {
     get_customer: "Opening customer details",
     create_proposal: "Preparing proposal",
     send_email: "Preparing email",
+    gmail_send_email: "Dispatching Gmail email",
+    gmail_create_draft: "Creating Gmail draft",
+    gcal_list_events: "Checking Google Calendar",
+    gcal_create_event: "Scheduling Google Calendar event",
+    gcal_cancel_event: "Canceling Google Calendar event",
     schedule_event: "Checking calendar",
     ask_clarifying_questions: "Requesting clarification",
+    askClarifyingQuestions: "Requesting clarification",
   }
   return names[value] ?? humanize(value)
 }
@@ -65,15 +73,6 @@ function humanize(value: string): string {
     .replace(/^./, (char) => char.toUpperCase())
 }
 
-function formatValue(value: unknown): string {
-  if (typeof value === "string")
-    return value.length > 100 ? `${value.slice(0, 97)}…` : value
-  if (typeof value === "number" || typeof value === "boolean")
-    return String(value)
-  if (Array.isArray(value)) return `${value.length} selected`
-  return "provided"
-}
-
 export const ToolCallCard: React.FC<ToolCallCardProps> = ({
   toolCalls,
   onApproveTool,
@@ -83,83 +82,74 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
 
   return (
     <div className="my-2 flex flex-col space-y-2">
-      {/* Tool execution timeline */}
-      <div className="flex flex-col gap-1.5">
+      {/* Tool execution cards */}
+      <div className="flex flex-col gap-2">
         {toolCalls.map((tc) => {
-          const isRunning = tc.status === "running"
-          const isError = tc.status === "error"
+          const toolState = mapToToolState(tc)
           const isQuestionnaire =
             tc.name === "ask_clarifying_questions" ||
             tc.name === "askClarifyingQuestions" ||
             tc.name.toLowerCase().includes("clarifying_question")
+          const hasArgs = tc.args && Object.keys(tc.args).length > 0
+          const hasOutput = tc.result !== undefined || tc.errorText
+
           return (
-            <div
-              key={tc.id}
-              className="rounded-md border border-border bg-card px-2.5 py-2 text-[11px] shadow-2xs"
-            >
-              <div className="flex items-center gap-1.5 font-mono text-muted-foreground">
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    isRunning
-                      ? "animate-pulse bg-amber-500"
-                      : isError
-                        ? "bg-destructive"
-                        : "bg-emerald-500"
-                  }`}
+            <div key={tc.id} className="w-full">
+              <Tool
+                defaultOpen={
+                  toolState === "approval-requested" ||
+                  toolState === "output-error" ||
+                  tc.needsApproval
+                }
+              >
+                <ToolHeader
+                  type={tc.name}
+                  state={toolState}
+                  title={toolDisplayName(tc.name)}
                 />
-                <span>{toolDisplayName(tc.name)}</span>
-                <span className="ml-auto font-sans text-[10px]">
-                  {isRunning ? "running" : isError ? "failed" : "complete"}
-                </span>
-              </div>
-              {!isQuestionnaire &&
-                tc.args &&
-                Object.keys(tc.args).length > 0 && (
-                  <p className="mt-1 text-[11px] text-muted-foreground/80">
-                    {formatToolArguments(tc.args)}
-                  </p>
+                {!isQuestionnaire && (hasArgs || hasOutput) && (
+                  <ToolContent>
+                    {hasArgs && <ToolInput input={tc.args} />}
+                    {hasOutput && (
+                      <ToolOutput output={tc.result} errorText={tc.errorText} />
+                    )}
+                  </ToolContent>
                 )}
-              {!isQuestionnaire && tc.result !== undefined && (
-                <div className="mt-1 border-border/60 border-t pt-1 text-foreground/80">
-                  {formatToolResult(tc.result)}
+              </Tool>
+
+              {/* Interactive Questionnaires */}
+              {isQuestionnaire && (
+                <div className="mt-2">
+                  <QuestionnaireCard
+                    toolCallId={tc.id}
+                    args={
+                      (tc.args || {}) as Parameters<
+                        typeof QuestionnaireCard
+                      >[0]["args"]
+                    }
+                  />
                 </div>
               )}
+
+              {/* Approval Cards for Write Tools */}
+              {tc.needsApproval &&
+                tc.status !== "approved" &&
+                tc.status !== "rejected" && (
+                  <div className="mt-2">
+                    <ApprovalCard
+                      toolName={toolDisplayName(tc.name)}
+                      args={tc.args || {}}
+                      onApprove={() =>
+                        onApproveTool?.(tc.approvalId || tc.id, tc.args || {})
+                      }
+                      onReject={() => onRejectTool?.(tc.approvalId || tc.id)}
+                    />
+                  </div>
+                )}
             </div>
           )
         })}
       </div>
-
-      {/* Interactive Questionnaires */}
-      {toolCalls.map(
-        (tc) =>
-          (tc.name === "ask_clarifying_questions" ||
-            tc.name === "askClarifyingQuestions" ||
-            tc.name.toLowerCase().includes("clarifying_question")) && (
-            <QuestionnaireCard
-              key={tc.id}
-              toolCallId={tc.id}
-              args={(tc.args || {}) as any}
-            />
-          )
-      )}
-
-      {/* Approval Cards for Write Tools */}
-      {toolCalls.map(
-        (tc) =>
-          tc.needsApproval &&
-          tc.status !== "approved" &&
-          tc.status !== "rejected" && (
-            <ApprovalCard
-              key={tc.id}
-              toolName={tc.name}
-              args={tc.args || {}}
-              onApprove={() =>
-                onApproveTool?.(tc.approvalId || tc.id, tc.args || {})
-              }
-              onReject={() => onRejectTool?.(tc.approvalId || tc.id)}
-            />
-          )
-      )}
     </div>
   )
 }

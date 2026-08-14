@@ -10,7 +10,7 @@ export function verifyOrgAccessTool(ctx: AgentContext) {
   return toolDefinition({
     name: "verify_org_access",
     description:
-      "Verify which organization the current session belongs to. Returns the organization id and name. Call this when uncertain about the acting organization.",
+      "Verify organization context: returns the current organization id and name. Internal diagnostic tool; do not call for conversational queries or greetings.",
     outputSchema: verifyOrgAccessOutput,
     needsApproval: false,
   }).server(async () => {

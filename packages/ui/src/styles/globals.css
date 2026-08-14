@@ -636,6 +636,19 @@
   .document-print-page p {
     overflow-wrap: anywhere;
   }
+
+  @keyframes text-shimmer {
+    0% {
+      background-position: 100% center;
+    }
+    100% {
+      background-position: 0% center;
+    }
+  }
+
+  .animate-text-shimmer {
+    animation: text-shimmer var(--shimmer-duration, 2s) linear infinite;
+  }
 }
 
 @page {
@@ -655,3 +668,4 @@
     min-height: 0;
   }
 }
+

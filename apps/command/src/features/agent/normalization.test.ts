@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test"
-import { normalizeAssistantMessage } from "./normalization"
+import {
+  normalizeAssistantMessage,
+  stripLeakedFunctionCalls,
+} from "./normalization"
 
 describe("normalizeAssistantMessage", () => {
   test("extracts ask_clarifying_questions tool calls and arguments from parts", () => {
@@ -95,6 +98,71 @@ describe("normalizeAssistantMessage", () => {
     )
     expect((normalized.tools[0].args as any).subtitle).toBe(
       "Please provide details"
+    )
+  })
+
+  test("extracts thinking, chain of thought, and tasks when present", () => {
+    const rawMessage = {
+      id: "msg-complex",
+      role: "assistant",
+      parts: [
+        {
+          type: "thinking",
+          thinking: "Evaluating sales pipeline and draft proposals...",
+        },
+        {
+          type: "text",
+          text: "Here is the summary of your pipeline.",
+        },
+      ],
+      chainOfThought: [
+        {
+          label: "Query CRM deals",
+          description: "Fetched active deals for Q3",
+          status: "complete",
+          searchResults: ["deals/q3"],
+        },
+      ],
+      tasks: [
+        {
+          title: "Proposal dispatch workflow",
+          status: "in_progress",
+          items: [{ text: "Created draft", status: "completed" }],
+        },
+      ],
+    }
+
+    const normalized = normalizeAssistantMessage(rawMessage)
+    expect(normalized.text).toBe("Here is the summary of your pipeline.")
+    expect(normalized.thinking).toBe(
+      "Evaluating sales pipeline and draft proposals..."
+    )
+    expect(normalized.chainOfThought).toHaveLength(1)
+    expect(normalized.chainOfThought?.[0].label).toBe("Query CRM deals")
+    expect(normalized.tasks).toHaveLength(1)
+    expect(normalized.tasks?.[0].title).toBe("Proposal dispatch workflow")
+  })
+
+  test("strips leaked markdown pseudo-function-call text from assistant messages", () => {
+    const leakedRawText = `I can help manage your sales pipeline and draft proposals.
+
+Here is a JSON for a function call with its proper arguments that best answers the given prompt:
+\`\`\`
+{"name": "verify_org_access", "parameters": {}}
+\`\`\`
+This function call will verify which organization the current session belongs to and return the organization id and name.`
+
+    const sanitized = stripLeakedFunctionCalls(leakedRawText)
+    expect(sanitized).toBe(
+      "I can help manage your sales pipeline and draft proposals."
+    )
+
+    const normalized = normalizeAssistantMessage({
+      role: "assistant",
+      content: leakedRawText,
+    })
+    expect(normalized.text).toBe(
+      "I can help manage your sales pipeline and draft proposals."
     )
   })
 })

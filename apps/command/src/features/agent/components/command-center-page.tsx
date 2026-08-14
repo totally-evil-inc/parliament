@@ -311,6 +311,8 @@ export const CommandCenterPage: React.FC = () => {
                       content: normalized.text,
                       thinking: normalized.thinking || undefined,
                       toolCalls: normalized.tools,
+                      chainOfThought: normalized.chainOfThought,
+                      tasks: normalized.tasks,
                       openuiCode: normalized.openui?.source,
                       error: isLastMessage && chatError ? chatError : undefined,
                     }}
@@ -323,6 +325,7 @@ export const CommandCenterPage: React.FC = () => {
                   />
                 )
               })}
+
 
               {/* Feed-level Error Banner when no assistant message was generated */}
               {chatError &&

@@ -100,7 +100,7 @@ export const TOOL_CATALOG = {
   },
   verify_org_access: {
     description:
-      "Verify organization context: returns the current organization id and name.",
+      "Verify organization context: returns the current organization id and name. Internal diagnostic tool; do not call for conversational queries or greetings.",
     input: toolInputSchemas.verify_org_access,
     output: toolOutputSchemas.verify_org_access,
     category: "read",

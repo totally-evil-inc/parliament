@@ -87,7 +87,7 @@ function sha256Sync(ascii: string): string {
     }
   }
 
-  let formatted = ascii + "\x80"
+  let formatted = `${ascii}\x80`
   while ((formatted.length % 64) - 56) formatted += "\x00"
   for (i = 0; i < formatted.length; i++) {
     j = formatted.charCodeAt(i)
@@ -96,8 +96,8 @@ function sha256Sync(ascii: string): string {
   words[words.length] = (asciiBitLength / maxWord) | 0
   words[words.length] = asciiBitLength
 
-  for (j = 0; j < words.length; ) {
-    const w = words.slice(j, (j += 16))
+  for (j = 0; j < words.length; j += 16) {
+    const w = words.slice(j, j + 16)
     const oldHash = [...hash]
 
     for (i = 0; i < 64; i++) {
