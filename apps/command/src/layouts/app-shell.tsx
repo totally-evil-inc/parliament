@@ -7,7 +7,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@workspace/ui/components/breadcrumb"
-import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
 import {
   SidebarInset,
@@ -59,11 +58,9 @@ export function AppShell({ children }: AppShellProps) {
             <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumbs />
           </header>
-          <ScrollArea className="min-h-0 flex-1">
-            <main className="flex min-h-full flex-col bg-background text-foreground">
-              {children}
-            </main>
-          </ScrollArea>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
+            {children}
+          </div>
         </SidebarInset>
       </WorkspaceProvider>
     </SidebarProvider>

@@ -67,30 +67,35 @@ export function IntegrationsPage({ integrations }: IntegrationsPageProps) {
         description="Connect Parliament to external services managed by Better-Auth to enable AI Agent task execution across Gmail, Calendar, Drive, GitHub, Linear, and Notion."
       />
 
-      <div className="flex flex-1 flex-col gap-5 p-6 md:p-8">
-        <Tabs defaultValue="all" className="gap-5">
-          <div className="flex items-center justify-between gap-3">
-            <TabsList variant="line">
-              {integrationCategories.map((category) => (
-                <TabsTrigger key={category.value} value={category.value}>
-                  {category.label}
-                  <span className="ml-1 font-normal text-muted-foreground text-xs">
-                    ({counts[category.value] ?? 0})
-                  </span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="flex flex-1 flex-col gap-5 p-6 md:p-8">
+          <Tabs defaultValue="all" className="gap-5">
+            <div className="flex items-center justify-between gap-3">
+              <TabsList variant="line">
+                {integrationCategories.map((category) => (
+                  <TabsTrigger key={category.value} value={category.value}>
+                    {category.label}
+                    <span className="ml-1 font-normal text-muted-foreground text-xs">
+                      ({counts[category.value] ?? 0})
+                    </span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
-          {integrationCategories.map((category) => (
-            <TabsContent key={category.value} value={category.value}>
-              <IntegrationGrid
-                integrations={filterIntegrations(integrations, category.value)}
-              />
-            </TabsContent>
-          ))}
-        </Tabs>
-      </div>
+            {integrationCategories.map((category) => (
+              <TabsContent key={category.value} value={category.value}>
+                <IntegrationGrid
+                  integrations={filterIntegrations(
+                    integrations,
+                    category.value
+                  )}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+        </div>
+      </ScrollArea>
     </>
   )
 }

@@ -47,7 +47,10 @@ export async function processCalComWebhook(
 
   if (triggerEvent === "BOOKING_CREATED") {
     if (!contactId) {
-      return { status: "no_matching_deal", reason: "contact not found for attendee email" }
+      return {
+        status: "no_matching_deal",
+        reason: "contact not found for attendee email",
+      }
     }
 
     const [dealToUpdate] = await db
@@ -86,7 +89,11 @@ export async function processCalComWebhook(
         },
       })
 
-      return { status: "updated", dealId: dealToUpdate.id, newStage: "discovery" }
+      return {
+        status: "updated",
+        dealId: dealToUpdate.id,
+        newStage: "discovery",
+      }
     }
 
     return { status: "no_matching_deal" }
@@ -94,7 +101,10 @@ export async function processCalComWebhook(
 
   if (triggerEvent === "BOOKING_CANCELLED") {
     if (!contactId) {
-      return { status: "no_matching_deal", reason: "contact not found for attendee email" }
+      return {
+        status: "no_matching_deal",
+        reason: "contact not found for attendee email",
+      }
     }
 
     const [dealToRollback] = await db
@@ -134,7 +144,11 @@ export async function processCalComWebhook(
         },
       })
 
-      return { status: "rolled_back", dealId: dealToRollback.id, newStage: "lead" }
+      return {
+        status: "rolled_back",
+        dealId: dealToRollback.id,
+        newStage: "lead",
+      }
     }
 
     return { status: "no_matching_deal" }

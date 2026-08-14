@@ -50,7 +50,9 @@ describe("Command App Integration Configuration & Scopes", () => {
     expect(gmailInt?.author).toBe("Google.com")
     expect(gmailInt?.documentationUrl).toBeDefined()
     expect(gmailInt?.overview).toContain("Gmail API")
-    expect(gmailInt?.howItWorks).toContain("The Gmail API offers a ready-to-use solution")
+    expect(gmailInt?.howItWorks).toContain(
+      "The Gmail API offers a ready-to-use solution"
+    )
     expect(gmailInt?.previews).toBeDefined()
     expect(gmailInt?.previews?.length).toBeGreaterThan(0)
   })

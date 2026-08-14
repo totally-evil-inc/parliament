@@ -30,6 +30,13 @@ export const workspaceSettingsTabs = [
     title: "API keys",
     description: "Create and rotate keys for workspace integrations.",
   },
+  {
+    value: "ai",
+    label: "AI Configuration",
+    to: "/settings/$tab",
+    title: "AI Configuration",
+    description: "Configure LLM provider endpoint, API key, and default model.",
+  },
 ] as const
 
 const workspaceSettingsParamTabs = workspaceSettingsTabs.filter(

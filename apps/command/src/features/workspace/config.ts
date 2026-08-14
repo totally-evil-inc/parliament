@@ -1,5 +1,4 @@
 import {
-  IconBell,
   IconConnect,
   IconFile,
   IconFolder,
@@ -14,7 +13,14 @@ import type React from "react"
 
 export type WorkspaceRouteNavItem = {
   label: string
-  to: "/" | "/integrations" | "/proposals" | "/invoices" | "/settings" | "/clients" | "/clients/deals"
+  to:
+    | "/"
+    | "/integrations"
+    | "/proposals"
+    | "/invoices"
+    | "/settings"
+    | "/clients"
+    | "/clients/deals"
   icon: React.ComponentType<{ className?: string }>
   badge?: number
 }
