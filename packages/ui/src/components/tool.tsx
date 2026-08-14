@@ -167,7 +167,7 @@ export function Tool({
         open={isOpen}
         onOpenChange={handleOpenChange}
         className={cn(
-          "group not-prose my-2 w-full rounded-xl border border-border/80 bg-card text-xs shadow-xs transition-all",
+          "group not-prose my-2 w-full max-w-full overflow-hidden rounded-xl border border-border/80 bg-card text-xs shadow-xs transition-all",
           className
         )}
         {...props}
@@ -208,17 +208,17 @@ export function ToolHeader({
     <CollapsibleTrigger
       data-slot="tool-header"
       className={cn(
-        "flex w-full cursor-pointer items-center justify-between gap-3 p-3 text-left font-mono transition-colors hover:bg-muted/40",
+        "flex w-full min-w-0 cursor-pointer items-center justify-between gap-3 p-3 text-left font-mono transition-colors hover:bg-muted/40",
         className
       )}
       {...props}
     >
-      <div className="flex items-center gap-2 truncate">
+      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
         <WrenchScrewdriverIcon className="size-4 shrink-0 text-muted-foreground" />
         <span className="truncate font-semibold text-foreground text-xs">
           {displayName}
         </span>
-        {getStatusBadge(state)}
+        <div className="shrink-0">{getStatusBadge(state)}</div>
       </div>
       <ChevronDownIcon
         className={cn(
@@ -239,7 +239,7 @@ export function ToolContent({
     <CollapsibleContent
       data-slot="tool-content"
       className={cn(
-        "space-y-3 border-border/60 border-t bg-muted/20 p-3.5 text-xs transition-all",
+        "max-w-full space-y-3 overflow-hidden border-border/60 border-t bg-muted/20 p-3.5 text-xs transition-all",
         className
       )}
       {...props}
@@ -267,14 +267,14 @@ export function ToolInput({ input, className, ...props }: ToolInputProps) {
   return (
     <div
       data-slot="tool-input"
-      className={cn("space-y-1.5", className)}
+      className={cn("max-w-full space-y-1.5 overflow-hidden", className)}
       {...props}
     >
       <h4 className="font-medium font-mono text-[10px] text-muted-foreground uppercase tracking-wide">
         Parameters
       </h4>
-      <div className="overflow-x-auto rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px]">
-        <pre className="whitespace-pre-wrap text-foreground/90 leading-relaxed">
+      <div className="max-h-56 max-w-full overflow-auto rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px]">
+        <pre className="whitespace-pre-wrap break-words text-foreground/90 leading-relaxed">
           {jsonString}
         </pre>
       </div>
@@ -299,7 +299,7 @@ export function ToolOutput({
   return (
     <div
       data-slot="tool-output"
-      className={cn("space-y-1.5", className)}
+      className={cn("max-w-full space-y-1.5 overflow-hidden", className)}
       {...props}
     >
       <h4 className="font-medium font-mono text-[10px] text-muted-foreground uppercase tracking-wide">
@@ -307,24 +307,24 @@ export function ToolOutput({
       </h4>
 
       {errorText ? (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 font-mono text-[11px] text-destructive">
+        <div className="max-h-64 max-w-full overflow-auto break-words rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 font-mono text-[11px] text-destructive">
           {errorText}
         </div>
       ) : output !== undefined ? (
         typeof output === "string" ? (
-          <div className="whitespace-pre-wrap rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px] text-foreground/90">
+          <div className="max-h-80 max-w-full overflow-auto whitespace-pre-wrap break-words rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px] text-foreground/90">
             {output}
           </div>
         ) : typeof output === "object" &&
           output !== null &&
           !isValidElement(output) ? (
-          <div className="overflow-x-auto rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px]">
-            <pre className="whitespace-pre-wrap text-foreground/90 leading-relaxed">
+          <div className="max-h-80 max-w-full overflow-auto rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px]">
+            <pre className="whitespace-pre-wrap break-words text-foreground/90 leading-relaxed">
               {JSON.stringify(output, null, 2)}
             </pre>
           </div>
         ) : (
-          <div className="rounded-lg border border-border/80 bg-background/80 p-2.5 text-[11px] text-foreground/90">
+          <div className="max-h-80 max-w-full overflow-auto break-words rounded-lg border border-border/80 bg-background/80 p-2.5 text-[11px] text-foreground/90">
             {output as React.ReactNode}
           </div>
         )

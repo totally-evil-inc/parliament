@@ -93,9 +93,18 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
           const hasArgs = tc.args && Object.keys(tc.args).length > 0
           const hasOutput = tc.result !== undefined || tc.errorText
 
+          const shouldDefaultOpen =
+            toolState === "approval-requested" ||
+            toolState === "awaiting-approval" ||
+            Boolean(
+              tc.needsApproval &&
+                tc.status !== "approved" &&
+                tc.status !== "rejected"
+            )
+
           return (
             <div key={tc.id} className="w-full">
-              <Tool defaultOpen={true}>
+              <Tool defaultOpen={shouldDefaultOpen}>
                 <ToolHeader
                   type={tc.name}
                   state={toolState}
