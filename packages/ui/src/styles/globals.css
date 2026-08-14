@@ -840,6 +840,24 @@
     background: var(--muted-foreground);
   }
 
+  [data-slot="scroll-area-viewport"] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  [data-slot="scroll-area-viewport"]::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .document-print-root,
   .document-print-root body {
     overflow: auto;
