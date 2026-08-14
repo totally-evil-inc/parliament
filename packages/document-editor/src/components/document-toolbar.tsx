@@ -1,4 +1,3 @@
-import { useRef, useState } from "react"
 import type { Editor } from "@tiptap/react"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -8,6 +7,7 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
+import { useRef, useState } from "react"
 import { insertDocumentBlockFromDefinition } from "../core/definition"
 import type {
   DocumentBlockDefinition,
@@ -178,7 +178,7 @@ export function DocumentToolbar({
           role="toolbar"
           aria-label="Document formatting and action toolbar"
           onMouseLeave={handleDockMouseLeave}
-          className="liquid-glass-dock gap-1.5 p-2"
+          className="liquid-glass liquid-glass-dock gap-1.5 p-2"
         >
           {/* Animated Liquid Glass Sliding Pill */}
           {hoveredPill && (
@@ -257,7 +257,7 @@ function MobileCompactDock({
       <div
         role="toolbar"
         aria-label="Mobile document toolbar"
-        className="liquid-glass-dock gap-1 p-1.5"
+        className="liquid-glass liquid-glass-dock gap-1 p-1.5"
       >
         {compactActions.map((action) => {
           const isSend = action.id === "send"
