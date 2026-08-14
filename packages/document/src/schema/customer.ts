@@ -53,7 +53,10 @@ export const createCustomerInputSchema = z
     country: z.string().optional(),
     note: z.string().optional(),
     status: customerStatusEnumSchema.default("active"),
-    preferredCurrency: z.string().regex(/^[A-Z]{3}$/).default("USD"),
+    preferredCurrency: z
+      .string()
+      .regex(/^[A-Z]{3}$/)
+      .default("USD"),
     defaultPaymentTerms: z.number().int().positive().default(30),
     industry: z.string().optional(),
   })
@@ -74,7 +77,10 @@ export const updateCustomerInputSchema = z
     country: z.string().optional(),
     note: z.string().optional(),
     status: customerStatusEnumSchema.optional(),
-    preferredCurrency: z.string().regex(/^[A-Z]{3}$/).optional(),
+    preferredCurrency: z
+      .string()
+      .regex(/^[A-Z]{3}$/)
+      .optional(),
     defaultPaymentTerms: z.number().int().positive().optional(),
     industry: z.string().optional(),
     isArchived: z.boolean().optional(),

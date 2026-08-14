@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import type { DealStage } from "@workspace/document/schema"
@@ -6,7 +5,14 @@ import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/components/sonner"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@workspace/ui/components/tabs"
+import { IconDeleteX } from "nucleo-glass"
+import { useState } from "react"
 import { DealKanbanBoard } from "../../../features/clients/deal-kanban-board"
 import { DealKpiCards } from "../../../features/clients/deal-kpi-cards"
 import { DealPipelineChart } from "../../../features/clients/deal-pipeline-chart"
@@ -29,7 +35,9 @@ function DealsKanbanRoute() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
-  const [activeTab, setActiveTab] = useState<"pipeline" | "board" | "table">("pipeline")
+  const [activeTab, setActiveTab] = useState<"pipeline" | "board" | "table">(
+    "pipeline"
+  )
   const [isCreating, setIsCreating] = useState(false)
   const [newTitle, setNewTitle] = useState("")
   const [newValue, setNewValue] = useState("5000")
@@ -69,7 +77,10 @@ function DealsKanbanRoute() {
       queryClient.invalidateQueries({ queryKey: ["deals"] })
       queryClient.invalidateQueries({ queryKey: ["deal-analytics"] })
       queryClient.invalidateQueries({ queryKey: ["proposals"] })
-      navigate({ to: "/proposals/$proposalId", params: { proposalId: res.proposalId } })
+      navigate({
+        to: "/proposals/$proposalId" as any,
+        params: { proposalId: (res as any)?.proposalId } as any,
+      })
     },
     onError: (err) => {
       toast.error(getErrorMessage(err, "Failed to convert deal to proposal"))
@@ -79,7 +90,9 @@ function DealsKanbanRoute() {
   const createDealMutation = useMutation({
     mutationFn: async () => {
       if (!newTitle.trim()) return
-      const valueMinorUnits = Math.round(Number.parseFloat(newValue || "0") * 100)
+      const valueMinorUnits = Math.round(
+        Number.parseFloat(newValue || "0") * 100
+      )
       return await createDealServerFn({
         data: {
           title: newTitle.trim(),
@@ -103,18 +116,24 @@ function DealsKanbanRoute() {
   })
 
   return (
-    <div className="flex flex-col h-full min-h-screen bg-background text-foreground p-6 gap-6">
+    <div className="flex h-full min-h-screen flex-col gap-6 bg-background p-6 text-foreground">
       {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
+      <div className="flex flex-col justify-between gap-4 border-border border-b pb-4 md:flex-row md:items-center">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Deal Pipeline & Analytics</h1>
-            <Badge variant="secondary" className="px-2 py-0.5 text-xs font-semibold">
+            <h1 className="font-bold text-2xl tracking-tight">
+              Deal Pipeline & Analytics
+            </h1>
+            <Badge
+              variant="secondary"
+              className="px-2 py-0.5 font-semibold text-xs"
+            >
               {deals.length} Deals
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Midday-inspired pipeline overview, conversion analytics, and 1-click proposal handoff.
+          <p className="mt-1 text-muted-foreground text-sm">
+            Midday-inspired pipeline overview, conversion analytics, and 1-click
+            proposal handoff.
           </p>
         </div>
 
@@ -136,8 +155,11 @@ function DealsKanbanRoute() {
       )}
 
       {/* Main Tabs Navigation */}
-      <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as typeof activeTab)}>
-        <div className="flex items-center justify-between border-b border-border pb-2">
+      <Tabs
+        value={activeTab}
+        onValueChange={(val) => setActiveTab(val as typeof activeTab)}
+      >
+        <div className="flex items-center justify-between border-border border-b pb-2">
           <TabsList variant="line">
             <TabsTrigger value="pipeline">Pipeline Overview</TabsTrigger>
             <TabsTrigger value="board">Kanban Board</TabsTrigger>
@@ -148,7 +170,7 @@ function DealsKanbanRoute() {
         {/* Tab 1: Pipeline Analytics (Bar Chart + Funnel Breakdown) */}
         <TabsContent value="pipeline" className="mt-4">
           {analytics ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <DealPipelineChart monthlyData={analytics.monthlyPipeline} />
               </div>
@@ -168,7 +190,9 @@ function DealsKanbanRoute() {
           <DealKanbanBoard
             deals={deals}
             isLoading={isDealsLoading}
-            onUpdateStage={(id, stage) => updateStageMutation.mutate({ id, stage })}
+            onUpdateStage={(id, stage) =>
+              updateStageMutation.mutate({ id, stage })
+            }
             onConvertProposal={(dealId) => convertMutation.mutate(dealId)}
             isConverting={convertMutation.isPending}
           />
@@ -187,10 +211,12 @@ function DealsKanbanRoute() {
 
       {/* Create New Deal Dialog Modal */}
       {isCreating && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md p-6 rounded-xl border border-border bg-card shadow-xl flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <h3 className="text-lg font-bold text-foreground">Create New Deal</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+          <div className="flex w-full max-w-md flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-xl">
+            <div className="flex items-center justify-between border-border border-b pb-3">
+              <h3 className="font-bold text-foreground text-lg">
+                Create New Deal
+              </h3>
               <Button
                 type="button"
                 variant="ghost"
@@ -198,13 +224,13 @@ function DealsKanbanRoute() {
                 onClick={() => setIsCreating(false)}
                 className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
               >
-                ✕
+                <IconDeleteX className="size-3.5" />
               </Button>
             </div>
 
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                <label className="mb-1 block font-medium text-muted-foreground text-xs">
                   Deal Title *
                 </label>
                 <Input
@@ -216,7 +242,7 @@ function DealsKanbanRoute() {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                <label className="mb-1 block font-medium text-muted-foreground text-xs">
                   Estimated Value (USD)
                 </label>
                 <Input
@@ -228,7 +254,7 @@ function DealsKanbanRoute() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+            <div className="flex items-center justify-end gap-3 border-border border-t pt-3">
               <Button
                 type="button"
                 variant="outline"

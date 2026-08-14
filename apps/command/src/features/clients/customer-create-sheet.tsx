@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { CustomerStatus } from "@workspace/document/schema"
 import { Button } from "@workspace/ui/components/button"
@@ -10,8 +9,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@workspace/ui/components/sheet"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@workspace/ui/components/sheet"
 import { toast } from "@workspace/ui/components/sonner"
+import { useState } from "react"
 import { getErrorMessage } from "../../lib/error-formatter"
 import { createCustomerServerFn } from "../../server/customers"
 
@@ -73,19 +78,24 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-full max-w-lg sm:max-w-lg p-6 overflow-y-auto gap-6 border-l border-border bg-card shadow-2xl">
-        <SheetHeader className="p-0 border-b border-border pb-4">
+      <SheetContent
+        side="right"
+        className="w-full max-w-lg gap-6 overflow-y-auto border-border border-l bg-card p-6 shadow-2xl sm:max-w-lg"
+      >
+        <SheetHeader className="border-border border-b p-0 pb-4">
           <div>
-            <SheetTitle className="text-lg font-bold text-foreground">Add New Client</SheetTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <SheetTitle className="font-bold text-foreground text-lg">
+              Add New Client
+            </SheetTitle>
+            <p className="mt-0.5 text-muted-foreground text-xs">
               Register a customer profile for billing, proposals, and deals.
             </p>
           </div>
         </SheetHeader>
 
-        <div className="flex flex-col gap-4 flex-1 my-2">
+        <div className="my-2 flex flex-1 flex-col gap-4">
           <div>
-            <label className="text-xs font-medium text-muted-foreground block mb-1">
+            <label className="mb-1 block font-medium text-muted-foreground text-xs">
               Company Name *
             </label>
             <Input
@@ -98,7 +108,7 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">
+              <label className="mb-1 block font-medium text-muted-foreground text-xs">
                 Billing Email
               </label>
               <Input
@@ -110,7 +120,7 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">
+              <label className="mb-1 block font-medium text-muted-foreground text-xs">
                 Phone Number
               </label>
               <Input
@@ -124,7 +134,7 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">
+              <label className="mb-1 block font-medium text-muted-foreground text-xs">
                 Website Domain
               </label>
               <Input
@@ -136,7 +146,7 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">
+              <label className="mb-1 block font-medium text-muted-foreground text-xs">
                 VAT / Tax ID
               </label>
               <Input
@@ -150,14 +160,14 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">
+              <label className="mb-1 block font-medium text-muted-foreground text-xs">
                 Initial Status
               </label>
               <Select
                 value={status}
                 onValueChange={(val) => val && setStatus(val as CustomerStatus)}
               >
-                <SelectTrigger className="w-full h-8">
+                <SelectTrigger className="h-8 w-full">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -170,14 +180,14 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">
+              <label className="mb-1 block font-medium text-muted-foreground text-xs">
                 Preferred Currency
               </label>
               <Select
                 value={preferredCurrency}
                 onValueChange={(val) => val && setPreferredCurrency(val)}
               >
-                <SelectTrigger className="w-full h-8">
+                <SelectTrigger className="h-8 w-full">
                   <SelectValue placeholder="Currency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -190,7 +200,7 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-muted-foreground block mb-1">
+            <label className="mb-1 block font-medium text-muted-foreground text-xs">
               Address Line
             </label>
             <Input
@@ -203,7 +213,7 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">
+              <label className="mb-1 block font-medium text-muted-foreground text-xs">
                 City
               </label>
               <Input
@@ -215,7 +225,7 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">
+              <label className="mb-1 block font-medium text-muted-foreground text-xs">
                 Country
               </label>
               <Input
@@ -228,13 +238,8 @@ export function CustomerCreateSheet({ isOpen, onClose }: Props) {
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-auto">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-          >
+        <div className="mt-auto flex items-center justify-end gap-3 border-border border-t pt-4">
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
             Cancel
           </Button>
           <Button

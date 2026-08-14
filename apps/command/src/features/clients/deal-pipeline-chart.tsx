@@ -1,5 +1,10 @@
 import { formatMoneyMinor } from "@workspace/document/calculate"
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card"
 import {
   Bar,
   BarChart,
@@ -29,50 +34,60 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function DealPipelineChart({ monthlyData }: Props) {
-  const currentMonthData = monthlyData.find((d) => d.isCurrent) || monthlyData[monthlyData.length - 1]
+  const currentMonthData =
+    monthlyData.find((d) => d.isCurrent) || monthlyData[monthlyData.length - 1]
   const currentTotal = currentMonthData ? currentMonthData.value : 0
 
   return (
-    <Card className="bg-card border-border shadow-xs">
-      <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border/50">
+    <Card className="border-border bg-card shadow-xs">
+      <CardHeader className="flex flex-row items-center justify-between border-border/50 border-b pb-2">
         <div>
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+          <span className="block font-semibold text-muted-foreground text-xs uppercase tracking-wider">
             Sales Pipeline Volume
           </span>
-          <CardTitle className="text-2xl font-bold font-mono text-foreground mt-1">
+          <CardTitle className="mt-1 font-bold font-mono text-2xl text-foreground">
             {formatMoneyMinor(currentTotal, "USD", "en-US")}
           </CardTitle>
-          <span className="text-xs text-muted-foreground">Current month deal volume</span>
+          <span className="text-muted-foreground text-xs">
+            Current month deal volume
+          </span>
         </div>
       </CardHeader>
 
       <CardContent className="pt-4">
         <ChartContainer config={chartConfig} className="h-64 w-full">
-          <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <BarChart
+            data={monthlyData}
+            margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+          >
             <XAxis
               dataKey="month"
               tickLine={false}
               axisLine={false}
               tickMargin={10}
-              className="text-[11px] font-medium text-muted-foreground"
+              className="font-medium text-[11px] text-muted-foreground"
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               tickFormatter={(val) => `$${Math.round(val / 100000)}k`}
-              className="text-[11px] font-mono text-muted-foreground"
+              className="font-mono text-[11px] text-muted-foreground"
             />
             <ChartTooltip
               content={({ active, payload }) => {
-                if (!active || !payload || !payload.length) return null
+                if (!active || !payload?.length) return null
                 const data = payload[0].payload
                 return (
-                  <div className="p-2.5 rounded-lg bg-popover border border-border shadow-md text-xs flex flex-col gap-1">
-                    <span className="font-semibold text-popover-foreground">{data.month} Pipeline</span>
-                    <span className="font-mono font-bold text-primary">
+                  <div className="flex flex-col gap-1 rounded-lg border border-border bg-popover p-2.5 text-xs shadow-md">
+                    <span className="font-semibold text-popover-foreground">
+                      {data.month} Pipeline
+                    </span>
+                    <span className="font-bold font-mono text-primary">
                       {formatMoneyMinor(data.value, "USD", "en-US")}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">{data.count} deals created</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {data.count} deals created
+                    </span>
                   </div>
                 )
               }}
@@ -81,7 +96,11 @@ export function DealPipelineChart({ monthlyData }: Props) {
               {monthlyData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={entry.isCurrent ? "var(--primary)" : "hsl(var(--muted-foreground) / 0.25)"}
+                  fill={
+                    entry.isCurrent
+                      ? "var(--primary)"
+                      : "hsl(var(--muted-foreground) / 0.25)"
+                  }
                 />
               ))}
             </Bar>

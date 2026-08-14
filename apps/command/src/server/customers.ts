@@ -1,15 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { createServerFn } from "@tanstack/react-start"
-import {
-  and,
-  count,
-  db,
-  desc,
-  eq,
-  gte,
-  schema,
-  sql,
-} from "@workspace/database"
+import { and, count, db, desc, eq, gte, schema, sql } from "@workspace/database"
 import {
   createCustomerInputSchema,
   updateCustomerInputSchema,
@@ -52,7 +43,10 @@ export const listCustomersServerFn = createServerFn({ method: "GET" })
           totalRevenueMinorUnits: sql<number>`coalesce(sum(${schema.proposal.totalMinorUnits}), 0)::int`,
         })
         .from(schema.company)
-        .leftJoin(schema.proposal, eq(schema.proposal.companyId, schema.company.id))
+        .leftJoin(
+          schema.proposal,
+          eq(schema.proposal.companyId, schema.company.id)
+        )
         .where(eq(schema.company.organizationId, organizationId))
         .groupBy(schema.company.id)
         .orderBy(desc(schema.company.updatedAt))
@@ -157,7 +151,10 @@ export const getCustomerAnalyticsServerFn = createServerFn({ method: "GET" })
           revenueMinorUnits: sql<number>`coalesce(sum(${schema.proposal.totalMinorUnits}), 0)::int`,
         })
         .from(schema.company)
-        .innerJoin(schema.proposal, eq(schema.proposal.companyId, schema.company.id))
+        .innerJoin(
+          schema.proposal,
+          eq(schema.proposal.companyId, schema.company.id)
+        )
         .where(eq(schema.company.organizationId, organizationId))
         .groupBy(schema.company.id, schema.company.name)
         .orderBy(sql`sum(${schema.proposal.totalMinorUnits}) DESC`)
@@ -170,7 +167,10 @@ export const getCustomerAnalyticsServerFn = createServerFn({ method: "GET" })
           proposalsCount: count(schema.proposal.id),
         })
         .from(schema.company)
-        .innerJoin(schema.proposal, eq(schema.proposal.companyId, schema.company.id))
+        .innerJoin(
+          schema.proposal,
+          eq(schema.proposal.companyId, schema.company.id)
+        )
         .where(eq(schema.company.organizationId, organizationId))
         .groupBy(schema.company.id, schema.company.name)
         .orderBy(sql`count(${schema.proposal.id}) DESC`)
@@ -201,16 +201,24 @@ export const getCustomerAnalyticsServerFn = createServerFn({ method: "GET" })
       return {
         totalCustomersCount: countResult?.total || 0,
         topRevenueClient: topRevenueRow
-          ? { name: topRevenueRow.name, revenueMinorUnits: topRevenueRow.revenueMinorUnits }
+          ? {
+              name: topRevenueRow.name,
+              revenueMinorUnits: topRevenueRow.revenueMinorUnits,
+            }
           : null,
         mostActiveClient: mostActiveRow
-          ? { name: mostActiveRow.name, proposalsCount: mostActiveRow.proposalsCount }
+          ? {
+              name: mostActiveRow.name,
+              proposalsCount: mostActiveRow.proposalsCount,
+            }
           : null,
         inactiveClientsCount: inactiveRow?.total || 0,
         newCustomersThisMonth: newThisMonthRow?.total || 0,
       }
     } catch (error) {
-      throw new Error(getErrorMessage(error, "Failed to calculate client analytics"))
+      throw new Error(
+        getErrorMessage(error, "Failed to calculate client analytics")
+      )
     }
   })
 
@@ -224,7 +232,10 @@ export const createCustomerServerFn = createServerFn({ method: "POST" })
 
     try {
       organizationId = await requireActiveOrganization(context.auth)
-      userId = typeof context.auth.user?.id === "string" ? context.auth.user.id : undefined
+      userId =
+        typeof context.auth.user?.id === "string"
+          ? context.auth.user.id
+          : undefined
       const id = randomUUID()
 
       const [newCustomer] = await db
@@ -291,24 +302,39 @@ export const updateCustomerServerFn = createServerFn({ method: "POST" })
 
     try {
       organizationId = await requireActiveOrganization(context.auth)
-      userId = typeof context.auth.user?.id === "string" ? context.auth.user.id : undefined
+      userId =
+        typeof context.auth.user?.id === "string"
+          ? context.auth.user.id
+          : undefined
 
       const [updatedCustomer] = await db
         .update(schema.company)
         .set({
           ...(data.name && { name: data.name }),
-          ...(data.billingEmail !== undefined && { billingEmail: data.billingEmail || null }),
+          ...(data.billingEmail !== undefined && {
+            billingEmail: data.billingEmail || null,
+          }),
           ...(data.phone !== undefined && { phone: data.phone || null }),
           ...(data.website !== undefined && { website: data.website || null }),
-          ...(data.vatNumber !== undefined && { vatNumber: data.vatNumber || null }),
-          ...(data.addressLine1 !== undefined && { addressLine1: data.addressLine1 || null }),
+          ...(data.vatNumber !== undefined && {
+            vatNumber: data.vatNumber || null,
+          }),
+          ...(data.addressLine1 !== undefined && {
+            addressLine1: data.addressLine1 || null,
+          }),
           ...(data.city !== undefined && { city: data.city || null }),
           ...(data.country !== undefined && { country: data.country || null }),
           ...(data.note !== undefined && { note: data.note || null }),
           ...(data.status && { status: data.status }),
-          ...(data.preferredCurrency && { preferredCurrency: data.preferredCurrency }),
-          ...(data.defaultPaymentTerms && { defaultPaymentTerms: data.defaultPaymentTerms }),
-          ...(data.industry !== undefined && { industry: data.industry || null }),
+          ...(data.preferredCurrency && {
+            preferredCurrency: data.preferredCurrency,
+          }),
+          ...(data.defaultPaymentTerms && {
+            defaultPaymentTerms: data.defaultPaymentTerms,
+          }),
+          ...(data.industry !== undefined && {
+            industry: data.industry || null,
+          }),
           ...(data.isArchived !== undefined && { isArchived: data.isArchived }),
           updatedAt: new Date(),
         })

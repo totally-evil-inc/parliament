@@ -1,4 +1,3 @@
-import { useMemo, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { formatDateOnly, formatMoneyMinor } from "@workspace/document/calculate"
 import type { DealStage } from "@workspace/document/schema"
@@ -13,6 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
+import { IconBolt, IconFile, IconUsers } from "nucleo-glass"
+import { useMemo, useState } from "react"
 
 type DealRow = {
   id: string
@@ -35,15 +36,44 @@ type Props = {
 }
 
 const STAGE_CONFIG: Record<string, { label: string; badgeBg: string }> = {
-  lead: { label: "Lead", badgeBg: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" },
-  discovery: { label: "Discovery", badgeBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },
-  proposal_sent: { label: "Proposal Sent", badgeBg: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20" },
-  negotiation: { label: "Negotiation", badgeBg: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20" },
-  closed_won: { label: "Closed Won", badgeBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
-  closed_lost: { label: "Closed Lost", badgeBg: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20" },
+  lead: {
+    label: "Lead",
+    badgeBg:
+      "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+  },
+  discovery: {
+    label: "Discovery",
+    badgeBg:
+      "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  },
+  proposal_sent: {
+    label: "Proposal Sent",
+    badgeBg:
+      "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+  },
+  negotiation: {
+    label: "Negotiation",
+    badgeBg:
+      "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
+  },
+  closed_won: {
+    label: "Closed Won",
+    badgeBg:
+      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+  },
+  closed_lost: {
+    label: "Closed Lost",
+    badgeBg:
+      "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+  },
 }
 
-export function DealsTable({ deals, isLoading, onConvertProposal, isConverting }: Props) {
+export function DealsTable({
+  deals,
+  isLoading,
+  onConvertProposal,
+  isConverting,
+}: Props) {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [stageFilter, setStageFilter] = useState<"all" | DealStage>("all")
@@ -55,7 +85,7 @@ export function DealsTable({ deals, isLoading, onConvertProposal, isConverting }
       const matchesSearch =
         !searchQuery.trim() ||
         d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (d.companyName && d.companyName.toLowerCase().includes(searchQuery.toLowerCase()))
+        d.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
 
       const matchesStage = stageFilter === "all" || d.stage === stageFilter
       return matchesSearch && matchesStage
@@ -72,7 +102,9 @@ export function DealsTable({ deals, isLoading, onConvertProposal, isConverting }
         const dateB = new Date(b.createdAt).getTime()
         return sortOrder === "desc" ? dateA - dateB : dateB - dateA
       }
-      return sortOrder === "desc" ? b.title.localeCompare(a.title) : a.title.localeCompare(b.title)
+      return sortOrder === "desc"
+        ? b.title.localeCompare(a.title)
+        : a.title.localeCompare(b.title)
     })
 
     return result
@@ -87,32 +119,39 @@ export function DealsTable({ deals, isLoading, onConvertProposal, isConverting }
   return (
     <div className="flex flex-col gap-4">
       {/* Table Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-3">
+      <div className="flex flex-col justify-between gap-4 border-border border-b pb-3 sm:flex-row sm:items-center">
         {/* Stage Filter Pills */}
-        <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border overflow-x-auto">
+        <div className="flex items-center gap-1 overflow-x-auto rounded-lg border border-border bg-muted/40 p-1">
           <Button
             type="button"
             variant={stageFilter === "all" ? "secondary" : "ghost"}
             size="sm"
             onClick={() => setStageFilter("all")}
-            className="h-7 text-xs px-2.5 font-semibold shrink-0"
+            className="h-7 shrink-0 px-2.5 font-semibold text-xs"
           >
             All Deals ({deals.length})
           </Button>
-          {(["lead", "discovery", "proposal_sent", "negotiation", "closed_won", "closed_lost"] as const).map(
-            (stg) => (
-              <Button
-                key={stg}
-                type="button"
-                variant={stageFilter === stg ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setStageFilter(stg)}
-                className="h-7 text-xs px-2.5 font-semibold capitalize shrink-0"
-              >
-                {STAGE_CONFIG[stg]?.label || stg}
-              </Button>
-            )
-          )}
+          {(
+            [
+              "lead",
+              "discovery",
+              "proposal_sent",
+              "negotiation",
+              "closed_won",
+              "closed_lost",
+            ] as const
+          ).map((stg) => (
+            <Button
+              key={stg}
+              type="button"
+              variant={stageFilter === stg ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setStageFilter(stg)}
+              className="h-7 shrink-0 px-2.5 font-semibold text-xs capitalize"
+            >
+              {STAGE_CONFIG[stg]?.label || stg}
+            </Button>
+          ))}
         </div>
 
         {/* Search */}
@@ -133,53 +172,59 @@ export function DealsTable({ deals, isLoading, onConvertProposal, isConverting }
           Loading deals list...
         </div>
       ) : filteredDeals.length === 0 ? (
-        <div className="p-12 text-center border border-dashed border-border rounded-xl text-xs text-muted-foreground">
+        <div className="rounded-xl border border-border border-dashed p-12 text-center text-muted-foreground text-xs">
           No deals match the filter criteria.
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <TableRow className="bg-muted/40 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
                 <TableHead
                   className="cursor-pointer select-none hover:text-foreground"
                   onClick={() => {
-                    if (sortBy === "title") setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                    if (sortBy === "title")
+                      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
                     else {
                       setSortBy("title")
                       setSortOrder("asc")
                     }
                   }}
                 >
-                  Deal Opportunity {sortBy === "title" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
+                  Deal Opportunity{" "}
+                  {sortBy === "title" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
                 </TableHead>
 
                 <TableHead>Stage</TableHead>
 
                 <TableHead
-                  className="text-right cursor-pointer select-none hover:text-foreground"
+                  className="cursor-pointer select-none text-right hover:text-foreground"
                   onClick={() => {
-                    if (sortBy === "value") setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                    if (sortBy === "value")
+                      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
                     else {
                       setSortBy("value")
                       setSortOrder("desc")
                     }
                   }}
                 >
-                  Value {sortBy === "value" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
+                  Value{" "}
+                  {sortBy === "value" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
                 </TableHead>
 
                 <TableHead
-                  className="text-right cursor-pointer select-none hover:text-foreground"
+                  className="cursor-pointer select-none text-right hover:text-foreground"
                   onClick={() => {
-                    if (sortBy === "age") setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                    if (sortBy === "age")
+                      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
                     else {
                       setSortBy("age")
                       setSortOrder("desc")
                     }
                   }}
                 >
-                  Age {sortBy === "age" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
+                  Age{" "}
+                  {sortBy === "age" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
                 </TableHead>
 
                 <TableHead className="text-right">Expected Close</TableHead>
@@ -196,32 +241,49 @@ export function DealsTable({ deals, isLoading, onConvertProposal, isConverting }
                 const ageDays = calculateAgeDays(deal.createdAt)
 
                 return (
-                  <TableRow key={deal.id} className="hover:bg-muted/50 transition-colors">
+                  <TableRow
+                    key={deal.id}
+                    className="transition-colors hover:bg-muted/50"
+                  >
                     <TableCell className="font-medium">
                       <div className="flex flex-col">
-                        <span className="font-semibold text-foreground text-sm">{deal.title}</span>
+                        <span className="font-semibold text-foreground text-sm">
+                          {deal.title}
+                        </span>
                         {deal.companyName && (
-                          <span className="text-xs text-muted-foreground">🏢 {deal.companyName}</span>
+                          <span className="mt-0.5 inline-flex items-center gap-1 text-muted-foreground text-xs">
+                            <IconUsers className="size-3 shrink-0" />
+                            <span>{deal.companyName}</span>
+                          </span>
                         )}
                       </div>
                     </TableCell>
 
                     <TableCell>
-                      <Badge variant="outline" className={`px-2 py-0.5 text-[10px] font-bold uppercase ${config.badgeBg}`}>
+                      <Badge
+                        variant="outline"
+                        className={`px-2 py-0.5 font-bold text-[10px] uppercase ${config.badgeBg}`}
+                      >
                         {config.label}
                       </Badge>
                     </TableCell>
 
                     <TableCell className="text-right font-mono font-semibold text-foreground">
-                      {formatMoneyMinor(deal.valueMinorUnits, deal.currency || "USD", "en-US")}
+                      {formatMoneyMinor(
+                        deal.valueMinorUnits,
+                        deal.currency || "USD",
+                        "en-US"
+                      )}
                     </TableCell>
 
-                    <TableCell className="text-right text-xs text-muted-foreground font-mono">
+                    <TableCell className="text-right font-mono text-muted-foreground text-xs">
                       {ageDays}d open
                     </TableCell>
 
-                    <TableCell className="text-right text-xs text-muted-foreground">
-                      {deal.expectedCloseDate ? formatDateOnly(deal.expectedCloseDate, "en-US") : "—"}
+                    <TableCell className="text-right text-muted-foreground text-xs">
+                      {deal.expectedCloseDate
+                        ? formatDateOnly(deal.expectedCloseDate, "en-US")
+                        : "—"}
                     </TableCell>
 
                     <TableCell className="text-right">
@@ -232,9 +294,10 @@ export function DealsTable({ deals, isLoading, onConvertProposal, isConverting }
                           size="sm"
                           disabled={isConverting}
                           onClick={() => onConvertProposal(deal.id)}
-                          className="text-xs font-semibold bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                          className="gap-1.5 border-primary/20 bg-primary/10 font-semibold text-primary text-xs hover:bg-primary/20"
                         >
-                          ⚡ Convert
+                          <IconBolt className="size-3.5" />
+                          <span>Convert</span>
                         </Button>
                       ) : (
                         <Button
@@ -247,9 +310,10 @@ export function DealsTable({ deals, isLoading, onConvertProposal, isConverting }
                               params: { proposalId: deal.proposalId as string },
                             })
                           }
-                          className="text-xs font-semibold"
+                          className="gap-1.5 font-semibold text-xs"
                         >
-                          📄 Proposal
+                          <IconFile className="size-3.5" />
+                          <span>Proposal</span>
                         </Button>
                       )}
                     </TableCell>

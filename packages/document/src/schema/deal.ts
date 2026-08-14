@@ -38,7 +38,10 @@ export const createDealInputSchema = z
     contactId: z.string().trim().min(1).optional(),
     stage: dealStageEnumSchema.default("lead"),
     valueMinorUnits: z.number().int().nonnegative().default(0),
-    currency: z.string().regex(/^[A-Z]{3}$/).default("USD"),
+    currency: z
+      .string()
+      .regex(/^[A-Z]{3}$/)
+      .default("USD"),
     expectedCloseDate: z.string().optional(),
   })
   .strict()

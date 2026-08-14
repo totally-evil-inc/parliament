@@ -115,7 +115,10 @@ export function formatMoneyMinor(
   currency: string,
   locale: string
 ) {
-  const numeric = typeof valueMinor === "string" ? Number.parseFloat(valueMinor) : (valueMinor ?? 0)
+  const numeric =
+    typeof valueMinor === "string"
+      ? Number.parseFloat(valueMinor)
+      : (valueMinor ?? 0)
   const safeNumber = Number.isNaN(numeric) ? 0 : numeric
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(
     safeNumber / 100

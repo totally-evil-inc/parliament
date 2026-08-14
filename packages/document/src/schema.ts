@@ -9,7 +9,7 @@ const dateOnlySchema = z
 export const richTextMarkSchema = z
   .object({
     type: z.string().min(1),
-    attrs: z.record(z.unknown()).optional(),
+    attrs: z.record(z.string(), z.unknown()).optional(),
   })
   .strict()
 
@@ -25,7 +25,7 @@ export const richTextNodeSchema: z.ZodType<RichTextNode> = z.lazy(() =>
   z
     .object({
       type: z.string().min(1),
-      attrs: z.record(z.unknown()).optional(),
+      attrs: z.record(z.string(), z.unknown()).optional(),
       marks: z.array(richTextMarkSchema).optional(),
       text: z.string().optional(),
       content: z.array(richTextNodeSchema).optional(),
@@ -353,7 +353,10 @@ export const documentTemplateSchema = z
     id: idSchema,
     version: z.number().int().positive(),
     overrides: z
-      .record(z.union([z.string(), z.number(), z.boolean(), z.null()]))
+      .record(
+        z.string(),
+        z.union([z.string(), z.number(), z.boolean(), z.null()])
+      )
       .optional(),
   })
   .strict()
@@ -489,7 +492,7 @@ export const proposalPersistedSchema = z
     taxMinorUnits: z.number().int(),
     totalMinorUnits: z.number().int(),
     portalToken: z.string().nullable().optional(),
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
     createdById: idSchema.nullable().optional(),
     createdAt: z.string().or(z.date()),
     updatedAt: z.string().or(z.date()),
@@ -529,6 +532,5 @@ export const createProposalInputSchema = z
 
 export type CreateProposalInput = z.infer<typeof createProposalInputSchema>
 
-export * from "./schema/deal"
 export * from "./schema/customer"
-
+export * from "./schema/deal"

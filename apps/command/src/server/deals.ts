@@ -1,12 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { createServerFn } from "@tanstack/react-start"
-import {
-  and,
-  db,
-  desc,
-  eq,
-  schema,
-} from "@workspace/database"
+import { and, db, desc, eq, schema } from "@workspace/database"
 import { createProposalDraftFromBlueprint } from "@workspace/document/proposal"
 import {
   createDealInputSchema,
@@ -76,30 +70,58 @@ export const getDealAnalyticsServerFn = createServerFn({ method: "GET" })
 
       // Active & Total metrics
       const activeDeals = deals.filter((d) => d.stage !== "closed_lost")
-      const totalPipelineValue = activeDeals.reduce((sum, d) => sum + (d.valueMinorUnits || 0), 0)
+      const totalPipelineValue = activeDeals.reduce(
+        (sum, d) => sum + (d.valueMinorUnits || 0),
+        0
+      )
       const wonDeals = deals.filter((d) => d.stage === "closed_won")
-      const closedWonValue = wonDeals.reduce((sum, d) => sum + (d.valueMinorUnits || 0), 0)
-      const totalDecided = wonDeals.length + deals.filter((d) => d.stage === "closed_lost").length
-      const conversionRate = totalDecided > 0 ? Math.round((wonDeals.length / totalDecided) * 1000) / 10 : 0
-      const avgDealSize = deals.length > 0 ? Math.round(totalPipelineValue / deals.length) : 0
+      const closedWonValue = wonDeals.reduce(
+        (sum, d) => sum + (d.valueMinorUnits || 0),
+        0
+      )
+      const totalDecided =
+        wonDeals.length + deals.filter((d) => d.stage === "closed_lost").length
+      const conversionRate =
+        totalDecided > 0
+          ? Math.round((wonDeals.length / totalDecided) * 1000) / 10
+          : 0
+      const avgDealSize =
+        deals.length > 0 ? Math.round(totalPipelineValue / deals.length) : 0
       const dealsToCloseThisMonth = deals.filter(
-        (d) => d.expectedCloseDate && d.expectedCloseDate.startsWith(currentYearMonth)
+        (d) =>
+          d.expectedCloseDate &&
+          d.expectedCloseDate.startsWith(currentYearMonth)
       ).length
 
       // Previous period metrics
-      const prevDeals = deals.filter((d) => new Date(d.createdAt) < thirtyDaysAgo)
+      const prevDeals = deals.filter(
+        (d) => new Date(d.createdAt) < thirtyDaysAgo
+      )
       const prevActiveDeals = prevDeals.filter((d) => d.stage !== "closed_lost")
-      const previousPipelineValue = prevActiveDeals.reduce((sum, d) => sum + (d.valueMinorUnits || 0), 0)
+      const previousPipelineValue = prevActiveDeals.reduce(
+        (sum, d) => sum + (d.valueMinorUnits || 0),
+        0
+      )
       const prevWonDeals = prevDeals.filter((d) => d.stage === "closed_won")
-      const prevTotalDecided = prevWonDeals.length + prevDeals.filter((d) => d.stage === "closed_lost").length
-      const previousConversionRate = prevTotalDecided > 0 ? Math.round((prevWonDeals.length / prevTotalDecided) * 1000) / 10 : 0
+      const prevTotalDecided =
+        prevWonDeals.length +
+        prevDeals.filter((d) => d.stage === "closed_lost").length
+      const previousConversionRate =
+        prevTotalDecided > 0
+          ? Math.round((prevWonDeals.length / prevTotalDecided) * 1000) / 10
+          : 0
 
       // Monthly pipeline (last 12 months)
-      const monthsMap = new Map<string, { value: number; count: number; monthName: string }>()
+      const monthsMap = new Map<
+        string,
+        { value: number; count: number; monthName: string }
+      >()
       for (let i = 11; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-        const monthName = d.toLocaleString("en-US", { month: "short" }).toUpperCase()
+        const monthName = d
+          .toLocaleString("en-US", { month: "short" })
+          .toUpperCase()
         monthsMap.set(key, { value: 0, count: 0, monthName })
       }
 
@@ -113,19 +135,31 @@ export const getDealAnalyticsServerFn = createServerFn({ method: "GET" })
         }
       }
 
-      const monthlyPipeline = Array.from(monthsMap.entries()).map(([key, data]) => ({
-        monthKey: key,
-        month: data.monthName,
-        value: data.value,
-        count: data.count,
-        isCurrent: key === currentYearMonth,
-      }))
+      const monthlyPipeline = Array.from(monthsMap.entries()).map(
+        ([key, data]) => ({
+          monthKey: key,
+          month: data.monthName,
+          value: data.value,
+          count: data.count,
+          isCurrent: key === currentYearMonth,
+        })
+      )
 
       // Stage breakdown
-      const stagesList = ["lead", "discovery", "proposal_sent", "negotiation", "closed_won", "closed_lost"] as const
+      const stagesList = [
+        "lead",
+        "discovery",
+        "proposal_sent",
+        "negotiation",
+        "closed_won",
+        "closed_lost",
+      ] as const
       const stageBreakdown = stagesList.map((stg) => {
         const stageDeals = deals.filter((d) => d.stage === stg)
-        const value = stageDeals.reduce((sum, d) => sum + (d.valueMinorUnits || 0), 0)
+        const value = stageDeals.reduce(
+          (sum, d) => sum + (d.valueMinorUnits || 0),
+          0
+        )
         return {
           stage: stg,
           count: stageDeals.length,
@@ -145,7 +179,9 @@ export const getDealAnalyticsServerFn = createServerFn({ method: "GET" })
         stageBreakdown,
       }
     } catch (error) {
-      throw new Error(getErrorMessage(error, "Failed to compute deal analytics"))
+      throw new Error(
+        getErrorMessage(error, "Failed to compute deal analytics")
+      )
     }
   })
 
@@ -172,7 +208,7 @@ export const createDealServerFn = createServerFn({ method: "POST" })
           currency: data.currency,
           expectedCloseDate: data.expectedCloseDate ?? null,
           createdById: userId ?? null,
-        })
+        } as any)
         .returning()
 
       if (!newDeal) {
@@ -183,7 +219,7 @@ export const createDealServerFn = createServerFn({ method: "POST" })
         event: "client.deal.created",
         durationMs: Date.now() - startTime,
         organizationId,
-        userId: userId ?? undefined,
+        userId: typeof userId === "string" ? userId : undefined,
         entityId: id,
         outcome: "success",
         metadata: {
@@ -230,7 +266,7 @@ export const updateDealStageServerFn = createServerFn({ method: "POST" })
         event: "client.deal.stage_updated",
         durationMs: Date.now() - startTime,
         organizationId,
-        userId: userId ?? undefined,
+        userId: typeof userId === "string" ? userId : undefined,
         entityId: data.id,
         outcome: "success",
         metadata: {
@@ -318,7 +354,7 @@ export const convertDealToProposalServerFn = createServerFn({ method: "POST" })
             subtotalMinorUnits: dealRow.valueMinorUnits,
             totalMinorUnits: dealRow.valueMinorUnits,
             createdById: userId ?? null,
-          })
+          } as any)
           .returning()
 
         // Insert version 1 snapshot
@@ -330,7 +366,7 @@ export const convertDealToProposalServerFn = createServerFn({ method: "POST" })
           proposalDraft: draftDoc,
           hash: "initial-deal-conversion",
           createdById: userId ?? null,
-        })
+        } as any)
 
         // Insert legacy draft row for editor backwards compatibility
         await tx.insert(schema.proposalDraft).values({
@@ -341,7 +377,7 @@ export const convertDealToProposalServerFn = createServerFn({ method: "POST" })
           status: "draft",
           document: draftDoc,
           revision: 1,
-        })
+        } as any)
 
         // Link proposal to deal and advance stage to proposal_sent
         await tx
@@ -365,7 +401,7 @@ export const convertDealToProposalServerFn = createServerFn({ method: "POST" })
         event: "client.deal.proposal_created",
         durationMs: Date.now() - startTime,
         organizationId,
-        userId: userId ?? undefined,
+        userId: typeof userId === "string" ? userId : undefined,
         entityId: data.id,
         outcome: "success",
         metadata: {
@@ -374,8 +410,10 @@ export const convertDealToProposalServerFn = createServerFn({ method: "POST" })
         },
       })
 
-      return { proposalId, proposal: result }
+      return { proposalId, proposal: result } as any
     } catch (error) {
-      throw new Error(getErrorMessage(error, "Failed to convert deal to proposal"))
+      throw new Error(
+        getErrorMessage(error, "Failed to convert deal to proposal")
+      )
     }
   })
