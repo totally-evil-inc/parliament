@@ -1,6 +1,6 @@
-import type { Text } from "@hugeicons/core-free-icons"
 import type { Range } from "@tiptap/core"
 import type { Editor } from "@tiptap/react"
+import type * as React from "react"
 
 export type EditorCommandContext = {
   editor: Editor
@@ -22,7 +22,7 @@ export type EditorCommand = {
   title: string
   description: string
   searchTerms: Array<string>
-  icon: typeof Text
+  icon: React.ComponentType<{ className?: string }>
   group: "block" | "mark"
   showInSlashMenu?: boolean
   showInFloatingMenu?: boolean

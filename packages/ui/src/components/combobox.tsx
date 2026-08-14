@@ -6,8 +6,12 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@workspace/ui/components/input-group"
+import {
+  CheckIcon,
+  ChevronUpDownIcon,
+  XMarkIcon,
+} from "@heroicons/react/20/solid"
 import { cn } from "@workspace/ui/lib/utils"
-import { IconArrowBoldDown, IconCircleCheck, IconDeleteX } from "nucleo-glass"
 import * as React from "react"
 
 const Combobox = ComboboxPrimitive.Root
@@ -28,7 +32,7 @@ function ComboboxTrigger({
       {...props}
     >
       {children}
-      <IconArrowBoldDown className="pointer-events-none size-3.5 text-muted-foreground" />
+      <ChevronUpDownIcon className="pointer-events-none size-3.5 text-muted-foreground" />
     </ComboboxPrimitive.Trigger>
   )
 }
@@ -41,7 +45,7 @@ function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
       className={cn(className)}
       {...props}
     >
-      <IconDeleteX className="pointer-events-none" />
+      <XMarkIcon className="pointer-events-none" />
     </ComboboxPrimitive.Clear>
   )
 }
@@ -151,7 +155,7 @@ function ComboboxItem({
           <span className="pointer-events-none absolute right-2 flex items-center justify-center" />
         }
       >
-        <IconCircleCheck className="pointer-events-none" />
+        <CheckIcon className="pointer-events-none" />
       </ComboboxPrimitive.ItemIndicator>
     </ComboboxPrimitive.Item>
   )
@@ -253,7 +257,7 @@ function ComboboxChip({
           className="-ml-1 opacity-50 hover:opacity-100"
           data-slot="combobox-chip-remove"
         >
-          <IconDeleteX className="pointer-events-none" />
+          <XMarkIcon className="pointer-events-none" />
         </ComboboxPrimitive.ChipRemove>
       )}
     </ComboboxPrimitive.Chip>

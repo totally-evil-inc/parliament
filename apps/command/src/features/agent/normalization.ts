@@ -117,7 +117,9 @@ export function normalizeAssistantMessage(
           ),
           status: tc.status ?? "completed",
           result: tc.result ?? tc.output,
-          needsApproval: Boolean(tc.needsApproval || tc.approval?.needsApproval),
+          needsApproval: Boolean(
+            tc.needsApproval || tc.approval?.needsApproval
+          ),
           approvalId: tc.approval?.id,
         })
       }

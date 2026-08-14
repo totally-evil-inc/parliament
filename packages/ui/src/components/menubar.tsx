@@ -18,8 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 
+import { CheckIcon } from "@heroicons/react/20/solid"
 import { cn } from "@workspace/ui/lib/utils"
-import { IconCircleCheck } from "nucleo-glass"
 import type * as React from "react"
 
 function Menubar({ className, ...props }: MenubarPrimitive.Props) {
@@ -128,7 +128,7 @@ function MenubarCheckboxItem({
     >
       <span className="pointer-events-none absolute left-2 flex size-4 items-center justify-center [&_svg:not([class*='size-'])]:size-4">
         <MenuPrimitive.CheckboxItemIndicator>
-          <IconCircleCheck />
+          <CheckIcon />
         </MenuPrimitive.CheckboxItemIndicator>
       </span>
       {children}
@@ -162,7 +162,7 @@ function MenubarRadioItem({
     >
       <span className="pointer-events-none absolute left-2 flex size-4 items-center justify-center [&_svg:not([class*='size-'])]:size-4">
         <MenuPrimitive.RadioItemIndicator>
-          <IconCircleCheck />
+          <CheckIcon />
         </MenuPrimitive.RadioItemIndicator>
       </span>
       {children}

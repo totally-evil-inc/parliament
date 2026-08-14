@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@openuidev/react-lang": "^0.2.11",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.1.0",

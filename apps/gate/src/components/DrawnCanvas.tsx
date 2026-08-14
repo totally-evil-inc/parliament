@@ -1,5 +1,5 @@
 import { Button } from "@workspace/ui/components/button"
-import { RotateCcw } from "lucide-react"
+import { ArrowPathIcon } from "@heroicons/react/24/outline"
 import type React from "react"
 import { useRef, useState } from "react"
 
@@ -121,7 +121,7 @@ export function DrawnCanvas({ onChange, disabled = false }: DrawnCanvasProps) {
           className="gap-1 text-muted-foreground text-xs"
           data-testid="clear-signature-button"
         >
-          <RotateCcw className="h-3 w-3" /> Clear Signature
+          <ArrowPathIcon className="h-3 w-3" /> Clear Signature
         </Button>
       </div>
     </div>

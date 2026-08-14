@@ -153,7 +153,9 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
               key={tc.id}
               toolName={tc.name}
               args={tc.args || {}}
-              onApprove={() => onApproveTool?.(tc.approvalId || tc.id, tc.args || {})}
+              onApprove={() =>
+                onApproveTool?.(tc.approvalId || tc.id, tc.args || {})
+              }
               onReject={() => onRejectTool?.(tc.approvalId || tc.id)}
             />
           )

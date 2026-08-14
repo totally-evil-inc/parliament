@@ -1,7 +1,7 @@
 "use client"
 
+import { MoonIcon, SunIcon } from "@heroicons/react/24/outline"
 import { Button } from "@workspace/ui/components/button"
-import { IconBrightnessIncrease, IconCloudMoon } from "nucleo-glass"
 import { useTheme } from "@/components/theme-provider"
 
 type ThemeToggleProps = {
@@ -21,7 +21,11 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={toggleLightDark}
     >
-      {isDark ? <IconBrightnessIncrease /> : <IconCloudMoon />}
+      {isDark ? (
+        <SunIcon className="h-5 w-5" />
+      ) : (
+        <MoonIcon className="h-5 w-5" />
+      )}
     </Button>
   )
 }

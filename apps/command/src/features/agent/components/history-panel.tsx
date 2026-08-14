@@ -1,8 +1,8 @@
+import { SparklesIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { useNavigate } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
-import { IconDeleteX, IconSparkle4 } from "nucleo-glass"
 import type React from "react"
 import { useState } from "react"
 import {
@@ -70,7 +70,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
             onClick={onClose}
             className="h-7 w-7 p-0"
           >
-            <IconDeleteX className="size-3.5" />
+            <XMarkIcon className="size-3.5" />
           </Button>
         </div>
 
@@ -80,7 +80,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
           onClick={handleNewChat}
           className="flex h-9 w-full items-center justify-center gap-2 font-medium text-xs"
         >
-          <IconSparkle4 className="size-3.5" />
+          <SparklesIcon className="size-3.5" />
           <span>Start New Chat</span>
         </Button>
 
@@ -128,7 +128,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
                     disabled={deleteMutation.isPending}
                     className="h-6 w-6 p-0 text-muted-foreground text-xs hover:text-destructive"
                   >
-                    <IconDeleteX className="size-3.5" />
+                    <TrashIcon className="size-3.5" />
                   </Button>
                 </div>
               ))

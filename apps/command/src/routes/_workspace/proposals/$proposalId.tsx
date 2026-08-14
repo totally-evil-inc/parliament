@@ -1,5 +1,4 @@
-import { Share01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { PaperAirplaneIcon } from "@heroicons/react/24/outline"
 import {
   useMutation,
   useQueryClient,
@@ -258,7 +257,7 @@ function ProposalEditorScreen({
             disabled={saveDraft.isPending || sendDraft.isPending}
             className="gap-1.5"
           >
-            <HugeiconsIcon icon={Share01Icon} className="h-4 w-4" />
+            <PaperAirplaneIcon className="h-4 w-4" />
             {sendDraft.isPending ? "Sending..." : "Send"}
           </Button>
         </div>

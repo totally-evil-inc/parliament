@@ -10,7 +10,7 @@ import {
   SheetTitle,
 } from "@workspace/ui/components/sheet"
 import { toast } from "@workspace/ui/components/sonner"
-import { IconDuplicatePlus, IconEarth } from "nucleo-glass"
+import { GlobeAltIcon, PlusIcon } from "@heroicons/react/24/outline"
 import { useState } from "react"
 import { getErrorMessage } from "../../lib/error-formatter"
 import {
@@ -139,7 +139,7 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
                         rel="noreferrer"
                         className="mt-0.5 flex items-center gap-1 text-muted-foreground text-xs transition-colors hover:text-primary"
                       >
-                        <IconEarth className="size-3.5 shrink-0" />
+                        <GlobeAltIcon className="size-3.5 shrink-0" />
                         <span>
                           {data.customer.website.replace(/^https?:\/\//, "")}
                         </span>
@@ -158,7 +158,7 @@ export function CustomerDetailsSheet({ customerId, onClose }: Props) {
                   disabled={createDealMutation.isPending}
                   className="gap-1.5"
                 >
-                  <IconDuplicatePlus className="size-3.5" />
+                  <PlusIcon className="size-3.5" />
                   <span>New Deal</span>
                 </Button>
                 <Button

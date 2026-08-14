@@ -3,8 +3,8 @@
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
 import { Button } from "@workspace/ui/components/button"
 
+import { XMarkIcon } from "@heroicons/react/24/outline"
 import { cn } from "@workspace/ui/lib/utils"
-import { IconDeleteX } from "nucleo-glass"
 import type * as React from "react"
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
@@ -70,7 +70,7 @@ function SheetContent({
               />
             }
           >
-            <IconDeleteX />
+            <XMarkIcon />
             <span className="sr-only">Close</span>
           </SheetPrimitive.Close>
         )}

@@ -1,10 +1,10 @@
+import {
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@heroicons/react/24/outline"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
-import {
-  IconArrowBoldDown,
-  IconArrowBoldLeft,
-  IconArrowBoldRight,
-} from "nucleo-glass"
 import * as React from "react"
 import {
   type DayButton,
@@ -148,16 +148,13 @@ function Calendar({
         Chevron: ({ className, orientation, ...props }) => {
           if (orientation === "left") {
             return (
-              <IconArrowBoldLeft
-                className={cn("size-4", className)}
-                {...props}
-              />
+              <ChevronLeftIcon className={cn("size-4", className)} {...props} />
             )
           }
 
           if (orientation === "right") {
             return (
-              <IconArrowBoldRight
+              <ChevronRightIcon
                 className={cn("size-4", className)}
                 {...props}
               />
@@ -165,7 +162,7 @@ function Calendar({
           }
 
           return (
-            <IconArrowBoldDown className={cn("size-4", className)} {...props} />
+            <ChevronDownIcon className={cn("size-4", className)} {...props} />
           )
         },
         DayButton: ({ ...props }) => (

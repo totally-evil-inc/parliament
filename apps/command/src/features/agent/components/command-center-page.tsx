@@ -2,11 +2,11 @@ import { useNavigate } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import {
-  IconArrowBoldDown,
-  IconBookmarks,
-  IconGreekTemple,
-  IconSparkle4,
-} from "nucleo-glass"
+  ArrowDownIcon,
+  BookmarkIcon,
+  BuildingLibraryIcon,
+  SparklesIcon,
+} from "@heroicons/react/24/outline"
 import type React from "react"
 import { useEffect, useRef, useState } from "react"
 import { useCommandChatContext } from "../context/command-chat-context"
@@ -230,7 +230,7 @@ export const CommandCenterPage: React.FC = () => {
       <header className="flex shrink-0 items-center justify-between border-border border-b bg-card/50 px-6 py-3 backdrop-blur-md">
         <div className="flex items-center gap-3 truncate pr-4">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 font-bold text-primary text-xs">
-            <IconGreekTemple className="size-4 text-primary" />
+            <BuildingLibraryIcon className="size-4 text-primary" />
           </div>
           <div className="truncate">
             <h1 className="truncate font-semibold text-foreground text-sm">
@@ -253,7 +253,7 @@ export const CommandCenterPage: React.FC = () => {
               className="flex h-8 items-center gap-1.5 px-2.5 text-xs"
               title="Start a new conversation"
             >
-              <IconSparkle4 className="size-3.5" />
+              <SparklesIcon className="size-3.5" />
               <span>New Chat</span>
             </Button>
           )}
@@ -263,7 +263,7 @@ export const CommandCenterPage: React.FC = () => {
             onClick={() => setHistoryOpen(true)}
             className="flex h-8 items-center gap-1.5 px-3 text-xs"
           >
-            <IconBookmarks className="size-3.5" />
+            <BookmarkIcon className="size-3.5" />
             <span>History</span>
           </Button>
         </div>
@@ -282,7 +282,7 @@ export const CommandCenterPage: React.FC = () => {
           ) : messages.length === 0 && !chatError ? (
             <div className="my-16 flex h-full flex-col items-center justify-center space-y-4 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-3xl">
-                <IconGreekTemple className="size-8 text-primary" />
+                <BuildingLibraryIcon className="size-8 text-primary" />
               </div>
               <div className="max-w-md space-y-1">
                 <h2 className="font-semibold text-foreground text-lg">
@@ -363,7 +363,7 @@ export const CommandCenterPage: React.FC = () => {
             }}
             className="flex items-center gap-1.5 rounded-full border border-border bg-card/90 px-3 py-1 text-foreground text-xs shadow-lg backdrop-blur-xs hover:bg-card"
           >
-            <IconArrowBoldDown className="size-3.5" />
+            <ArrowDownIcon className="size-3.5" />
             <span>Jump to latest</span>
           </Button>
         </div>

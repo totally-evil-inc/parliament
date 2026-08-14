@@ -23,18 +23,18 @@ import {
 } from "@workspace/ui/components/popover"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import {
-  IconBan,
-  IconBulletList,
-  IconCalendar,
-  IconCircleCheck,
-  IconCircleCoin,
-  IconCircleCopyPlus,
-  IconDots,
-  IconGrid,
-  IconMagnifier,
-  IconMoneyBill,
-  IconSlidersVertical,
-} from "nucleo-glass"
+  AdjustmentsHorizontalIcon,
+  BanknotesIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  EllipsisHorizontalIcon,
+  ListBulletIcon,
+  MagnifyingGlassIcon,
+  NoSymbolIcon,
+  PlusIcon,
+  Squares2X2Icon,
+} from "@heroicons/react/24/outline"
 import * as React from "react"
 import type { DateRange } from "react-day-picker"
 import { invoiceDraftsQuery } from "@/api/invoices"
@@ -236,7 +236,7 @@ function InvoicesRoute() {
                   />
                 }
               >
-                <IconCalendar className="h-3.5 w-3.5" />
+                <CalendarIcon className="h-3.5 w-3.5" />
                 {dateRange?.from ? (
                   dateRange.to ? (
                     <>
@@ -280,7 +280,7 @@ function InvoicesRoute() {
               onClick={() => createDraft.mutate()}
               disabled={createDraft.isPending}
             >
-              <IconCircleCopyPlus className="h-3.5 w-3.5" />
+              <PlusIcon className="h-3.5 w-3.5" />
               {createDraft.isPending ? "Creating..." : "New Invoice"}
             </Button>
           </div>
@@ -296,7 +296,7 @@ function InvoicesRoute() {
                   Total Invoiced
                 </span>
                 <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
-                  <IconMoneyBill className="h-4 w-4" />
+                  <BanknotesIcon className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-3">
@@ -315,7 +315,7 @@ function InvoicesRoute() {
                   Paid Invoices
                 </span>
                 <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
-                  <IconCircleCheck className="h-4 w-4" />
+                  <CheckCircleIcon className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-3">
@@ -334,7 +334,7 @@ function InvoicesRoute() {
                   Outstanding
                 </span>
                 <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
-                  <IconCircleCoin className="h-4 w-4" />
+                  <ClockIcon className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-3">
@@ -353,7 +353,7 @@ function InvoicesRoute() {
                   Overdue
                 </span>
                 <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
-                  <IconBan className="h-4 w-4" />
+                  <NoSymbolIcon className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-3">
@@ -385,14 +385,14 @@ function InvoicesRoute() {
                     size="icon"
                     className="h-7 w-7 rounded bg-neutral-800 text-white"
                   >
-                    <IconBulletList className="h-3.5 w-3.5" />
+                    <ListBulletIcon className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-neutral-500 hover:text-neutral-300"
                   >
-                    <IconGrid className="h-3.5 w-3.5" />
+                    <Squares2X2Icon className="h-3.5 w-3.5" />
                   </Button>
                 </div>
 
@@ -400,12 +400,12 @@ function InvoicesRoute() {
                   variant="outline"
                   className="h-8 cursor-pointer gap-1.5 rounded-lg border-neutral-800/80 bg-neutral-900/60 text-xs hover:bg-neutral-800/50"
                 >
-                  <IconSlidersVertical className="h-3.5 w-3.5" />
+                  <AdjustmentsHorizontalIcon className="h-3.5 w-3.5" />
                   Filters
                 </Button>
 
                 <div className="relative w-full sm:w-[220px]">
-                  <IconMagnifier className="absolute top-2.5 left-2.5 h-3.5 w-3.5 text-neutral-500" />
+                  <MagnifyingGlassIcon className="absolute top-2.5 left-2.5 h-3.5 w-3.5 text-neutral-500" />
                   <Input
                     type="search"
                     placeholder="Search..."
@@ -536,7 +536,7 @@ function InvoicesRoute() {
                                     />
                                   }
                                 >
-                                  <IconDots className="h-3.5 w-3.5" />
+                                  <EllipsisHorizontalIcon className="h-3.5 w-3.5" />
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent
                                   align="end"

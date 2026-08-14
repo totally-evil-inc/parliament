@@ -11,7 +11,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@workspace/ui/components/tabs"
-import { IconDeleteX } from "nucleo-glass"
+import { XMarkIcon } from "@heroicons/react/24/outline"
 import { useState } from "react"
 import { DealKanbanBoard } from "../../../features/clients/deal-kanban-board"
 import { DealKpiCards } from "../../../features/clients/deal-kpi-cards"
@@ -224,7 +224,7 @@ function DealsKanbanRoute() {
                 onClick={() => setIsCreating(false)}
                 className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
               >
-                <IconDeleteX className="size-3.5" />
+                <XMarkIcon className="size-3.5" />
               </Button>
             </div>
 

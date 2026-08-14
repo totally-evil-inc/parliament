@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
-import { IconTriangleWarning } from "nucleo-glass"
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline"
 import { useState } from "react"
 import { CustomerCreateSheet } from "../../../features/clients/customer-create-sheet"
 import { CustomerDetailsSheet } from "../../../features/clients/customer-details-sheet"
@@ -72,7 +72,7 @@ function ClientsHubRoute() {
         {hasError && (
           <div className="flex items-center justify-between rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-destructive text-sm">
             <div className="flex items-center gap-2">
-              <IconTriangleWarning className="size-4 shrink-0" />
+              <ExclamationTriangleIcon className="size-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
             <button

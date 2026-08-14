@@ -1,12 +1,12 @@
 import {
-  Download01Icon,
-  Image01Icon,
-  LayoutGridIcon,
-  LayoutTableIcon,
-  Share01Icon,
-  TextFontIcon,
-  Tick01Icon,
-} from "@hugeicons/core-free-icons"
+  ArrowDownTrayIcon,
+  CheckCircleIcon,
+  DocumentTextIcon,
+  PaperAirplaneIcon,
+  PhotoIcon,
+  Squares2X2Icon,
+  TableCellsIcon,
+} from "@heroicons/react/24/outline"
 import { defaultDocumentTemplate } from "@workspace/document/presentation"
 import type { DocumentDefinition } from "../core/types"
 import { proposalBlocks } from "../proposal/blocks/proposal-blocks"
@@ -119,43 +119,43 @@ export const invoiceEditorRegistry: DocumentDefinition = {
     {
       id: "text",
       label: "Text",
-      icon: TextFontIcon,
+      icon: DocumentTextIcon,
       command: (editor) => editor.chain().focus().setNode("paragraph").run(),
     },
     {
       id: "gallery",
       label: "Attachments",
-      icon: Image01Icon,
+      icon: PhotoIcon,
       blockId: "gallery",
     },
     {
       id: "timeline",
       label: "Milestones",
-      icon: Tick01Icon,
+      icon: CheckCircleIcon,
       blockId: "timeline",
     },
     {
       id: "line-items",
       label: "Billing Table",
-      icon: LayoutTableIcon,
+      icon: TableCellsIcon,
       blockId: "line-items",
     },
     {
       id: "layout",
       label: "Layout",
-      icon: LayoutGridIcon,
+      icon: Squares2X2Icon,
       togglesSidebar: true,
     },
     {
       id: "export",
       label: "Export",
-      icon: Download01Icon,
+      icon: ArrowDownTrayIcon,
       hostAction: true,
     },
     {
       id: "send",
       label: "Send Invoice",
-      icon: Share01Icon,
+      icon: PaperAirplaneIcon,
       hostAction: true,
     },
   ],

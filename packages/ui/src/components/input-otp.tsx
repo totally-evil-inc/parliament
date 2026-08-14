@@ -1,6 +1,6 @@
+import { MinusIcon } from "@heroicons/react/24/outline"
 import { cn } from "@workspace/ui/lib/utils"
 import { OTPInput, OTPInputContext } from "input-otp"
-import { IconDeleteX } from "nucleo-glass"
 import * as React from "react"
 
 function InputOTP({
@@ -75,7 +75,7 @@ function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
       role="separator"
       {...props}
     >
-      <IconDeleteX />
+      <MinusIcon />
     </div>
   )
 }

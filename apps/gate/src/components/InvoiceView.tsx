@@ -18,13 +18,13 @@ import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import {
-  CheckCircle2,
-  CreditCard,
-  ExternalLink,
-  FileCheck,
-  Lock,
-  ShieldCheck,
-} from "lucide-react"
+  ArrowTopRightOnSquareIcon,
+  CheckCircleIcon,
+  ClipboardDocumentCheckIcon,
+  CreditCardIcon,
+  LockClosedIcon,
+  ShieldCheckIcon,
+} from "@heroicons/react/24/outline"
 import type React from "react"
 import { useState } from "react"
 import type { AcceptancePayload } from "../lib/api"
@@ -149,7 +149,7 @@ export function InvoiceView({
                 variant="default"
                 className="flex items-center gap-1 bg-emerald-600 text-white"
               >
-                <CheckCircle2 className="h-3.5 w-3.5" /> Accepted
+                <CheckCircleIcon className="h-3.5 w-3.5" /> Accepted
               </Badge>
             ) : (
               paymentLinkUrl && (
@@ -166,8 +166,8 @@ export function InvoiceView({
                     size="sm"
                     className="gap-1.5 bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
                   >
-                    <CreditCard className="h-4 w-4" /> Pay Now{" "}
-                    <ExternalLink className="h-3 w-3" />
+                    <CreditCardIcon className="h-4 w-4" /> Pay Now{" "}
+                    <ArrowTopRightOnSquareIcon className="h-3 w-3" />
                   </Button>
                 </a>
               )
@@ -404,7 +404,7 @@ export function InvoiceView({
             <Card className="border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 font-bold text-base text-emerald-800 dark:text-emerald-300">
-                  <FileCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  <ClipboardDocumentCheckIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                   Invoice Accepted
                 </CardTitle>
               </CardHeader>
@@ -439,7 +439,7 @@ export function InvoiceView({
                     variant="outline"
                     className="mt-2 border-emerald-400 text-emerald-700 text-xs dark:text-emerald-300"
                   >
-                    <ShieldCheck className="mr-1 h-3 w-3" /> OTP Verified
+                    <ShieldCheckIcon className="mr-1 h-3 w-3" /> OTP Verified
                   </Badge>
                 )}
               </CardContent>
@@ -449,8 +449,8 @@ export function InvoiceView({
               <Card className="border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 font-bold text-lg">
-                    <Lock className="h-5 w-5 text-primary" /> Accept & Confirm
-                    Invoice
+                    <LockClosedIcon className="h-5 w-5 text-primary" /> Accept &
+                    Confirm Invoice
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -540,7 +540,7 @@ export function InvoiceView({
                     </div>
 
                     <div className="flex items-center gap-1.5 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-emerald-600 text-xs dark:text-emerald-400">
-                      <ShieldCheck className="h-4 w-4" />
+                      <ShieldCheckIcon className="h-4 w-4" />
                       <span>Email identity verified</span>
                     </div>
 

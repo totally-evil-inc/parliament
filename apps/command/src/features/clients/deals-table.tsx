@@ -12,7 +12,11 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
-import { IconBolt, IconFile, IconUsers } from "nucleo-glass"
+import {
+  BoltIcon,
+  DocumentTextIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline"
 import { useMemo, useState } from "react"
 
 type DealRow = {
@@ -252,7 +256,7 @@ export function DealsTable({
                         </span>
                         {deal.companyName && (
                           <span className="mt-0.5 inline-flex items-center gap-1 text-muted-foreground text-xs">
-                            <IconUsers className="size-3 shrink-0" />
+                            <UsersIcon className="size-3 shrink-0" />
                             <span>{deal.companyName}</span>
                           </span>
                         )}
@@ -296,7 +300,7 @@ export function DealsTable({
                           onClick={() => onConvertProposal(deal.id)}
                           className="gap-1.5 border-primary/20 bg-primary/10 font-semibold text-primary text-xs hover:bg-primary/20"
                         >
-                          <IconBolt className="size-3.5" />
+                          <BoltIcon className="size-3.5" />
                           <span>Convert</span>
                         </Button>
                       ) : (
@@ -312,7 +316,7 @@ export function DealsTable({
                           }
                           className="gap-1.5 font-semibold text-xs"
                         >
-                          <IconFile className="size-3.5" />
+                          <DocumentTextIcon className="size-3.5" />
                           <span>Proposal</span>
                         </Button>
                       )}

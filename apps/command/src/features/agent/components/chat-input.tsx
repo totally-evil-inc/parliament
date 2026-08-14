@@ -9,13 +9,15 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 import {
-  IconArrowBoldUp,
-  IconDeleteX,
-  IconGreekTemple,
-  IconSparkle4,
-} from "nucleo-glass"
+  ArrowUpIcon,
+  BuildingLibraryIcon,
+  SparklesIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline"
+import { StopIcon } from "@heroicons/react/24/solid"
 import type React from "react"
 import { useRef, useState } from "react"
+import { useConfirm } from "@/components/confirm-dialog-provider"
 import { useAIModels } from "../hooks/use-ai-models"
 
 interface ChatInputProps {
@@ -56,6 +58,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [customModelInput, setCustomModelInput] = useState("")
   const [isAddingCustom, setIsAddingCustom] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const confirm = useConfirm()
 
   const { data: modelsData, isLoading: isModelsLoading } = useAIModels()
 
@@ -98,6 +101,21 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   }
 
+  const handleStop = async () => {
+    if (!onStop) return
+    const confirmed = await confirm({
+      title: "Stop generation?",
+      description:
+        "Are you sure you want to stop the agent from generating a response?",
+      confirmLabel: "Stop",
+      cancelLabel: "Cancel",
+      variant: "destructive",
+    })
+    if (confirmed) {
+      onStop()
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-3">
       {/* Input Box (ai-02 design) */}
@@ -116,7 +134,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
         <div className="flex min-h-[40px] items-center gap-2 border-border/40 border-t p-2.5 pt-1">
           <div className="flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 py-1 text-xs">
-            <IconGreekTemple className="size-3.5 text-primary" />
+            <BuildingLibraryIcon className="size-3.5 text-primary" />
             <span className="font-semibold text-[11px] text-primary">
               Agent
             </span>
@@ -150,7 +168,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   className="h-7 px-1.5 py-0 text-[11px]"
                   onClick={() => setIsAddingCustom(false)}
                 >
-                  <IconDeleteX className="size-3" />
+                  <XMarkIcon className="size-3" />
                 </Button>
               </form>
             ) : (
@@ -213,27 +231,28 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             {isLoading ? (
               <Button
                 type="button"
+                variant="destructive"
+                size="icon"
                 aria-label="Stop generation"
-                className="h-8 rounded-full bg-destructive px-3 text-destructive-foreground text-xs"
-                onClick={onStop}
-                size="sm"
+                className="h-8 w-8 rounded-full shadow-xs"
+                onClick={handleStop}
               >
-                Stop
+                <StopIcon className="size-4" />
               </Button>
             ) : (
               <Button
                 type="button"
+                variant="default"
+                size="icon"
                 aria-label="Send message"
                 className={cn(
-                  "flex h-8 cursor-pointer items-center gap-1 rounded-full bg-primary px-3.5 font-semibold text-primary-foreground text-xs transition-all",
+                  "h-8 w-8 rounded-full transition-all",
                   inputValue.trim() && "shadow-md hover:bg-primary/90"
                 )}
                 disabled={!inputValue.trim()}
                 onClick={() => handleSubmit()}
-                size="sm"
               >
-                <span>Send</span>
-                <IconArrowBoldUp className="size-3" />
+                <ArrowUpIcon className="size-4" />
               </Button>
             )}
           </div>
@@ -249,7 +268,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             onClick={() => handlePromptClick(p.prompt)}
             variant="ghost"
           >
-            <IconSparkle4 className="size-3 shrink-0 text-primary/80" />
+            <SparklesIcon className="size-3 shrink-0 text-primary/80" />
             <span>{p.text}</span>
           </Button>
         ))}

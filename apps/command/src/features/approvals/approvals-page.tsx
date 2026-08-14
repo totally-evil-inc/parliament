@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
-import { IconCircleCheck, IconDeleteX } from "nucleo-glass"
+import { CheckCircleIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { PageHeader } from "@/components/page-header"
 import type { PendingAction } from "./use-agent-approvals"
 import {
@@ -38,7 +38,7 @@ export function ApprovalsPage() {
         ) : !pendingActions || pendingActions.length === 0 ? (
           <Card className="flex flex-col items-center justify-center p-12 text-center">
             <div className="rounded-full bg-emerald-500/10 p-3 text-emerald-600">
-              <IconCircleCheck className="size-6" />
+              <CheckCircleIcon className="size-6" />
             </div>
             <h3 className="mt-4 font-semibold text-lg">All Caught Up</h3>
             <p className="mt-1 text-muted-foreground text-sm">
@@ -119,7 +119,7 @@ function ApprovalCard({
           disabled={isPending}
           onClick={onReject}
         >
-          <IconDeleteX data-icon="inline-start" />
+          <XMarkIcon className="h-4 w-4" data-icon="inline-start" />
           Reject
         </Button>
         <Button
@@ -129,7 +129,7 @@ function ApprovalCard({
           disabled={isPending}
           onClick={onApprove}
         >
-          <IconCircleCheck data-icon="inline-start" />
+          <CheckCircleIcon className="h-4 w-4" data-icon="inline-start" />
           Approve Action
         </Button>
       </CardFooter>

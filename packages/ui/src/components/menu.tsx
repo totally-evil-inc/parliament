@@ -1,8 +1,8 @@
 "use client"
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
+import { ChevronRightIcon } from "@heroicons/react/20/solid"
 import { cn } from "@workspace/ui/lib/utils"
-import { IconArrowBoldRight } from "nucleo-glass"
 import type * as React from "react"
 
 export const MenuCreateHandle: typeof MenuPrimitive.createHandle =
@@ -275,7 +275,7 @@ export function MenuSubTrigger({
       {...props}
     >
       {children}
-      <IconArrowBoldRight className="ms-auto -me-0.5 opacity-80" />
+      <ChevronRightIcon className="ms-auto -me-0.5 opacity-80" />
     </MenuPrimitive.SubmenuTrigger>
   )
 }

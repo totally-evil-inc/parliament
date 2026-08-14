@@ -1,5 +1,9 @@
 import { createLibrary, defineComponent } from "@openuidev/react-lang"
-import { IconCircleCheck, IconLocation, IconUsers } from "nucleo-glass"
+import {
+  CheckCircleIcon,
+  MapPinIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline"
 import React from "react"
 import { z } from "zod"
 
@@ -213,7 +217,7 @@ export const EventCardComponent = defComp({
             className:
               "text-[11px] text-muted-foreground flex items-center gap-1",
           },
-          React.createElement(IconLocation, { className: "size-3 shrink-0" }),
+          React.createElement(MapPinIcon, { className: "size-3 shrink-0" }),
           props.location
         ),
       props.attendees &&
@@ -224,7 +228,7 @@ export const EventCardComponent = defComp({
             className:
               "text-[10px] text-muted-foreground truncate flex items-center gap-1",
           },
-          React.createElement(IconUsers, { className: "size-3 shrink-0" }),
+          React.createElement(UsersIcon, { className: "size-3 shrink-0" }),
           props.attendees.join(", ")
         )
     )
@@ -284,7 +288,7 @@ export const DocumentSentCardComponent = defComp({
               "text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1",
           },
           "Sent",
-          React.createElement(IconCircleCheck, {
+          React.createElement(CheckCircleIcon, {
             className: "size-3 text-emerald-600 dark:text-emerald-400",
           })
         )

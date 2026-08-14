@@ -11,7 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { IconBolt, IconFile, IconUsers } from "nucleo-glass"
+import {
+  BoltIcon,
+  DocumentTextIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline"
 import { useMemo, useState } from "react"
 
 type DealRow = {
@@ -171,7 +175,7 @@ export function DealKanbanBoard({
 
                         {dealItem.companyName && (
                           <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
-                            <IconUsers className="size-3.5 shrink-0" />
+                            <UsersIcon className="size-3.5 shrink-0" />
                             <span>{dealItem.companyName}</span>
                           </span>
                         )}
@@ -222,7 +226,7 @@ export function DealKanbanBoard({
                             onClick={() => onConvertProposal(dealItem.id)}
                             className="mt-1 w-full gap-1.5 border-primary/20 bg-primary/10 font-semibold text-primary text-xs hover:bg-primary/20"
                           >
-                            <IconBolt className="size-3.5" />
+                            <BoltIcon className="size-3.5" />
                             <span>1-Click Convert to Proposal</span>
                           </Button>
                         ) : (
@@ -240,7 +244,7 @@ export function DealKanbanBoard({
                             }
                             className="mt-1 w-full gap-1.5 font-semibold text-xs"
                           >
-                            <IconFile className="size-3.5" />
+                            <DocumentTextIcon className="size-3.5" />
                             <span>View Linked Proposal</span>
                           </Button>
                         )}

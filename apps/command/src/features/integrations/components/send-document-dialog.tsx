@@ -1,5 +1,8 @@
-import { Share01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  CheckCircleIcon,
+  Cog6ToothIcon,
+  PaperAirplaneIcon,
+} from "@heroicons/react/24/outline"
 import { render } from "@react-email/render"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -10,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
-import { IconCircleCheck, IconGear } from "nucleo-glass"
 import * as React from "react"
 import { DocumentDispatchEmail } from "../../email/templates/DocumentDispatchEmail"
 import { useSendGmailEmail } from "../hooks/use-gmail-operations"
@@ -310,7 +312,7 @@ export function SendDocumentDialog({
                   }`}
                 >
                   {statusMessage.startsWith("Successfully") && (
-                    <IconCircleCheck className="mr-1 inline size-3.5 shrink-0" />
+                    <CheckCircleIcon className="mr-1 inline size-3.5 shrink-0" />
                   )}
                   {statusMessage}
                 </div>
@@ -324,7 +326,7 @@ export function SendDocumentDialog({
                   className="text-xs"
                   onClick={handleOpenInGmailWeb}
                 >
-                  <IconGear className="mr-1 size-3" />
+                  <Cog6ToothIcon className="mr-1 size-3" />
                   Open in Gmail Web
                 </Button>
 
@@ -334,7 +336,7 @@ export function SendDocumentDialog({
                   className="text-xs gap-1"
                   disabled={sendGmailMutation.isPending}
                 >
-                  <HugeiconsIcon icon={Share01Icon} className="size-3.5" />
+                  <PaperAirplaneIcon className="size-3.5" />
                   {sendGmailMutation.isPending
                     ? "Sending..."
                     : "Send via Gmail API"}

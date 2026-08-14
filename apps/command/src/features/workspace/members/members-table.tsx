@@ -25,11 +25,11 @@ import {
   TableRow,
 } from "@workspace/ui/components/table"
 import {
-  IconCircleDotsVertical,
-  IconDeleteX,
-  IconEnvelope,
-  IconLock,
-} from "nucleo-glass"
+  EllipsisVerticalIcon,
+  EnvelopeIcon,
+  LockClosedIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { authClient } from "@/lib/auth-client"
 
@@ -216,7 +216,7 @@ export function MembersTable({
                 <TableCell>
                   {isOwner ? (
                     <Badge variant="outline" className="gap-1.5">
-                      <IconLock className="size-3" />
+                      <LockClosedIcon className="size-3" />
                       Owner
                     </Badge>
                   ) : (
@@ -267,7 +267,7 @@ export function MembersTable({
                           />
                         }
                       >
-                        <IconCircleDotsVertical className="size-4" />
+                        <EllipsisVerticalIcon className="size-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-44">
                         <DropdownMenuItem
@@ -276,7 +276,7 @@ export function MembersTable({
                             window.open(`mailto:${member.user.email}`)
                           }
                         >
-                          <IconEnvelope />
+                          <EnvelopeIcon className="h-4 w-4" />
                           Send email
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -284,7 +284,7 @@ export function MembersTable({
                           variant="destructive"
                           onClick={() => void handleRemove(member)}
                         >
-                          <IconDeleteX />
+                          <TrashIcon className="h-4 w-4" />
                           Remove
                         </DropdownMenuItem>
                       </DropdownMenuContent>

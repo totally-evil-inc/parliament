@@ -1,7 +1,10 @@
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
+import {
+  ChevronRightIcon,
+  EllipsisHorizontalIcon,
+} from "@heroicons/react/24/outline"
 import { cn } from "@workspace/ui/lib/utils"
-import { IconArrowBoldRight, IconCircleDots } from "nucleo-glass"
 import type * as React from "react"
 
 function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
@@ -84,7 +87,7 @@ function BreadcrumbSeparator({
       className={cn("[&>svg]:size-3.5", className)}
       {...props}
     >
-      {children ?? <IconArrowBoldRight />}
+      {children ?? <ChevronRightIcon />}
     </li>
   )
 }
@@ -104,7 +107,7 @@ function BreadcrumbEllipsis({
       )}
       {...props}
     >
-      <IconCircleDots />
+      <EllipsisHorizontalIcon />
       <span className="sr-only">More</span>
     </span>
   )

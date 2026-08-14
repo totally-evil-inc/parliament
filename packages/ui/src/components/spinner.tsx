@@ -1,9 +1,9 @@
+import { ArrowPathIcon } from "@heroicons/react/24/outline"
 import { cn } from "@workspace/ui/lib/utils"
-import { IconLoader } from "nucleo-glass"
 
 function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
   return (
-    <IconLoader
+    <ArrowPathIcon
       {...props}
       role="status"
       aria-label="Loading"

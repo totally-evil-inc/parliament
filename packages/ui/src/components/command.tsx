@@ -12,9 +12,10 @@ import {
   InputGroupAddon,
 } from "@workspace/ui/components/input-group"
 
+import { CheckIcon } from "@heroicons/react/20/solid"
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 import { cn } from "@workspace/ui/lib/utils"
 import { Command as CommandPrimitive } from "cmdk"
-import { IconCircleCheck, IconMagnifier } from "nucleo-glass"
 import type * as React from "react"
 
 function Command({
@@ -82,7 +83,7 @@ function CommandInput({
           {...props}
         />
         <InputGroupAddon>
-          <IconMagnifier className="size-3.5 shrink-0 opacity-50" />
+          <MagnifyingGlassIcon className="size-3.5 shrink-0 opacity-50" />
         </InputGroupAddon>
       </InputGroup>
     </div>
@@ -162,7 +163,7 @@ function CommandItem({
       {...props}
     >
       {children}
-      <IconCircleCheck className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
+      <CheckIcon className="ml-auto size-3.5 opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
     </CommandPrimitive.Item>
   )
 }

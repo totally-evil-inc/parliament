@@ -1,4 +1,8 @@
-import { IconArrowBoldDown, IconArrowBoldUp, IconBolt } from "nucleo-glass"
+import {
+  BoltIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from "@heroicons/react/24/outline"
 import type React from "react"
 import { useEffect, useState } from "react"
 
@@ -27,7 +31,7 @@ export const ReasoningCard: React.FC<ReasoningCardProps> = ({
         className="flex w-full items-center justify-between px-3.5 py-2 text-left font-mono text-[11px] text-muted-foreground transition-colors hover:bg-muted/50"
       >
         <div className="flex items-center gap-2">
-          <IconBolt className="size-3.5 shrink-0 text-amber-500" />
+          <BoltIcon className="size-3.5 shrink-0 text-amber-500" />
           <span className="font-semibold text-foreground/90">
             Agent reasoning
           </span>
@@ -44,9 +48,9 @@ export const ReasoningCard: React.FC<ReasoningCardProps> = ({
         <span className="flex items-center gap-1 font-medium text-[10px] text-muted-foreground">
           <span>{expanded ? "Hide" : "Show"}</span>
           {expanded ? (
-            <IconArrowBoldUp className="size-3" />
+            <ChevronUpIcon className="size-3" />
           ) : (
-            <IconArrowBoldDown className="size-3" />
+            <ChevronDownIcon className="size-3" />
           )}
         </span>
       </button>

@@ -3,7 +3,7 @@ import type { CustomerStatus } from "@workspace/document/schema"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { IconDeleteX, IconDuplicatePlus, IconUsers } from "nucleo-glass"
+import { PlusIcon, UsersIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { useMemo, useState } from "react"
 
 type CustomerRow = {
@@ -111,7 +111,7 @@ export function CustomersTable({
                 onClick={() => setSearchQuery("")}
                 className="absolute top-1.5 right-2 text-muted-foreground text-xs hover:text-foreground"
               >
-                <IconDeleteX className="size-3.5" />
+                <XMarkIcon className="size-3.5" />
               </button>
             )}
           </div>
@@ -121,7 +121,7 @@ export function CustomersTable({
             onClick={onNewClient}
             className="gap-1.5"
           >
-            <IconDuplicatePlus className="size-3.5" />
+            <PlusIcon className="size-3.5" />
             <span>Add Client</span>
           </Button>
         </div>
@@ -134,7 +134,7 @@ export function CustomersTable({
         </div>
       ) : filteredCustomers.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border/80 border-dashed bg-card/30 p-12 text-center">
-          <IconUsers className="size-10 text-muted-foreground/50" />
+          <UsersIcon className="size-10 text-muted-foreground/50" />
           <div className="flex flex-col gap-1">
             <h3 className="font-bold text-foreground text-sm">
               No clients found
@@ -151,7 +151,7 @@ export function CustomersTable({
             onClick={onNewClient}
             className="mt-2 gap-1.5"
           >
-            <IconDuplicatePlus className="size-3.5" />
+            <PlusIcon className="size-3.5" />
             <span>Add Client</span>
           </Button>
         </div>

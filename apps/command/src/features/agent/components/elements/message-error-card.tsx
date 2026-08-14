@@ -1,5 +1,8 @@
+import {
+  ArrowPathIcon,
+  ExclamationTriangleIcon,
+} from "@heroicons/react/24/outline"
 import { Button } from "@workspace/ui/components/button"
-import { IconRefresh, IconTriangleWarning } from "nucleo-glass"
 import type React from "react"
 
 export interface MessageErrorCardProps {
@@ -30,7 +33,7 @@ export const MessageErrorCard: React.FC<MessageErrorCardProps> = ({
     <div className="my-3 flex flex-col space-y-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-destructive text-xs shadow-xs">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2.5">
-          <IconTriangleWarning className="mt-0.5 size-4 shrink-0 text-destructive" />
+          <ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
           <div className="space-y-0.5">
             <h4 className="font-semibold text-destructive-foreground text-xs tracking-tight">
               Agent Request Failed ({code})
@@ -48,7 +51,7 @@ export const MessageErrorCard: React.FC<MessageErrorCardProps> = ({
             onClick={onRetry}
             className="flex h-7 shrink-0 items-center gap-1.5 border-destructive/40 px-2.5 font-medium text-[11px] text-destructive-foreground hover:bg-destructive/20"
           >
-            <IconRefresh className="size-3 shrink-0" />
+            <ArrowPathIcon className="size-3 shrink-0" />
             <span>Retry</span>
           </Button>
         )}

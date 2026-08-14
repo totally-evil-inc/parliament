@@ -30,12 +30,16 @@ import {
 } from "@workspace/ui/components/tabs"
 import { cn } from "@workspace/ui/lib/utils"
 import {
-  IconArrowBoldRight,
-  IconBolt,
-  IconCircleCheck,
-  IconCodeEditor,
-  IconGear,
-} from "nucleo-glass"
+  ArrowRightIcon,
+  ArrowTopRightOnSquareIcon,
+  BoltIcon,
+  CheckCircleIcon,
+  CodeBracketIcon,
+  Cog6ToothIcon,
+  EllipsisVerticalIcon,
+  LinkIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline"
 import * as React from "react"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { PageHeader } from "@/components/page-header"
@@ -158,7 +162,7 @@ function IntegrationCard({ integration }: { integration: Integration }) {
           </span>
           <span className="flex items-center gap-1.5 font-medium text-foreground/70">
             {integration.actions.length} actions
-            <IconArrowBoldRight className="size-3.5" />
+            <ArrowRightIcon className="size-3.5" />
           </span>
         </CardFooter>
       </SheetTrigger>
@@ -244,7 +248,7 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
                 />
               }
             >
-              <IconDotsVertical className="size-4" />
+              <EllipsisVerticalIcon className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem
@@ -274,7 +278,7 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
               className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               title="Open documentation"
             >
-              <IconExternalLink className="size-4" />
+              <ArrowTopRightOnSquareIcon className="size-4" />
             </a>
           )}
 
@@ -287,7 +291,7 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
               />
             }
           >
-            <IconClose className="size-4" />
+            <XMarkIcon className="size-4" />
             <span className="sr-only">Close</span>
           </SheetClose>
         </div>
@@ -326,7 +330,7 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
               disabled={isPending || comingSoon}
               onClick={handleAction}
             >
-              <IconChainLink className="mr-1.5 size-3.5" />
+              <LinkIcon className="mr-1.5 size-3.5" />
               {buttonText}
             </Button>
           </div>
@@ -394,7 +398,7 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
             {/* Key Features Section */}
             <section className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <IconBolt className="size-4 text-primary" />
+                <BoltIcon className="size-4 text-primary" />
                 <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide">
                   Key Features
                 </h3>
@@ -406,7 +410,7 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
                     className="flex flex-col gap-1.5 rounded-xl border border-border/60 bg-card p-4 transition-colors hover:border-border"
                   >
                     <div className="flex items-center gap-2">
-                      <IconCircleCheck className="size-4 shrink-0 text-emerald-500" />
+                      <CheckCircleIcon className="size-4 shrink-0 text-emerald-500" />
                       <span className="font-medium text-foreground text-sm">
                         {feature.label}
                       </span>
@@ -422,7 +426,7 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
             {/* Agent Actions Section */}
             <section className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <IconCodeEditor className="size-4 text-primary" />
+                <CodeBracketIcon className="size-4 text-primary" />
                 <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide">
                   Agent Actions
                 </h3>
@@ -448,7 +452,7 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
             {integration.scopes && integration.scopes.length > 0 && (
               <section className="flex flex-col gap-4">
                 <div className="flex items-center gap-2">
-                  <IconGear className="size-4 text-primary" />
+                  <Cog6ToothIcon className="size-4 text-primary" />
                   <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide">
                     OAuth Scopes Requested
                   </h3>
@@ -532,74 +536,4 @@ function getIntegrationCounts(
     }
     return counts
   }, initialCounts)
-}
-
-function IconDotsVertical(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <circle cx="12" cy="5" r="1" />
-      <circle cx="12" cy="12" r="1" />
-      <circle cx="12" cy="19" r="1" />
-    </svg>
-  )
-}
-
-function IconExternalLink(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M15 3h6v6" />
-      <path d="M10 14L21 3" />
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-    </svg>
-  )
-}
-
-function IconClose(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M18 6L6 18" />
-      <path d="M6 6l12 12" />
-    </svg>
-  )
-}
-
-function IconChainLink(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-    </svg>
-  )
 }

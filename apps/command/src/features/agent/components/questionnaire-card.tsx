@@ -1,45 +1,14 @@
+import {
+  CheckCircleIcon,
+  CheckIcon,
+  QuestionMarkCircleIcon,
+  SparklesIcon,
+} from "@heroicons/react/20/solid"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { IconCircleCheck, IconSparkle4 } from "nucleo-glass"
 import type React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { useCommandChatContext } from "../context/command-chat-context"
-
-function IconCheck({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  )
-}
-
-function IconHelp({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  )
-}
 
 export interface QuestionOptionItem {
   label: string
@@ -312,7 +281,7 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
         <div className="flex items-center justify-between border-emerald-500/20 border-b pb-2.5">
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-0.5 font-bold text-[10px] text-emerald-600 uppercase dark:text-emerald-400">
-              <IconCircleCheck className="size-3" />
+              <CheckCircleIcon className="size-3" />
               <span>Answers Submitted</span>
             </span>
             <span className="font-semibold text-foreground text-xs">
@@ -349,7 +318,7 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
       <div className="flex items-center justify-between border-border/60 border-b pb-3">
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1 rounded bg-primary/15 px-2 py-0.5 font-bold text-[10px] text-primary uppercase">
-            <IconHelp className="size-3" />
+            <QuestionMarkCircleIcon className="size-3" />
             <span>Clarification Needed</span>
           </span>
           <h3 className="font-semibold text-foreground text-sm">{title}</h3>
@@ -414,7 +383,7 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
                         <div className="flex w-full items-center justify-between gap-1.5">
                           <span>{opt.label}</span>
                           {isSelected && (
-                            <IconCheck className="size-3.5 shrink-0 text-primary" />
+                            <CheckIcon className="size-3.5 shrink-0 text-primary" />
                           )}
                         </div>
                         {opt.description && (
@@ -456,7 +425,7 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
                                 : "border-muted-foreground/40 bg-background"
                             }`}
                           >
-                            {isSelected && <IconCheck className="size-2.5" />}
+                            {isSelected && <CheckIcon className="size-2.5" />}
                           </span>
                         </div>
                         {opt.description && (
@@ -521,7 +490,7 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
           disabled={!isFormValid || isLoading}
           className="flex h-8 items-center gap-1.5 px-4 text-xs font-medium"
         >
-          <IconSparkle4 className="size-3.5" />
+          <SparklesIcon className="size-3.5" />
           <span>{submitButtonText}</span>
         </Button>
       </div>

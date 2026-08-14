@@ -10,7 +10,7 @@ import {
   buildProposalRenderModel,
 } from "@workspace/document/render"
 import "@workspace/ui/globals.css"
-import { Loader2 } from "lucide-react"
+import { ArrowPathIcon } from "@heroicons/react/24/outline"
 import { useEffect, useState } from "react"
 
 import { GateChallenge } from "./components/GateChallenge"
@@ -142,7 +142,7 @@ function ProposalRouteHandler({
   if (isMetaLoading || (meta?.status === "ready" && isDocLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <ArrowPathIcon className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
@@ -247,7 +247,7 @@ function InvoiceRouteHandler({
   if (isMetaLoading || (meta?.status === "ready" && isDocLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <ArrowPathIcon className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
