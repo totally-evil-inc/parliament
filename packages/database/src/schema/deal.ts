@@ -28,10 +28,7 @@ export const dealStageEnum = pgEnum("deal_stage", [
 export const deal = pgTable(
   "deal",
   {
-    id: uuid("id")
-      .default(sql`uuidv7()`)
-      .primaryKey()
-      .notNull(),
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
@@ -69,10 +66,7 @@ export const deal = pgTable(
 export const clientTask = pgTable(
   "client_task",
   {
-    id: uuid("id")
-      .default(sql`uuidv7()`)
-      .primaryKey()
-      .notNull(),
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
@@ -101,10 +95,7 @@ export const clientTask = pgTable(
 export const clientActivity = pgTable(
   "client_activity",
   {
-    id: uuid("id")
-      .default(sql`uuidv7()`)
-      .primaryKey()
-      .notNull(),
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),

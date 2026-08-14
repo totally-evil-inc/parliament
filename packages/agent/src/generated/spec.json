@@ -1,0 +1,400 @@
+{
+  "root": "Stack",
+  "components": {
+    "Stack": {
+      "signature": "Stack(children: any[], direction?: \"row\" | \"column\", gap?: number, align?: \"start\" | \"center\" | \"end\" | \"stretch\", justify?: \"start\" | \"center\" | \"end\" | \"between\")",
+      "description": "Flexible stack layout container for arranging elements horizontally or vertically."
+    },
+    "Layout": {
+      "signature": "Layout(children: any[], type?: \"bento\" | \"grid\" | \"sidebar\", cols?: number)",
+      "description": "Bento or grid layout container for structured dash cards and widgets."
+    },
+    "Content": {
+      "signature": "Content(title?: string, subtitle?: string, body?: string)",
+      "description": "Text content block with optional title, subtitle and body markdown."
+    },
+    "Data": {
+      "signature": "Data(label: string, value: string, trend?: \"up\" | \"down\" | \"neutral\", badge?: string)",
+      "description": "Key-value data tile with trend indicator or badge."
+    },
+    "EventCard": {
+      "signature": "EventCard(summary: string, start: string, end?: string, location?: string, attendees?: string[], htmlLink?: string)",
+      "description": "Calendar event badge displaying title, time range, attendees, and link."
+    },
+    "DocumentSentCard": {
+      "signature": "DocumentSentCard(documentTitle: string, documentType: \"proposal\" | \"invoice\", shareUrl: string, recipientEmail?: string, status?: string, valueFormatted?: string)",
+      "description": "Document dispatch card showing proposal or invoice sent status, share URL, and recipient."
+    },
+    "MetricGroup": {
+      "signature": "MetricGroup(metrics: {label: string, value: string, change?: string}[])",
+      "description": "Horizontal bar of 2 to 4 metric callouts."
+    },
+    "Chart": {
+      "signature": "Chart(type?: \"bar\" | \"line\" | \"pie\", title?: string, data: Record<string, any>[], dataKeys?: string[])",
+      "description": "Bar, line, or pie visualization chart."
+    },
+    "DataTable": {
+      "signature": "DataTable(columns: {key: string, header: string}[], data: Record<string, any>[])",
+      "description": "Structured data table with columns and rows."
+    },
+    "Callout": {
+      "signature": "Callout(title?: string, description: string, variant?: \"info\" | \"success\" | \"warning\" | \"error\")",
+      "description": "Important message callout box with severity color."
+    },
+    "LinkCard": {
+      "signature": "LinkCard(title: string, description?: string, url: string, badge?: string)",
+      "description": "External or internal link button card."
+    },
+    "Divider": {
+      "signature": "Divider(label?: string)",
+      "description": "Horizontal visual divider line with optional label."
+    }
+  },
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "Stack": {
+        "$ref": "#/$defs/Stack"
+      },
+      "Layout": {
+        "$ref": "#/$defs/Layout"
+      },
+      "Content": {
+        "$ref": "#/$defs/Content"
+      },
+      "Data": {
+        "$ref": "#/$defs/Data"
+      },
+      "EventCard": {
+        "$ref": "#/$defs/EventCard"
+      },
+      "DocumentSentCard": {
+        "$ref": "#/$defs/DocumentSentCard"
+      },
+      "MetricGroup": {
+        "$ref": "#/$defs/MetricGroup"
+      },
+      "Chart": {
+        "$ref": "#/$defs/Chart"
+      },
+      "DataTable": {
+        "$ref": "#/$defs/DataTable"
+      },
+      "Callout": {
+        "$ref": "#/$defs/Callout"
+      },
+      "LinkCard": {
+        "$ref": "#/$defs/LinkCard"
+      },
+      "Divider": {
+        "$ref": "#/$defs/Divider"
+      }
+    },
+    "required": [
+      "Stack",
+      "Layout",
+      "Content",
+      "Data",
+      "EventCard",
+      "DocumentSentCard",
+      "MetricGroup",
+      "Chart",
+      "DataTable",
+      "Callout",
+      "LinkCard",
+      "Divider"
+    ],
+    "additionalProperties": false,
+    "$defs": {
+      "Stack": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {}
+          },
+          "direction": {
+            "default": "column",
+            "type": "string",
+            "enum": ["row", "column"]
+          },
+          "gap": {
+            "default": 3,
+            "type": "number"
+          },
+          "align": {
+            "default": "stretch",
+            "type": "string",
+            "enum": ["start", "center", "end", "stretch"]
+          },
+          "justify": {
+            "default": "start",
+            "type": "string",
+            "enum": ["start", "center", "end", "between"]
+          }
+        },
+        "required": ["children", "direction", "gap", "align", "justify"],
+        "additionalProperties": false,
+        "description": "Flexible stack layout container for arranging elements horizontally or vertically."
+      },
+      "Layout": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {}
+          },
+          "type": {
+            "default": "bento",
+            "type": "string",
+            "enum": ["bento", "grid", "sidebar"]
+          },
+          "cols": {
+            "default": 2,
+            "type": "number"
+          }
+        },
+        "required": ["children", "type", "cols"],
+        "additionalProperties": false,
+        "description": "Bento or grid layout container for structured dash cards and widgets."
+      },
+      "Content": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Text content block with optional title, subtitle and body markdown."
+      },
+      "Data": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "trend": {
+            "type": "string",
+            "enum": ["up", "down", "neutral"]
+          },
+          "badge": {
+            "type": "string"
+          }
+        },
+        "required": ["label", "value"],
+        "additionalProperties": false,
+        "description": "Key-value data tile with trend indicator or badge."
+      },
+      "EventCard": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "attendees": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "htmlLink": {
+            "type": "string"
+          }
+        },
+        "required": ["summary", "start"],
+        "additionalProperties": false,
+        "description": "Calendar event badge displaying title, time range, attendees, and link."
+      },
+      "DocumentSentCard": {
+        "type": "object",
+        "properties": {
+          "documentTitle": {
+            "type": "string"
+          },
+          "documentType": {
+            "type": "string",
+            "enum": ["proposal", "invoice"]
+          },
+          "shareUrl": {
+            "type": "string"
+          },
+          "recipientEmail": {
+            "type": "string"
+          },
+          "status": {
+            "default": "sent",
+            "type": "string"
+          },
+          "valueFormatted": {
+            "type": "string"
+          }
+        },
+        "required": ["documentTitle", "documentType", "shareUrl", "status"],
+        "additionalProperties": false,
+        "description": "Document dispatch card showing proposal or invoice sent status, share URL, and recipient."
+      },
+      "MetricGroup": {
+        "type": "object",
+        "properties": {
+          "metrics": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                },
+                "change": {
+                  "type": "string"
+                }
+              },
+              "required": ["label", "value"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["metrics"],
+        "additionalProperties": false,
+        "description": "Horizontal bar of 2 to 4 metric callouts."
+      },
+      "Chart": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "default": "bar",
+            "type": "string",
+            "enum": ["bar", "line", "pie"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            }
+          },
+          "dataKeys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["type", "data"],
+        "additionalProperties": false,
+        "description": "Bar, line, or pie visualization chart."
+      },
+      "DataTable": {
+        "type": "object",
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "header": {
+                  "type": "string"
+                }
+              },
+              "required": ["key", "header"],
+              "additionalProperties": false
+            }
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            }
+          }
+        },
+        "required": ["columns", "data"],
+        "additionalProperties": false,
+        "description": "Structured data table with columns and rows."
+      },
+      "Callout": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "variant": {
+            "default": "info",
+            "type": "string",
+            "enum": ["info", "success", "warning", "error"]
+          }
+        },
+        "required": ["description", "variant"],
+        "additionalProperties": false,
+        "description": "Important message callout box with severity color."
+      },
+      "LinkCard": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "badge": {
+            "type": "string"
+          }
+        },
+        "required": ["title", "url"],
+        "additionalProperties": false,
+        "description": "External or internal link button card."
+      },
+      "Divider": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Horizontal visual divider line with optional label."
+      }
+    }
+  }
+}

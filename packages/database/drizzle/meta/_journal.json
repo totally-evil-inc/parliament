@@ -85,6 +85,27 @@
       "when": 1786383999999,
       "tag": "0011_customer_crm_enhancements",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786613610506,
+      "tag": "0012_chat",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786613700000,
+      "tag": "0013_ai_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786623825017,
+      "tag": "0014_condemned_raza",
+      "breakpoints": true
     }
   ]
 }

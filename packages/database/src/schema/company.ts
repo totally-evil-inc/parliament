@@ -21,10 +21,7 @@ export const customerStatusEnum = pgEnum("customer_status", [
 export const company = pgTable(
   "company",
   {
-    id: uuid("id")
-      .default(sql`uuidv7()`)
-      .primaryKey()
-      .notNull(),
+    id: uuid("id").default(sql`uuidv7()`).primaryKey().notNull(),
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),

@@ -27,6 +27,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@workspace/agent": "workspace:*",
     "@workspace/logger": "workspace:*",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2"
