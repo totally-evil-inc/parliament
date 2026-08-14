@@ -8,7 +8,8 @@ const subDays = (date: Date, days: number) => {
   return result
 }
 
-export function useProposalsFilter(proposals: ProposalDraftListItem[]) {
+export function useProposalsFilter(proposals: ProposalDraftListItem[] = []) {
+  const safeProposals = Array.isArray(proposals) ? proposals : []
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
     to: new Date(),
@@ -35,7 +36,7 @@ export function useProposalsFilter(proposals: ProposalDraftListItem[]) {
     return d >= s && d <= e
   }
 
-  const filteredList = proposals.filter((p) => {
+  const filteredList = safeProposals.filter((p) => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       const matchesSearch =
@@ -55,7 +56,7 @@ export function useProposalsFilter(proposals: ProposalDraftListItem[]) {
     return true
   })
 
-  const currentPeriodProposals = proposals.filter((p) => {
+  const currentPeriodProposals = safeProposals.filter((p) => {
     if (!dateRange?.from) return true
     const pDate = new Date(p.issueDate)
     const start = dateRange.from
@@ -63,14 +64,15 @@ export function useProposalsFilter(proposals: ProposalDraftListItem[]) {
     return isProposalInPeriod(pDate, start, end)
   })
 
-  const prevPeriodProposals = proposals.filter((p) => {
+  const prevPeriodProposals = safeProposals.filter((p) => {
     if (!showTrend || !prevRange) return false
     const pDate = new Date(p.issueDate)
     return isProposalInPeriod(pDate, prevRange.from, prevRange.to)
   })
 
-  const getStats = (list: ProposalDraftListItem[]) => {
-    const totalProposedList = list.filter((p) => p.status !== "draft")
+  const getStats = (list: ProposalDraftListItem[] = []) => {
+    const safeList = Array.isArray(list) ? list : []
+    const totalProposedList = safeList.filter((p) => p.status !== "draft")
     const totalProposedSum = totalProposedList.reduce(
       (sum, p) => sum + p.valueMinor,
       0

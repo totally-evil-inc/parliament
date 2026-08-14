@@ -3,20 +3,26 @@
  * Strips raw SQL queries, internal database error structures, and stack traces,
  * converting them into clean, human-readable user messages for Sonner toasts and UI banners.
  */
-export function getErrorMessage(error: unknown, fallbackMessage = "An unexpected error occurred"): string {
+export function getErrorMessage(
+  error: unknown,
+  fallbackMessage = "An unexpected error occurred"
+): string {
   if (!error) return fallbackMessage
 
   const rawMessage =
     error instanceof Error
       ? error.message
       : typeof error === "string"
-      ? error
-      : typeof error === "object" && error !== null && "message" in error
-      ? String((error as { message: unknown }).message)
-      : fallbackMessage
+        ? error
+        : typeof error === "object" && error !== null && "message" in error
+          ? String((error as { message: unknown }).message)
+          : fallbackMessage
 
   // Handle Unauthorized / Auth errors
-  if (rawMessage.includes("Unauthorized") || rawMessage.includes("activeOrganizationId")) {
+  if (
+    rawMessage.includes("Unauthorized") ||
+    rawMessage.includes("activeOrganizationId")
+  ) {
     return "Session expired or unauthorized. Please sign in again."
   }
 
@@ -47,7 +53,12 @@ export function getErrorMessage(error: unknown, fallbackMessage = "An unexpected
   }
 
   // Return sanitized message if clean, otherwise fallback
-  if (rawMessage.length > 0 && rawMessage.length < 150 && !rawMessage.includes("select ") && !rawMessage.includes("insert ")) {
+  if (
+    rawMessage.length > 0 &&
+    rawMessage.length < 150 &&
+    !rawMessage.includes("select ") &&
+    !rawMessage.includes("insert ")
+  ) {
     return rawMessage
   }
 

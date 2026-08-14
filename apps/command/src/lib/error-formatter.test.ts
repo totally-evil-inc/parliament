@@ -24,7 +24,9 @@ describe("Error Formatter Utility", () => {
   })
 
   it("preserves safe short error messages", () => {
-    expect(getErrorMessage(new Error("Customer not found"))).toBe("Customer not found")
+    expect(getErrorMessage(new Error("Customer not found"))).toBe(
+      "Customer not found"
+    )
   })
 
   it("returns fallback message for unknown or null errors", () => {

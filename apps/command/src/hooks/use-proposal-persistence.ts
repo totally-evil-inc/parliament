@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react"
 import { useMutation } from "@tanstack/react-query"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { saveProposalDraft } from "../server/proposals"
 
 export type SaveState = "idle" | "saving" | "saved" | "error"
@@ -26,7 +26,11 @@ export function useProposalPersistence({
   const isFirstRender = useRef(true)
 
   const { mutate, isPending } = useMutation({
-    mutationFn: async (payload: { id: string; revision: number; document: unknown }) => {
+    mutationFn: async (payload: {
+      id: string
+      revision: number
+      document: unknown
+    }) => {
       setSaveState("saving")
       return await saveProposalDraft({ data: payload })
     },
