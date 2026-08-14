@@ -5,6 +5,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline"
 import { StopIcon } from "@heroicons/react/24/solid"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@workspace/ui/components/button"
 import {
   Select,
@@ -19,6 +20,18 @@ import type React from "react"
 import { useEffect, useRef, useState } from "react"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { useAIModels } from "../hooks/use-ai-models"
+
+interface AIProvider {
+  id: string
+  name: string
+  isActive: boolean
+  defaultModel: string
+}
+
+interface AIProvidersResponse {
+  providers: AIProvider[]
+  activeProvider: AIProvider | null
+}
 
 interface ChatInputProps {
   onSend: (text: string) => void
@@ -64,8 +77,41 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const prevLoadingRef = useRef(isLoading)
   const confirm = useConfirm()
+  const queryClient = useQueryClient()
+  const authUrl =
+    import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
 
   const { data: modelsData, isLoading: isModelsLoading } = useAIModels()
+  const { data: providersData, isLoading: isProvidersLoading } =
+    useQuery<AIProvidersResponse>({
+      queryKey: ["agent", "settings", "ai"],
+      queryFn: async () => {
+        const response = await fetch(`${authUrl}/api/agent/settings/ai`, {
+          credentials: "include",
+        })
+        if (!response.ok) throw new Error("Failed to load AI providers")
+        return response.json()
+      },
+      staleTime: 30_000,
+    })
+  const selectProvider = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`${authUrl}/api/agent/settings/ai/${id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: true }),
+      })
+      if (!response.ok) throw new Error("Failed to switch AI provider")
+      return id
+    },
+    onSuccess: (id) => {
+      queryClient.invalidateQueries({ queryKey: ["agent", "settings", "ai"] })
+      queryClient.invalidateQueries({ queryKey: ["agent", "models"] })
+      const provider = providersData?.providers.find((item) => item.id === id)
+      if (provider?.defaultModel) onSelectModel?.(provider.defaultModel)
+    },
+  })
 
   const defaultModel = modelsData?.defaultModel || ""
   const activeModel = selectedModel || defaultModel
@@ -168,6 +214,39 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
 
           <div className="relative flex items-center gap-2">
+            <Select
+              value={providersData?.activeProvider?.id ?? ""}
+              onValueChange={(id) => {
+                if (id) selectProvider.mutate(id)
+              }}
+              disabled={
+                isProvidersLoading ||
+                selectProvider.isPending ||
+                !providersData?.providers.length
+              }
+            >
+              <SelectTrigger
+                aria-label="Select AI provider"
+                className="h-8 w-[150px] max-w-[28vw] border-none bg-transparent! p-0 text-muted-foreground text-xs shadow-none hover:text-foreground focus:ring-0"
+              >
+                <SelectValue placeholder="Provider">
+                  <span className="block truncate text-left font-medium text-xs">
+                    {providersData?.providers.find(
+                      (provider) =>
+                        provider.id === providersData.activeProvider?.id
+                    )?.name ?? "Provider"}
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {providersData?.providers.map((provider) => (
+                  <SelectItem key={provider.id} value={provider.id}>
+                    {provider.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {isAddingCustom ? (
               <form
                 onSubmit={handleAddCustomModel}
