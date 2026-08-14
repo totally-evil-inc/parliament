@@ -95,13 +95,7 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
 
           return (
             <div key={tc.id} className="w-full">
-              <Tool
-                defaultOpen={
-                  toolState === "approval-requested" ||
-                  toolState === "output-error" ||
-                  tc.needsApproval
-                }
-              >
+              <Tool defaultOpen={true}>
                 <ToolHeader
                   type={tc.name}
                   state={toolState}

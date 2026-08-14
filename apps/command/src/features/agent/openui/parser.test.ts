@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { extractOpenUI } from "./parser"
+import { extractOpenUI, normalizeOpenUIProgram } from "./parser"
 
 describe("extractOpenUI", () => {
   test("separates prose and a completed program", () => {
@@ -31,5 +31,28 @@ describe("extractOpenUI", () => {
       hasOpenUI: false,
       isComplete: true,
     })
+  })
+
+  test("normalizes keyword arguments in component calls like DataTable(columns=..., data=...)", () => {
+    const rawProgram = `root = Stack([
+    MetricGroup(metrics=[
+        {"label": "Total Pipeline", "value": "$1,500,000"}
+    ]),
+    DataTable(
+        columns=[
+            {"key": "id", "header": "ID"}
+        ],
+        data=[
+            {"id": "1", "title": "Deal 1"}
+        ]
+    )
+])`
+
+    const normalized = normalizeOpenUIProgram(rawProgram)
+    expect(normalized).not.toContain("columns=")
+    expect(normalized).not.toContain("data=")
+    expect(normalized).not.toContain("metrics=")
+    expect(normalized).toContain("DataTable(")
+    expect(normalized).toContain("MetricGroup(")
   })
 })

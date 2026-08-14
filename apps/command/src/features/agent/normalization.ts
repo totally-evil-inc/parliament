@@ -115,10 +115,29 @@ export function normalizeAssistantMessage(
     }
   }
 
-  const thinking = parts
+  let thinking = parts
     .filter((p: any) => p?.type === "thinking" || p?.type === "reasoning")
-    .map((p: any) => p.content ?? p.thinking ?? p.reasoning ?? "")
+    .map((p: any) => p.content ?? p.thinking ?? p.reasoning ?? p.text ?? "")
     .join("")
+
+  // Extract <think>...</think> tags if present in text (common in reasoning models)
+  if (text.includes("<think>")) {
+    const thinkMatch = text.match(/<think>([\s\S]*?)<\/think>/)
+    if (thinkMatch) {
+      const extractedThink = thinkMatch[1].trim()
+      thinking = thinking ? `${thinking}\n\n${extractedThink}` : extractedThink
+      text = text.replace(/<think>[\s\S]*?<\/think>/g, "").trim()
+    } else {
+      const openThinkMatch = text.match(/<think>([\s\S]*)$/)
+      if (openThinkMatch) {
+        const extractedThink = openThinkMatch[1].trim()
+        thinking = thinking
+          ? `${thinking}\n\n${extractedThink}`
+          : extractedThink
+        text = text.replace(/<think>[\s\S]*$/, "").trim()
+      }
+    }
+  }
   const calls = new Map<string, ToolCallItem>()
 
   // Direct toolCalls on message object

@@ -143,6 +143,31 @@ describe("normalizeAssistantMessage", () => {
     expect(normalized.tasks?.[0].title).toBe("Proposal dispatch workflow")
   })
 
+  test("extracts <think>...</think> reasoning tags from text", () => {
+    const rawMessage = {
+      id: "msg-think",
+      role: "assistant",
+      content:
+        "<think>Checking deal stages and CRM pipeline.</think>Here are your deals.",
+    }
+
+    const normalized = normalizeAssistantMessage(rawMessage)
+    expect(normalized.thinking).toBe("Checking deal stages and CRM pipeline.")
+    expect(normalized.text).toBe("Here are your deals.")
+  })
+
+  test("extracts unclosed <think> reasoning tags during active stream", () => {
+    const rawMessage = {
+      id: "msg-stream-think",
+      role: "assistant",
+      content: "<think>Currently analyzing deal milestones and",
+    }
+
+    const normalized = normalizeAssistantMessage(rawMessage)
+    expect(normalized.thinking).toBe("Currently analyzing deal milestones and")
+    expect(normalized.text).toBe("")
+  })
+
   test("strips leaked markdown pseudo-function-call text from assistant messages", () => {
     const leakedRawText = `I can help manage your sales pipeline and draft proposals.
 

@@ -65,15 +65,13 @@ export function Reasoning({
     onOpenChange?.(nextOpen)
   }
 
-  // Auto-open on streaming start, auto-close on streaming end
+  // Auto-open on streaming start; record duration on stream end
   useEffect(() => {
     if (isStreaming && !prevStreamingRef.current) {
       if (!isControlled) setUncontrolledOpen(true)
       onOpenChange?.(true)
       startTimeRef.current = Date.now()
     } else if (!isStreaming && prevStreamingRef.current) {
-      if (!isControlled) setUncontrolledOpen(false)
-      onOpenChange?.(false)
       if (startTimeRef.current) {
         const finalDuration = Math.max(
           1,
