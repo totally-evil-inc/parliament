@@ -10,8 +10,9 @@ import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 import type React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { HeaderPortal } from "@/layouts/header-portal"
+import { authClient } from "@/lib/auth-client"
 import { useCommandChatContext } from "../context/command-chat-context"
 import { normalizeAssistantMessage } from "../normalization"
 import { ChatInput } from "./chat-input"
@@ -187,7 +188,12 @@ export const CommandCenterPage: React.FC = () => {
     rejectTool,
   } = useCommandChatContext()
 
+  const session = authClient.useSession()
+  const userName = session.data?.user?.name
+  const displayName = userName?.trim().split(/\s+/)[0] || userName?.trim() || ""
+
   const displayedMessages = messages
+  const isEmpty = messages.length === 0
 
   const [historyOpen, setHistoryOpen] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -195,14 +201,14 @@ export const CommandCenterPage: React.FC = () => {
   const [showScrollBottom, setShowScrollBottom] = useState(false)
   const lastMessageCountRef = useRef(messages.length)
 
-  const scrollToBottom = (smooth = true) => {
+  const scrollToBottom = useCallback((smooth = true) => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({
         behavior: smooth ? "smooth" : "auto",
         block: "end",
       })
     }
-  }
+  }, [])
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget
@@ -276,34 +282,67 @@ export const CommandCenterPage: React.FC = () => {
         </header>
       </HeaderPortal>
 
-      {/* Message Feed with ScrollArea */}
-      <ScrollArea className="min-h-0 w-full flex-1" onScroll={handleScroll}>
-        <main className="mx-auto w-full max-w-4xl space-y-4 px-6 py-4">
-          {isHydrating && messages.length === 0 ? (
-            <div className="my-24 flex h-full flex-col items-center justify-center space-y-2 text-center">
+      {/* Main Content Area: Centered Initial State vs Active Message Feed */}
+      {isEmpty ? (
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-8">
+          {isHydrating ? (
+            <div className="flex flex-col items-center justify-center space-y-2 text-center">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               <p className="text-muted-foreground text-xs">
                 Loading conversation history...
               </p>
             </div>
-          ) : messages.length === 0 && !chatError ? (
-            <div className="my-16 flex h-full flex-col items-center justify-center space-y-4 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-3xl">
-                <BuildingLibraryIcon className="size-8 text-primary" />
+          ) : (
+            <div className="flex w-full max-w-3xl flex-col items-center space-y-6">
+              {/* Welcome Header */}
+              <div className="flex flex-col items-center space-y-3 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-3xl shadow-xs">
+                  <BuildingLibraryIcon className="size-7 text-primary" />
+                </div>
+                <div className="max-w-md space-y-1.5">
+                  <h2 className="font-semibold text-2xl text-foreground tracking-tight sm:text-3xl">
+                    {displayName
+                      ? `Welcome, ${displayName}`
+                      : "Welcome to Parliament Command"}
+                  </h2>
+                  <p className="text-muted-foreground text-xs leading-relaxed sm:text-sm">
+                    Ask about deals, proposals, invoices, customer analytics, or
+                    instruct the agent to dispatch proposals via Gmail and
+                    schedule calendar syncs.
+                  </p>
+                </div>
               </div>
-              <div className="max-w-md space-y-1">
-                <h2 className="font-semibold text-foreground text-lg">
-                  Welcome to Parliament Command
-                </h2>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  Ask about deals, proposals, invoices, customer analytics, or
-                  instruct the agent to dispatch proposals via Gmail and
-                  schedule calendar syncs.
-                </p>
+
+              {/* Empty Feed Error Banner if error occurred */}
+              {chatError && (
+                <div className="w-full max-w-2xl">
+                  <MessageErrorCard
+                    error={chatError}
+                    onRetry={retryLastPrompt}
+                  />
+                </div>
+              )}
+
+              {/* Centered Chat Input directly below welcome header */}
+              <div className="w-full">
+                <ChatInput
+                  onSend={sendPrompt}
+                  onStop={stop}
+                  isLoading={isLoading}
+                  selectedModel={selectedModel}
+                  onSelectModel={setSelectedModel}
+                  showPrompts={true}
+                  autoFocus={true}
+                />
               </div>
             </div>
-          ) : (
-            <>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Message Feed with ScrollArea */}
+          <ScrollArea className="min-h-0 w-full flex-1" onScroll={handleScroll}>
+            <main className="mx-auto w-full max-w-4xl space-y-4 px-6 py-4">
               {displayedMessages.map((m: any, idx: number) => {
                 const normalized = normalizeAssistantMessage(m)
                 const isLastMessage = idx === displayedMessages.length - 1
@@ -344,50 +383,42 @@ export const CommandCenterPage: React.FC = () => {
                     />
                   </div>
                 )}
+              <div ref={bottomRef} />
+            </main>
+          </ScrollArea>
 
-              {/* Empty Feed Error Banner */}
-              {chatError && messages.length === 0 && (
-                <div className="mx-auto my-6 max-w-2xl">
-                  <MessageErrorCard
-                    error={chatError}
-                    onRetry={retryLastPrompt}
-                  />
-                </div>
-              )}
-            </>
+          {/* Floating Scroll to Bottom Button */}
+          {showScrollBottom && (
+            <div className="absolute right-8 bottom-24 z-20">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  isAtBottomRef.current = true
+                  scrollToBottom(true)
+                }}
+                className="flex items-center gap-1.5 rounded-full border border-border bg-card/90 px-3 py-1 text-foreground text-xs shadow-lg backdrop-blur-xs hover:bg-card"
+              >
+                <ArrowDownIcon className="size-3.5" />
+                <span>Jump to latest</span>
+              </Button>
+            </div>
           )}
-          <div ref={bottomRef} />
-        </main>
-      </ScrollArea>
 
-      {/* Floating Scroll to Bottom Button */}
-      {showScrollBottom && (
-        <div className="absolute right-8 bottom-24 z-20">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              isAtBottomRef.current = true
-              scrollToBottom(true)
-            }}
-            className="flex items-center gap-1.5 rounded-full border border-border bg-card/90 px-3 py-1 text-foreground text-xs shadow-lg backdrop-blur-xs hover:bg-card"
-          >
-            <ArrowDownIcon className="size-3.5" />
-            <span>Jump to latest</span>
-          </Button>
-        </div>
+          {/* Docked Bottom Input */}
+          <footer className="shrink-0 border-border border-t bg-background p-4">
+            <ChatInput
+              onSend={sendPrompt}
+              onStop={stop}
+              isLoading={isLoading}
+              selectedModel={selectedModel}
+              onSelectModel={setSelectedModel}
+              showPrompts={false}
+              autoFocus={true}
+            />
+          </footer>
+        </>
       )}
-
-      {/* Input */}
-      <footer className="shrink-0 border-border border-t bg-background p-4">
-        <ChatInput
-          onSend={sendPrompt}
-          onStop={stop}
-          isLoading={isLoading}
-          selectedModel={selectedModel}
-          onSelectModel={setSelectedModel}
-        />
-      </footer>
 
       {/* History Slide-over */}
       {historyOpen && (

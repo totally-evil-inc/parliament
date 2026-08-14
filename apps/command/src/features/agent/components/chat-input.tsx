@@ -16,7 +16,7 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 import type React from "react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { useAIModels } from "../hooks/use-ai-models"
 
@@ -26,6 +26,8 @@ interface ChatInputProps {
   isLoading?: boolean
   selectedModel?: string
   onSelectModel?: (model: string) => void
+  showPrompts?: boolean
+  autoFocus?: boolean
 }
 
 const PROMPTS = [
@@ -53,11 +55,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   isLoading,
   selectedModel,
   onSelectModel,
+  showPrompts = true,
+  autoFocus = true,
 }) => {
   const [inputValue, setInputValue] = useState("")
   const [customModelInput, setCustomModelInput] = useState("")
   const [isAddingCustom, setIsAddingCustom] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const prevLoadingRef = useRef(isLoading)
   const confirm = useConfirm()
 
   const { data: modelsData, isLoading: isModelsLoading } = useAIModels()
@@ -74,11 +79,30 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     modelOptions.unshift({ id: activeModel, name: activeModel })
   }
 
+  // Focus handling on mount / visibility
+  useEffect(() => {
+    if (autoFocus) {
+      inputRef.current?.focus()
+    }
+  }, [autoFocus])
+
+  // Refocus when agent finishes responding
+  useEffect(() => {
+    if (prevLoadingRef.current && !isLoading) {
+      inputRef.current?.focus()
+    }
+    prevLoadingRef.current = isLoading
+  }, [isLoading])
+
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!inputValue.trim() || isLoading) return
-    onSend(inputValue.trim())
+    const text = inputValue.trim()
     setInputValue("")
+    onSend(text)
+    requestAnimationFrame(() => {
+      inputRef.current?.focus()
+    })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -90,6 +114,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const handlePromptClick = (prompt: string) => {
     onSend(prompt)
+    requestAnimationFrame(() => {
+      inputRef.current?.focus()
+    })
   }
 
   const handleAddCustomModel = (e: React.FormEvent) => {
@@ -260,19 +287,21 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       </div>
 
       {/* Prompt Suggestions */}
-      <div className="flex flex-wrap justify-center gap-2">
-        {PROMPTS.map((p) => (
-          <Button
-            key={p.text}
-            className="flex h-auto cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-foreground text-xs transition-colors hover:bg-muted"
-            onClick={() => handlePromptClick(p.prompt)}
-            variant="ghost"
-          >
-            <SparklesIcon className="size-3 shrink-0 text-primary/80" />
-            <span>{p.text}</span>
-          </Button>
-        ))}
-      </div>
+      {showPrompts && (
+        <div className="flex flex-wrap justify-center gap-2">
+          {PROMPTS.map((p) => (
+            <Button
+              key={p.text}
+              className="flex h-auto cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-foreground text-xs transition-colors hover:bg-muted"
+              onClick={() => handlePromptClick(p.prompt)}
+              variant="ghost"
+            >
+              <SparklesIcon className="size-3 shrink-0 text-primary/80" />
+              <span>{p.text}</span>
+            </Button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
