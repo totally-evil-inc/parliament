@@ -31,7 +31,9 @@
       "@workspace/document-editor": [
         "../../packages/document-editor/src/index.ts"
       ],
-      "@workspace/document-editor/*": ["../../packages/document-editor/src/*"]
+      "@workspace/document-editor/*": ["../../packages/document-editor/src/*"],
+      "@workspace/agent": ["../../packages/agent/src/index.ts"],
+      "@workspace/agent/*": ["../../packages/agent/src/*"]
     }
   }
 }

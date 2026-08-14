@@ -19,7 +19,6 @@ import { logWideEvent } from "@workspace/logger"
 import { z } from "zod"
 import type { JsonValue } from "./api-client"
 import { getUserId, requireActiveOrganization, requireAuth } from "./auth"
-import type { AuthenticatedCommandAuthContext } from "./auth-context"
 
 const proposalIdSchema = z.object({ id: z.string().uuid() })
 const createProposalDraftSchema = z.object({
@@ -509,8 +508,6 @@ export const acceptPublicProposal = createServerFn({ method: "POST" })
 
     return { accepted: acceptance }
   })
-
-
 
 async function selectDraft(id: string, organizationId: string) {
   const [row] = await db

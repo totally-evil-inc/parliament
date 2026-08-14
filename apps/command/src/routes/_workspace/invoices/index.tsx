@@ -21,6 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import {
   IconBan,
   IconBulletList,
@@ -220,7 +221,7 @@ function InvoicesRoute() {
   }
 
   return (
-    <>
+    <div className="flex flex-col h-full min-h-0 flex-1 overflow-hidden">
       <PageHeader
         title="Invoices"
         description="Manage and track bills, payments, and receivables."
@@ -285,306 +286,313 @@ function InvoicesRoute() {
           </div>
         }
       />
-
-      <div className="grid gap-6 bg-neutral-950/40 p-6 text-neutral-200 md:p-8">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
-            <div className="flex items-start justify-between">
-              <span className="font-medium text-neutral-400 text-xs">
-                Total Invoiced
-              </span>
-              <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
-                <IconMoneyBill className="h-4 w-4" />
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="grid gap-6 bg-neutral-950/40 p-6 text-neutral-200 md:p-8">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
+              <div className="flex items-start justify-between">
+                <span className="font-medium text-neutral-400 text-xs">
+                  Total Invoiced
+                </span>
+                <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
+                  <IconMoneyBill className="h-4 w-4" />
+                </div>
               </div>
-            </div>
-            <div className="mt-3">
-              <span className="font-semibold text-3xl text-white tracking-tight">
-                {formatValueNoDecimals(stats.totalSum, "KES")}
-              </span>
-            </div>
-            <div className="mt-4 flex items-center justify-between text-neutral-500 text-xs">
-              <span>{stats.totalCount} invoices</span>
-            </div>
-          </Card>
-
-          <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
-            <div className="flex items-start justify-between">
-              <span className="font-medium text-neutral-400 text-xs">
-                Paid Invoices
-              </span>
-              <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
-                <IconCircleCheck className="h-4 w-4" />
+              <div className="mt-3">
+                <span className="font-semibold text-3xl text-white tracking-tight">
+                  {formatValueNoDecimals(stats.totalSum, "KES")}
+                </span>
               </div>
-            </div>
-            <div className="mt-3">
-              <span className="font-semibold text-3xl text-white tracking-tight">
-                {formatValueNoDecimals(stats.paidSum, "KES")}
-              </span>
-            </div>
-            <div className="mt-4 flex items-center justify-between text-neutral-500 text-xs">
-              <span>{stats.paidCount} paid</span>
-            </div>
-          </Card>
-
-          <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
-            <div className="flex items-start justify-between">
-              <span className="font-medium text-neutral-400 text-xs">
-                Outstanding
-              </span>
-              <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
-                <IconCircleCoin className="h-4 w-4" />
+              <div className="mt-4 flex items-center justify-between text-neutral-500 text-xs">
+                <span>{stats.totalCount} invoices</span>
               </div>
-            </div>
-            <div className="mt-3">
-              <span className="font-semibold text-3xl text-white tracking-tight">
-                {formatValueNoDecimals(stats.outstandingSum, "KES")}
-              </span>
-            </div>
-            <div className="mt-4 flex items-center justify-between text-neutral-500 text-xs">
-              <span>{stats.outstandingCount} outstanding</span>
-            </div>
-          </Card>
+            </Card>
 
-          <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
-            <div className="flex items-start justify-between">
-              <span className="font-medium text-neutral-400 text-xs">
-                Overdue
-              </span>
-              <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
-                <IconBan className="h-4 w-4" />
+            <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
+              <div className="flex items-start justify-between">
+                <span className="font-medium text-neutral-400 text-xs">
+                  Paid Invoices
+                </span>
+                <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
+                  <IconCircleCheck className="h-4 w-4" />
+                </div>
               </div>
-            </div>
-            <div className="mt-3">
-              <span className="font-semibold text-3xl text-red-400 tracking-tight">
-                {formatValueNoDecimals(stats.overdueSum, "KES")}
-              </span>
-            </div>
-            <div className="mt-4 flex items-center justify-between text-neutral-500 text-xs">
-              <span>{stats.overdueCount} overdue</span>
-            </div>
-          </Card>
-        </div>
-
-        {/* Invoices List Card Container */}
-        <Card className="mt-2 overflow-hidden rounded-2xl border-neutral-800/80 bg-neutral-900/30 p-6">
-          <div className="mb-6 flex flex-col gap-4 border-neutral-800/50 border-b pb-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="font-semibold text-lg text-white">All invoices</h2>
-              <p className="mt-1 text-neutral-500 text-xs">
-                {filteredList.length} of {invoices.length} shown
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center rounded-lg border border-neutral-800/80 bg-neutral-900/60 p-0.5">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 rounded bg-neutral-800 text-white"
-                >
-                  <IconBulletList className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-neutral-500 hover:text-neutral-300"
-                >
-                  <IconGrid className="h-3.5 w-3.5" />
-                </Button>
+              <div className="mt-3">
+                <span className="font-semibold text-3xl text-white tracking-tight">
+                  {formatValueNoDecimals(stats.paidSum, "KES")}
+                </span>
               </div>
-
-              <Button
-                variant="outline"
-                className="h-8 cursor-pointer gap-1.5 rounded-lg border-neutral-800/80 bg-neutral-900/60 text-xs hover:bg-neutral-800/50"
-              >
-                <IconSlidersVertical className="h-3.5 w-3.5" />
-                Filters
-              </Button>
-
-              <div className="relative w-full sm:w-[220px]">
-                <IconMagnifier className="absolute top-2.5 left-2.5 h-3.5 w-3.5 text-neutral-500" />
-                <Input
-                  type="search"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 w-full rounded-lg border-neutral-800/80 bg-neutral-900/60 pl-8 text-neutral-200 text-xs placeholder-neutral-500 focus-visible:border-neutral-700 focus-visible:ring-neutral-700"
-                />
+              <div className="mt-4 flex items-center justify-between text-neutral-500 text-xs">
+                <span>{stats.paidCount} paid</span>
               </div>
-            </div>
+            </Card>
+
+            <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
+              <div className="flex items-start justify-between">
+                <span className="font-medium text-neutral-400 text-xs">
+                  Outstanding
+                </span>
+                <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
+                  <IconCircleCoin className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="font-semibold text-3xl text-white tracking-tight">
+                  {formatValueNoDecimals(stats.outstandingSum, "KES")}
+                </span>
+              </div>
+              <div className="mt-4 flex items-center justify-between text-neutral-500 text-xs">
+                <span>{stats.outstandingCount} outstanding</span>
+              </div>
+            </Card>
+
+            <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
+              <div className="flex items-start justify-between">
+                <span className="font-medium text-neutral-400 text-xs">
+                  Overdue
+                </span>
+                <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
+                  <IconBan className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="font-semibold text-3xl text-red-400 tracking-tight">
+                  {formatValueNoDecimals(stats.overdueSum, "KES")}
+                </span>
+              </div>
+              <div className="mt-4 flex items-center justify-between text-neutral-500 text-xs">
+                <span>{stats.overdueCount} overdue</span>
+              </div>
+            </Card>
           </div>
 
-          {groupedMonths.length === 0 ? (
-            <div className="py-12 text-center text-neutral-500 text-sm">
-              No invoices found.
+          {/* Invoices List Card Container */}
+          <Card className="mt-2 overflow-hidden rounded-2xl border-neutral-800/80 bg-neutral-900/30 p-6">
+            <div className="mb-6 flex flex-col gap-4 border-neutral-800/50 border-b pb-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-semibold text-lg text-white">
+                  All invoices
+                </h2>
+                <p className="mt-1 text-neutral-500 text-xs">
+                  {filteredList.length} of {invoices.length} shown
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center rounded-lg border border-neutral-800/80 bg-neutral-900/60 p-0.5">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded bg-neutral-800 text-white"
+                  >
+                    <IconBulletList className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-neutral-500 hover:text-neutral-300"
+                  >
+                    <IconGrid className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="h-8 cursor-pointer gap-1.5 rounded-lg border-neutral-800/80 bg-neutral-900/60 text-xs hover:bg-neutral-800/50"
+                >
+                  <IconSlidersVertical className="h-3.5 w-3.5" />
+                  Filters
+                </Button>
+
+                <div className="relative w-full sm:w-[220px]">
+                  <IconMagnifier className="absolute top-2.5 left-2.5 h-3.5 w-3.5 text-neutral-500" />
+                  <Input
+                    type="search"
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-8 w-full rounded-lg border-neutral-800/80 bg-neutral-900/60 pl-8 text-neutral-200 text-xs placeholder-neutral-500 focus-visible:border-neutral-700 focus-visible:ring-neutral-700"
+                  />
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-8">
-              {groupedMonths.map((group) => (
-                <div key={group.monthName} className="space-y-3">
-                  <div className="grid grid-cols-[48px_1fr_110px_110px_90px_100px_40px] items-center gap-4 border-neutral-900 border-b px-2 pb-2 font-semibold text-neutral-500 text-xs">
-                    <div className="col-span-2 flex items-center gap-1.5">
-                      <span className="font-bold text-neutral-300">
-                        {group.monthName}
-                      </span>
-                      <span className="rounded-full bg-neutral-800/60 px-1.5 py-0.2 font-normal text-[10px] text-neutral-400">
-                        {group.invoices.length}
-                      </span>
+
+            {groupedMonths.length === 0 ? (
+              <div className="py-12 text-center text-neutral-500 text-sm">
+                No invoices found.
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {groupedMonths.map((group) => (
+                  <div key={group.monthName} className="space-y-3">
+                    <div className="grid grid-cols-[48px_1fr_110px_110px_90px_100px_40px] items-center gap-4 border-neutral-900 border-b px-2 pb-2 font-semibold text-neutral-500 text-xs">
+                      <div className="col-span-2 flex items-center gap-1.5">
+                        <span className="font-bold text-neutral-300">
+                          {group.monthName}
+                        </span>
+                        <span className="rounded-full bg-neutral-800/60 px-1.5 py-0.2 font-normal text-[10px] text-neutral-400">
+                          {group.invoices.length}
+                        </span>
+                      </div>
+                      <div className="text-right">Created</div>
+                      <div className="text-right">Due Date</div>
+                      <div className="text-right">Status</div>
+                      <div className="text-right font-bold text-neutral-400">
+                        {formatValueNoDecimals(
+                          group.totalMinor,
+                          group.currency
+                        )}
+                      </div>
+                      <div></div>
                     </div>
-                    <div className="text-right">Created</div>
-                    <div className="text-right">Due Date</div>
-                    <div className="text-right">Status</div>
-                    <div className="text-right font-bold text-neutral-400">
-                      {formatValueNoDecimals(group.totalMinor, group.currency)}
-                    </div>
-                    <div></div>
-                  </div>
 
-                  <div className="space-y-2">
-                    {group.invoices.map((invoice) => {
-                      const isOverdue =
-                        invoice.status === "sent" &&
-                        invoice.dueDate < new Date().toISOString().split("T")[0]
-                      return (
-                        <div
-                          key={invoice.id}
-                          className="grid grid-cols-[48px_1fr_110px_110px_90px_100px_40px] items-center gap-4 rounded-xl border border-neutral-900/40 bg-neutral-900/20 px-2 py-3 transition duration-150 hover:bg-neutral-900/55"
-                        >
-                          <div className="flex h-9 w-9 select-none items-center justify-center rounded-full border border-neutral-700/30 bg-neutral-800/80 font-semibold text-neutral-400 text-xs">
-                            {getInitials(invoice.title)}
-                          </div>
-
-                          <div className="flex min-w-0 flex-col">
-                            <Link
-                              to="/invoices/$invoiceId"
-                              params={{ invoiceId: invoice.id }}
-                              className="truncate font-medium text-neutral-200 text-sm transition-colors hover:text-white"
-                            >
-                              {invoice.title || "Untitled invoice"}{" "}
-                              <span className="font-normal text-neutral-500 text-xs">
-                                ({invoice.invoiceNumber})
-                              </span>
-                            </Link>
-                            <div className="mt-1 flex min-w-0 items-center gap-2">
-                              <span className="truncate text-neutral-500 text-xs">
-                                {invoice.customerName || "Untitled client"}
-                              </span>
-                              <Badge
-                                variant="outline"
-                                className="rounded border-neutral-800 bg-neutral-800/40 px-1 py-0 text-[9px] text-neutral-500"
-                              >
-                                Invoice
-                              </Badge>
-                            </div>
-                          </div>
-
-                          <div className="text-right text-neutral-400 text-xs">
-                            {formatDateOnly(invoice.issueDate, "en-US")}
-                          </div>
-
+                    <div className="space-y-2">
+                      {group.invoices.map((invoice) => {
+                        const isOverdue =
+                          invoice.status === "sent" &&
+                          invoice.dueDate <
+                            new Date().toISOString().split("T")[0]
+                        return (
                           <div
-                            className={`text-right text-xs ${
-                              isOverdue
-                                ? "font-medium text-red-400"
-                                : "text-neutral-400"
-                            }`}
+                            key={invoice.id}
+                            className="grid grid-cols-[48px_1fr_110px_110px_90px_100px_40px] items-center gap-4 rounded-xl border border-neutral-900/40 bg-neutral-900/20 px-2 py-3 transition duration-150 hover:bg-neutral-900/55"
                           >
-                            {formatDateOnly(invoice.dueDate, "en-US")}
-                          </div>
+                            <div className="flex h-9 w-9 select-none items-center justify-center rounded-full border border-neutral-700/30 bg-neutral-800/80 font-semibold text-neutral-400 text-xs">
+                              {getInitials(invoice.title)}
+                            </div>
 
-                          <div className="flex justify-end">
-                            <Badge
-                              variant="outline"
-                              className={`rounded px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider ${
-                                invoice.status === "paid"
-                                  ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
-                                  : invoice.status === "sent"
-                                    ? isOverdue
-                                      ? "border-red-500/25 bg-red-500/10 text-red-400"
-                                      : "border-blue-500/25 bg-blue-500/10 text-blue-400"
-                                    : "border-neutral-800 bg-neutral-900 text-neutral-500"
+                            <div className="flex min-w-0 flex-col">
+                              <Link
+                                to="/invoices/$invoiceId"
+                                params={{ invoiceId: invoice.id }}
+                                className="truncate font-medium text-neutral-200 text-sm transition-colors hover:text-white"
+                              >
+                                {invoice.title || "Untitled invoice"}{" "}
+                                <span className="font-normal text-neutral-500 text-xs">
+                                  ({invoice.invoiceNumber})
+                                </span>
+                              </Link>
+                              <div className="mt-1 flex min-w-0 items-center gap-2">
+                                <span className="truncate text-neutral-500 text-xs">
+                                  {invoice.customerName || "Untitled client"}
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className="rounded border-neutral-800 bg-neutral-800/40 px-1 py-0 text-[9px] text-neutral-500"
+                                >
+                                  Invoice
+                                </Badge>
+                              </div>
+                            </div>
+
+                            <div className="text-right text-neutral-400 text-xs">
+                              {formatDateOnly(invoice.issueDate, "en-US")}
+                            </div>
+
+                            <div
+                              className={`text-right text-xs ${
+                                isOverdue
+                                  ? "font-medium text-red-400"
+                                  : "text-neutral-400"
                               }`}
                             >
-                              {invoice.status === "sent" && isOverdue
-                                ? "overdue"
-                                : invoice.status}
-                            </Badge>
-                          </div>
+                              {formatDateOnly(invoice.dueDate, "en-US")}
+                            </div>
 
-                          <div className="text-right font-semibold text-sm text-white">
-                            {formatValueNoDecimals(
-                              invoice.valueMinor,
-                              invoice.currency
-                            )}
-                          </div>
+                            <div className="flex justify-end">
+                              <Badge
+                                variant="outline"
+                                className={`rounded px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider ${
+                                  invoice.status === "paid"
+                                    ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
+                                    : invoice.status === "sent"
+                                      ? isOverdue
+                                        ? "border-red-500/25 bg-red-500/10 text-red-400"
+                                        : "border-blue-500/25 bg-blue-500/10 text-blue-400"
+                                      : "border-neutral-800 bg-neutral-900 text-neutral-500"
+                                }`}
+                              >
+                                {invoice.status === "sent" && isOverdue
+                                  ? "overdue"
+                                  : invoice.status}
+                              </Badge>
+                            </div>
 
-                          <div className="flex justify-end">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger
-                                render={
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 cursor-pointer rounded-lg text-neutral-500 hover:text-neutral-200"
-                                  />
-                                }
-                              >
-                                <IconDots className="h-3.5 w-3.5" />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="end"
-                                className="w-40 border-neutral-800 bg-neutral-900 text-neutral-300"
-                              >
-                                <DropdownMenuItem
+                            <div className="text-right font-semibold text-sm text-white">
+                              {formatValueNoDecimals(
+                                invoice.valueMinor,
+                                invoice.currency
+                              )}
+                            </div>
+
+                            <div className="flex justify-end">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger
                                   render={
-                                    <Link
-                                      to="/invoices/$invoiceId"
-                                      params={{ invoiceId: invoice.id }}
-                                      className="cursor-pointer text-xs"
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 cursor-pointer rounded-lg text-neutral-500 hover:text-neutral-200"
                                     />
                                   }
                                 >
-                                  Edit
-                                </DropdownMenuItem>
-                                {invoice.publicToken && (
+                                  <IconDots className="h-3.5 w-3.5" />
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="w-40 border-neutral-800 bg-neutral-900 text-neutral-300"
+                                >
                                   <DropdownMenuItem
                                     render={
-                                      <a
-                                        href={buildPublicLink(
-                                          "invoice",
-                                          invoice.publicToken
-                                        )}
-                                        target="_blank"
-                                        rel="noreferrer"
+                                      <Link
+                                        to="/invoices/$invoiceId"
+                                        params={{ invoiceId: invoice.id }}
                                         className="cursor-pointer text-xs"
                                       />
                                     }
                                   >
-                                    View public page
+                                    Edit
                                   </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem
-                                  variant="destructive"
-                                  className="cursor-pointer text-red-500 text-xs focus:bg-red-500/10 focus:text-red-500"
-                                  onClick={() =>
-                                    handleDelete(invoice.id, invoice.title)
-                                  }
-                                >
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                  {invoice.publicToken && (
+                                    <DropdownMenuItem
+                                      render={
+                                        <a
+                                          href={buildPublicLink(
+                                            "invoice",
+                                            invoice.publicToken
+                                          )}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="cursor-pointer text-xs"
+                                        />
+                                      }
+                                    >
+                                      View public page
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    className="cursor-pointer text-red-500 text-xs focus:bg-red-500/10 focus:text-red-500"
+                                    onClick={() =>
+                                      handleDelete(invoice.id, invoice.title)
+                                    }
+                                  >
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </div>
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
-    </>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      </ScrollArea>
+    </div>
   )
 }

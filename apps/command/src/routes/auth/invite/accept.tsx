@@ -166,8 +166,7 @@ function AcceptInvitePage() {
             <Button
               variant="outline"
               onClick={async () => {
-                await authClient.signOut()
-                void navigate({ to: "/auth/onboarding" })
+                void navigate({ to: "/auth" as any })
               }}
             >
               Sign Out
