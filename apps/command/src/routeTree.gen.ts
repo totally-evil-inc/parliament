@@ -16,6 +16,7 @@ import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
 import { Route as ProposalPublicTokenRouteImport } from './routes/proposal/$publicToken'
 import { Route as DocumentsPrintRouteImport } from './routes/documents/print'
 import { Route as WorkspaceApprovalsRouteImport } from './routes/_workspace/approvals'
+import { Route as WorkspaceIdRouteImport } from './routes/_workspace/$id'
 import { Route as WorkspaceSettingsRouteRouteImport } from './routes/_workspace/settings/route'
 import { Route as AuthSignInIndexRouteImport } from './routes/auth/sign-in/index'
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
@@ -63,6 +64,11 @@ const DocumentsPrintRoute = DocumentsPrintRouteImport.update({
 const WorkspaceApprovalsRoute = WorkspaceApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
+const WorkspaceIdRoute = WorkspaceIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceSettingsRouteRoute = WorkspaceSettingsRouteRouteImport.update({
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteRouteWithChildren
   '/$': typeof SplatRoute
   '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
+  '/$id': typeof WorkspaceIdRoute
   '/approvals': typeof WorkspaceApprovalsRoute
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteRouteWithChildren
   '/$': typeof SplatRoute
+  '/$id': typeof WorkspaceIdRoute
   '/approvals': typeof WorkspaceApprovalsRoute
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteRouteWithChildren
   '/$': typeof SplatRoute
   '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
+  '/_workspace/$id': typeof WorkspaceIdRoute
   '/_workspace/approvals': typeof WorkspaceApprovalsRoute
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
@@ -213,6 +222,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/$'
     | '/settings'
+    | '/$id'
     | '/approvals'
     | '/documents/print'
     | '/proposal/$publicToken'
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/$'
+    | '/$id'
     | '/approvals'
     | '/documents/print'
     | '/proposal/$publicToken'
@@ -256,6 +267,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/$'
     | '/_workspace/settings'
+    | '/_workspace/$id'
     | '/_workspace/approvals'
     | '/documents/print'
     | '/proposal/$publicToken'
@@ -333,6 +345,13 @@ declare module '@tanstack/react-router' {
       path: '/approvals'
       fullPath: '/approvals'
       preLoaderRoute: typeof WorkspaceApprovalsRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/$id': {
+      id: '/_workspace/$id'
+      path: '/$id'
+      fullPath: '/$id'
+      preLoaderRoute: typeof WorkspaceIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/settings': {
@@ -454,6 +473,7 @@ const WorkspaceSettingsRouteRouteWithChildren =
 
 interface WorkspaceRouteRouteChildren {
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
+  WorkspaceIdRoute: typeof WorkspaceIdRoute
   WorkspaceApprovalsRoute: typeof WorkspaceApprovalsRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
   WorkspaceClientsDealsRoute: typeof WorkspaceClientsDealsRoute
@@ -467,6 +487,7 @@ interface WorkspaceRouteRouteChildren {
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
+  WorkspaceIdRoute: WorkspaceIdRoute,
   WorkspaceApprovalsRoute: WorkspaceApprovalsRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
   WorkspaceClientsDealsRoute: WorkspaceClientsDealsRoute,
