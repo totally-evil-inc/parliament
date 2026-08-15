@@ -3,7 +3,7 @@ import { renderToString } from "react-dom/server"
 import { CustomScheduleSubmenu } from "./custom-schedule-submenu"
 
 describe("CustomScheduleSubmenu Component (comp-503)", () => {
-  test("renders calendar, segmented time controls, presets, and schedule send button for proposal", () => {
+  test("renders calendar, time input, and schedule send button for proposal", () => {
     const fixedDate = new Date(2026, 7, 20, 15, 30) // Aug 20, 2026 3:30 PM
     const html = renderToString(
       <CustomScheduleSubmenu
@@ -14,12 +14,7 @@ describe("CustomScheduleSubmenu Component (comp-503)", () => {
     )
 
     expect(html).toContain("Time")
-    expect(html).toContain("aria-label=\"Hours\"")
-    expect(html).toContain("aria-label=\"Minutes\"")
-    expect(html).toContain("AM")
-    expect(html).toContain("PM")
-    expect(html).toContain("9 AM")
-    expect(html).toContain("1 PM")
+    expect(html).toContain("type=\"time\"")
     expect(html).toContain("Schedule Proposal")
     expect(html).toContain("Scheduled:")
   })
@@ -33,6 +28,6 @@ describe("CustomScheduleSubmenu Component (comp-503)", () => {
     )
 
     expect(html).toContain("Schedule Invoice")
-    expect(html).toContain("aria-label=\"Hours\"")
+    expect(html).toContain("type=\"time\"")
   })
 })

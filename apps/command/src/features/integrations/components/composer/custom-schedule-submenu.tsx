@@ -1,6 +1,8 @@
 import { CalendarDaysIcon, ClockIcon } from "@heroicons/react/24/outline"
 import { Button } from "@workspace/ui/components/button"
 import { Calendar } from "@workspace/ui/components/calendar"
+import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
 import * as React from "react"
 
@@ -11,19 +13,14 @@ export interface CustomScheduleSubmenuProps {
   className?: string
 }
 
-const TIME_CHIPS = [
-  { label: "9 AM", hours: 9, minutes: 0 },
-  { label: "1 PM", hours: 13, minutes: 0 },
-  { label: "5 PM", hours: 17, minutes: 0 },
-  { label: "8 PM", hours: 20, minutes: 0 },
-]
-
 export function CustomScheduleSubmenu({
   documentType = "proposal",
   initialDate,
   onSchedule,
   className,
 }: CustomScheduleSubmenuProps) {
+  const inputId = React.useId()
+
   const getTomorrowMorning = () => {
     const d = new Date()
     d.setDate(d.getDate() + 1)
@@ -35,33 +32,24 @@ export function CustomScheduleSubmenu({
     initialDate || getTomorrowMorning()
   )
 
-  const [hours12, setHours12] = React.useState<number>(() => {
+  const [timeStr, setTimeStr] = React.useState<string>(() => {
     if (initialDate) {
-      const h = initialDate.getHours()
-      return h % 12 === 0 ? 12 : h % 12
+      const h = String(initialDate.getHours()).padStart(2, "0")
+      const m = String(initialDate.getMinutes()).padStart(2, "0")
+      return `${h}:${m}`
     }
-    return 9
-  })
-
-  const [minutes, setMinutes] = React.useState<number>(() => {
-    return initialDate ? initialDate.getMinutes() : 0
-  })
-
-  const [period, setPeriod] = React.useState<"AM" | "PM">(() => {
-    if (initialDate) {
-      return initialDate.getHours() >= 12 ? "PM" : "AM"
-    }
-    return "AM"
+    return "09:00"
   })
 
   const combinedDateTime = React.useMemo((): Date | null => {
     if (!date) return null
-    let h24 = hours12 % 12
-    if (period === "PM") h24 += 12
+    const [hoursStr, minutesStr] = timeStr.split(":")
+    const hours = Number.parseInt(hoursStr || "9", 10)
+    const minutes = Number.parseInt(minutesStr || "0", 10)
     const result = new Date(date)
-    result.setHours(h24, minutes, 0, 0)
+    result.setHours(hours, minutes, 0, 0)
     return result
-  }, [date, hours12, minutes, period])
+  }, [date, timeStr])
 
   const isPast = React.useMemo(() => {
     if (!combinedDateTime) return false
@@ -85,28 +73,6 @@ export function CustomScheduleSubmenu({
     e.stopPropagation()
     if (!combinedDateTime || isPast) return
     onSchedule(formattedScheduleLabel, combinedDateTime)
-  }
-
-  const handleHourChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number.parseInt(e.target.value, 10)
-    if (Number.isNaN(val)) return
-    if (val >= 1 && val <= 12) {
-      setHours12(val)
-    }
-  }
-
-  const handleMinuteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number.parseInt(e.target.value, 10)
-    if (Number.isNaN(val)) return
-    if (val >= 0 && val <= 59) {
-      setMinutes(val)
-    }
-  }
-
-  const applyPreset = (h: number, m: number) => {
-    setHours12(h % 12 === 0 ? 12 : h % 12)
-    setMinutes(m)
-    setPeriod(h >= 12 ? "PM" : "AM")
   }
 
   const today = React.useMemo(() => {
@@ -133,96 +99,29 @@ export function CustomScheduleSubmenu({
           className="w-full p-2.5"
         />
 
-        {/* Tailored Time Selector Row */}
+        {/* Time Picker Input */}
         <div className="border-border/60 border-t bg-muted/30 p-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-              <ClockIcon className="size-3.5 text-muted-foreground/80" />
-              <span className="font-medium text-[11px] uppercase tracking-wider">
-                Time
-              </span>
-            </div>
-
-            {/* Segmented Time Inputs & AM/PM Toggle */}
-            <div className="flex items-center gap-1">
-              <div className="flex items-center rounded-md border border-border/80 bg-background px-1.5 py-0.5 shadow-2xs focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/50">
-                <input
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={String(hours12).padStart(2, "0")}
-                  onChange={handleHourChange}
-                  className="w-5 bg-transparent p-0 text-center font-medium font-mono text-foreground text-xs outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                  aria-label="Hours"
-                />
-                <span className="text-muted-foreground/60">:</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={59}
-                  value={String(minutes).padStart(2, "0")}
-                  onChange={handleMinuteChange}
-                  className="w-5 bg-transparent p-0 text-center font-medium font-mono text-foreground text-xs outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                  aria-label="Minutes"
-                />
-              </div>
-
-              {/* AM / PM Segmented Switch */}
-              <div className="flex rounded-md border border-border/80 bg-background p-0.5 shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => setPeriod("AM")}
-                  className={cn(
-                    "rounded-xs px-1.5 py-0.5 font-bold text-[10px] transition-all",
-                    period === "AM"
-                      ? "bg-primary text-primary-foreground shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  AM
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPeriod("PM")}
-                  className={cn(
-                    "rounded-xs px-1.5 py-0.5 font-bold text-[10px] transition-all",
-                    period === "PM"
-                      ? "bg-primary text-primary-foreground shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  PM
-                </button>
+          <div className="flex items-center gap-2.5">
+            <Label
+              htmlFor={inputId}
+              className="shrink-0 font-medium text-foreground text-xs"
+            >
+              Time
+            </Label>
+            <div className="relative grow">
+              <Input
+                id={inputId}
+                type="time"
+                value={timeStr}
+                onChange={(e) => setTimeStr(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
+                onKeyUp={(e) => e.stopPropagation()}
+                className="peer h-8 appearance-none ps-8 font-mono text-xs [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+              />
+              <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-2.5 text-muted-foreground/80 peer-disabled:opacity-50">
+                <ClockIcon aria-hidden="true" className="size-3.5" />
               </div>
             </div>
-          </div>
-
-          {/* Quick Time Preset Chips */}
-          <div className="mt-2 flex items-center justify-between gap-1">
-            {TIME_CHIPS.map((chip) => {
-              const chipH12 = chip.hours % 12 === 0 ? 12 : chip.hours % 12
-              const chipPeriod = chip.hours >= 12 ? "PM" : "AM"
-              const isSelected =
-                hours12 === chipH12 &&
-                minutes === chip.minutes &&
-                period === chipPeriod
-
-              return (
-                <button
-                  key={chip.label}
-                  type="button"
-                  onClick={() => applyPreset(chip.hours, chip.minutes)}
-                  className={cn(
-                    "flex-1 rounded border py-0.5 text-center font-mono text-[10px] transition-all",
-                    isSelected
-                      ? "border-primary bg-primary/10 font-bold text-primary"
-                      : "border-border/50 bg-background/50 text-muted-foreground hover:border-border hover:bg-accent/60 hover:text-foreground"
-                  )}
-                >
-                  {chip.label}
-                </button>
-              )
-            })}
           </div>
         </div>
       </div>
