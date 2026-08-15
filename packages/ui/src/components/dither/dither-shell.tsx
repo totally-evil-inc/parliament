@@ -62,11 +62,12 @@ export function DitherShell({
 
   const animRef = useRef({
     baseIntensity: 0,
-    intensity: 0,
-    targetIntensity: 0,
+    targetBaseIntensity: 0,
+    hoverIntensity: 0,
+    targetHoverIntensity: 0,
     pointerHovered: false,
-    pointerX: 80,
-    pointerY: 18,
+    pointerX: 0,
+    pointerY: 0,
     raf: 0,
   })
   const fillRef = useRef(fillOf(color))
@@ -77,17 +78,8 @@ export function DitherShell({
     if (!container) return
 
     fillRef.current = canvasFill(container, color)
-    animRef.current.baseIntensity = clamp01(intensity)
-    animRef.current.pointerHovered = false
-
-    const refreshTarget = () => {
-      animRef.current.targetIntensity = clamp01(
-        animRef.current.baseIntensity +
-          (animRef.current.pointerHovered ? 0.35 : 0)
-      )
-      startLoopRef.current()
-    }
-    refreshTarget()
+    animRef.current.targetBaseIntensity = clamp01(intensity)
+    startLoopRef.current()
 
     // Re-resolve custom property colors when the theme class on <html> changes
     const themeObserver =
@@ -133,13 +125,14 @@ export function DitherShell({
 
     const render = () => {
       ctx.clearRect(0, 0, cols, rows)
-      const { intensity, pointerX, pointerY } = animRef.current
+      const { hoverIntensity, baseIntensity, pointerX, pointerY } =
+        animRef.current
       const fill = fillRef.current
       const isDark =
         typeof document !== "undefined" &&
         document.documentElement.classList.contains("dark")
 
-      // 1. Subtle ambient grain dither on the top header ledge
+      // 1. Subtle ambient grain dither on the top header ledge (+ reasoning highlight)
       const headerRows = Math.min(rows, 36)
       const ambientColor = isDark
         ? "rgba(180, 190, 210, 0.12)"
@@ -147,25 +140,39 @@ export function DitherShell({
 
       for (let gy = 0; gy < headerRows; gy++) {
         const rowRamp = 1 - gy / headerRows
-        const ambientDensity = 0.08 * rowRamp
+        const ambientDensity = (0.08 + baseIntensity * 0.1) * rowRamp
         for (let gx = 0; gx < cols; gx++) {
           if (ambientDensity > BAYER4[gy & 3][gx & 3]) {
-            ctx.fillStyle = ambientColor
+            if (baseIntensity > 0.05 && gy < 4) {
+              ctx.fillStyle = rgb(
+                fill,
+                1,
+                clamp01(0.18 * baseIntensity * rowRamp)
+              )
+            } else {
+              ctx.fillStyle = ambientColor
+            }
             ctx.fillRect(gx, gy, 1, 1)
           }
         }
       }
 
       // 2. Interactive Bayer dither particle halo on pointer hover
-      if (intensity > 0.01 && !reduceMotion) {
+      // Blob appears only when hovering and disappears when pointer exits
+      if (hoverIntensity > 0.005 && !reduceMotion) {
         const radiusX = 75 // wide horizontal halo span
         const radiusY = 32 // vertical halo span
         const cx = Math.round(pointerX / CELL)
         const cy = Math.round(pointerY / CELL)
         const time = performance.now() * 0.001
 
-        for (let gy = 0; gy < headerRows + 8; gy++) {
-          for (let gx = 0; gx < cols; gx++) {
+        const minX = Math.max(0, cx - radiusX)
+        const maxX = Math.min(cols, cx + radiusX + 1)
+        const minY = Math.max(0, cy - radiusY)
+        const maxY = Math.min(rows, cy + radiusY + 1)
+
+        for (let gy = minY; gy < maxY; gy++) {
+          for (let gx = minX; gx < maxX; gx++) {
             const dx = gx - cx
             const dy = gy - cy
             const distNorm = Math.sqrt(
@@ -175,12 +182,12 @@ export function DitherShell({
             if (distNorm >= 1) continue
 
             const falloff = 1 - distNorm
-            const density = falloff ** 1.5 * intensity * 0.42
+            const density = falloff ** 1.5 * hoverIntensity * 0.42
             const bayerThreshold = BAYER4[gy & 3][gx & 3]
 
             if (density > bayerThreshold) {
               const alpha = clamp01(
-                (density / 0.42) ** 1.2 * (isDark ? 0.9 : 0.7) * intensity
+                (density / 0.42) ** 1.2 * (isDark ? 0.9 : 0.7) * hoverIntensity
               )
               const sparkle =
                 (gx * 5 + gy * 7 + Math.floor(time * 6)) % 7 === 0 &&
@@ -213,21 +220,38 @@ export function DitherShell({
       }
 
       // Intensity easing & animation frame scheduling
-      const diff = animRef.current.targetIntensity - animRef.current.intensity
-      if (Math.abs(diff) > 0.005) {
-        animRef.current.intensity += diff * 0.16
+      let needsNextFrame = false
+
+      // Ease hover intensity
+      const hoverDiff =
+        animRef.current.targetHoverIntensity - animRef.current.hoverIntensity
+      if (Math.abs(hoverDiff) > 0.005) {
+        animRef.current.hoverIntensity += hoverDiff * 0.18
+        needsNextFrame = true
+      } else {
+        animRef.current.hoverIntensity = animRef.current.targetHoverIntensity
+      }
+
+      // Ease base intensity
+      const baseDiff =
+        animRef.current.targetBaseIntensity - animRef.current.baseIntensity
+      if (Math.abs(baseDiff) > 0.005) {
+        animRef.current.baseIntensity += baseDiff * 0.16
+        needsNextFrame = true
+      } else {
+        animRef.current.baseIntensity = animRef.current.targetBaseIntensity
+      }
+
+      if (
+        (animRef.current.pointerHovered &&
+          animRef.current.hoverIntensity > 0.01 &&
+          !reduceMotion) ||
+        (animRef.current.baseIntensity > 0.01 && !reduceMotion) ||
+        needsNextFrame
+      ) {
         animRef.current.raf = requestAnimationFrame(render)
       } else {
-        animRef.current.intensity = animRef.current.targetIntensity
-        if (
-          animRef.current.intensity > 0.01 &&
-          animRef.current.pointerHovered &&
-          !reduceMotion
-        ) {
-          animRef.current.raf = requestAnimationFrame(render)
-        } else {
-          animRef.current.raf = 0
-        }
+        animRef.current.raf = 0
       }
     }
 
@@ -241,37 +265,41 @@ export function DitherShell({
 
     // Draw initial frame and start loop if active
     render()
-    if (animRef.current.targetIntensity > 0 || animRef.current.intensity > 0) {
+    if (
+      animRef.current.targetBaseIntensity > 0 ||
+      animRef.current.targetHoverIntensity > 0
+    ) {
       startLoop()
     }
 
-    // Direct pointer tracking on the top header strip of the container
+    // Direct pointer tracking on the container
+    const handleContainerPointerEnter = (e: PointerEvent) => {
+      const box = container.getBoundingClientRect()
+      animRef.current.pointerX = e.clientX - box.left
+      animRef.current.pointerY = e.clientY - box.top
+      animRef.current.pointerHovered = true
+      animRef.current.targetHoverIntensity = 1
+      startLoop()
+    }
+
     const handleContainerPointerMove = (e: PointerEvent) => {
       const box = container.getBoundingClientRect()
-      const relY = e.clientY - box.top
       animRef.current.pointerX = e.clientX - box.left
-      animRef.current.pointerY = relY
-      if (relY <= 52) {
+      animRef.current.pointerY = e.clientY - box.top
+      if (!animRef.current.pointerHovered) {
         animRef.current.pointerHovered = true
-        animRef.current.targetIntensity = clamp01(
-          animRef.current.baseIntensity + 0.35
-        )
-        startLoop()
-      } else if (animRef.current.pointerHovered) {
-        animRef.current.pointerHovered = false
-        animRef.current.targetIntensity = animRef.current.baseIntensity
-        startLoop()
+        animRef.current.targetHoverIntensity = 1
       }
+      startLoop()
     }
 
     const handleContainerPointerLeave = () => {
-      if (animRef.current.pointerHovered) {
-        animRef.current.pointerHovered = false
-        animRef.current.targetIntensity = animRef.current.baseIntensity
-        startLoop()
-      }
+      animRef.current.pointerHovered = false
+      animRef.current.targetHoverIntensity = 0
+      startLoop()
     }
 
+    container.addEventListener("pointerenter", handleContainerPointerEnter)
     container.addEventListener("pointermove", handleContainerPointerMove)
     container.addEventListener("pointerleave", handleContainerPointerLeave)
 
@@ -281,6 +309,7 @@ export function DitherShell({
 
     return () => {
       if (animRef.current.raf) cancelAnimationFrame(animRef.current.raf)
+      container.removeEventListener("pointerenter", handleContainerPointerEnter)
       container.removeEventListener("pointermove", handleContainerPointerMove)
       container.removeEventListener("pointerleave", handleContainerPointerLeave)
       ro?.disconnect()
