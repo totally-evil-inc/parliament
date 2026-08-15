@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { getDocumentTemplate } from "@workspace/document/presentation"
+import { resolveDocumentTemplate } from "@workspace/document/presentation"
 import { createProposalDraft } from "@workspace/document/proposal"
 import { buildProposalRenderModel } from "@workspace/document/render"
 import { safeParseProposalDraft } from "@workspace/document/schema"
@@ -36,7 +36,7 @@ function PrintRoute() {
   return (
     <ProposalPrintView
       model={buildProposalRenderModel(result.document)}
-      template={getDocumentTemplate(result.document.template, "light")}
+      template={resolveDocumentTemplate(result.document.template)}
     />
   )
 }

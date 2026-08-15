@@ -1,7 +1,7 @@
 import { calculateInvoicePricing, calculateProposalPricing } from "./calculate"
 import { buildInvoiceRenderModel, buildProposalRenderModel } from "./render"
 import type { InvoiceDraft, ProposalDraft } from "./schema"
-import { parseInvoiceDraft, parseProposalDraft } from "./schema"
+import { normalizeInvoiceDraft, normalizeProposalDraft } from "./schema"
 
 export type ProposalSnapshotPayload = {
   document: ProposalDraft
@@ -11,8 +11,11 @@ export type ProposalSnapshotPayload = {
   calculationVersion: string | null
 }
 
-export function finalizeProposalDraft(input: unknown): ProposalSnapshotPayload {
-  const document = parseProposalDraft(input)
+export function finalizeProposalDraft(
+  input: unknown,
+  fallbackScheme: "light" | "dark" = "light"
+): ProposalSnapshotPayload {
+  const document = normalizeProposalDraft(input, fallbackScheme)
   const model = buildProposalRenderModel(document)
   const calculationVersion = document.data.pricing
     ? calculateProposalPricing(document.data.pricing).calculationVersion
@@ -39,8 +42,11 @@ export type InvoiceSnapshotPayload = {
   calculationVersion: string | null
 }
 
-export function finalizeInvoiceDraft(input: unknown): InvoiceSnapshotPayload {
-  const document = parseInvoiceDraft(input)
+export function finalizeInvoiceDraft(
+  input: unknown,
+  fallbackScheme: "light" | "dark" = "light"
+): InvoiceSnapshotPayload {
+  const document = normalizeInvoiceDraft(input, fallbackScheme)
   const model = buildInvoiceRenderModel(document)
   const calculationVersion = document.data.pricing
     ? calculateInvoicePricing(document.data.pricing).calculationVersion

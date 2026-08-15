@@ -7,9 +7,8 @@ import {
 import { createFileRoute } from "@tanstack/react-router"
 import type { DocumentTemplate } from "@workspace/document/presentation"
 import {
-  defaultDocumentTemplate as classicTemplate,
   getDefaultDocumentTemplateForScheme,
-  getDocumentTemplate,
+  resolveDocumentTemplate,
 } from "@workspace/document/presentation"
 import { parseInvoiceDraft } from "@workspace/document/schema"
 import type { DocumentEditorHostAdapter } from "@workspace/document-editor"
@@ -38,7 +37,6 @@ import { createId } from "@/lib/create-id"
 import { buildPublicLink } from "@/lib/public-links"
 import type {
   FinalizeInvoiceDraftResult,
-  PersistedInvoiceDraft,
   SaveInvoiceDraftResult,
 } from "@/server/invoices"
 import { finalizeInvoiceDraft, saveInvoiceDraft } from "@/server/invoices"
@@ -49,22 +47,16 @@ export const Route = createFileRoute("/_workspace/invoices/$invoiceId")({
       invoiceDraftQuery(params.invoiceId)
     )
   },
-  component: InvoiceEditRoute,
+  component: InvoiceEditorRoute,
 })
 
-function InvoiceEditRoute() {
+function InvoiceEditorRoute() {
   const { invoiceId } = Route.useParams()
-  const { data } = useSuspenseQuery(invoiceDraftQuery(invoiceId))
-  const persisted = data as PersistedInvoiceDraft
-  const document = React.useMemo(
-    () => parseInvoiceDraft(persisted.document),
-    [persisted.document]
+  const { data: draft } = useSuspenseQuery(invoiceDraftQuery(invoiceId))
+  const [store] = React.useState(() =>
+    createInvoiceDraftStore(parseInvoiceDraft(draft.document))
   )
   const confirm = useConfirm()
-  const store = React.useMemo(
-    () => createInvoiceDraftStore(document),
-    [document]
-  )
   const host = React.useMemo<DocumentEditorHostAdapter>(
     () => ({
       confirm,
@@ -79,8 +71,8 @@ function InvoiceEditRoute() {
     <DocumentEditorHostProvider adapter={host}>
       <InvoiceDraftProvider store={store}>
         <InvoiceEditorScreen
-          initialRevision={persisted.revision}
-          initialStatus={persisted.status}
+          initialRevision={draft.revision}
+          initialStatus={draft.status}
           store={store}
         />
       </InvoiceDraftProvider>
@@ -100,10 +92,9 @@ function InvoiceEditorScreen({
   const queryClient = useQueryClient()
   const runtime = useInvoiceEditorRuntime({ store })
   const { resolved: appTheme } = useTheme()
-  const defaultTemplate =
-    appTheme === "dark"
-      ? getDefaultDocumentTemplateForScheme("dark")
-      : classicTemplate
+  const defaultTemplate = getDefaultDocumentTemplateForScheme(
+    appTheme === "dark" ? "dark" : "light"
+  )
   const [serverRevision, setServerRevision] = React.useState(initialRevision)
   const [status, setStatus] = React.useState(initialStatus)
   const [customTemplate, setCustomTemplate] =
@@ -112,16 +103,47 @@ function InvoiceEditorScreen({
   const [shareUrl, setShareUrl] = React.useState<string | null>(null)
   const template =
     customTemplate ??
-    getDocumentTemplate(store.getSnapshot().template, appTheme)
+    resolveDocumentTemplate(store.getSnapshot().template, appTheme)
+
+  React.useEffect(() => {
+    const currentDoc = store.getSnapshot()
+    const isGeneric =
+      currentDoc.template.id === "proposal-classic" ||
+      currentDoc.template.id === "invoice-classic"
+    const currentOverrides = currentDoc.template.overrides
+    const hasCompleteOverrides =
+      currentOverrides &&
+      typeof currentOverrides === "object" &&
+      Object.keys(currentOverrides).length >= 10
+
+    if (isGeneric || !hasCompleteOverrides) {
+      const resolved = resolveDocumentTemplate(currentDoc.template, appTheme)
+      store.commands.setTemplate({
+        id: resolved.id,
+        version: currentDoc.template.version || 1,
+        overrides: resolved.tokens,
+      })
+    }
+  }, [appTheme, store])
 
   const saveDraft = useMutation({
     mutationFn: async () => {
       runtime.flush()
+      const currentDoc = store.getSnapshot()
+      const resolved = resolveDocumentTemplate(currentDoc.template, appTheme)
+      const documentToSave = {
+        ...currentDoc,
+        template: {
+          id: resolved.id,
+          version: currentDoc.template.version || 1,
+          overrides: resolved.tokens,
+        },
+      }
       return await saveInvoiceDraft({
         data: {
-          id: store.getSnapshot().id,
+          id: currentDoc.id,
           revision: serverRevision,
-          document: store.getSnapshot(),
+          document: documentToSave,
         },
       })
     },
@@ -145,11 +167,21 @@ function InvoiceEditorScreen({
   const sendDraft = useMutation({
     mutationFn: async (recipientEmail?: string) => {
       runtime.flush()
+      const currentDoc = store.getSnapshot()
+      const resolved = resolveDocumentTemplate(currentDoc.template, appTheme)
+      const documentToSave = {
+        ...currentDoc,
+        template: {
+          id: resolved.id,
+          version: currentDoc.template.version || 1,
+          overrides: resolved.tokens,
+        },
+      }
       const saved = await saveInvoiceDraft({
         data: {
-          id: store.getSnapshot().id,
+          id: currentDoc.id,
           revision: serverRevision,
-          document: store.getSnapshot(),
+          document: documentToSave,
         },
       })
       const savedResult = saved as SaveInvoiceDraftResult

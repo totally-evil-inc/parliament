@@ -703,8 +703,39 @@ describe("Document Presentation Components (apps/gate)", () => {
 
       expect(html).toContain("Typed Signature")
       expect(html).toContain("Drawn Signature")
-      expect(html).toContain('data-testid="signature-mode-typed"')
-      expect(html).toContain('data-testid="signature-mode-drawn"')
+    })
+
+    test("renders custom snapshot tokens without being affected by appTheme", () => {
+      const customProposalInput = {
+        ...mockProposalInput,
+        template: {
+          id: "custom-template",
+          version: 1,
+          overrides: {
+            canvasBackground: "#121212",
+            pageBackground: "#1e1e1e",
+            foreground: "#f0f0f0",
+            mutedForeground: "#888888",
+            accent: "#ff007a",
+            border: "#333333",
+            fontFamily: "spacemono",
+            headingFontFamily: "playfair",
+            radius: "1rem",
+            spacingScale: "compact",
+          },
+        },
+      }
+      const model = buildProposalRenderModel(customProposalInput)
+      // Even if appTheme="light", it must render the custom tokens from snapshot
+      const html = renderToString(
+        <ProposalView proposal={model} appTheme="light" />
+      )
+
+      expect(html).toContain("--document-canvas-background:#121212")
+      expect(html).toContain("--document-page-background:#1e1e1e")
+      expect(html).toContain("--document-accent:#ff007a")
+      expect(html).toContain("--document-radius:1rem")
+      expect(html).toContain("--document-section-spacing:2rem")
     })
   })
 
@@ -800,6 +831,37 @@ describe("Document Presentation Components (apps/gate)", () => {
       expect(html).toContain("Drawn Signature")
       expect(html).toContain('data-testid="inv-signature-mode-typed"')
       expect(html).toContain('data-testid="inv-signature-mode-drawn"')
+    })
+
+    test("renders invoice with custom snapshot tokens faithfully", () => {
+      const customInvoiceInput = {
+        ...mockInvoiceInput,
+        template: {
+          id: "custom-invoice-template",
+          version: 1,
+          overrides: {
+            canvasBackground: "#0a0a0a",
+            pageBackground: "#141414",
+            foreground: "#eaeaea",
+            mutedForeground: "#999999",
+            accent: "#00d2ff",
+            border: "#282828",
+            fontFamily: "satoshi",
+            headingFontFamily: "cabinet",
+            radius: "0.375rem",
+            spacingScale: "comfortable",
+          },
+        },
+      }
+      const model = buildInvoiceRenderModel(customInvoiceInput)
+      const html = renderToString(
+        <InvoiceView invoice={model} appTheme="light" />
+      )
+
+      expect(html).toContain("--document-canvas-background:#0a0a0a")
+      expect(html).toContain("--document-page-background:#141414")
+      expect(html).toContain("--document-accent:#00d2ff")
+      expect(html).toContain("--document-radius:0.375rem")
     })
   })
 

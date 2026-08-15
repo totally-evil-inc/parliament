@@ -7,9 +7,9 @@ import {
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline"
 import {
-  getDocumentTemplate,
   getDocumentTemplateStyle,
   type InvoiceRenderModel,
+  resolveDocumentTemplate,
 } from "@workspace/document"
 import type { InvoiceAcceptanceRecord } from "@workspace/document/public-api"
 import { Badge } from "@workspace/ui/components/badge"
@@ -56,9 +56,8 @@ export function InvoiceView({
   onVerifyOtp: _onVerifyOtp,
   onPayNow,
   isSubmitting = false,
-  appTheme = "light",
 }: InvoiceViewProps) {
-  const template = getDocumentTemplate(invoice.template, appTheme)
+  const template = resolveDocumentTemplate(invoice.template)
   const templateStyle = getDocumentTemplateStyle(template)
   const effectiveAccepted = propsAccepted ?? null
 

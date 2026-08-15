@@ -5,9 +5,9 @@ import {
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline"
 import {
-  getDocumentTemplate,
   getDocumentTemplateStyle,
   type ProposalRenderModel,
+  resolveDocumentTemplate,
 } from "@workspace/document"
 import type { ProposalAcceptanceRecord } from "@workspace/document/public-api"
 import { Badge } from "@workspace/ui/components/badge"
@@ -50,9 +50,8 @@ export function ProposalView({
   onSendOtp: _onSendOtp,
   onVerifyOtp: _onVerifyOtp,
   isSubmitting = false,
-  appTheme = "light",
 }: ProposalViewProps) {
-  const template = getDocumentTemplate(proposal.template, appTheme)
+  const template = resolveDocumentTemplate(proposal.template)
   const templateStyle = getDocumentTemplateStyle(template)
 
   // Form states

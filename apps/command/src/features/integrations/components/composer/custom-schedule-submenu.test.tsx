@@ -14,20 +14,17 @@ describe("CustomScheduleSubmenu Component (comp-503)", () => {
     )
 
     expect(html).toContain("Time")
-    expect(html).toContain("type=\"time\"")
+    expect(html).toContain('type="time"')
     expect(html).toContain("Schedule Proposal")
     expect(html).toContain("Scheduled:")
   })
 
   test("renders with default tomorrow 9:00 AM initial state for invoice", () => {
     const html = renderToString(
-      <CustomScheduleSubmenu
-        documentType="invoice"
-        onSchedule={() => {}}
-      />
+      <CustomScheduleSubmenu documentType="invoice" onSchedule={() => {}} />
     )
 
     expect(html).toContain("Schedule Invoice")
-    expect(html).toContain("type=\"time\"")
+    expect(html).toContain('type="time"')
   })
 })

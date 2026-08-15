@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { normalizeDocumentTemplateReference } from "./presentation"
 import { stripHtml } from "./text"
 
 const idSchema = z.string().trim().min(1)
@@ -348,6 +349,37 @@ export const documentBlockSchema = z.union([
 
 export type DocumentBlock = z.infer<typeof documentBlockSchema>
 
+export const documentFontTokenSchema = z.enum([
+  "sans",
+  "serif",
+  "mono",
+  "satoshi",
+  "cabinet",
+  "playfair",
+  "spacemono",
+])
+
+export const documentSpacingScaleSchema = z.enum([
+  "compact",
+  "comfortable",
+  "spacious",
+])
+
+export const documentTemplateTokensSchema = z
+  .object({
+    canvasBackground: z.string(),
+    pageBackground: z.string(),
+    foreground: z.string(),
+    mutedForeground: z.string(),
+    accent: z.string(),
+    border: z.string(),
+    fontFamily: documentFontTokenSchema,
+    headingFontFamily: documentFontTokenSchema,
+    radius: z.string(),
+    spacingScale: documentSpacingScaleSchema,
+  })
+  .strict()
+
 export const documentTemplateSchema = z
   .object({
     id: idSchema,
@@ -355,9 +387,17 @@ export const documentTemplateSchema = z
     overrides: z
       .record(
         z.string(),
-        z.union([z.string(), z.number(), z.boolean(), z.null()])
+        z.union([z.string(), z.number(), z.boolean(), z.null(), z.undefined()])
       )
       .optional(),
+  })
+  .strict()
+
+export const normalizedDocumentTemplateSchema = z
+  .object({
+    id: idSchema,
+    version: z.number().int().positive(),
+    overrides: documentTemplateTokensSchema,
   })
   .strict()
 
@@ -417,6 +457,20 @@ export function safeParseProposalDraft(input: unknown) {
   return proposalDraftSchema.safeParse(input)
 }
 
+export function normalizeProposalDraft(
+  input: unknown,
+  fallbackScheme: "light" | "dark" = "light"
+): ProposalDraft {
+  const parsed = parseProposalDraft(input)
+  return {
+    ...parsed,
+    template: normalizeDocumentTemplateReference(
+      parsed.template,
+      fallbackScheme
+    ),
+  }
+}
+
 export const invoicePricingSchema = z
   .object({
     currency: z.string().regex(/^[A-Z]{3}$/, "Expected an ISO 4217 currency"),
@@ -468,6 +522,20 @@ export function parseInvoiceDraft(input: unknown): InvoiceDraft {
 
 export function safeParseInvoiceDraft(input: unknown) {
   return invoiceDraftSchema.safeParse(input)
+}
+
+export function normalizeInvoiceDraft(
+  input: unknown,
+  fallbackScheme: "light" | "dark" = "light"
+): InvoiceDraft {
+  const parsed = parseInvoiceDraft(input)
+  return {
+    ...parsed,
+    template: normalizeDocumentTemplateReference(
+      parsed.template,
+      fallbackScheme
+    ),
+  }
 }
 
 export const proposalStatusEnumSchema = z.enum([

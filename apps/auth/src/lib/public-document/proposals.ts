@@ -101,7 +101,7 @@ export async function getPublicProposalMeta(
   return {
     status: "ready",
     token,
-    title: link.draftTitle || document.data.title || "Proposal",
+    title: document.data.title || link.draftTitle || "Proposal",
     sellerName: document.data.seller.name || "",
     recipientEmail: link.recipientEmail ?? null,
   }
