@@ -9,6 +9,11 @@ export interface SendGmailPayload {
   htmlText: string
   plainText?: string
   replyTo?: string
+  attachment?: {
+    filename: string
+    mimeType: "application/pdf"
+    content: string
+  }
 }
 
 export interface ThreadActivityItem {

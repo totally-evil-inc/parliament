@@ -261,12 +261,15 @@ function InvoiceEditorScreen({
     (scheduledDispatch && scheduledDispatch.status === "pending")
 
   const handleFinalizeAndGetShareUrl = React.useCallback(
-    async (recipientEmail?: string): Promise<string> => {
+    async (recipientEmail?: string) => {
       const result = await sendDraft.mutateAsync(recipientEmail)
       if (result.status === "sent" && result.finalized) {
         const url = buildPublicLink("invoice", result.finalized.token)
         setShareUrl(url)
-        return url
+        return {
+          shareUrl: url,
+          document: parseInvoiceDraft(result.finalized.draft.document),
+        }
       }
       throw new Error(
         "Unable to create invoice link. Finalize the document before sending it."
@@ -374,6 +377,7 @@ function InvoiceEditorScreen({
         documentType="invoice"
         documentId={snapshot.id}
         documentTitle={invoiceTitle}
+        document={snapshot}
         defaultRecipientEmail={defaultClientEmail}
         shareUrl={shareUrl || undefined}
         onFinalizeAndGetShareUrl={handleFinalizeAndGetShareUrl}

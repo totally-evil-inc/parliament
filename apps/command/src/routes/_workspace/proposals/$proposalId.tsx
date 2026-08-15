@@ -263,12 +263,15 @@ function ProposalEditorScreen({
     (scheduledDispatch && scheduledDispatch.status === "pending")
 
   const handleFinalizeAndGetShareUrl = React.useCallback(
-    async (recipientEmail?: string): Promise<string> => {
+    async (recipientEmail?: string) => {
       const result = await sendDraft.mutateAsync(recipientEmail)
       if (result.status === "sent" && result.finalized) {
         const url = buildPublicLink("proposal", result.finalized.token)
         setShareUrl(url)
-        return url
+        return {
+          shareUrl: url,
+          document: parseProposalDraft(result.finalized.draft.document),
+        }
       }
       throw new Error(
         "Unable to create proposal link. Finalize the document before sending it."
@@ -376,6 +379,7 @@ function ProposalEditorScreen({
         documentType="proposal"
         documentId={snapshot.id}
         documentTitle={proposalTitle}
+        document={snapshot}
         defaultRecipientEmail={defaultClientEmail}
         shareUrl={shareUrl || undefined}
         onFinalizeAndGetShareUrl={handleFinalizeAndGetShareUrl}

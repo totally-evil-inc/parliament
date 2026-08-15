@@ -5,6 +5,7 @@ import {
   ChevronDownIcon,
   ClockIcon,
   DocumentDuplicateIcon,
+  DocumentTextIcon,
   FaceSmileIcon,
   LinkIcon,
   PaperAirplaneIcon,
@@ -31,6 +32,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
+import { cn } from "@workspace/ui/lib/utils"
 import * as React from "react"
 import { CustomScheduleSubmenu } from "./custom-schedule-submenu"
 
@@ -39,6 +41,8 @@ interface ComposerToolbarProps {
   isDraftSaved?: boolean
   statusMessage?: string | null
   documentType: "proposal" | "invoice"
+  includePdf?: boolean
+  onToggleIncludePdf?: (include: boolean) => void
   onSend: () => void
   onOpenGmailWeb: () => void
   onCopyShareLink: () => void
@@ -70,6 +74,8 @@ export function ComposerToolbar({
   isDraftSaved = true,
   statusMessage,
   documentType,
+  includePdf = false,
+  onToggleIncludePdf,
   onSend,
   onOpenGmailWeb,
   onCopyShareLink,
@@ -223,6 +229,33 @@ export function ComposerToolbar({
             </TooltipTrigger>
             <TooltipContent>Insert signature sign-off</TooltipContent>
           </Tooltip>
+
+          {/* Toggle PDF Attachment */}
+          {onToggleIncludePdf && (
+            <Tooltip>
+              <TooltipTrigger
+                type="button"
+                onClick={() => onToggleIncludePdf(!includePdf)}
+                className={cn(
+                  "flex h-7.5 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs font-medium transition-colors",
+                  includePdf
+                    ? "border border-rose-500/30 bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                    : "border border-transparent text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+                aria-label="Toggle PDF attachment"
+              >
+                <DocumentTextIcon className="size-4" />
+                <span className="hidden sm:inline">
+                  {includePdf ? "PDF attached" : "Attach PDF"}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {includePdf
+                  ? "PDF attachment included (click to remove)"
+                  : "Include downloadable PDF attachment"}
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           {/* Discard Draft */}
           <Tooltip>

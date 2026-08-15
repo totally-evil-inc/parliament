@@ -5,6 +5,9 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline"
 import { render } from "@react-email/render"
+import type { InvoiceDraft, ProposalDraft } from "@workspace/document/schema"
+import { stripHtml } from "@workspace/document/text"
+import { generateDocumentPdfBase64 } from "@workspace/document-pdf"
 import {
   Dialog,
   DialogContent,
@@ -69,6 +72,7 @@ export function SendDocumentDialog({
   documentType,
   documentTitle,
   documentId,
+  document: initialDocument,
   defaultRecipientEmail = "",
   shareUrl: initialShareUrl,
   onFinalizeAndGetShareUrl,
@@ -92,6 +96,10 @@ export function SendDocumentDialog({
   const [subject, setSubject] = React.useState("")
   const [message, setMessage] = React.useState("")
   const [attachments, setAttachments] = React.useState<ComposerAttachment[]>([])
+  const [includePdf, setIncludePdf] = React.useState(false)
+  const [finalizedDoc, setFinalizedDoc] = React.useState<
+    ProposalDraft | InvoiceDraft | null
+  >(initialDocument || null)
 
   const [statusMessage, setStatusMessage] = React.useState<string | null>(null)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
@@ -130,6 +138,8 @@ export function SendDocumentDialog({
       setMessage(defaultBody)
       setStatusMessage(null)
       setErrorMessage(null)
+      setIncludePdf(false)
+      setFinalizedDoc(initialDocument || null)
 
       if (initialShareUrl) {
         setActiveShareUrl(initialShareUrl)
@@ -155,23 +165,76 @@ export function SendDocumentDialog({
     defaultSubject,
     defaultBody,
     initialShareUrl,
+    initialDocument,
     documentTitle,
     documentType,
   ])
 
-  const ensureShareUrl = async (recipientEmail?: string): Promise<string> => {
-    if (activeShareUrl) return activeShareUrl
-    if (onFinalizeAndGetShareUrl) {
-      const url = await onFinalizeAndGetShareUrl(recipientEmail)
+  const handleToggleIncludePdf = (checked: boolean) => {
+    setIncludePdf(checked)
+    if (checked) {
+      const cleanTitle =
+        stripHtml(documentTitle)
+          .trim()
+          .replace(/[^\w.-]/g, "_") || "document"
+      const pdfAttachment: ComposerAttachment = {
+        id: "dynamic-pdf-attachment",
+        name: `${cleanTitle}.pdf`,
+        size: "PDF Document Attachment",
+        type: "pdf",
+        isPrimary: false,
+      }
+      setAttachments((prev) => [
+        ...prev.filter((a) => a.id !== "dynamic-pdf-attachment"),
+        pdfAttachment,
+      ])
+    } else {
+      setAttachments((prev) =>
+        prev.filter((a) => a.id !== "dynamic-pdf-attachment")
+      )
+    }
+  }
+
+  const ensureShareUrlAndDoc = async (
+    recipientEmail?: string
+  ): Promise<{
+    shareUrl: string
+    doc: ProposalDraft | InvoiceDraft | null
+  }> => {
+    let url = activeShareUrl
+    let doc = finalizedDoc || initialDocument || null
+
+    if (!url && onFinalizeAndGetShareUrl) {
+      const res = await onFinalizeAndGetShareUrl(recipientEmail)
+      if (typeof res === "string") {
+        url = res
+      } else {
+        url = res.shareUrl
+        if (res.document) {
+          doc = res.document
+          setFinalizedDoc(res.document)
+        }
+      }
       setActiveShareUrl(url)
       setAttachments((prev) =>
-        prev.map((att) => (att.isPrimary ? { ...att, url } : att))
+        prev.map((att) =>
+          att.isPrimary ? { ...att, url: url ?? undefined } : att
+        )
       )
-      return url
     }
-    throw new Error(
-      `Unable to create ${documentType} client gate link. Finalize the document before sending it.`
-    )
+
+    if (!url) {
+      throw new Error(
+        `Unable to create ${documentType} client gate link. Finalize the document before sending it.`
+      )
+    }
+
+    return { shareUrl: url, doc }
+  }
+
+  const ensureShareUrl = async (recipientEmail?: string): Promise<string> => {
+    const { shareUrl } = await ensureShareUrlAndDoc(recipientEmail)
+    return shareUrl
   }
 
   const handleAddAttachmentFiles = (files: FileList) => {
@@ -185,6 +248,9 @@ export function SendDocumentDialog({
   }
 
   const handleRemoveAttachment = (id: string) => {
+    if (id === "dynamic-pdf-attachment") {
+      setIncludePdf(false)
+    }
     setAttachments((prev) => prev.filter((a) => a.id !== id))
   }
 
@@ -209,6 +275,7 @@ export function SendDocumentDialog({
     setMessage(defaultBody)
     setStatusMessage(null)
     setErrorMessage(null)
+    setIncludePdf(false)
     setAttachments((prev) => prev.filter((a) => a.isPrimary))
   }
 
@@ -238,7 +305,9 @@ export function SendDocumentDialog({
 
     try {
       setStatusMessage("Generating client gate link...")
-      const url = await ensureShareUrl(toRecipients[0]?.email)
+      const { shareUrl: url, doc } = await ensureShareUrlAndDoc(
+        toRecipients[0]?.email
+      )
 
       setStatusMessage("Rendering dispatch email template...")
       const htmlBody = await render(
@@ -251,11 +320,41 @@ export function SendDocumentDialog({
         })
       )
 
+      let attachment:
+        | {
+            filename: string
+            mimeType: "application/pdf"
+            content: string
+          }
+        | undefined
+
+      if (includePdf) {
+        if (!doc) {
+          throw new Error(
+            "Document snapshot is required to generate the PDF attachment."
+          )
+        }
+        setStatusMessage("Generating PDF attachment...")
+        const base64 = await generateDocumentPdfBase64({
+          document: doc,
+        })
+        const cleanTitle =
+          stripHtml(documentTitle)
+            .trim()
+            .replace(/[^\w.-]/g, "_") || "document"
+        attachment = {
+          filename: `${cleanTitle}.pdf`,
+          mimeType: "application/pdf",
+          content: base64,
+        }
+      }
+
       setStatusMessage("Sending email via Gmail API...")
       await sendGmailMutation.mutateAsync({
         to: primaryTo,
         subject: subject.trim() || defaultSubject,
         htmlText: htmlBody,
+        attachment,
       })
 
       setStatusMessage(`Sent via Gmail to ${primaryTo}!`)
@@ -317,6 +416,7 @@ export function SendDocumentDialog({
         message: message.trim(),
         scheduledFor: scheduledDate.toISOString(),
         sendMethod: "gmail",
+        includePdf,
       })
 
       setStatusMessage(`Successfully scheduled for ${timeLabel}!`)
@@ -537,6 +637,8 @@ export function SendDocumentDialog({
             isDraftSaved={true}
             statusMessage={sendGmailMutation.isPending ? "Sending..." : null}
             documentType={documentType}
+            includePdf={includePdf}
+            onToggleIncludePdf={handleToggleIncludePdf}
             onSend={handleSendViaGmail}
             onOpenGmailWeb={handleOpenInGmailWeb}
             onCopyShareLink={handleCopyShareLink}

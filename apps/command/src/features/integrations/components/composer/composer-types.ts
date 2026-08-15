@@ -1,3 +1,5 @@
+import type { InvoiceDraft, ProposalDraft } from "@workspace/document/schema"
+
 export interface ComposerRecipient {
   id: string
   email: string
@@ -33,13 +35,21 @@ export interface SendMediumOption {
   badge?: string
 }
 
+export interface FinalizeAndShareResult {
+  shareUrl: string
+  document?: ProposalDraft | InvoiceDraft
+}
+
 export interface SendDocumentDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   documentType: "proposal" | "invoice"
   documentTitle: string
   documentId?: string
+  document?: ProposalDraft | InvoiceDraft
   defaultRecipientEmail?: string
   shareUrl?: string
-  onFinalizeAndGetShareUrl?: (recipientEmail?: string) => Promise<string>
+  onFinalizeAndGetShareUrl?: (
+    recipientEmail?: string
+  ) => Promise<string | FinalizeAndShareResult>
 }

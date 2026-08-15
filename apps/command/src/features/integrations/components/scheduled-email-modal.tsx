@@ -2,6 +2,7 @@ import {
   CalendarDaysIcon,
   CheckIcon,
   ClockIcon,
+  DocumentTextIcon,
   EnvelopeIcon,
   ExclamationTriangleIcon,
   PaperAirplaneIcon,
@@ -74,6 +75,7 @@ export function ScheduledEmailModal({
   const [recipientEmail, setRecipientEmail] = React.useState("")
   const [subject, setSubject] = React.useState("")
   const [message, setMessage] = React.useState("")
+  const [includePdf, setIncludePdf] = React.useState(false)
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>()
   const [timeStr, setTimeStr] = React.useState("09:00")
   const [actionStatus, setActionStatus] = React.useState<string | null>(null)
@@ -85,6 +87,7 @@ export function ScheduledEmailModal({
       setRecipientEmail(dispatch.recipientEmail)
       setSubject(dispatch.subject)
       setMessage(dispatch.message)
+      setIncludePdf(Boolean(dispatch.includePdf))
       const parsedDate = new Date(dispatch.scheduledFor)
       setSelectedDate(parsedDate)
       const h = String(parsedDate.getHours()).padStart(2, "0")
@@ -98,7 +101,7 @@ export function ScheduledEmailModal({
 
   const scheduledDateObj = React.useMemo(() => {
     return dispatch ? new Date(dispatch.scheduledFor) : new Date()
-  }, [dispatch?.scheduledFor])
+  }, [dispatch])
 
   const combinedEditDate = React.useMemo((): Date | null => {
     if (!selectedDate) return null
@@ -143,6 +146,7 @@ export function ScheduledEmailModal({
         recipientEmail: recipientEmail.trim(),
         subject: subject.trim(),
         message: message.trim(),
+        includePdf,
         scheduledFor: combinedEditDate.toISOString(),
       })
       setActionStatus("Schedule updated successfully!")
@@ -424,6 +428,35 @@ export function ScheduledEmailModal({
                   </div>
                 </div>
 
+                {/* PDF Attachment Option */}
+                <div className="flex items-center justify-between rounded-lg border border-border/70 bg-muted/20 p-3">
+                  <div className="flex items-center gap-2.5">
+                    <DocumentTextIcon className="size-4 text-rose-500" />
+                    <div className="flex flex-col">
+                      <span className="font-medium text-foreground text-xs">
+                        PDF Attachment
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        Attach downloadable PDF to scheduled email
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIncludePdf((prev) => !prev)}
+                    className={cn(
+                      "h-7 text-xs font-medium",
+                      includePdf
+                        ? "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {includePdf ? "Included" : "None"}
+                  </Button>
+                </div>
+
                 <div className="flex justify-end gap-2 pt-2">
                   <Button
                     type="button"
@@ -473,6 +506,17 @@ export function ScheduledEmailModal({
                     {dispatch.sendMethod === "gmail"
                       ? "Gmail API (Authenticated)"
                       : "Workspace SMTP"}
+                  </span>
+                </div>
+
+                {/* Attachment */}
+                <div className="flex items-center justify-between border-border/40 border-b pb-2">
+                  <span className="text-muted-foreground">Attachment:</span>
+                  <span className="flex items-center gap-1 font-medium text-foreground">
+                    <DocumentTextIcon className="size-3.5 text-rose-500" />
+                    {dispatch.includePdf
+                      ? "Downloadable PDF included"
+                      : "Client gate link only"}
                   </span>
                 </div>
 
