@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm"
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -33,6 +34,7 @@ export const scheduledDocumentDispatch = pgTable(
     scheduledFor: timestamp("scheduled_for", { withTimezone: true }).notNull(),
     status: text("status").default("pending").notNull(), // "pending" | "processing" | "sent" | "cancelled" | "failed"
     sendMethod: text("send_method").default("gmail").notNull(), // "gmail" | "smtp_resend"
+    includePdf: boolean("include_pdf").default(false).notNull(),
     lastError: text("last_error"),
     attempts: integer("attempts").default(0).notNull(),
     sentAt: timestamp("sent_at", { withTimezone: true }),
