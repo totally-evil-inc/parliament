@@ -968,8 +968,15 @@ export const cancelScheduledDispatchOutput = z.union([
 export const customerDetailsInput = z.object({ id: z.string().uuid() })
 export const getProposalSummaryInput = z.object({ id: z.string().uuid() })
 export const getInvoiceSummaryInput = z.object({ id: z.string().uuid() })
+export const getCurrentUserNameInput = z.object({}).strict()
+export const getCurrentUserNameOutput = z
+  .object({
+    name: z.string(),
+  })
+  .strict()
 
 export const toolInputSchemas = {
+  get_current_user_name: getCurrentUserNameInput,
   list_deals: z.object({}),
   deal_analytics: z.object({}),
   list_customers: z.object({}),
@@ -1008,6 +1015,7 @@ export const toolInputSchemas = {
 } as const
 
 export const toolOutputSchemas = {
+  get_current_user_name: getCurrentUserNameOutput,
   list_deals: listDealsOutput,
   deal_analytics: dealAnalyticsOutput,
   list_customers: listCustomersOutput,

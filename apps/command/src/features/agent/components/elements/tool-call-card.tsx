@@ -53,6 +53,7 @@ function mapToToolState(item: ToolCallItem): ToolState {
 
 function toolDisplayName(value: string): string {
   const names: Record<string, string> = {
+    get_current_user_name: "Checking user name",
     list_deals: "Reviewing deals",
     get_deal: "Opening deal details",
     create_deal: "Creating deal",

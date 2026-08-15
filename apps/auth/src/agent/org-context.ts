@@ -6,6 +6,7 @@ export interface AgentContext {
   organizationId: string
   userId: string
   userEmail: string
+  userName?: string
   orgName: string
 }
 
@@ -32,7 +33,7 @@ export class AgentContextError extends Error {
 export async function resolveOrgContext(
   c: Context<{
     Variables: {
-      user: { id: string; email: string } | null
+      user: { id: string; email: string; name?: string } | null
       session: { activeOrganizationId?: string | null } | null
     }
   }>
@@ -71,6 +72,7 @@ export async function resolveOrgContext(
     organizationId: membership.organizationId,
     userId: user.id,
     userEmail: user.email,
+    userName: user.name || undefined,
     orgName: org?.name ?? "",
   }
 }

@@ -37,6 +37,7 @@ import { gmailCreateDraftTool, gmailSendEmailTool } from "./gmail"
 import { listIntegrationsTool } from "./integrations"
 import { verifyOrgAccessTool } from "./org"
 import { askClarifyingQuestionsTool } from "./questionnaire"
+import { getCurrentUserNameTool } from "./user"
 
 /**
  * Builds the full server tool set for a turn (02-§2 step 5, 04-§2).
@@ -48,6 +49,7 @@ import { askClarifyingQuestionsTool } from "./questionnaire"
  */
 export function buildAgentTools(ctx: AgentContext): AnyServerTool[] {
   const tools: AnyServerTool[] = [
+    getCurrentUserNameTool(ctx),
     verifyOrgAccessTool(ctx),
     askClarifyingQuestionsTool(ctx),
     listDealsTool(ctx),

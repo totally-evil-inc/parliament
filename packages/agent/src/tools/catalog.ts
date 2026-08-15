@@ -17,6 +17,14 @@ export interface ToolEntry {
  */
 export const TOOL_CATALOG = {
   // ——— Business reads (auto-run) ———
+  get_current_user_name: {
+    description:
+      "Get the display name of the currently signed-in user strictly without any PII (no email, phone, user id, or personal identifiers).",
+    input: toolInputSchemas.get_current_user_name,
+    output: toolOutputSchemas.get_current_user_name,
+    category: "read" as const,
+    needsApproval: false,
+  },
   list_deals: {
     description:
       "List all deals in the current organization's pipeline with stage, value and expected close date.",
