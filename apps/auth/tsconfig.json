@@ -2,7 +2,8 @@
   "include": ["**/*.ts", "../../packages/database/src/schema/auth-schema.ts"],
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "types": ["bun"],
@@ -22,6 +23,8 @@
       "@workspace/database/*": ["../../packages/database/src/*"],
       "@workspace/document": ["../../packages/document/src/index.ts"],
       "@workspace/document/*": ["../../packages/document/src/*"],
+      "@workspace/document-pdf": ["../../packages/document-pdf/src/index.ts"],
+      "@workspace/document-pdf/*": ["../../packages/document-pdf/src/*"],
       "@workspace/agent": ["../../packages/agent/src/index.ts"],
       "@workspace/agent/*": ["../../packages/agent/src/*"]
     }

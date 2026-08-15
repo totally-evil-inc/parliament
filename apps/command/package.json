@@ -30,6 +30,7 @@
     "@workspace/database": "workspace:*",
     "@workspace/document": "workspace:*",
     "@workspace/document-editor": "workspace:*",
+    "@workspace/document-pdf": "workspace:*",
     "@workspace/logger": "workspace:*",
     "@workspace/ui": "workspace:*",
     "better-auth": "^1.6.9",
