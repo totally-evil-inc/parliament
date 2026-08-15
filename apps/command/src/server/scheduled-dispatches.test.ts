@@ -1,15 +1,15 @@
 import { describe, expect, it } from "bun:test"
 import {
-  cancelScheduleInputSchema,
   cancelScheduledDispatch,
+  cancelScheduleInputSchema,
   getScheduledDispatchForDocument,
   listScheduledDispatches,
   scheduleDispatchInputSchema,
   scheduleDocumentDispatch,
   sendNowInputSchema,
   sendScheduledDispatchNow,
-  updateScheduleInputSchema,
   updateScheduledDispatch,
+  updateScheduleInputSchema,
 } from "./scheduled-dispatches"
 
 describe("Scheduled Dispatches Server & Schema Validation", () => {
@@ -69,7 +69,9 @@ describe("Scheduled Dispatches Server & Schema Validation", () => {
       })
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain("must be in the future")
+        expect(result.error.issues[0].message).toContain(
+          "must be in the future"
+        )
       }
     })
 

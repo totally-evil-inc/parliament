@@ -1,17 +1,4 @@
-import {
-  calculateInvoicePricing,
-  calculateProposalPricing,
-} from "./calculate"
-import { webStudioProposalTemplate } from "./presentation"
-import type {
-  DocumentBlock,
-  InvoiceDraft,
-  PricingItem,
-  ProposalDraft,
-  ProposalPricing,
-  RichTextDoc,
-  RichTextNode,
-} from "./schema"
+import type { DocumentBlock, RichTextDoc, RichTextNode } from "./schema"
 
 export function textDoc(text: string): RichTextDoc {
   if (!text) {
@@ -388,7 +375,9 @@ export type DeclarativeBlockInput =
       variant?: "split" | "band" | "minimal"
     }
 
-export function convertDeclarativeBlock(input: DeclarativeBlockInput): DocumentBlock {
+export function convertDeclarativeBlock(
+  input: DeclarativeBlockInput
+): DocumentBlock {
   switch (input.type) {
     case "section":
       return buildSectionBlock(input)
@@ -453,7 +442,10 @@ export function normalizeCompositionBlocks(
           ...block,
           binding: pricingBinding,
           config: {
-            title: options.pricingTitle || block.config?.title || (isInvoice ? "Invoice Line Items" : "Services & Billing"),
+            title:
+              options.pricingTitle ||
+              block.config?.title ||
+              (isInvoice ? "Invoice Line Items" : "Services & Billing"),
           },
         }
       }
@@ -492,7 +484,9 @@ export function normalizeCompositionBlocks(
       buildPricingBlock({
         id: isInvoice ? "invoice-pricing" : "proposal-pricing",
         binding: pricingBinding,
-        title: options.pricingTitle || (isInvoice ? "Invoice Line Items" : "Services & Billing"),
+        title:
+          options.pricingTitle ||
+          (isInvoice ? "Invoice Line Items" : "Services & Billing"),
       })
 
     // If there is a signature or faq block, put pricing before them; otherwise append

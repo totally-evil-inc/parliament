@@ -298,14 +298,15 @@ function ProposalEditorScreen({
                 >
                   <ClockIcon className="size-3" />
                   Scheduled for{" "}
-                  {new Date(
-                    scheduledDispatch.scheduledFor
-                  ).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}{" "}
+                  {new Date(scheduledDispatch.scheduledFor).toLocaleDateString(
+                    undefined,
+                    {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    }
+                  )}{" "}
                   • View / Edit
                 </button>
               ) : null}

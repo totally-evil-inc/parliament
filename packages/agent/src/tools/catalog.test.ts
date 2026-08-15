@@ -76,15 +76,28 @@ describe("Agent Tool Catalog & Schemas", () => {
         {
           type: "section" as const,
           title: "Executive Summary",
-          content: "Migrate legacy infrastructure to modern Kubernetes architecture.",
+          content:
+            "Migrate legacy infrastructure to modern Kubernetes architecture.",
         },
         {
           type: "metrics" as const,
-          items: [{ value: "99.99%", label: "Target Availability", detail: "Multi-region failover" }],
+          items: [
+            {
+              value: "99.99%",
+              label: "Target Availability",
+              detail: "Multi-region failover",
+            },
+          ],
         },
         {
           type: "timeline" as const,
-          items: [{ date: "Month 1", title: "Assessment", description: "Audit dependencies" }],
+          items: [
+            {
+              date: "Month 1",
+              title: "Assessment",
+              description: "Audit dependencies",
+            },
+          ],
         },
         {
           type: "team" as const,
@@ -92,11 +105,22 @@ describe("Agent Tool Catalog & Schemas", () => {
         },
         {
           type: "testimonials" as const,
-          items: [{ quote: "Transformative results", author: "Jane Doe", role: "CTO" }],
+          items: [
+            {
+              quote: "Transformative results",
+              author: "Jane Doe",
+              role: "CTO",
+            },
+          ],
         },
         {
           type: "faq" as const,
-          items: [{ question: "Is migration zero-downtime?", answer: "Yes, via shadow routing." }],
+          items: [
+            {
+              question: "Is migration zero-downtime?",
+              answer: "Yes, via shadow routing.",
+            },
+          ],
         },
         {
           type: "signature" as const,

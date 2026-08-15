@@ -591,13 +591,19 @@ export const declarativeBlockSchema = z.discriminatedUnion("type", [
     eyebrow: z.string().optional(),
     title: z.string().min(1),
     lead: z.string().optional(),
-    variant: z.enum(["default", "accent", "compact"]).optional().default("default"),
+    variant: z
+      .enum(["default", "accent", "compact"])
+      .optional()
+      .default("default"),
     content: z.string().min(1),
   }),
   z.object({
     type: z.literal("metrics"),
     id: z.string().optional(),
-    columns: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional().default(3),
+    columns: z
+      .union([z.literal(1), z.literal(2), z.literal(3)])
+      .optional()
+      .default(3),
     items: z
       .array(
         z.object({
@@ -625,7 +631,10 @@ export const declarativeBlockSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("team"),
     id: z.string().optional(),
-    columns: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional().default(3),
+    columns: z
+      .union([z.literal(1), z.literal(2), z.literal(3)])
+      .optional()
+      .default(3),
     items: z
       .array(
         z.object({
@@ -640,7 +649,10 @@ export const declarativeBlockSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("testimonials"),
     id: z.string().optional(),
-    columns: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional().default(2),
+    columns: z
+      .union([z.literal(1), z.literal(2), z.literal(3)])
+      .optional()
+      .default(2),
     items: z
       .array(
         z.object({
@@ -675,7 +687,10 @@ export const declarativeBlockSchema = z.discriminatedUnion("type", [
     type: z.literal("columns"),
     id: z.string().optional(),
     title: z.string().optional(),
-    columns: z.union([z.literal(2), z.literal(3)]).optional().default(2),
+    columns: z
+      .union([z.literal(2), z.literal(3)])
+      .optional()
+      .default(2),
     items: z
       .array(
         z.object({
@@ -1026,4 +1041,3 @@ export const toolOutputSchemas = {
   gcal_cancel_event: gcalCancelEventOutput,
   ask_clarifying_questions: askClarifyingQuestionsOutput,
 } as const
-

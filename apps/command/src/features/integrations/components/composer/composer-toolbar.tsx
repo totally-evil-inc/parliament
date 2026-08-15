@@ -59,7 +59,7 @@ function getTomorrowMorning(): Date {
 function getNextMondayMorning(): Date {
   const d = new Date()
   const day = d.getDay()
-  const daysUntilNextMonday = ((7 - day + 1) % 7) || 7
+  const daysUntilNextMonday = (7 - day + 1) % 7 || 7
   d.setDate(d.getDate() + daysUntilNextMonday)
   d.setHours(9, 0, 0, 0)
   return d

@@ -156,10 +156,7 @@ export const scheduleDocumentDispatch = createServerFn({ method: "POST" })
         .where(
           and(
             eq(schema.scheduledDocumentDispatch.documentId, data.documentId),
-            eq(
-              schema.scheduledDocumentDispatch.organizationId,
-              organizationId
-            ),
+            eq(schema.scheduledDocumentDispatch.organizationId, organizationId),
             eq(schema.scheduledDocumentDispatch.status, "pending")
           )
         )
@@ -243,10 +240,7 @@ export const getScheduledDispatchForDocument = createServerFn({
       .where(
         and(
           eq(schema.scheduledDocumentDispatch.documentId, data.documentId),
-          eq(
-            schema.scheduledDocumentDispatch.organizationId,
-            organizationId
-          ),
+          eq(schema.scheduledDocumentDispatch.organizationId, organizationId),
           inArray(schema.scheduledDocumentDispatch.status, [
             "pending",
             "processing",
@@ -271,10 +265,7 @@ export const listScheduledDispatches = createServerFn({ method: "GET" })
       .select()
       .from(schema.scheduledDocumentDispatch)
       .where(
-        eq(
-          schema.scheduledDocumentDispatch.organizationId,
-          organizationId
-        )
+        eq(schema.scheduledDocumentDispatch.organizationId, organizationId)
       )
       .orderBy(desc(schema.scheduledDocumentDispatch.scheduledFor))
 
@@ -296,10 +287,7 @@ export const updateScheduledDispatch = createServerFn({ method: "POST" })
       .where(
         and(
           eq(schema.scheduledDocumentDispatch.id, data.id),
-          eq(
-            schema.scheduledDocumentDispatch.organizationId,
-            organizationId
-          )
+          eq(schema.scheduledDocumentDispatch.organizationId, organizationId)
         )
       )
       .limit(1)
@@ -311,7 +299,9 @@ export const updateScheduledDispatch = createServerFn({ method: "POST" })
       )
     }
 
-    const updates: Partial<typeof schema.scheduledDocumentDispatch.$inferInsert> = {
+    const updates: Partial<
+      typeof schema.scheduledDocumentDispatch.$inferInsert
+    > = {
       updatedAt: new Date(),
     }
     if (data.recipientEmail) updates.recipientEmail = data.recipientEmail
@@ -341,7 +331,9 @@ export const cancelScheduledDispatch = createServerFn({ method: "POST" })
     const organizationId = await requireActiveOrganization(context.auth)
     const userId = getUserId(context.auth)
 
-    let targetDispatch: typeof schema.scheduledDocumentDispatch.$inferSelect | undefined
+    let targetDispatch:
+      | typeof schema.scheduledDocumentDispatch.$inferSelect
+      | undefined
 
     if (data.id) {
       const [row] = await db
@@ -350,10 +342,7 @@ export const cancelScheduledDispatch = createServerFn({ method: "POST" })
         .where(
           and(
             eq(schema.scheduledDocumentDispatch.id, data.id),
-            eq(
-              schema.scheduledDocumentDispatch.organizationId,
-              organizationId
-            )
+            eq(schema.scheduledDocumentDispatch.organizationId, organizationId)
           )
         )
         .limit(1)
@@ -365,10 +354,7 @@ export const cancelScheduledDispatch = createServerFn({ method: "POST" })
         .where(
           and(
             eq(schema.scheduledDocumentDispatch.documentId, data.documentId),
-            eq(
-              schema.scheduledDocumentDispatch.organizationId,
-              organizationId
-            ),
+            eq(schema.scheduledDocumentDispatch.organizationId, organizationId),
             eq(schema.scheduledDocumentDispatch.status, "pending")
           )
         )
@@ -439,10 +425,7 @@ export const sendScheduledDispatchNow = createServerFn({ method: "POST" })
         .where(
           and(
             eq(schema.scheduledDocumentDispatch.id, data.id),
-            eq(
-              schema.scheduledDocumentDispatch.organizationId,
-              organizationId
-            )
+            eq(schema.scheduledDocumentDispatch.organizationId, organizationId)
           )
         )
         .limit(1)

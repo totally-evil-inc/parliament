@@ -298,7 +298,9 @@ export function ScheduledEmailModal({
               <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-xs">
                 <ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0" />
                 <div className="flex flex-col gap-0.5">
-                  <span className="font-semibold">Last Delivery Attempt Failed</span>
+                  <span className="font-semibold">
+                    Last Delivery Attempt Failed
+                  </span>
                   <span className="leading-relaxed">{dispatch.lastError}</span>
                 </div>
               </div>
@@ -354,7 +356,9 @@ export function ScheduledEmailModal({
 
                 {/* Recipient Input */}
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-muted-foreground text-xs">To Recipient</Label>
+                  <Label className="text-muted-foreground text-xs">
+                    To Recipient
+                  </Label>
                   <Input
                     type="email"
                     value={recipientEmail}
@@ -366,7 +370,9 @@ export function ScheduledEmailModal({
 
                 {/* Subject Input */}
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-muted-foreground text-xs">Subject</Label>
+                  <Label className="text-muted-foreground text-xs">
+                    Subject
+                  </Label>
                   <Input
                     type="text"
                     value={subject}
@@ -378,7 +384,9 @@ export function ScheduledEmailModal({
 
                 {/* Message Textarea */}
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-muted-foreground text-xs">Personal Note</Label>
+                  <Label className="text-muted-foreground text-xs">
+                    Personal Note
+                  </Label>
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
@@ -389,13 +397,17 @@ export function ScheduledEmailModal({
 
                 {/* Date & Time Reschedule Picker */}
                 <div className="flex flex-col gap-2 pt-1">
-                  <Label className="text-muted-foreground text-xs">Reschedule Delivery Time</Label>
+                  <Label className="text-muted-foreground text-xs">
+                    Reschedule Delivery Time
+                  </Label>
                   <div className="overflow-hidden rounded-lg border border-border/70 bg-background/80">
                     <Calendar
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                      disabled={(d) =>
+                        d < new Date(new Date().setHours(0, 0, 0, 0))
+                      }
                       className="w-full p-2.5"
                     />
                     <div className="flex items-center gap-3 border-border/60 border-t bg-muted/20 p-2.5">
@@ -474,7 +486,9 @@ export function ScheduledEmailModal({
 
                 {/* Personal Note Preview */}
                 <div className="flex flex-col gap-1">
-                  <span className="text-muted-foreground">Personal Message:</span>
+                  <span className="text-muted-foreground">
+                    Personal Message:
+                  </span>
                   <p className="whitespace-pre-wrap rounded-md bg-muted/40 p-2.5 text-foreground text-xs leading-relaxed">
                     {dispatch.message}
                   </p>

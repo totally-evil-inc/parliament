@@ -125,15 +125,17 @@ export function createProposalTool(ctx: AgentContext) {
       }
 
       // Convert pricing items
-      const pricingItems: PricingItem[] = (args.items || []).map((item, idx) => ({
-        id: item.id || `pricing-item-${idx + 1}`,
-        description: item.description,
-        details: item.details || "",
-        quantity: String(item.quantity || "1"),
-        unitPriceMinor: item.unitPriceMinor,
-        showDetails: item.showDetails !== false,
-        showImage: Boolean(item.showImage),
-      }))
+      const pricingItems: PricingItem[] = (args.items || []).map(
+        (item, idx) => ({
+          id: item.id || `pricing-item-${idx + 1}`,
+          description: item.description,
+          details: item.details || "",
+          quantity: String(item.quantity || "1"),
+          unitPriceMinor: item.unitPriceMinor,
+          showDetails: item.showDetails !== false,
+          showImage: Boolean(item.showImage),
+        })
+      )
 
       const pricing: ProposalPricing = {
         currency: args.currency || "USD",
@@ -253,7 +255,9 @@ export function createProposalTool(ctx: AgentContext) {
         error: {
           code: "internal" as const,
           message:
-            err instanceof Error ? err.message : "Failed to create proposal draft",
+            err instanceof Error
+              ? err.message
+              : "Failed to create proposal draft",
         },
       }
     }
@@ -436,7 +440,9 @@ export function createInvoiceTool(ctx: AgentContext) {
         error: {
           code: "internal" as const,
           message:
-            err instanceof Error ? err.message : "Failed to create invoice draft",
+            err instanceof Error
+              ? err.message
+              : "Failed to create invoice draft",
         },
       }
     }

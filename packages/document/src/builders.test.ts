@@ -36,7 +36,11 @@ describe("Server-Safe Semantic Block Builders", () => {
     const block = buildMetricsBlock({
       columns: 3,
       items: [
-        { value: "$50K+", label: "Cost Savings", detail: "Annualized estimate" },
+        {
+          value: "$50K+",
+          label: "Cost Savings",
+          detail: "Annualized estimate",
+        },
         { value: "99.9%", label: "Uptime SLA", detail: "Enterprise grade" },
       ],
     })
@@ -47,8 +51,16 @@ describe("Server-Safe Semantic Block Builders", () => {
   it("builds a valid timeline block with milestones", () => {
     const block = buildTimelineBlock({
       items: [
-        { date: "Week 1", title: "Kickoff & Discovery", description: "Stakeholder alignment" },
-        { date: "Week 2-4", title: "Design Phase", description: "Figma wireframes" },
+        {
+          date: "Week 1",
+          title: "Kickoff & Discovery",
+          description: "Stakeholder alignment",
+        },
+        {
+          date: "Week 2-4",
+          title: "Design Phase",
+          description: "Figma wireframes",
+        },
       ],
     })
     const parsed = documentBlockSchema.safeParse(block)
@@ -57,7 +69,9 @@ describe("Server-Safe Semantic Block Builders", () => {
 
   it("builds team, testimonials, faq, signature, columns, and cover blocks", () => {
     const team = buildTeamBlock({
-      items: [{ name: "Alice", role: "Lead Architect", bio: "10+ years experience" }],
+      items: [
+        { name: "Alice", role: "Lead Architect", bio: "10+ years experience" },
+      ],
     })
     expect(documentBlockSchema.safeParse(team).success).toBe(true)
 
@@ -108,7 +122,10 @@ describe("Server-Safe Semantic Block Builders", () => {
   it("normalizeCompositionBlocks enforces invariants: single header at index 0 and pricing block", () => {
     const rawBlocks = [
       buildSectionBlock({ title: "Intro", content: "Hello" }),
-      buildPartyHeaderBlock({ id: "header-1", layout: "mark-left-dates-right" }),
+      buildPartyHeaderBlock({
+        id: "header-1",
+        layout: "mark-left-dates-right",
+      }),
       buildPartyHeaderBlock({ id: "header-2", layout: "editorial-band" }),
       buildPricingBlock({ title: "Pricing 1" }),
       buildPricingBlock({ title: "Pricing 2" }),
@@ -117,7 +134,9 @@ describe("Server-Safe Semantic Block Builders", () => {
 
     const normalized = normalizeCompositionBlocks(rawBlocks)
     expect(normalized[0]?.type).toBe("partyHeader")
-    const headerCount = normalized.filter((b) => b.type === "partyHeader").length
+    const headerCount = normalized.filter(
+      (b) => b.type === "partyHeader"
+    ).length
     expect(headerCount).toBe(1)
     const pricingCount = normalized.filter((b) => b.type === "pricing").length
     expect(pricingCount).toBe(1)

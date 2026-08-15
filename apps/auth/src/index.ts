@@ -202,6 +202,7 @@ app.use("*", async (c, next) => {
   return next()
 })
 
+import { processDueScheduledDispatches } from "./lib/scheduler/dispatch-worker"
 import { addonRouter } from "./routes/addon"
 import { agentChatRouter } from "./routes/agent/chat"
 import { agentHistoryRouter } from "./routes/agent/history"
@@ -215,7 +216,6 @@ import { inviteRouter } from "./routes/invite"
 import { magicLinkRouter } from "./routes/magic-link"
 import { publicDocumentRouter } from "./routes/public-document"
 import { schedulerRouter } from "./routes/scheduler"
-import { processDueScheduledDispatches } from "./lib/scheduler/dispatch-worker"
 
 app.route("/auth/magic-link", magicLinkRouter)
 app.route("/auth/invite", inviteRouter)
