@@ -27,7 +27,16 @@ export function PdfBlockRenderer({ block, model, theme }: PdfBlockProps) {
       return <PdfPricing block={block} model={model} theme={theme} />
     case "richText":
       return (
-        <View style={{ marginBottom: theme.spacing.sectionMarginBottom }}>
+        <View
+          style={{
+            marginBottom: 16,
+            padding: 24,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: theme.border,
+            backgroundColor: theme.pageBackground,
+          }}
+        >
           <PdfRichText content={block.content} theme={theme} />
         </View>
       )
@@ -79,12 +88,12 @@ function PdfPartyHeader({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
-      padding: theme.spacing.headerPadding,
-      borderRadius: theme.cardRadius,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
       borderWidth: 1,
-      borderColor: theme.accentBorderMix,
-      backgroundColor: theme.accentTintSubtle,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
     },
     topRow: {
       flexDirection: "row",
@@ -92,47 +101,39 @@ function PdfPartyHeader({
       alignItems: "flex-start",
     },
     brandBadge: {
-      width: 48,
-      height: 26,
-      borderRadius: theme.radius,
+      width: 44,
+      height: 24,
+      borderRadius: 8,
       borderWidth: 1,
-      borderColor: theme.accentBorderMix,
-      backgroundColor: theme.pageBackground,
+      borderColor: theme.border,
+      backgroundColor: theme.canvasBackground,
       justifyContent: "center",
       alignItems: "center",
-      marginBottom: 10,
+      marginBottom: 12,
     },
     brandBadgeText: {
       fontFamily: theme.headingFont,
-      fontSize: 8.5,
+      fontSize: 8,
       fontWeight: "bold",
-      color: theme.accent,
+      color: theme.foreground,
       letterSpacing: 1,
     },
     documentTypePill: {
       fontFamily: theme.headingFont,
       fontSize: 7.5,
       fontWeight: "bold",
-      color: theme.accent,
+      color: theme.mutedForeground,
       textTransform: "uppercase",
       letterSpacing: 1.5,
-      marginBottom: 4,
+      marginBottom: 6,
     },
     documentTitle: {
       fontFamily: theme.headingFont,
-      fontSize: 22,
+      fontSize: 20,
       fontWeight: "bold",
       color: theme.foreground,
-      lineHeight: 1.15,
-      maxWidth: 300,
-    },
-    documentSubtitle: {
-      fontFamily: theme.bodyFont,
-      fontSize: 8.5,
-      color: theme.mutedForeground,
-      marginTop: 4,
-      maxWidth: 280,
-      lineHeight: 1.35,
+      lineHeight: 1.2,
+      maxWidth: 320,
     },
     datesColumn: {
       flexDirection: "column",
@@ -149,7 +150,7 @@ function PdfPartyHeader({
       color: theme.mutedForeground,
       textTransform: "uppercase",
       letterSpacing: 1,
-      marginBottom: 1,
+      marginBottom: 2,
     },
     dateValue: {
       fontFamily: theme.bodyFont,
@@ -163,10 +164,10 @@ function PdfPartyHeader({
       color: theme.foreground,
     },
     partiesDivider: {
-      borderTopWidth: 0.75,
-      borderTopColor: theme.accentBorderMix,
-      marginTop: 12,
-      paddingTop: 10,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+      marginTop: 18,
+      paddingTop: 16,
       flexDirection: "row",
       justifyContent: "space-between",
     },
@@ -179,7 +180,7 @@ function PdfPartyHeader({
     <View style={styles.datesColumn}>
       {isInvoice && (model as InvoiceRenderModel).invoiceNumber ? (
         <View style={styles.dateItem}>
-          <Text style={styles.dateLabel}>Invoice No</Text>
+          <Text style={styles.dateLabel}>INVOICE NO</Text>
           <Text style={styles.invoiceNumberValue}>
             {(model as InvoiceRenderModel).invoiceNumber}
           </Text>
@@ -187,9 +188,7 @@ function PdfPartyHeader({
       ) : null}
 
       <View style={styles.dateItem}>
-        <Text style={styles.dateLabel}>
-          {isInvoice ? "Date Issued" : "Date"}
-        </Text>
+        <Text style={styles.dateLabel}>DATE</Text>
         <Text style={styles.dateValue}>
           {formatDateOnly(model.issueDate, model.locale)}
         </Text>
@@ -197,7 +196,7 @@ function PdfPartyHeader({
 
       {!isInvoice && (model as ProposalRenderModel).validUntil ? (
         <View style={styles.dateItem}>
-          <Text style={styles.dateLabel}>Valid Until</Text>
+          <Text style={styles.dateLabel}>VALID UNTIL</Text>
           <Text style={styles.dateValue}>
             {formatDateOnly(
               (model as ProposalRenderModel).validUntil as string,
@@ -209,7 +208,7 @@ function PdfPartyHeader({
 
       {isInvoice && (model as InvoiceRenderModel).dueDate ? (
         <View style={styles.dateItem}>
-          <Text style={styles.dateLabel}>Due Date</Text>
+          <Text style={styles.dateLabel}>DUE DATE</Text>
           <Text style={styles.dateValue}>
             {formatDateOnly(
               (model as InvoiceRenderModel).dueDate,
@@ -221,7 +220,7 @@ function PdfPartyHeader({
 
       {isInvoice && (model as InvoiceRenderModel).paymentTerms ? (
         <View style={styles.dateItem}>
-          <Text style={styles.dateLabel}>Terms</Text>
+          <Text style={styles.dateLabel}>TERMS</Text>
           <Text style={styles.dateValue}>
             {(model as InvoiceRenderModel).paymentTerms}
           </Text>
@@ -231,10 +230,8 @@ function PdfPartyHeader({
   )
 
   const sellerInitials = model.seller.name
-    ? model.seller.name.slice(0, 2).toUpperCase()
-    : isInvoice
-      ? "INV"
-      : "PR"
+    ? model.seller.name.trim().slice(0, 2).toUpperCase()
+    : "TH"
 
   return (
     <View style={styles.container} wrap={false}>
@@ -244,7 +241,7 @@ function PdfPartyHeader({
             <Text style={styles.brandBadgeText}>{sellerInitials}</Text>
           </View>
           <Text style={styles.documentTypePill}>
-            {isInvoice ? "Tax Invoice" : "Proposal"}
+            {isInvoice ? "INVOICE" : "PROPOSAL"}
           </Text>
           <Text style={[styles.documentTitle, { textAlign: "center" }]}>
             {cleanTitle}
@@ -260,7 +257,7 @@ function PdfPartyHeader({
             {dateItems}
           </View>
           <Text style={styles.documentTypePill}>
-            {isInvoice ? "Tax Invoice" : "Proposal"}
+            {isInvoice ? "INVOICE" : "PROPOSAL"}
           </Text>
           <Text style={styles.documentTitle}>{cleanTitle}</Text>
         </View>
@@ -271,14 +268,9 @@ function PdfPartyHeader({
               <Text style={styles.brandBadgeText}>{sellerInitials}</Text>
             </View>
             <Text style={styles.documentTypePill}>
-              {isInvoice ? "Tax Invoice" : "Proposal"}
+              {isInvoice ? "INVOICE" : "PROPOSAL"}
             </Text>
             <Text style={styles.documentTitle}>{cleanTitle}</Text>
-            <Text style={styles.documentSubtitle}>
-              {isInvoice
-                ? "Official invoice for professional services rendered."
-                : "A focused plan for a clear, performant, and conversion-ready project."}
-            </Text>
           </View>
           {dateItems}
         </View>
@@ -287,14 +279,14 @@ function PdfPartyHeader({
       <View style={styles.partiesDivider}>
         <View style={styles.partyColumn}>
           <PdfPartyBlock
-            label={isInvoice ? "Billed By" : "Prepared By"}
+            label={isInvoice ? "BILLED BY" : "PREPARED BY"}
             party={model.seller}
             theme={theme}
           />
         </View>
         <View style={styles.partyColumn}>
           <PdfPartyBlock
-            label={isInvoice ? "Billed To" : "Prepared For"}
+            label={isInvoice ? "BILLED TO" : "PREPARED FOR"}
             party={model.customer}
             theme={theme}
           />
@@ -389,13 +381,16 @@ function PdfPricing({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
     },
     titleRow: {
-      borderBottomWidth: 1,
-      borderBottomColor: theme.border,
-      paddingBottom: 6,
-      marginBottom: 8,
+      paddingBottom: 8,
+      marginBottom: 12,
     },
     title: {
       fontFamily: theme.headingFont,
@@ -687,28 +682,14 @@ function PdfSection({
   block: Extract<DocumentBlock, { type: "section" }>
   theme: ResolvedPdfTheme
 }) {
-  const variant = block.variant || "default"
-  const isAccent = variant === "accent"
-  const isCompact = variant === "compact"
-
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
-      ...(isAccent
-        ? {
-            padding: theme.spacing.headerPadding,
-            borderRadius: theme.cardRadius,
-            borderWidth: 1,
-            borderColor: theme.accentBorderMix,
-            backgroundColor: theme.accentTintSubtle,
-          }
-        : isCompact
-          ? {
-              borderTopWidth: 0.75,
-              borderTopColor: theme.border,
-              paddingTop: 10,
-            }
-          : {}),
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
     },
   })
 
@@ -744,12 +725,12 @@ function PdfCover({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
-      padding: theme.spacing.headerPadding,
-      borderRadius: theme.cardRadius,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
       borderWidth: 1,
-      borderColor: theme.accentBorderMix,
-      backgroundColor: theme.accentTintSubtle,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
     },
     splitRow: {
       flexDirection: "row",
@@ -840,7 +821,12 @@ function PdfColumns({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
     },
     grid: {
       flexDirection: "row",
@@ -900,7 +886,12 @@ function PdfImageText({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
       flexDirection: isReverse ? "row-reverse" : "row",
       justifyContent: "space-between",
       alignItems: "center",
@@ -962,7 +953,12 @@ function PdfImageCards({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
       flexDirection: "row",
       flexWrap: "wrap",
       justifyContent: "space-between",
@@ -1037,7 +1033,12 @@ function PdfMetrics({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
     },
     grid: {
       flexDirection: "row",
@@ -1113,7 +1114,12 @@ function PdfTeam({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
     },
     grid: {
       flexDirection: "row",
@@ -1209,7 +1215,12 @@ function PdfTestimonials({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
     },
     grid: {
       flexDirection: "row",
@@ -1280,10 +1291,12 @@ function PdfTimeline({
 }) {
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
-      borderLeftWidth: 1.5,
-      borderLeftColor: theme.border,
-      paddingLeft: 12,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
     },
   })
 
@@ -1316,7 +1329,12 @@ function PdfGallery({
 
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
       flexDirection: "row",
       flexWrap: "wrap",
       justifyContent: "space-between",
@@ -1362,7 +1380,12 @@ function PdfFaq({
 }) {
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
     },
     faqItem: {
       borderTopWidth: 0.5,
@@ -1418,10 +1441,12 @@ function PdfSignature({
 }) {
   const styles = StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.sectionMarginBottom,
-      borderTopWidth: 0.75,
-      borderTopColor: theme.border,
-      paddingTop: 10,
+      marginBottom: 16,
+      padding: 24,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.pageBackground,
       flexDirection: "row",
       justifyContent: "space-between",
     },

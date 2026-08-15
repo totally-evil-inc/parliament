@@ -13,10 +13,20 @@ import {
   buildInvoiceRenderModel,
   buildProposalRenderModel,
 } from "@workspace/document/render"
-import { generateDocumentPdfBlob, generateModelPdfBlob } from "./pdf-exporter"
+import {
+  isInvoiceRenderModel,
+  renderDocumentHtmlDocument,
+} from "./document-html"
+import { estimateDocumentHeight } from "./pdf-capture"
+import {
+  generateDocumentPdfBlob,
+  generateDocumentPdfBuffer,
+  generateModelPdfBlob,
+  generateModelPdfBuffer,
+} from "./pdf-exporter"
 import { resolvePdfTheme } from "./pdf-styles"
 
-describe("React-PDF Document Export Engine", () => {
+describe("Continuous Document PDF Export & HTML Fidelity Engine", () => {
   test("resolves theme tokens accurately into PDF styles and colors", () => {
     const theme = resolvePdfTheme(webStudioProposalTemplate)
     expect(theme.accent).toBe("#0f766e")
@@ -24,6 +34,121 @@ describe("React-PDF Document Export Engine", () => {
     expect(theme.radius).toBeGreaterThan(0)
     expect(theme.headingFont).toBe("Helvetica-Bold")
     expect(theme.accentTintSubtle).toContain("rgba(")
+  })
+
+  test("compiles full HTML document with styles, KaTeX, and fonts", () => {
+    const draft = createProposalDraftFromBlueprint({
+      blueprint: "web-design",
+      id: "test-html-compilation",
+      sellerName: "Studio North",
+    })
+    const model = buildProposalRenderModel(draft, "light")
+    const template = resolveDocumentTemplate(draft.template, "light")
+
+    const html = renderDocumentHtmlDocument({
+      model,
+      template,
+      title: "Test Proposal Document",
+    })
+
+    expect(html).toContain("<!DOCTYPE html>")
+    expect(html).toContain("<title>Test Proposal Document</title>")
+    expect(html).toContain("document-print-canvas")
+    expect(html).toContain("document-print-page")
+    expect(html).toContain("--document-canvas-background")
+    expect(html).toContain("--document-accent")
+    expect(html).toContain("@page {")
+    expect(isInvoiceRenderModel(model)).toBe(false)
+  })
+
+  test("compiles invoice HTML document with invoice badge, number, and payment terms", () => {
+    const draft = createInvoiceDraftFromBlueprint({
+      blueprint: "standard",
+      id: "test-invoice-html",
+      sellerName: "Northstar Studio",
+    })
+    draft.data.invoiceNumber = "INV-2026-999"
+    draft.data.paymentTerms = "Net 15 days via bank transfer"
+
+    const model = buildInvoiceRenderModel(draft, "light")
+    const template = resolveDocumentTemplate(draft.template, "light")
+
+    const html = renderDocumentHtmlDocument({
+      model,
+      template,
+    })
+
+    expect(html).toContain("INV-2026-999")
+    expect(html).toContain("Invoice")
+    expect(html).toContain("Net 15 days via bank transfer")
+    expect(isInvoiceRenderModel(model)).toBe(true)
+  })
+
+  test("calculates deterministic continuous height estimation", () => {
+    const pDraft = createProposalDraftFromBlueprint({
+      blueprint: "web-design",
+      id: "height-estimate-test",
+    })
+    const pModel = buildProposalRenderModel(pDraft)
+    const pHeight = estimateDocumentHeight(pModel)
+
+    expect(pHeight).toBeGreaterThan(500)
+    expect(pHeight).toBeLessThan(10000)
+
+    const iDraft = createInvoiceDraftFromBlueprint({
+      blueprint: "standard",
+      id: "height-estimate-inv",
+    })
+    const iModel = buildInvoiceRenderModel(iDraft)
+    const iHeight = estimateDocumentHeight(iModel)
+
+    expect(iHeight).toBeGreaterThan(400)
+    expect(iHeight).toBeLessThan(10000)
+  })
+
+  test("generates continuous single-page PDF with exact MediaBox geometry for Proposal", async () => {
+    const draft = createProposalDraftFromBlueprint({
+      blueprint: "web-design",
+      id: "test-proposal-geometry",
+      sellerName: "Studio North",
+    })
+
+    const buffer = await generateDocumentPdfBuffer({
+      document: draft,
+      appTheme: "light",
+    })
+
+    expect(Buffer.isBuffer(buffer)).toBe(true)
+    expect(buffer.length).toBeGreaterThan(500)
+    expect(buffer.subarray(0, 5).toString("utf-8")).toBe("%PDF-")
+
+    const pdfText = buffer.toString("latin1")
+    const mediaBoxes = pdfText.match(/\/MediaBox\s*\[\s*([\d.\s]+)\s*\]/g)
+    expect(mediaBoxes).toBeDefined()
+    // Verify it is a single continuous page (exactly 1 MediaBox entry)
+    expect(mediaBoxes?.length).toBe(1)
+  })
+
+  test("generates continuous single-page PDF with exact MediaBox geometry for Invoice", async () => {
+    const draft = createInvoiceDraftFromBlueprint({
+      blueprint: "standard",
+      id: "test-invoice-geometry",
+      sellerName: "Northstar Studio",
+    })
+
+    const buffer = await generateDocumentPdfBuffer({
+      document: draft,
+      appTheme: "light",
+    })
+
+    expect(Buffer.isBuffer(buffer)).toBe(true)
+    expect(buffer.length).toBeGreaterThan(500)
+    expect(buffer.subarray(0, 5).toString("utf-8")).toBe("%PDF-")
+
+    const pdfText = buffer.toString("latin1")
+    const mediaBoxes = pdfText.match(/\/MediaBox\s*\[\s*([\d.\s]+)\s*\]/g)
+    expect(mediaBoxes).toBeDefined()
+    expect(mediaBoxes?.length).toBe(1)
   })
 
   test("generates valid PDF Blob from standard Proposal blueprint", async () => {
@@ -516,9 +641,6 @@ describe("React-PDF Document Export Engine", () => {
   })
 
   test("generates valid server byte Buffer with %PDF signature", async () => {
-    const { generateDocumentPdfBuffer, generateModelPdfBuffer } = await import(
-      "./pdf-exporter"
-    )
     const draft = createProposalDraftFromBlueprint({
       blueprint: "web-design",
       id: "test-buffer-pdf",
@@ -532,7 +654,6 @@ describe("React-PDF Document Export Engine", () => {
 
     expect(Buffer.isBuffer(buffer)).toBe(true)
     expect(buffer.length).toBeGreaterThan(500)
-    // Check %PDF- signature
     expect(buffer.subarray(0, 5).toString("utf-8")).toBe("%PDF-")
 
     const model = buildProposalRenderModel(draft, "light")
@@ -558,7 +679,6 @@ describe("React-PDF Document Export Engine", () => {
 
     expect(typeof base64).toBe("string")
     expect(base64.length).toBeGreaterThan(500)
-    // Verify decoded content begins with %PDF-
     const decoded = Buffer.from(base64, "base64")
     expect(decoded.subarray(0, 5).toString("utf-8")).toBe("%PDF-")
   })

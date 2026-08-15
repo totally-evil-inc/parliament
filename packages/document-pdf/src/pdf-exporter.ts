@@ -1,4 +1,3 @@
-import { pdf } from "@react-pdf/renderer"
 import type { DocumentTemplate } from "@workspace/document/presentation"
 import { resolveDocumentTemplate } from "@workspace/document/presentation"
 import {
@@ -9,28 +8,29 @@ import {
 } from "@workspace/document/render"
 import type { InvoiceDraft, ProposalDraft } from "@workspace/document/schema"
 import { stripHtml } from "@workspace/document/text"
-import * as React from "react"
-import { DocumentPdfDocument } from "./document-pdf-document"
+import { captureContinuousPdf, generateReactPdfBlob } from "./pdf-capture"
 
 export type GeneratePdfOptions = {
   document: ProposalDraft | InvoiceDraft
   appTheme?: "light" | "dark"
   template?: DocumentTemplate
+  preferContinuous?: boolean
 }
 
 export type GenerateModelPdfOptions = {
   model: ProposalRenderModel | InvoiceRenderModel
   template: DocumentTemplate
+  preferContinuous?: boolean
 }
 
 /**
- * Builds the appropriate RenderModel and compiles it into a binary PDF Blob using React-PDF.
+ * Builds the appropriate RenderModel and compiles it into a binary PDF Buffer on the server.
  */
-export async function generateDocumentPdfBlob({
+export async function generateDocumentPdfBuffer({
   document,
   appTheme = "light",
   template: customTemplate,
-}: GeneratePdfOptions): Promise<Blob> {
+}: GeneratePdfOptions): Promise<Buffer> {
   const isInvoice = document.kind === "invoice"
   const model = isInvoice
     ? buildInvoiceRenderModel(document, appTheme)
@@ -39,29 +39,74 @@ export async function generateDocumentPdfBlob({
   const template =
     customTemplate ?? resolveDocumentTemplate(document.template, appTheme)
 
-  const element = React.createElement(DocumentPdfDocument, {
+  return captureContinuousPdf({
     model,
     template,
+    title: document.data.title,
   })
-  // biome-ignore lint/suspicious/noExplicitAny: react-pdf accepts JSX Document element
-  const pdfInstance = pdf(element as any)
-  return await pdfInstance.toBlob()
 }
 
 /**
- * Compiles an existing RenderModel into a binary PDF Blob.
+ * Compiles an existing RenderModel into a binary PDF Buffer on the server.
  */
-export async function generateModelPdfBlob({
+export async function generateModelPdfBuffer({
   model,
   template,
-}: GenerateModelPdfOptions): Promise<Blob> {
-  const element = React.createElement(DocumentPdfDocument, {
+}: GenerateModelPdfOptions): Promise<Buffer> {
+  return captureContinuousPdf({
     model,
     template,
+    title: model.title,
   })
-  // biome-ignore lint/suspicious/noExplicitAny: react-pdf accepts JSX Document element
-  const pdfInstance = pdf(element as any)
-  return await pdfInstance.toBlob()
+}
+
+/**
+ * Builds the appropriate RenderModel and compiles it into a binary PDF Blob across both browser and server.
+ */
+export async function generateDocumentPdfBlob(
+  options: GeneratePdfOptions
+): Promise<Blob> {
+  const isInvoice = options.document.kind === "invoice"
+  const model = isInvoice
+    ? buildInvoiceRenderModel(options.document, options.appTheme)
+    : buildProposalRenderModel(options.document, options.appTheme)
+
+  const template =
+    options.template ??
+    resolveDocumentTemplate(options.document.template, options.appTheme)
+
+  if (typeof window !== "undefined") {
+    // In browser: create Blob directly via React-PDF
+    return generateReactPdfBlob({ model, template })
+  }
+
+  const buffer = await generateDocumentPdfBuffer(options)
+  const arrayBuffer = buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength
+  ) as ArrayBuffer
+  return new Blob([arrayBuffer], { type: "application/pdf" })
+}
+
+/**
+ * Compiles an existing RenderModel into a binary PDF Blob across both browser and server.
+ */
+export async function generateModelPdfBlob(
+  options: GenerateModelPdfOptions
+): Promise<Blob> {
+  if (typeof window !== "undefined") {
+    return generateReactPdfBlob({
+      model: options.model,
+      template: options.template,
+    })
+  }
+
+  const buffer = await generateModelPdfBuffer(options)
+  const arrayBuffer = buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength
+  ) as ArrayBuffer
+  return new Blob([arrayBuffer], { type: "application/pdf" })
 }
 
 /**
@@ -96,45 +141,34 @@ export async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 /**
- * Builds the appropriate RenderModel and compiles it into a Base64 string.
+ * Converts a Base64 string into a Blob across browser and server.
+ */
+export function base64ToBlob(
+  base64: string,
+  mimeType = "application/pdf"
+): Blob {
+  if (typeof window !== "undefined") {
+    const byteCharacters = atob(base64)
+    const byteNumbers = new Array(byteCharacters.length)
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i)
+    }
+    const byteArray = new Uint8Array(byteNumbers)
+    return new Blob([byteArray], { type: mimeType })
+  }
+
+  const buf = Buffer.from(base64, "base64")
+  return new Blob([buf], { type: mimeType })
+}
+
+/**
+ * Builds the appropriate RenderModel and compiles it into a Base64 string across browser and server.
  */
 export async function generateDocumentPdfBase64(
   options: GeneratePdfOptions
 ): Promise<string> {
   const blob = await generateDocumentPdfBlob(options)
   return blobToBase64(blob)
-}
-
-/**
- * Builds the appropriate RenderModel and compiles it into a binary Node/Bun Buffer.
- */
-export async function generateDocumentPdfBuffer({
-  document,
-  appTheme = "light",
-  template: customTemplate,
-}: GeneratePdfOptions): Promise<Buffer> {
-  const blob = await generateDocumentPdfBlob({
-    document,
-    appTheme,
-    template: customTemplate,
-  })
-  const arrayBuffer = await blob.arrayBuffer()
-  return Buffer.from(arrayBuffer)
-}
-
-/**
- * Compiles an existing RenderModel into a binary Node/Bun Buffer.
- */
-export async function generateModelPdfBuffer({
-  model,
-  template,
-}: GenerateModelPdfOptions): Promise<Buffer> {
-  const blob = await generateModelPdfBlob({
-    model,
-    template,
-  })
-  const arrayBuffer = await blob.arrayBuffer()
-  return Buffer.from(arrayBuffer)
 }
 
 export type ExportPdfOptions = GeneratePdfOptions & {

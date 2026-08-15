@@ -1,122 +1,81 @@
-import { pdf } from "@react-pdf/renderer"
-import type { DocumentTemplate } from "@workspace/document/presentation"
-import { resolveDocumentTemplate } from "@workspace/document/presentation"
-import {
-  buildInvoiceRenderModel,
-  buildProposalRenderModel,
-  type InvoiceRenderModel,
-  type ProposalRenderModel,
-} from "@workspace/document/render"
-import type { InvoiceDraft, ProposalDraft } from "@workspace/document/schema"
 import { stripHtml } from "@workspace/document/text"
-import * as React from "react"
-import { DocumentPdfDocument } from "./document-pdf-document"
+import {
+  base64ToBlob,
+  exportDocumentToPdf as baseExportDocumentToPdf,
+  generateDocumentPdfBase64 as baseGenerateDocumentPdfBase64,
+  type ExportPdfOptions,
+  type GeneratePdfOptions,
+  triggerBlobDownload,
+} from "@workspace/document-pdf"
+import { exportDocumentPdfServerFn } from "@/server/pdf-export"
 
-export type GeneratePdfOptions = {
-  document: ProposalDraft | InvoiceDraft
-  appTheme?: "light" | "dark"
-  template?: DocumentTemplate
-}
+export * from "@workspace/document-pdf"
 
-export type GenerateModelPdfOptions = {
-  model: ProposalRenderModel | InvoiceRenderModel
-  template: DocumentTemplate
+/**
+ * Enhanced client PDF exporter that requests continuous tall PDF from the server,
+ * falling back gracefully to browser-side React-PDF generation if offline or unavailable.
+ */
+export async function exportDocumentToPdf(
+  options: ExportPdfOptions
+): Promise<void> {
+  try {
+    const serverResult = await exportDocumentPdfServerFn({
+      data: {
+        document: options.document,
+        appTheme: options.appTheme ?? "light",
+      },
+    })
+
+    if (serverResult.success && serverResult.base64) {
+      const blob = base64ToBlob(serverResult.base64, "application/pdf")
+      const isInvoice = options.document.kind === "invoice"
+      const rawTitle =
+        options.document.data.title || (isInvoice ? "Invoice" : "Proposal")
+      const cleanTitle =
+        stripHtml(rawTitle)
+          .trim()
+          .replace(/[^a-zA-Z0-9_-]/g, "_") ||
+        (isInvoice ? "Invoice" : "Proposal")
+
+      const identifier =
+        isInvoice &&
+        "invoiceNumber" in options.document.data &&
+        options.document.data.invoiceNumber
+          ? `_${options.document.data.invoiceNumber.replace(/[^a-zA-Z0-9_-]/g, "_")}`
+          : ""
+
+      const downloadName = options.filename || `${cleanTitle}${identifier}.pdf`
+      triggerBlobDownload(blob, downloadName)
+      return
+    }
+  } catch (_err) {
+    // Fall back to client-side renderer
+  }
+
+  return baseExportDocumentToPdf(options)
 }
 
 /**
- * Builds the appropriate RenderModel and compiles it into a binary PDF Blob using React-PDF.
+ * Enhanced client Base64 generator that requests continuous PDF from the server,
+ * falling back gracefully to browser-side generation.
  */
-export async function generateDocumentPdfBlob({
-  document,
-  appTheme = "light",
-  template: customTemplate,
-}: GeneratePdfOptions): Promise<Blob> {
-  const isInvoice = document.kind === "invoice"
-  const model = isInvoice
-    ? buildInvoiceRenderModel(document, appTheme)
-    : buildProposalRenderModel(document, appTheme)
+export async function generateDocumentPdfBase64(
+  options: GeneratePdfOptions
+): Promise<string> {
+  try {
+    const serverResult = await exportDocumentPdfServerFn({
+      data: {
+        document: options.document,
+        appTheme: options.appTheme ?? "light",
+      },
+    })
 
-  const template =
-    customTemplate ?? resolveDocumentTemplate(document.template, appTheme)
+    if (serverResult.success && serverResult.base64) {
+      return serverResult.base64
+    }
+  } catch (_err) {
+    // Fall back to client
+  }
 
-  const element = React.createElement(DocumentPdfDocument, {
-    model,
-    template,
-  })
-  // biome-ignore lint/suspicious/noExplicitAny: react-pdf accepts JSX Document element
-  const pdfInstance = pdf(element as any)
-  return await pdfInstance.toBlob()
-}
-
-/**
- * Compiles an existing RenderModel into a binary PDF Blob.
- */
-export async function generateModelPdfBlob({
-  model,
-  template,
-}: GenerateModelPdfOptions): Promise<Blob> {
-  const element = React.createElement(DocumentPdfDocument, {
-    model,
-    template,
-  })
-  // biome-ignore lint/suspicious/noExplicitAny: react-pdf accepts JSX Document element
-  const pdfInstance = pdf(element as any)
-  return await pdfInstance.toBlob()
-}
-
-export type ExportPdfOptions = GeneratePdfOptions & {
-  filename?: string
-}
-
-/**
- * Generates the PDF Blob and triggers a direct browser download.
- */
-export async function exportDocumentToPdf({
-  document,
-  appTheme = "light",
-  template,
-  filename,
-}: ExportPdfOptions): Promise<void> {
-  const blob = await generateDocumentPdfBlob({
-    document,
-    appTheme,
-    template,
-  })
-
-  const isInvoice = document.kind === "invoice"
-  const rawTitle = document.data.title || (isInvoice ? "Invoice" : "Proposal")
-  const cleanTitle =
-    stripHtml(rawTitle)
-      .trim()
-      .replace(/[^a-zA-Z0-9_-]/g, "_") || (isInvoice ? "Invoice" : "Proposal")
-
-  const identifier =
-    isInvoice && "invoiceNumber" in document.data && document.data.invoiceNumber
-      ? `_${document.data.invoiceNumber.replace(/[^a-zA-Z0-9_-]/g, "_")}`
-      : ""
-
-  const downloadName = filename || `${cleanTitle}${identifier}.pdf`
-
-  triggerBlobDownload(blob, downloadName)
-}
-
-/**
- * Triggers a direct browser file download for a given Blob.
- */
-export function triggerBlobDownload(blob: Blob, filename: string): void {
-  if (typeof window === "undefined") return
-
-  const url = URL.createObjectURL(blob)
-  const link = window.document.createElement("a")
-  link.href = url
-  link.download = filename
-  link.rel = "noopener"
-  window.document.body.appendChild(link)
-  link.click()
-  window.document.body.removeChild(link)
-
-  // Delay revoking URL slightly to ensure download starts cleanly
-  setTimeout(() => {
-    URL.revokeObjectURL(url)
-  }, 1000)
+  return baseGenerateDocumentPdfBase64(options)
 }

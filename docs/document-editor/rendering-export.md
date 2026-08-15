@@ -2,27 +2,39 @@
 
 ## Render-model boundary
 
-`buildProposalRenderModel(input)` accepts unknown input and validates it before
-constructing renderer data.
+`buildProposalRenderModel(input)` and `buildInvoiceRenderModel(input)` accept unknown input and validate it before constructing renderer data.
 
-It resolves:
+They resolve:
 
-- Proposal metadata and parties.
+- Document metadata and parties (seller and customer).
 - Optional pricing and its shared calculation result.
-- Template reference.
+- Template reference and CSS tokens.
 - Ordered canonical blocks.
 - Locale and timezone.
+- For invoices: invoice number, due date, and payment terms.
 
-Renderers should accept `ProposalRenderModel`, not `ProposalDraft`, TipTap JSON,
-or NodeView props.
+Renderers accept `ProposalRenderModel` or `InvoiceRenderModel`, not mutable drafts, TipTap JSON, or editor NodeView props.
 
-## Current HTML/print renderer
+## Unified Document HTML & Read Renderer
 
-The current read renderer is
-`apps/command/src/features/documents/print/proposal-print-view.tsx`.
+The unified read & print renderer is `DocumentHtmlView` in `@workspace/document-pdf` (re-exported by `apps/command/src/features/documents/print/proposal-print-view.tsx`).
 
-It contains a typed block registry. The registry is exhaustive over
-`DocumentBlock["type"]`, so new block types require a renderer at compile time.
+It contains a typed block registry exhaustive over all 14 canonical `DocumentBlock["type"]` entries:
+- `partyHeader`: Dispatches between proposal layout (prepared for / valid until) and invoice layout (billed to / invoice number / due date).
+- `pricing`: Renders line items, precomputed calculation totals (subtotal, discount, tax, total), and dispatches between signature block (proposals) and payment terms notes (invoices).
+- `richText`: Renders typography, marks, lists, blockquotes, tables, and KaTeX LaTeX math equations.
+- `section`: Standard and accented section layouts.
+- `cover`: Minimal and split/band cover variants.
+- `columns`: Multi-column structured layouts.
+- `imageText`: Alternating image and prose blocks.
+- `imageCards`: Horizontal and vertical card grids.
+- `signature`: Formal acceptance and digital signature representation.
+- `timeline`: Visual project phases and delivery schedules.
+- `metrics`: Stat calls with large numeral emphasis.
+- `team`: Team member cards with roles and biographies.
+- `testimonials`: Quoted client endorsements.
+- `gallery`: Visual image galleries with column configuration.
+- `faq`: Collapsible question-and-answer lists.
 
 The renderer:
 
@@ -30,9 +42,32 @@ The renderer:
 - Uses precomputed pricing results from the render model.
 - Formats money with explicit currency and locale.
 - Formats date-only strings without UTC conversion.
+- Applies CSS variables directly from `getDocumentTemplateStyle(template)`.
 - Renders authored blocks without mounting NodeViews.
 
-It does not yet resolve durable image assets or generate PDF bytes.
+## Continuous Tall Document PDF Engine
+
+PDF export generates a single continuous, tall PDF document with no physical page breaks, no content compression, and 100% visual parity with the editor/read view:
+
+1. **Geometry Contract**:
+   - Fixed document width: `210mm` (standard A4 width).
+   - Dynamic document height: measured continuous height matching the content length (1 page).
+   - Zero physical page breaks across sections, tables, or composite blocks.
+   - Clean margin structure: `18mm` horizontal padding.
+
+2. **Headless Chrome Capture (`pdf-capture.ts`)**:
+   - `renderDocumentHtmlDocument({ model, template, title })` generates a self-contained HTML document with embedded fonts, CSS tokens, and KaTeX styles.
+   - The capture adapter executes headless Chrome to measure and emit a single tall PDF page with `--print-to-pdf`.
+   - Bounds safety: minimum height `200px`, maximum height `50,000px`.
+
+3. **Fallback Engine**:
+   - If headless Chrome is not detected on the host system, `@react-pdf/renderer` serves as an automatic fallback generator.
+
+4. **Converged Dispatch**:
+   - Browser direct download (`exportDocumentToPdf`)
+   - Gmail attachments (`apps/auth/src/agent/tools/document-send.ts`)
+   - Scheduled dispatches (`apps/auth/src/lib/scheduler/dispatch-worker.ts`)
+   All converge on `generateDocumentPdfBuffer` / `generateDocumentPdfBlob` in `@workspace/document-pdf`.
 
 ## Text rendering
 
@@ -45,28 +80,7 @@ It does not yet resolve durable image assets or generate PDF bytes.
 
 Every new block type must have an explicit text policy.
 
-## Current preview transport
-
-The editor's Export toolbar action currently:
-
-1. Flushes current TipTap composition into the canonical store.
-2. Serializes the validated draft into `sessionStorage`.
-3. Opens `/documents/print?draftKey=...`.
-4. The print route reads and validates the draft.
-5. The route builds a render model and mounts the read renderer.
-
-This is a browser preview mechanism only.
-
-Limitations:
-
-- Data expires with the browser session.
-- Another device or worker cannot access it.
-- There is no immutable content hash.
-- No artifact record is created.
-- Browser CSS and fonts remain ambient.
-- It cannot be used as a reliable send/download backend.
-
-## Target production pipeline
+## Production pipeline
 
 ```txt
 persisted editable draft
@@ -83,53 +97,16 @@ finalize immutable snapshot
         +--> resolved asset descriptors
         |
         v
-background generation job
+generation job
         |
-        +--> HTML/public renderer
-        +--> PDF renderer
-        +--> email renderer
-        +--> plain text
+        +--> DocumentHtmlView (Web preview & public client gate)
+        +--> Headless Chrome Capture (Continuous Tall PDF)
+        +--> Email Dispatch (Gmail / SMTP / Resend)
+        +--> Plain Text Extraction
         |
         v
 generated artifact record + object storage
 ```
-
-Finalization must freeze source-linked seller, customer, product, team,
-testimonial, pricing, template, and asset values.
-
-## PDF technology decision
-
-The implementation has not selected a production PDF engine.
-
-Evaluate with a pagination prototype:
-
-- Headless browser HTML offers strong visual parity with the current read view
-  but requires deterministic fonts, image readiness, and page-break CSS.
-- `@react-pdf/renderer` offers explicit page primitives but requires a separate
-  component tree.
-
-Whichever is selected, it must consume the same render model and calculations.
-Do not print the editor DOM or reuse NodeViews as PDF components.
-
-## Asset resolution
-
-Future renderer input should receive authorized resolved assets:
-
-```ts
-type ResolvedAsset = {
-  id: string
-  mimeType: string
-  bytes?: Uint8Array
-  url?: string
-  width?: number
-  height?: number
-  sha256?: string
-}
-```
-
-A worker must never fetch arbitrary persisted user URLs. Resolve known storage
-keys through an allowlisted storage service to prevent SSRF, expiration, and
-nondeterministic output.
 
 ## Determinism checklist
 
@@ -140,10 +117,9 @@ A production renderer must receive or pin:
 - Template ID and version.
 - Calculation version.
 - Renderer version.
-- Page size.
+- Page geometry (210mm width, measured height).
 - Font files and weights.
 - Immutable asset bytes or controlled URLs.
 - Stable block ordering and IDs.
 
-Do not read current time, theme, session, or authenticated user inside a
-renderer.
+Do not read current time, theme, session, or authenticated user inside a renderer.

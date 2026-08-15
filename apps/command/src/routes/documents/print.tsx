@@ -2,17 +2,19 @@ import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
 import { createFileRoute } from "@tanstack/react-router"
 import { resolveDocumentTemplate } from "@workspace/document/presentation"
 import { createProposalDraft } from "@workspace/document/proposal"
-import { buildProposalRenderModel } from "@workspace/document/render"
+import {
+  buildInvoiceRenderModel,
+  buildProposalRenderModel,
+} from "@workspace/document/render"
 import {
   type InvoiceDraft,
   type ProposalDraft,
   safeParseInvoiceDraft,
   safeParseProposalDraft,
 } from "@workspace/document/schema"
+import { DocumentHtmlView, exportDocumentToPdf } from "@workspace/document-pdf"
 import { Button } from "@workspace/ui/components/button"
 import * as React from "react"
-import { exportDocumentToPdf } from "@/features/documents/pdf/pdf-exporter"
-import { ProposalPrintView } from "@/features/documents/print/proposal-print-view"
 
 export const Route = createFileRoute("/documents/print")({
   component: PrintRoute,
@@ -57,17 +59,10 @@ function PrintRoute() {
     }
   }
 
-  const proposalModel =
-    document.kind === "proposal"
-      ? buildProposalRenderModel(document)
-      : buildProposalRenderModel({
-          ...document,
-          kind: "proposal",
-          data: {
-            ...document.data,
-            validUntil: undefined,
-          },
-        })
+  const model =
+    document.kind === "invoice"
+      ? buildInvoiceRenderModel(document)
+      : buildProposalRenderModel(document)
 
   return (
     <>
@@ -83,7 +78,7 @@ function PrintRoute() {
         </Button>
       </div>
 
-      <ProposalPrintView model={proposalModel} template={template} />
+      <DocumentHtmlView model={model} template={template} />
     </>
   )
 }

@@ -1,4 +1,4 @@
-import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer"
+import { Document, Page, StyleSheet, View } from "@react-pdf/renderer"
 import type { DocumentTemplate } from "@workspace/document/presentation"
 import type {
   InvoiceRenderModel,
@@ -21,12 +21,12 @@ export function DocumentPdfDocument({ model, template }: DocumentPdfProps) {
 
   const styles = StyleSheet.create({
     page: {
-      backgroundColor: theme.pageBackground,
+      backgroundColor: theme.canvasBackground,
       color: theme.foreground,
       fontFamily: theme.bodyFont,
-      paddingTop: 36,
-      paddingBottom: 44,
-      paddingHorizontal: 40,
+      paddingTop: 24,
+      paddingBottom: 24,
+      paddingHorizontal: 24,
       fontSize: 9.5,
       lineHeight: 1.4,
       flexDirection: "column",
@@ -34,31 +34,6 @@ export function DocumentPdfDocument({ model, template }: DocumentPdfProps) {
     blocksContainer: {
       flex: 1,
       flexDirection: "column",
-    },
-    pageFooter: {
-      position: "absolute",
-      bottom: 20,
-      left: 40,
-      right: 40,
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      borderTopWidth: 0.5,
-      borderTopColor: theme.border,
-      paddingTop: 6,
-    },
-    footerBrand: {
-      fontFamily: theme.headingFont,
-      fontSize: 7.5,
-      fontWeight: "bold",
-      color: theme.mutedForeground,
-      textTransform: "uppercase",
-      letterSpacing: 0.8,
-    },
-    footerPagination: {
-      fontFamily: theme.bodyFont,
-      fontSize: 7.5,
-      color: theme.mutedForeground,
     },
   })
 
@@ -82,7 +57,7 @@ export function DocumentPdfDocument({ model, template }: DocumentPdfProps) {
                 type: "partyHeader",
                 version: 1,
                 binding: isInvoice ? "invoice.parties" : "proposal.parties",
-                config: { layout: "editorial-band" },
+                config: { layout: "mark-left-dates-right" },
               }}
               model={model}
               theme={theme}
@@ -97,19 +72,6 @@ export function DocumentPdfDocument({ model, template }: DocumentPdfProps) {
               theme={theme}
             />
           ))}
-        </View>
-
-        {/* Running Page Footer with dynamic page numbering */}
-        <View style={styles.pageFooter} fixed>
-          <Text style={styles.footerBrand}>
-            {model.seller.name || cleanTitle}
-          </Text>
-          <Text
-            style={styles.footerPagination}
-            render={({ pageNumber, totalPages }) =>
-              `Page ${pageNumber} of ${totalPages}`
-            }
-          />
         </View>
       </Page>
     </Document>

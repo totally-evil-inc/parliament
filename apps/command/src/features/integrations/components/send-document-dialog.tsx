@@ -7,7 +7,6 @@ import {
 import { render } from "@react-email/render"
 import type { InvoiceDraft, ProposalDraft } from "@workspace/document/schema"
 import { stripHtml } from "@workspace/document/text"
-import { generateDocumentPdfBase64 } from "@workspace/document-pdf"
 import {
   Dialog,
   DialogContent,
@@ -18,6 +17,7 @@ import {
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { cn } from "@workspace/ui/lib/utils"
 import * as React from "react"
+import { generateDocumentPdfBase64 } from "@/features/documents/pdf/pdf-exporter"
 import { authClient } from "@/lib/auth-client"
 import { DocumentDispatchEmail } from "../../email/templates/DocumentDispatchEmail"
 import { useSendGmailEmail } from "../hooks/use-gmail-operations"
