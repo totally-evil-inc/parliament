@@ -124,6 +124,13 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     onFinish: () => {
       queryClient.invalidateQueries({ queryKey: ["agent", "conversations"] })
+      queryClient.invalidateQueries({ queryKey: ["proposals"] })
+      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      queryClient.invalidateQueries({ queryKey: ["scheduled-dispatches"] })
+      queryClient.invalidateQueries({ queryKey: ["deals"] })
+      queryClient.invalidateQueries({ queryKey: ["customers"] })
+      queryClient.invalidateQueries({ queryKey: ["deal-analytics"] })
+      queryClient.invalidateQueries({ queryKey: ["customer-analytics"] })
       if (threadIdRef.current) {
         queryClient.invalidateQueries({
           queryKey: ["agent", "conversations", threadIdRef.current],

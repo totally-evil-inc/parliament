@@ -1,4 +1,12 @@
 import {
+  ArrowTopRightOnSquareIcon,
+  CalendarIcon,
+  ClockIcon,
+  DocumentCheckIcon,
+  DocumentTextIcon,
+} from "@heroicons/react/24/outline"
+import { Link } from "@tanstack/react-router"
+import {
   Tool,
   ToolContent,
   ToolHeader,
@@ -50,9 +58,23 @@ function toolDisplayName(value: string): string {
   const names: Record<string, string> = {
     list_deals: "Reviewing deals",
     get_deal: "Opening deal details",
+    create_deal: "Creating deal",
+    update_deal_stage: "Updating deal stage",
     list_customers: "Reviewing customers",
     get_customer: "Opening customer details",
-    create_proposal: "Preparing proposal",
+    create_customer: "Creating customer",
+    update_customer: "Updating customer",
+    create_proposal: "Drafting proposal",
+    create_invoice: "Drafting invoice",
+    get_proposal: "Inspecting proposal",
+    get_invoice: "Inspecting invoice",
+    update_proposal: "Updating proposal",
+    update_invoice: "Updating invoice",
+    send_proposal: "Sending proposal",
+    send_invoice: "Sending invoice",
+    schedule_document_send: "Scheduling document send",
+    list_scheduled_dispatches: "Checking scheduled dispatches",
+    cancel_scheduled_dispatch: "Canceling scheduled send",
     send_email: "Preparing email",
     gmail_send_email: "Dispatching Gmail email",
     gmail_create_draft: "Creating Gmail draft",
@@ -71,6 +93,13 @@ function humanize(value: string): string {
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/[_-]/g, " ")
     .replace(/^./, (char) => char.toUpperCase())
+}
+
+function formatMinorUnits(amountMinor: number, currency = "USD"): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+  }).format(amountMinor / 100)
 }
 
 export const ToolCallCard: React.FC<ToolCallCardProps> = ({
@@ -102,6 +131,24 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
                 tc.status !== "rejected"
             )
 
+          const res =
+            tc.result && typeof tc.result === "object"
+              ? (tc.result as Record<string, any>)
+              : null
+
+          const isDocumentDraftResult =
+            res &&
+            (tc.name === "create_proposal" ||
+              tc.name === "create_invoice" ||
+              tc.name === "update_proposal" ||
+              tc.name === "update_invoice" ||
+              tc.name === "get_proposal" ||
+              tc.name === "get_invoice") &&
+            !res.error
+
+          const isScheduleResult =
+            res && tc.name === "schedule_document_send" && !res.error
+
           return (
             <div key={tc.id} className="w-full">
               <Tool defaultOpen={shouldDefaultOpen}>
@@ -113,6 +160,83 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
                 {!isQuestionnaire && (hasArgs || hasOutput) && (
                   <ToolContent>
                     {hasArgs && <ToolInput input={tc.args} />}
+
+                    {/* Rich Action Banner for Document Drafts */}
+                    {isDocumentDraftResult && (
+                      <div className="my-2.5 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <DocumentTextIcon className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="truncate font-medium text-foreground text-xs">
+                              {res.title || "Document Draft"}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                              {res.totalMinorUnits !== undefined && (
+                                <span>
+                                  {formatMinorUnits(
+                                    res.totalMinorUnits,
+                                    res.currency
+                                  )}
+                                </span>
+                              )}
+                              {res.totalMinor !== undefined && (
+                                <span>
+                                  {formatMinorUnits(
+                                    res.totalMinor,
+                                    res.currency
+                                  )}
+                                </span>
+                              )}
+                              {res.customerName && (
+                                <span>• {res.customerName}</span>
+                              )}
+                              {res.revision !== undefined && (
+                                <span className="rounded bg-muted px-1 py-0.5 text-[10px]">
+                                  v{res.revision}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {res.id && (
+                          <div className="shrink-0 pt-1 sm:pt-0">
+                            <a
+                              href={
+                                tc.name.includes("invoice")
+                                  ? `/invoices/${res.id}`
+                                  : `/proposals/${res.id}`
+                              }
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 font-medium text-primary-foreground text-xs transition-colors hover:bg-primary/90"
+                            >
+                              <span>Open in Editor</span>
+                              <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Rich Action Banner for Scheduled Dispatches */}
+                    {isScheduleResult && (
+                      <div className="my-2.5 flex items-center gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                          <ClockIcon className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-foreground">
+                            Dispatch Scheduled
+                          </div>
+                          <div className="text-muted-foreground text-[11px]">
+                            Will send to {res.recipientEmail} at{" "}
+                            {new Date(res.scheduledFor).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {hasOutput && (
                       <ToolOutput output={tc.result} errorText={tc.errorText} />
                     )}
