@@ -77,3 +77,11 @@ test("setTitle strips HTML paragraph tags from title", () => {
   store.commands.setTitle("<p>Web Redesign Proposal</p>")
   expect(store.getSnapshot().data.title).toBe("Web Redesign Proposal")
 })
+
+test("setTitle preserves trailing spaces while typing", () => {
+  const store = createProposalDraftStore(
+    createProposalDraft({ id: "proposal-1" })
+  )
+  store.commands.setTitle("Website redesign ")
+  expect(store.getSnapshot().data.title).toBe("Website redesign ")
+})
