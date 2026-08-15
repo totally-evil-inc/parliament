@@ -9,8 +9,10 @@ import {
   proposalSnapshot,
   scheduledDocumentDispatch,
 } from "@workspace/database/schema"
-import { finalizeProposalDraft as buildProposalSnapshotPayload } from "@workspace/document/finalize"
-import { finalizeInvoiceDraft as buildInvoiceSnapshotPayload } from "@workspace/document/finalize"
+import {
+  finalizeInvoiceDraft as buildInvoiceSnapshotPayload,
+  finalizeProposalDraft as buildProposalSnapshotPayload,
+} from "@workspace/document/finalize"
 import { logger, logWideEvent } from "@workspace/logger"
 import { renderEmail, sendEmail } from "../email"
 import { sendGmailMessage } from "../gmail/send-service"
@@ -33,7 +35,11 @@ export async function processDueScheduledDispatches(options?: {
   forceNow?: boolean
 }): Promise<ProcessDispatchesResult> {
   const startTime = Date.now()
-  const commandUrl = Bun.env.COMMAND_SERVER_URL || "http://localhost:3000"
+  const gateUrl = (
+    Bun.env.GATE_URL ||
+    process.env.GATE_URL ||
+    "http://localhost:4100"
+  ).replace(/\/$/, "")
   const now = new Date()
 
   // 1. Query pending dispatches that are due (or target a specific dispatch if requested)
@@ -150,7 +156,7 @@ export async function processDueScheduledDispatches(options?: {
           })
         }
 
-        shareUrl = `${commandUrl}/proposal/${token}`
+        shareUrl = `${gateUrl}/p/${token}`
       } else if (dispatch.documentType === "invoice") {
         const [iDraft] = await db
           .select()
@@ -218,7 +224,7 @@ export async function processDueScheduledDispatches(options?: {
           })
         }
 
-        shareUrl = `${commandUrl}/invoice/${token}`
+        shareUrl = `${gateUrl}/i/${token}`
       } else {
         throw new Error(`Unsupported document type: ${dispatch.documentType}`)
       }

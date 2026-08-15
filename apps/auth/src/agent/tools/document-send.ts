@@ -1,6 +1,7 @@
 import { toolDefinition } from "@tanstack/ai"
 import { sendDocumentInput, sendDocumentOutput } from "@workspace/agent"
 import { logWideEvent } from "@workspace/logger"
+import { renderEmail } from "../../lib/email"
 import { sendGmailMessage } from "../../lib/gmail/send-service"
 import { finalizeInvoiceSend, finalizeProposalSend } from "../document-send"
 import type { AgentContext } from "../tool-ctx"
@@ -35,7 +36,19 @@ export function sendProposalTool(ctx: AgentContext) {
       const subject =
         args.subject ||
         `Proposal: ${finalized.documentTitle} from ${ctx.orgName}`
-      const htmlText = `<p>Hello,</p><p>Please review the proposal <strong>${finalized.documentTitle}</strong> from ${ctx.orgName}:</p><p><a href="${finalized.shareUrl}">View Proposal</a></p>${args.personalMessage ? `<p>${args.personalMessage}</p>` : ""}`
+
+      let htmlText: string
+      try {
+        htmlText = await renderEmail("document-dispatch", {
+          documentType: "proposal",
+          documentTitle: finalized.documentTitle,
+          personalMessage: args.personalMessage || "",
+          shareUrl: finalized.shareUrl,
+          recipientEmail,
+        })
+      } catch {
+        htmlText = `<p>Hello,</p><p>Please review the proposal <strong>${finalized.documentTitle}</strong> from ${ctx.orgName}:</p><p><a href="${finalized.shareUrl}">View Proposal</a></p>${args.personalMessage ? `<p>${args.personalMessage}</p>` : ""}`
+      }
 
       let messageId: string | undefined
       let threadId: string | undefined
@@ -50,6 +63,8 @@ export function sendProposalTool(ctx: AgentContext) {
         messageId = dispatchResult.id
         threadId = dispatchResult.threadId
       } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Gmail dispatch failed"
         logWideEvent({
           event: "agent.document.sent",
           outcome: "failure",
@@ -58,9 +73,16 @@ export function sendProposalTool(ctx: AgentContext) {
           metadata: {
             documentId: args.documentId,
             type: "proposal",
-            error: err instanceof Error ? err.message : "Gmail dispatch failed",
+            error: errorMessage,
           },
         })
+        return {
+          error: {
+            code: "provider" as const,
+            message: `Failed to deliver proposal email via Gmail: ${errorMessage}`,
+            provider: "gmail" as const,
+          },
+        }
       }
 
       logWideEvent({
@@ -133,7 +155,19 @@ export function sendInvoiceTool(ctx: AgentContext) {
       const subject =
         args.subject ||
         `Invoice: ${finalized.documentTitle} from ${ctx.orgName}`
-      const htmlText = `<p>Hello,</p><p>Please review the invoice <strong>${finalized.documentTitle}</strong> from ${ctx.orgName}:</p><p><a href="${finalized.shareUrl}">View Invoice</a></p>${args.personalMessage ? `<p>${args.personalMessage}</p>` : ""}`
+
+      let htmlText: string
+      try {
+        htmlText = await renderEmail("document-dispatch", {
+          documentType: "invoice",
+          documentTitle: finalized.documentTitle,
+          personalMessage: args.personalMessage || "",
+          shareUrl: finalized.shareUrl,
+          recipientEmail,
+        })
+      } catch {
+        htmlText = `<p>Hello,</p><p>Please review the invoice <strong>${finalized.documentTitle}</strong> from ${ctx.orgName}:</p><p><a href="${finalized.shareUrl}">View Invoice</a></p>${args.personalMessage ? `<p>${args.personalMessage}</p>` : ""}`
+      }
 
       let messageId: string | undefined
       let threadId: string | undefined
@@ -148,6 +182,8 @@ export function sendInvoiceTool(ctx: AgentContext) {
         messageId = dispatchResult.id
         threadId = dispatchResult.threadId
       } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Gmail dispatch failed"
         logWideEvent({
           event: "agent.document.sent",
           outcome: "failure",
@@ -156,9 +192,16 @@ export function sendInvoiceTool(ctx: AgentContext) {
           metadata: {
             documentId: args.documentId,
             type: "invoice",
-            error: err instanceof Error ? err.message : "Gmail dispatch failed",
+            error: errorMessage,
           },
         })
+        return {
+          error: {
+            code: "provider" as const,
+            message: `Failed to deliver invoice email via Gmail: ${errorMessage}`,
+            provider: "gmail" as const,
+          },
+        }
       }
 
       logWideEvent({
