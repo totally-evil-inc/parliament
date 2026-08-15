@@ -13,6 +13,19 @@ import {
   listCustomersTool,
 } from "./customers"
 import { dealAnalyticsTool, listDealsTool } from "./deals"
+import {
+  cancelScheduledDispatchTool,
+  listScheduledDispatchesTool,
+  scheduleDocumentSendTool,
+} from "./document-schedule"
+import {
+  createInvoiceTool,
+  createProposalTool,
+  getInvoiceTool,
+  getProposalTool,
+  updateInvoiceTool,
+  updateProposalTool,
+} from "./document-drafts"
 import { sendInvoiceTool, sendProposalTool } from "./document-send"
 import {
   getInvoiceSummaryTool,
@@ -30,7 +43,8 @@ import { askClarifyingQuestionsTool } from "./questionnaire"
  *
  * Every tool impl closes over `ctx`, making all access org-scoped. Approval
  * policy per 04-§6: all mutating tools `needsApproval: true` except
- * `gmail_create_draft` and `ask_clarifying_questions`.
+ * `gmail_create_draft`, `create_proposal`, `create_invoice`, `update_proposal`,
+ * `update_invoice`, and `ask_clarifying_questions`.
  */
 export function buildAgentTools(ctx: AgentContext): AnyServerTool[] {
   const tools: AnyServerTool[] = [
@@ -45,6 +59,15 @@ export function buildAgentTools(ctx: AgentContext): AnyServerTool[] {
     listInvoicesTool(ctx),
     getProposalSummaryTool(ctx),
     getInvoiceSummaryTool(ctx),
+    getProposalTool(ctx),
+    getInvoiceTool(ctx),
+    createProposalTool(ctx),
+    createInvoiceTool(ctx),
+    updateProposalTool(ctx),
+    updateInvoiceTool(ctx),
+    scheduleDocumentSendTool(ctx),
+    listScheduledDispatchesTool(ctx),
+    cancelScheduledDispatchTool(ctx),
     listIntegrationsTool(ctx),
     sendProposalTool(ctx),
     sendInvoiceTool(ctx),

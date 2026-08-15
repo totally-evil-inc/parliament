@@ -15,12 +15,21 @@ const APPROVAL_TOOLS: ToolName[] = [
   "update_customer",
   "send_proposal",
   "send_invoice",
+  "schedule_document_send",
+  "cancel_scheduled_dispatch",
   "gmail_send_email",
   "gcal_create_event",
   "gcal_cancel_event",
 ]
 
-const MUTATING_TOOLS: ToolName[] = [...APPROVAL_TOOLS, "gmail_create_draft"]
+const MUTATING_TOOLS: ToolName[] = [
+  ...APPROVAL_TOOLS,
+  "gmail_create_draft",
+  "create_proposal",
+  "create_invoice",
+  "update_proposal",
+  "update_invoice",
+]
 
 describe("tool registry invariants", () => {
   test("every catalog tool has schemas registered", () => {

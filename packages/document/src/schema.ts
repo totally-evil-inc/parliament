@@ -98,6 +98,8 @@ export const pricingItemSchema = sourceSnapshotSchema
   })
   .strict()
 
+export type PricingItem = z.infer<typeof pricingItemSchema>
+
 export const rateAdjustmentSchema = z
   .object({
     kind: z.literal("rate"),
