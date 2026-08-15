@@ -224,23 +224,31 @@ function InvoiceEditorScreen({
   const [scheduleModalOpen, setScheduleModalOpen] = React.useState(false)
 
   const handleAction = React.useCallback(
-    (actionId: string) => {
+    async (actionId: string) => {
       if (actionId === "send") {
         setSendDialogOpen(true)
         return
       }
       if (actionId !== "export") return
       runtime.flush()
-      const draft = store.getSnapshot()
-      const key = `invoice-draft:${draft.id}:${draft.revision}`
-      window.sessionStorage.setItem(key, JSON.stringify(draft))
-      window.open(
-        `/documents/print?draftKey=${encodeURIComponent(key)}`,
-        "_blank",
-        "noopener,noreferrer"
-      )
+      const currentDoc = store.getSnapshot()
+      try {
+        setMessage("Exporting PDF...")
+        const { exportDocumentToPdf } = await import(
+          "@/features/documents/pdf/pdf-exporter"
+        )
+        await exportDocumentToPdf({
+          document: currentDoc,
+          appTheme: appTheme === "dark" ? "dark" : "light",
+          template,
+        })
+        setMessage("PDF downloaded")
+        setTimeout(() => setMessage(null), 4000)
+      } catch (_err) {
+        setMessage("Failed to export PDF")
+      }
     },
-    [runtime, store]
+    [runtime, store, appTheme, template]
   )
 
   const snapshot = store.getSnapshot()
