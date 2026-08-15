@@ -261,8 +261,95 @@ export function normalizeAssistantMessage(
     ? message.chainOfThought
     : undefined
 
-  // Parse tasks if present
-  const tasks = Array.isArray(message?.tasks) ? message.tasks : undefined
+  // Parse tasks if present or synthesize structured progress steps from tool executions
+  let tasks:
+    | Array<{ title: string; status?: TaskStatus; items?: TaskItemData[] }>
+    | undefined = Array.isArray(message?.tasks) ? message.tasks : undefined
+
+  if (!tasks && calls.size > 0) {
+    const toolList = [...calls.values()]
+    const propTool = toolList.find(
+      (c) => c.name === "create_proposal" || c.name === "update_proposal"
+    )
+    const invTool = toolList.find(
+      (c) => c.name === "create_invoice" || c.name === "update_invoice"
+    )
+    const schedTool = toolList.find(
+      (c) => c.name === "schedule_document_send"
+    )
+
+    if (propTool) {
+      const isCompleted = propTool.status === "completed"
+      tasks = [
+        {
+          title: "Proposal Synthesis & Composition",
+          status: isCompleted ? "completed" : "in_progress",
+          items: [
+            {
+              id: "step-1",
+              text: "Analyze scope, timeline, and customer requirements",
+              status: "completed",
+            },
+            {
+              id: "step-2",
+              text: "Calculate integer minor pricing, line items & milestones",
+              status: isCompleted ? "completed" : "in_progress",
+            },
+            {
+              id: "step-3",
+              text: "Compose multi-block document canvas & persist draft",
+              status: isCompleted ? "completed" : "in_progress",
+            },
+          ],
+        },
+      ]
+    } else if (invTool) {
+      const isCompleted = invTool.status === "completed"
+      tasks = [
+        {
+          title: "Invoice Generation & Billing Calculation",
+          status: isCompleted ? "completed" : "in_progress",
+          items: [
+            {
+              id: "step-1",
+              text: "Snapshot customer billing & payment terms",
+              status: "completed",
+            },
+            {
+              id: "step-2",
+              text: "Compute line items, tax, and total minor balance",
+              status: isCompleted ? "completed" : "in_progress",
+            },
+            {
+              id: "step-3",
+              text: "Generate invoice draft and visual editor link",
+              status: isCompleted ? "completed" : "in_progress",
+            },
+          ],
+        },
+      ]
+    } else if (schedTool) {
+      const isCompleted = schedTool.status === "completed"
+      tasks = [
+        {
+          title: "Document Dispatch Scheduling",
+          status: isCompleted ? "completed" : "in_progress",
+          items: [
+            {
+              id: "step-1",
+              text: "Verify document status & recipient address",
+              status: "completed",
+            },
+            {
+              id: "step-2",
+              text: "Queue automated email dispatch worker",
+              status: isCompleted ? "completed" : "in_progress",
+            },
+          ],
+        },
+      ]
+    }
+  }
 
   const hasQuestionnaire = [...calls.values()].some((call) =>
     call.name.toLowerCase().includes("clarifying_question")

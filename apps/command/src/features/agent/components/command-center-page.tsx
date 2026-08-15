@@ -380,6 +380,21 @@ export const CommandCenterPage: React.FC = () => {
                 )
               })}
 
+              {/* Immediate active streaming placeholder while waiting for assistant token/turn */}
+              {isLoading &&
+                messages.length > 0 &&
+                messages[messages.length - 1]?.role === "user" && (
+                  <MessageBubble
+                    key="streaming-pending-assistant-turn"
+                    message={{
+                      role: "assistant",
+                      content: "",
+                      thinking: activeThinking || undefined,
+                    }}
+                    isStreaming={true}
+                  />
+                )}
+
               {/* Feed-level Error Banner when no assistant message was generated */}
               {chatError &&
                 messages.length > 0 &&

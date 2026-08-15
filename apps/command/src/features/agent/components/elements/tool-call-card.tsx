@@ -112,6 +112,10 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
       <div className="flex flex-col gap-2">
         {toolCalls.map((tc) => {
           const toolState = mapToToolState(tc)
+          const isRunning =
+            toolState === "input-available" ||
+            tc.status === "running" ||
+            (tc.result === undefined && !tc.errorText && !tc.needsApproval)
           const isQuestionnaire =
             tc.name === "ask_clarifying_questions" ||
             tc.name === "askClarifyingQuestions" ||
@@ -120,6 +124,7 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
           const hasOutput = tc.result !== undefined || tc.errorText
 
           const shouldDefaultOpen =
+            isRunning ||
             toolState === "approval-requested" ||
             toolState === "awaiting-approval" ||
             Boolean(
@@ -154,8 +159,25 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
                   state={toolState}
                   title={toolDisplayName(tc.name)}
                 />
-                {!isQuestionnaire && (hasArgs || hasOutput) && (
+                {!isQuestionnaire && (hasArgs || hasOutput || isRunning) && (
                   <ToolContent>
+                    {/* Live Execution Indicator when tool is in-flight */}
+                    {isRunning && !hasOutput && (
+                      <div className="my-1.5 flex items-center gap-2.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs">
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                        </span>
+                        <div className="flex items-center gap-1.5 font-medium text-foreground text-xs">
+                          <span>Processing</span>
+                          <span className="font-semibold text-primary">
+                            {toolDisplayName(tc.name)}
+                          </span>
+                          <span>…</span>
+                        </div>
+                      </div>
+                    )}
+
                     {hasArgs && <ToolInput input={tc.args} />}
 
                     {/* Rich Action Banner for Document Drafts */}

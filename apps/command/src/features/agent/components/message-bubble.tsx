@@ -131,17 +131,18 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         <div className="whitespace-pre-wrap text-foreground text-sm leading-relaxed">
           {extractedContent}
         </div>
-      ) : isStreaming &&
-        !thinkingText &&
-        (!message.toolCalls || message.toolCalls.length === 0) &&
-        !message.openuiCode ? (
+      ) : isStreaming && !message.openuiCode ? (
         <div className="flex items-center gap-2 py-1 text-muted-foreground text-xs">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
           </span>
           <Shimmer duration={1.5} className="font-medium text-xs">
-            Thinking & awaiting model response…
+            {message.toolCalls && message.toolCalls.some((tc) => tc.status === "running" || tc.result === undefined)
+              ? "Executing operations & updating draft…"
+              : message.toolCalls && message.toolCalls.length > 0
+                ? "Synthesizing document summary & breakdown…"
+                : "Thinking & analyzing requirements…"}
           </Shimmer>
         </div>
       ) : null}
