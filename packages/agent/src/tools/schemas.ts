@@ -556,6 +556,400 @@ export type AskClarifyingQuestionsOutput = z.infer<
   typeof askClarifyingQuestionsOutput
 >
 
+// ——— 2.4 Declarative Document Authoring Schemas ———
+
+export const declarativePricingItemSchema = z.object({
+  id: z.string().optional(),
+  description: z.string().min(1),
+  details: z.string().optional(),
+  quantity: z.union([z.string(), z.number()]).default("1"),
+  unitPriceMinor: moneyMinorUnits,
+  showDetails: z.boolean().optional().default(true),
+  showImage: z.boolean().optional().default(false),
+})
+
+export const declarativeDiscountSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("rate"),
+    basisPoints: z.number().int().min(0).max(1_000_000),
+  }),
+  z.object({
+    kind: z.literal("fixed"),
+    amountMinor: moneyMinorUnits,
+  }),
+])
+
+export const declarativeTaxSchema = z.object({
+  kind: z.literal("rate"),
+  basisPoints: z.number().int().min(0).max(1_000_000),
+})
+
+export const declarativeBlockSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("section"),
+    id: z.string().optional(),
+    eyebrow: z.string().optional(),
+    title: z.string().min(1),
+    lead: z.string().optional(),
+    variant: z.enum(["default", "accent", "compact"]).optional().default("default"),
+    content: z.string().min(1),
+  }),
+  z.object({
+    type: z.literal("metrics"),
+    id: z.string().optional(),
+    columns: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional().default(3),
+    items: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          value: z.string().min(1),
+          label: z.string().min(1),
+          detail: z.string().optional(),
+        })
+      )
+      .min(1),
+  }),
+  z.object({
+    type: z.literal("timeline"),
+    id: z.string().optional(),
+    items: z
+      .array(
+        z.object({
+          date: z.string().min(1),
+          title: z.string().min(1),
+          description: z.string().optional(),
+        })
+      )
+      .min(1),
+  }),
+  z.object({
+    type: z.literal("team"),
+    id: z.string().optional(),
+    columns: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional().default(3),
+    items: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          name: z.string().min(1),
+          role: z.string().min(1),
+          bio: z.string().optional(),
+        })
+      )
+      .min(1),
+  }),
+  z.object({
+    type: z.literal("testimonials"),
+    id: z.string().optional(),
+    columns: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional().default(2),
+    items: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          quote: z.string().min(1),
+          author: z.string().min(1),
+          role: z.string().optional(),
+        })
+      )
+      .min(1),
+  }),
+  z.object({
+    type: z.literal("faq"),
+    id: z.string().optional(),
+    items: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          question: z.string().min(1),
+          answer: z.string().min(1),
+        })
+      )
+      .min(1),
+  }),
+  z.object({
+    type: z.literal("signature"),
+    id: z.string().optional(),
+    title: z.string().optional().default("Signatures & Acceptance"),
+    terms: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("columns"),
+    id: z.string().optional(),
+    title: z.string().optional(),
+    columns: z.union([z.literal(2), z.literal(3)]).optional().default(2),
+    items: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          heading: z.string().min(1),
+          body: z.string().min(1),
+        })
+      )
+      .min(1),
+  }),
+  z.object({
+    type: z.literal("cover"),
+    id: z.string().optional(),
+    eyebrow: z.string().optional(),
+    title: z.string().min(1),
+    subtitle: z.string().optional(),
+    variant: z.enum(["split", "band", "minimal"]).optional().default("split"),
+  }),
+])
+
+export const createProposalInput = z.object({
+  title: z.string().trim().min(1).max(200),
+  companyId: z.string().uuid().optional(),
+  contactId: z.string().uuid().optional(),
+  customerName: z.string().optional(),
+  customerEmail: emailAddress.optional(),
+  currency: currencyCode.optional().default("USD"),
+  validDays: z.number().int().min(1).max(365).optional().default(14),
+  items: z.array(declarativePricingItemSchema).optional().default([]),
+  discount: declarativeDiscountSchema.optional(),
+  tax: declarativeTaxSchema.optional(),
+  blocks: z.array(declarativeBlockSchema).optional(),
+})
+
+export const createProposalOutput = z.union([
+  z.object({
+    id: z.string().uuid(),
+    title: z.string(),
+    status: z.string(),
+    revision: z.number().int().nonnegative(),
+    editorUrl: z.string(),
+    totalMinorUnits: moneyMinorUnits,
+    subtotalMinorUnits: moneyMinorUnits,
+    taxMinorUnits: moneyMinorUnits,
+    discountMinorUnits: moneyMinorUnits,
+    currency: currencyCode,
+    customerName: z.string(),
+    customerEmail: emailAddress.nullish(),
+    itemCount: z.number().int().nonnegative(),
+    blockCount: z.number().int().nonnegative(),
+  }),
+  toolError,
+])
+
+export const createInvoiceInput = z.object({
+  title: z.string().trim().min(1).max(200).optional().default("Invoice"),
+  companyId: z.string().uuid().optional(),
+  contactId: z.string().uuid().optional(),
+  customerName: z.string().optional(),
+  customerEmail: emailAddress.optional(),
+  currency: currencyCode.optional().default("USD"),
+  dueDays: z.number().int().min(0).max(365).optional().default(30),
+  paymentTerms: z.string().optional(),
+  items: z.array(declarativePricingItemSchema).min(1),
+  discount: declarativeDiscountSchema.optional(),
+  tax: declarativeTaxSchema.optional(),
+  notes: z.string().optional(),
+})
+
+export const createInvoiceOutput = z.union([
+  z.object({
+    id: z.string().uuid(),
+    invoiceNumber: z.string(),
+    title: z.string(),
+    status: z.string(),
+    revision: z.number().int().nonnegative(),
+    editorUrl: z.string(),
+    totalMinor: moneyMinorUnits,
+    currency: currencyCode,
+    issueDate: dateOnly,
+    dueDate: dateOnly,
+    customerName: z.string(),
+    customerEmail: emailAddress.nullish(),
+  }),
+  toolError,
+])
+
+export const getProposalInput = z.object({
+  id: z.string().uuid(),
+})
+
+export const getProposalOutput = z.union([
+  z.object({
+    id: z.string().uuid(),
+    title: z.string(),
+    status: z.string(),
+    revision: z.number().int().nonnegative(),
+    currency: currencyCode,
+    subtotalMinorUnits: moneyMinorUnits,
+    taxMinorUnits: moneyMinorUnits,
+    discountMinorUnits: moneyMinorUnits,
+    totalMinorUnits: moneyMinorUnits,
+    customerName: z.string(),
+    customerEmail: emailAddress.nullish(),
+    companyName: z.string(),
+    issueDate: dateOnly,
+    validUntil: dateOnly.nullish(),
+    editorUrl: z.string(),
+    blocks: z.array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        title: z.string().optional(),
+      })
+    ),
+    items: z.array(
+      z.object({
+        id: z.string(),
+        description: z.string(),
+        quantity: z.string(),
+        unitPriceMinor: moneyMinorUnits,
+      })
+    ),
+  }),
+  toolError,
+])
+
+export const getInvoiceInput = z.object({
+  id: z.string().uuid(),
+})
+
+export const getInvoiceOutput = z.union([
+  z.object({
+    id: z.string().uuid(),
+    invoiceNumber: z.string(),
+    title: z.string(),
+    status: z.string(),
+    revision: z.number().int().nonnegative(),
+    currency: currencyCode,
+    totalMinor: moneyMinorUnits,
+    issueDate: dateOnly,
+    dueDate: dateOnly,
+    customerName: z.string(),
+    customerEmail: emailAddress.nullish(),
+    paymentTerms: z.string().nullish(),
+    editorUrl: z.string(),
+    items: z.array(
+      z.object({
+        id: z.string(),
+        description: z.string(),
+        quantity: z.string(),
+        unitPriceMinor: moneyMinorUnits,
+      })
+    ),
+  }),
+  toolError,
+])
+
+export const updateProposalInput = z.object({
+  id: z.string().uuid(),
+  expectedRevision: z.number().int().nonnegative().optional(),
+  title: z.string().trim().min(1).max(200).optional(),
+  customerName: z.string().optional(),
+  customerEmail: emailAddress.optional(),
+  currency: currencyCode.optional(),
+  validDays: z.number().int().min(1).max(365).optional(),
+  items: z.array(declarativePricingItemSchema).optional(),
+  discount: declarativeDiscountSchema.optional(),
+  tax: declarativeTaxSchema.optional(),
+  blocks: z.array(declarativeBlockSchema).optional(),
+})
+
+export const updateProposalOutput = z.union([
+  z.object({
+    id: z.string().uuid(),
+    title: z.string(),
+    revision: z.number().int().nonnegative(),
+    editorUrl: z.string(),
+    totalMinorUnits: moneyMinorUnits,
+    currency: currencyCode,
+    status: z.string(),
+  }),
+  toolError,
+])
+
+export const updateInvoiceInput = z.object({
+  id: z.string().uuid(),
+  expectedRevision: z.number().int().nonnegative().optional(),
+  title: z.string().trim().min(1).max(200).optional(),
+  dueDate: dateOnly.optional(),
+  dueDays: z.number().int().min(0).max(365).optional(),
+  paymentTerms: z.string().optional(),
+  customerName: z.string().optional(),
+  customerEmail: emailAddress.optional(),
+  items: z.array(declarativePricingItemSchema).optional(),
+  discount: declarativeDiscountSchema.optional(),
+  tax: declarativeTaxSchema.optional(),
+  notes: z.string().optional(),
+})
+
+export const updateInvoiceOutput = z.union([
+  z.object({
+    id: z.string().uuid(),
+    title: z.string(),
+    revision: z.number().int().nonnegative(),
+    editorUrl: z.string(),
+    totalMinor: moneyMinorUnits,
+    currency: currencyCode,
+    status: z.string(),
+  }),
+  toolError,
+])
+
+export const scheduleDocumentSendInput = z.object({
+  documentType: z.enum(["proposal", "invoice"]),
+  documentId: z.string().uuid(),
+  recipientEmail: emailAddress,
+  scheduledFor: isoDateTime,
+  subject: z.string().trim().min(1).max(200).optional(),
+  personalMessage: z.string().max(2000).optional(),
+})
+
+export const scheduleDocumentSendOutput = z.union([
+  z.object({
+    id: z.string().uuid(),
+    documentType: z.enum(["proposal", "invoice"]),
+    documentId: z.string().uuid(),
+    recipientEmail: emailAddress,
+    scheduledFor: z.string(),
+    status: z.literal("pending"),
+    subject: z.string(),
+  }),
+  toolError,
+])
+
+export const listScheduledDispatchesInput = z.object({
+  documentId: z.string().uuid().optional(),
+  status: z
+    .enum(["pending", "processing", "sent", "failed", "cancelled"])
+    .optional(),
+})
+
+export const listScheduledDispatchesOutput = z.union([
+  z.object({
+    dispatches: z.array(
+      z.object({
+        id: z.string().uuid(),
+        documentType: z.enum(["proposal", "invoice"]),
+        documentId: z.string().uuid(),
+        recipientEmail: emailAddress,
+        scheduledFor: z.string(),
+        status: z.string(),
+        subject: z.string(),
+        createdAt: z.string(),
+      })
+    ),
+  }),
+  toolError,
+])
+
+export const cancelScheduledDispatchInput = z.object({
+  id: z.string().uuid().optional(),
+  documentId: z.string().uuid().optional(),
+})
+
+export const cancelScheduledDispatchOutput = z.union([
+  z.object({
+    id: z.string().uuid(),
+    status: z.literal("cancelled"),
+    cancelledAt: z.string(),
+  }),
+  toolError,
+])
+
 export const customerDetailsInput = z.object({ id: z.string().uuid() })
 export const getProposalSummaryInput = z.object({ id: z.string().uuid() })
 export const getInvoiceSummaryInput = z.object({ id: z.string().uuid() })
@@ -570,6 +964,15 @@ export const toolInputSchemas = {
   list_invoices: z.object({}),
   get_proposal_summary: getProposalSummaryInput,
   get_invoice_summary: getInvoiceSummaryInput,
+  get_proposal: getProposalInput,
+  get_invoice: getInvoiceInput,
+  create_proposal: createProposalInput,
+  create_invoice: createInvoiceInput,
+  update_proposal: updateProposalInput,
+  update_invoice: updateInvoiceInput,
+  schedule_document_send: scheduleDocumentSendInput,
+  list_scheduled_dispatches: listScheduledDispatchesInput,
+  cancel_scheduled_dispatch: cancelScheduledDispatchInput,
   gcal_list_events: z.object({
     days: z.number().int().min(1).max(14).optional(),
     calendarId: z.string().max(200).optional(),
@@ -599,6 +1002,15 @@ export const toolOutputSchemas = {
   list_invoices: listInvoicesOutput,
   get_proposal_summary: getProposalSummaryOutput,
   get_invoice_summary: getInvoiceSummaryOutput,
+  get_proposal: getProposalOutput,
+  get_invoice: getInvoiceOutput,
+  create_proposal: createProposalOutput,
+  create_invoice: createInvoiceOutput,
+  update_proposal: updateProposalOutput,
+  update_invoice: updateInvoiceOutput,
+  schedule_document_send: scheduleDocumentSendOutput,
+  list_scheduled_dispatches: listScheduledDispatchesOutput,
+  cancel_scheduled_dispatch: cancelScheduledDispatchOutput,
   gcal_list_events: gcalListEventsOutput,
   verify_org_access: verifyOrgAccessOutput,
   list_integrations: listIntegrationsOutput,
@@ -614,3 +1026,4 @@ export const toolOutputSchemas = {
   gcal_cancel_event: gcalCancelEventOutput,
   ask_clarifying_questions: askClarifyingQuestionsOutput,
 } as const
+

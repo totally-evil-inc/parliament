@@ -89,6 +89,30 @@ export const TOOL_CATALOG = {
     category: "read",
     needsApproval: false,
   },
+  get_proposal: {
+    description:
+      "Fetch the complete structure, status, revision, block composition, and pricing breakdown of a proposal by ID.",
+    input: toolInputSchemas.get_proposal,
+    output: toolOutputSchemas.get_proposal,
+    category: "read",
+    needsApproval: false,
+  },
+  get_invoice: {
+    description:
+      "Fetch the complete structure, status, revision, line items, and payment details of an invoice by ID.",
+    input: toolInputSchemas.get_invoice,
+    output: toolOutputSchemas.get_invoice,
+    category: "read",
+    needsApproval: false,
+  },
+  list_scheduled_dispatches: {
+    description:
+      "List pending and completed scheduled document dispatches for the active organization or a specific document.",
+    input: toolInputSchemas.list_scheduled_dispatches,
+    output: toolOutputSchemas.list_scheduled_dispatches,
+    category: "read",
+    needsApproval: false,
+  },
   gcal_list_events: {
     description:
       "List upcoming events on the user's Google Calendar (default: next 7 days, up to 14).",
@@ -115,7 +139,55 @@ export const TOOL_CATALOG = {
     needsApproval: false,
   },
 
-  // ——— Mutating (needsApproval) ———
+  // ——— Mutating (needsApproval: false for draft authoring, true for external actions) ———
+  create_proposal: {
+    description:
+      "Create a complete proposal draft with customer snapshots, structured pricing line items, and rich block composition (sections, timeline, metrics, team, testimonials, FAQ, signature). Returns draft ID, calculated totals, and visual editor link.",
+    input: toolInputSchemas.create_proposal,
+    output: toolOutputSchemas.create_proposal,
+    category: "mutate",
+    needsApproval: false,
+  },
+  create_invoice: {
+    description:
+      "Create a complete invoice draft with customer snapshots, structured line items, due dates, payment terms, and integer minor pricing calculations. Returns invoice ID, totals, and visual editor link.",
+    input: toolInputSchemas.create_invoice,
+    output: toolOutputSchemas.create_invoice,
+    category: "mutate",
+    needsApproval: false,
+  },
+  update_proposal: {
+    description:
+      "Atomically update a proposal's title, customer, pricing, or block composition with optimistic revision locking (expectedRevision).",
+    input: toolInputSchemas.update_proposal,
+    output: toolOutputSchemas.update_proposal,
+    category: "mutate",
+    needsApproval: false,
+  },
+  update_invoice: {
+    description:
+      "Atomically update an invoice's title, due date, line items, payment terms, or customer details with optimistic revision locking (expectedRevision).",
+    input: toolInputSchemas.update_invoice,
+    output: toolOutputSchemas.update_invoice,
+    category: "mutate",
+    needsApproval: false,
+  },
+  schedule_document_send: {
+    description:
+      "Schedule a proposal or invoice to be sent automatically at a future timestamp via email with a public client gate link.",
+    input: toolInputSchemas.schedule_document_send,
+    output: toolOutputSchemas.schedule_document_send,
+    category: "mutate",
+    needsApproval: true,
+  },
+  cancel_scheduled_dispatch: {
+    description:
+      "Cancel a pending scheduled document dispatch before it is sent.",
+    input: toolInputSchemas.cancel_scheduled_dispatch,
+    output: toolOutputSchemas.cancel_scheduled_dispatch,
+    category: "mutate",
+    needsApproval: true,
+  },
   create_deal: {
     description:
       "Create a new deal in the pipeline with optional company, contact, stage, value and expected close date.",
