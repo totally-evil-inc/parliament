@@ -288,6 +288,20 @@ export function normalizeAssistantMessage(
   }
 }
 
+/**
+ * Live reasoning text from the most recent assistant turn in the message
+ * stream. Returns "" before that turn has emitted any thinking content —
+ * earlier turns are ignored so a new run never flashes stale reasoning.
+ */
+export function latestAssistantThinking(messages: any[]): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    if (message?.role !== "assistant") continue
+    return normalizeAssistantMessage(message).thinking
+  }
+  return ""
+}
+
 export function stripLeakedFunctionCalls(rawText: string): string {
   if (!rawText) return ""
   return rawText

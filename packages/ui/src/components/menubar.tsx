@@ -2,6 +2,7 @@
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import { Menubar as MenubarPrimitive } from "@base-ui/react/menubar"
+import { CheckIcon } from "@heroicons/react/20/solid"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,8 +18,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-
-import { CheckIcon } from "@heroicons/react/20/solid"
 import { cn } from "@workspace/ui/lib/utils"
 import type * as React from "react"
 

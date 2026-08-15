@@ -15,6 +15,7 @@ import {
   documentRadiusOptions,
   documentSpacingOptions,
   updateDocumentTemplateToken,
+  webStudioProposalTemplate,
 } from "@workspace/document/presentation"
 import { ColorPicker } from "@workspace/ui/components/color-picker"
 import {
@@ -98,9 +99,14 @@ export function DocumentBlockSidebar({
             description: "Clean, professional light theme",
           },
           {
-            id: "classic-dark",
-            name: "Classic Dark",
+            id: darkDocumentTemplate.id,
+            name: darkDocumentTemplate.name,
             description: "Sleek, professional dark theme",
+          },
+          {
+            id: webStudioProposalTemplate.id,
+            name: webStudioProposalTemplate.name,
+            description: "Editorial mint theme with distinct typography",
           },
         ],
       },
@@ -873,8 +879,13 @@ function CustomizeGroupPanel({
                 onClick={() => {
                   if (preset.id === defaultDocumentTemplate.id) {
                     onTemplateChange(defaultDocumentTemplate)
-                  } else if (preset.id === "classic-dark") {
+                  } else if (
+                    preset.id === darkDocumentTemplate.id ||
+                    preset.id === "classic-dark"
+                  ) {
                     onTemplateChange(darkDocumentTemplate)
+                  } else if (preset.id === webStudioProposalTemplate.id) {
+                    onTemplateChange(webStudioProposalTemplate)
                   }
                 }}
                 className={cn(
@@ -1028,8 +1039,13 @@ function MobileCustomizeGroupPanel({
                 onClick={() => {
                   if (preset.id === defaultDocumentTemplate.id) {
                     onTemplateChange(defaultDocumentTemplate)
-                  } else if (preset.id === "classic-dark") {
+                  } else if (
+                    preset.id === darkDocumentTemplate.id ||
+                    preset.id === "classic-dark"
+                  ) {
                     onTemplateChange(darkDocumentTemplate)
+                  } else if (preset.id === webStudioProposalTemplate.id) {
+                    onTemplateChange(webStudioProposalTemplate)
                   }
                 }}
                 className={cn(

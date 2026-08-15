@@ -1,12 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { renderToString } from "react-dom/server"
-import {
-  Task,
-  TaskContent,
-  TaskItem,
-  TaskItemFile,
-  TaskTrigger,
-} from "./task"
+import { Task, TaskContent, TaskItem, TaskItemFile, TaskTrigger } from "./task"
 
 describe("Task", () => {
   test("renders trigger with status, count, items, and files", () => {
@@ -18,12 +12,8 @@ describe("Task", () => {
           count={{ completed: 2, total: 3 }}
         />
         <TaskContent>
-          <TaskItem status="completed">
-            Extracted pricing terms
-          </TaskItem>
-          <TaskItem status="completed">
-            Generated contract section
-          </TaskItem>
+          <TaskItem status="completed">Extracted pricing terms</TaskItem>
+          <TaskItem status="completed">Generated contract section</TaskItem>
           <TaskItem status="in_progress">
             <span className="inline-flex items-center gap-1">
               <span>Attaching stylesheet</span>

@@ -1,9 +1,8 @@
 "use client"
 
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
-import { Button } from "@workspace/ui/components/button"
-
 import { XMarkIcon } from "@heroicons/react/24/outline"
+import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import type * as React from "react"
 

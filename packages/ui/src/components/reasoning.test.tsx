@@ -1,17 +1,15 @@
 import { describe, expect, test } from "bun:test"
 import { renderToString } from "react-dom/server"
-import {
-  Reasoning,
-  ReasoningContent,
-  ReasoningTrigger,
-} from "./reasoning"
+import { Reasoning, ReasoningContent, ReasoningTrigger } from "./reasoning"
 
 describe("Reasoning", () => {
   test("renders trigger and content with duration", () => {
     const html = renderToString(
       <Reasoning defaultOpen={true} duration={4}>
         <ReasoningTrigger />
-        <ReasoningContent>Analyzing deal terms and client history</ReasoningContent>
+        <ReasoningContent>
+          Analyzing deal terms and client history
+        </ReasoningContent>
       </Reasoning>
     )
 

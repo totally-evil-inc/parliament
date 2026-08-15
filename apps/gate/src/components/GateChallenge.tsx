@@ -1,3 +1,11 @@
+import {
+  ArrowRightIcon,
+  CheckCircleIcon,
+  ChevronLeftIcon,
+  EnvelopeIcon,
+  LockClosedIcon,
+  ShieldCheckIcon,
+} from "@heroicons/react/24/outline"
 import { Button } from "@workspace/ui/components/button"
 import {
   Card,
@@ -14,14 +22,6 @@ import {
 } from "@workspace/ui/components/input-otp"
 import { Label } from "@workspace/ui/components/label"
 import { Spinner } from "@workspace/ui/components/spinner"
-import {
-  ArrowRightIcon,
-  CheckCircleIcon,
-  ChevronLeftIcon,
-  EnvelopeIcon,
-  LockClosedIcon,
-  ShieldCheckIcon,
-} from "@heroicons/react/24/outline"
 import type React from "react"
 import { useEffect, useState } from "react"
 import { gateAuthClient } from "../lib/auth-client"

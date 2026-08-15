@@ -14,7 +14,10 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { HeaderPortal } from "@/layouts/header-portal"
 import { authClient } from "@/lib/auth-client"
 import { useCommandChatContext } from "../context/command-chat-context"
-import { normalizeAssistantMessage } from "../normalization"
+import {
+  latestAssistantThinking,
+  normalizeAssistantMessage,
+} from "../normalization"
 import { ChatInput } from "./chat-input"
 import { MessageErrorCard, type ToolCallItem } from "./elements"
 import { HistoryPanel } from "./history-panel"
@@ -195,6 +198,10 @@ export const CommandCenterPage: React.FC = () => {
   const displayedMessages = messages
   const isEmpty = messages.length === 0
 
+  // Live reasoning text from the latest assistant turn — only meaningful
+  // while a run is streaming; the reasoning strip collapses on completion.
+  const activeThinking = isLoading ? latestAssistantThinking(messages) : ""
+
   const [historyOpen, setHistoryOpen] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const isAtBottomRef = useRef(true)
@@ -329,6 +336,7 @@ export const CommandCenterPage: React.FC = () => {
                   onSend={sendPrompt}
                   onStop={stop}
                   isLoading={isLoading}
+                  thinking={activeThinking}
                   selectedModel={selectedModel}
                   onSelectModel={setSelectedModel}
                   showPrompts={true}
@@ -411,6 +419,7 @@ export const CommandCenterPage: React.FC = () => {
               onSend={sendPrompt}
               onStop={stop}
               isLoading={isLoading}
+              thinking={activeThinking}
               selectedModel={selectedModel}
               onSelectModel={setSelectedModel}
               showPrompts={false}

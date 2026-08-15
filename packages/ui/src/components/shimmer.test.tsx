@@ -4,7 +4,9 @@ import { Shimmer } from "./shimmer"
 
 describe("Shimmer", () => {
   test("renders text content with shimmer attributes", () => {
-    const html = renderToString(<Shimmer>Thinking about the proposal...</Shimmer>)
+    const html = renderToString(
+      <Shimmer>Thinking about the proposal...</Shimmer>
+    )
     expect(html).toContain("Thinking about the proposal...")
     expect(html).toContain('data-slot="shimmer"')
     expect(html).toContain("animate-text-shimmer")

@@ -120,7 +120,7 @@ export function patchAdapterForSafety<T extends AnyTextAdapter>(adapter: T): T {
 
   const originalExtract = anyAdapter.extractTextContent
   if (typeof originalExtract === "function") {
-    anyAdapter.extractTextContent = function (content: unknown): string {
+    anyAdapter.extractTextContent = (content: unknown): string => {
       if (content === null || content === undefined) return ""
       if (typeof content === "string") return content
       if (!Array.isArray(content)) return ""
@@ -138,7 +138,7 @@ export function patchAdapterForSafety<T extends AnyTextAdapter>(adapter: T): T {
   // it, which aborts the whole turn before the approved tool can run.
   const originalNormalizeContent = anyAdapter.normalizeContent
   if (typeof originalNormalizeContent === "function") {
-    anyAdapter.normalizeContent = function (content: unknown): any[] {
+    anyAdapter.normalizeContent = (content: unknown): any[] => {
       if (content === null || content === undefined) return []
       if (typeof content === "string") {
         return [{ type: "text", content }]

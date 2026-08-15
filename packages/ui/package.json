@@ -48,6 +48,10 @@
   "exports": {
     "./globals.css": "./src/styles/globals.css",
     "./lib/*": "./src/lib/*.ts",
+    "./components/dither": "./src/components/dither/index.ts",
+    "./components/dither/*": "./src/components/dither/*",
+    "./components/orb": "./src/components/orb/index.ts",
+    "./components/orb/*": "./src/components/orb/*",
     "./components/*": "./src/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts"
   }

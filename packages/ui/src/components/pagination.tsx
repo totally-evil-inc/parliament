@@ -1,11 +1,10 @@
-import { Button } from "@workspace/ui/components/button"
-
-import { cn } from "@workspace/ui/lib/utils"
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   EllipsisHorizontalIcon,
 } from "@heroicons/react/20/solid"
+import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 import type * as React from "react"
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {

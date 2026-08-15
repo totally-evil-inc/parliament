@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import {
+  latestAssistantThinking,
   normalizeAssistantMessage,
   stripLeakedFunctionCalls,
 } from "./normalization"
@@ -189,5 +190,54 @@ This function call will verify which organization the current session belongs to
     expect(normalized.text).toBe(
       "I can help manage your sales pipeline and draft proposals."
     )
+  })
+})
+
+describe("latestAssistantThinking", () => {
+  test("returns the thinking of the most recent assistant turn", () => {
+    const messages = [
+      { role: "user", content: "hi" },
+      { role: "assistant", content: "first answer" },
+      { role: "user", content: "go deeper" },
+      {
+        role: "assistant",
+        parts: [
+          { type: "thinking", thinking: "comparing deal stages…" },
+          { type: "text", text: "Here is the comparison." },
+        ],
+      },
+    ]
+
+    expect(latestAssistantThinking(messages)).toBe("comparing deal stages…")
+  })
+
+  test("returns empty string when no assistant thinking is present", () => {
+    expect(latestAssistantThinking([])).toBe("")
+    expect(latestAssistantThinking([{ role: "user", content: "hi" }])).toBe("")
+    expect(
+      latestAssistantThinking([{ role: "assistant", content: "plain answer" }])
+    ).toBe("")
+  })
+
+  test("skips earlier assistant thinking once a newer assistant message streams in", () => {
+    const messages = [
+      {
+        role: "assistant",
+        parts: [{ type: "thinking", thinking: "previous run" }],
+      },
+      { role: "user", content: "next prompt" },
+      { role: "assistant", content: "" },
+    ]
+
+    expect(latestAssistantThinking(messages)).toBe("")
+  })
+
+  test("extracts unclosed  thinking reasoning while streaming", () => {
+    const messages = [
+      { role: "user", content: "go" },
+      { role: "assistant", content: "<think>checking the pipeline and" },
+    ]
+
+    expect(latestAssistantThinking(messages)).toBe("checking the pipeline and")
   })
 })

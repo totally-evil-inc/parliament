@@ -1,5 +1,5 @@
-import { DocumentTextIcon } from "@heroicons/react/24/outline"
 import { expect, test } from "bun:test"
+import { DocumentTextIcon } from "@heroicons/react/24/outline"
 import type { EditorCommand } from "./types"
 
 import {

@@ -1,5 +1,7 @@
 "use client"
 
+import { CheckIcon } from "@heroicons/react/20/solid"
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 import {
   Dialog,
   DialogContent,
@@ -11,9 +13,6 @@ import {
   InputGroup,
   InputGroupAddon,
 } from "@workspace/ui/components/input-group"
-
-import { CheckIcon } from "@heroicons/react/20/solid"
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 import { cn } from "@workspace/ui/lib/utils"
 import { Command as CommandPrimitive } from "cmdk"
 import type * as React from "react"

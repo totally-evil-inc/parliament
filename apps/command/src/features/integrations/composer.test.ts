@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import {
-  EMAIL_REGEX,
   createRecipientFromEmail,
+  EMAIL_REGEX,
   getInitials,
 } from "./components/composer/composer-recipient-field"
 

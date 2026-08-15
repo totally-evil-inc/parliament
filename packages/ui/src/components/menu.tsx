@@ -205,11 +205,11 @@ export function MenuGroupLabel({
   className,
   inset,
   ...props
-}: MenuPrimitive.GroupLabel.Props & {
+}: React.ComponentProps<"div"> & {
   inset?: boolean
 }): React.ReactElement {
   return (
-    <MenuPrimitive.GroupLabel
+    <div
       className={cn(
         "px-2 py-1.5 font-medium text-muted-foreground text-xs data-inset:ps-9 sm:data-inset:ps-8",
         className

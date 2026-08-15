@@ -1,6 +1,12 @@
 import {
-  formatDateOnly,
-  formatMoneyMinor,
+  ArrowTopRightOnSquareIcon,
+  CheckCircleIcon,
+  ClipboardDocumentCheckIcon,
+  CreditCardIcon,
+  LockClosedIcon,
+  ShieldCheckIcon,
+} from "@heroicons/react/24/outline"
+import {
   getDocumentTemplate,
   getDocumentTemplateStyle,
   type InvoiceRenderModel,
@@ -17,19 +23,12 @@ import {
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import {
-  ArrowTopRightOnSquareIcon,
-  CheckCircleIcon,
-  ClipboardDocumentCheckIcon,
-  CreditCardIcon,
-  LockClosedIcon,
-  ShieldCheckIcon,
-} from "@heroicons/react/24/outline"
 import type React from "react"
 import { useState } from "react"
 import type { AcceptancePayload } from "../lib/api"
 import { DrawnCanvas } from "./DrawnCanvas"
-import { RichTextRenderer } from "./RichTextRenderer"
+import { DocumentBlockRenderer } from "./document-block-renderer"
+import { DocumentHeaderRenderer } from "./document-header-renderer"
 
 export type InvoiceViewProps = {
   invoice: InvoiceRenderModel
@@ -123,33 +122,39 @@ export function InvoiceView({
   const locale = invoice.locale || "en-US"
   const currency = invoice.pricing?.currency || "USD"
 
+  const hasPartyHeaderBlock = invoice.blocks.some(
+    (b) => b.type === "partyHeader"
+  )
+  const hasPricingBlock = invoice.blocks.some((b) => b.type === "pricing")
+
   return (
     <div
       style={templateStyle as React.CSSProperties}
-      className="flex min-h-screen justify-center bg-[var(--document-canvas-background)] px-3 py-4 text-[var(--document-foreground)] sm:px-6 sm:py-8"
+      className="flex min-h-screen justify-center bg-[var(--document-canvas-background)] px-3 py-6 text-[var(--document-foreground)] sm:px-6 sm:py-12"
       data-testid="invoice-view-container"
     >
-      <article className="w-full max-w-3xl space-y-8 rounded-[var(--document-radius)] border border-[var(--document-border)] bg-[var(--document-page-background)] p-4 shadow-sm sm:p-8">
-        {/* Invoice Header */}
-        <header className="space-y-4 border-border border-b pb-6">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="font-semibold text-xs uppercase tracking-wider"
-              >
-                Invoice
-              </Badge>
-              <span className="font-mono text-muted-foreground text-xs">
-                {invoice.invoiceNumber}
-              </span>
-            </div>
+      <article className="w-full max-w-4xl space-y-8 rounded-[var(--document-radius)] border border-[var(--document-border)] bg-[var(--document-page-background)] p-6 text-[var(--document-foreground)] shadow-black/10 shadow-xl [font-family:var(--document-font-family)] sm:p-12">
+        {/* Top actions and status header */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-[var(--document-border)] border-b pb-4">
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="outline"
+              className="font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-wider"
+            >
+              Invoice
+            </Badge>
+            <span className="font-mono text-[var(--document-muted-foreground)] text-xs">
+              {invoice.invoiceNumber}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
             {effectiveAccepted ? (
               <Badge
                 variant="default"
-                className="flex items-center gap-1 bg-emerald-600 text-white"
+                className="flex items-center gap-1 bg-emerald-600 font-semibold text-white text-xs"
               >
-                <CheckCircleIcon className="h-3.5 w-3.5" /> Accepted
+                <CheckCircleIcon className="h-3.5 w-3.5" /> Invoice Accepted
               </Badge>
             ) : (
               paymentLinkUrl && (
@@ -173,233 +178,67 @@ export function InvoiceView({
               )
             )}
           </div>
+        </div>
 
-          <h1 className="font-bold text-2xl text-foreground tracking-tight sm:text-3xl">
-            {invoice.title}
-          </h1>
-
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-muted-foreground text-xs sm:text-sm">
-            <div>
-              <span className="font-medium text-foreground">Issued: </span>
-              {formatDateOnly(invoice.issueDate, locale)}
-            </div>
-            {invoice.dueDate && (
-              <div>
-                <span className="font-medium text-foreground">Due Date: </span>
-                {formatDateOnly(invoice.dueDate, locale)}
-              </div>
-            )}
-            {invoice.paymentTerms && (
-              <div>
-                <span className="font-medium text-foreground">Terms: </span>
-                {invoice.paymentTerms}
-              </div>
-            )}
-          </div>
-        </header>
-
-        {/* Parties Grid */}
-        <section className="grid grid-cols-1 gap-6 border-border border-b pb-6 sm:grid-cols-2">
-          {/* Seller */}
-          <div className="space-y-1 text-sm">
-            <h3 className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-              Billed By (Seller)
-            </h3>
-            <p className="font-medium text-base text-foreground">
-              {invoice.seller.name}
-            </p>
-            {invoice.seller.email && (
-              <p className="text-muted-foreground">{invoice.seller.email}</p>
-            )}
-            {invoice.seller.phone && (
-              <p className="text-muted-foreground">{invoice.seller.phone}</p>
-            )}
-            {invoice.seller.address && (
-              <p className="whitespace-pre-line text-muted-foreground">
-                {invoice.seller.address}
-              </p>
-            )}
-            {invoice.seller.taxId && (
-              <p className="text-muted-foreground text-xs">
-                Tax ID: {invoice.seller.taxId}
-              </p>
-            )}
-          </div>
-
-          {/* Customer */}
-          <div className="space-y-1 text-sm">
-            <h3 className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-              Billed To (Customer)
-            </h3>
-            <p className="font-medium text-base text-foreground">
-              {invoice.customer.name}
-            </p>
-            {invoice.customer.email && (
-              <p className="text-muted-foreground">{invoice.customer.email}</p>
-            )}
-            {invoice.customer.phone && (
-              <p className="text-muted-foreground">{invoice.customer.phone}</p>
-            )}
-            {invoice.customer.address && (
-              <p className="whitespace-pre-line text-muted-foreground">
-                {invoice.customer.address}
-              </p>
-            )}
-            {invoice.customer.taxId && (
-              <p className="text-muted-foreground text-xs">
-                Tax ID: {invoice.customer.taxId}
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* Pricing / Line Items Table */}
-        {invoice.pricing && (
-          <section className="space-y-4 border-border border-b pb-6">
-            <h2 className="font-bold text-xl tracking-tight">
-              Invoice Details
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-border border-b font-medium text-muted-foreground">
-                    <th className="py-2 pr-4">Item & Description</th>
-                    <th className="px-2 py-2 text-center">Qty</th>
-                    <th className="px-2 py-2 text-right">Unit Price</th>
-                    <th className="py-2 pl-4 text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {invoice.pricing.items.map((item, idx) => {
-                    const line = invoice.pricing?.calculation?.lines?.find(
-                      (l) => l.id === item.id
-                    )
-                    const lineAmount = line
-                      ? line.amountMinor
-                      : item.unitPriceMinor * Number(item.quantity)
-                    return (
-                      <tr key={item.id || idx}>
-                        <td className="py-3 pr-4">
-                          <div className="font-medium">{item.description}</div>
-                          {item.details && (
-                            <div className="mt-0.5 text-muted-foreground text-xs">
-                              {item.details}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-2 py-3 text-center align-top">
-                          {item.quantity}
-                        </td>
-                        <td className="px-2 py-3 text-right align-top">
-                          {formatMoneyMinor(
-                            item.unitPriceMinor,
-                            currency,
-                            locale
-                          )}
-                        </td>
-                        <td className="py-3 pl-4 text-right align-top font-medium">
-                          {formatMoneyMinor(lineAmount, currency, locale)}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {invoice.pricing.calculation && (
-              <div className="flex justify-end pt-2">
-                <div className="w-full space-y-1.5 text-sm sm:w-64">
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Subtotal:</span>
-                    <span>
-                      {formatMoneyMinor(
-                        invoice.pricing.calculation.subtotalMinor,
-                        currency,
-                        locale
-                      )}
-                    </span>
-                  </div>
-                  {invoice.pricing.calculation.discountMinor > 0 && (
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Discount:</span>
-                      <span>
-                        -
-                        {formatMoneyMinor(
-                          invoice.pricing.calculation.discountMinor,
-                          currency,
-                          locale
-                        )}
-                      </span>
-                    </div>
-                  )}
-                  {invoice.pricing.calculation.taxMinor > 0 && (
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Tax:</span>
-                      <span>
-                        {formatMoneyMinor(
-                          invoice.pricing.calculation.taxMinor,
-                          currency,
-                          locale
-                        )}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between border-border border-t pt-2 font-bold text-base">
-                    <span>Total Due:</span>
-                    <span>
-                      {formatMoneyMinor(
-                        invoice.pricing.calculation.totalMinor,
-                        currency,
-                        locale
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
+        {/* Fallback header if not explicitly in composition blocks */}
+        {!hasPartyHeaderBlock && (
+          <DocumentHeaderRenderer
+            kind="invoice"
+            layout="editorial-band"
+            title={invoice.title}
+            issueDate={invoice.issueDate}
+            dueDate={invoice.dueDate}
+            invoiceNumber={invoice.invoiceNumber}
+            paymentTerms={invoice.paymentTerms}
+            seller={invoice.seller}
+            customer={invoice.customer}
+            locale={locale}
+          />
         )}
 
         {/* Composition Blocks */}
-        {invoice.blocks.map((block) => {
-          if (block.type === "partyHeader" || block.type === "pricing")
-            return null
+        {invoice.blocks.map((block) => (
+          <DocumentBlockRenderer
+            key={block.id}
+            block={block}
+            title={invoice.title}
+            issueDate={invoice.issueDate}
+            dueDate={invoice.dueDate}
+            invoiceNumber={invoice.invoiceNumber}
+            paymentTerms={invoice.paymentTerms}
+            seller={invoice.seller}
+            customer={invoice.customer}
+            locale={locale}
+            currency={currency}
+            pricing={invoice.pricing}
+          />
+        ))}
 
-          if (block.type === "richText") {
-            return (
-              <section key={block.id} className="py-2">
-                <RichTextRenderer doc={block.content} />
-              </section>
-            )
-          }
-
-          if (block.type === "section") {
-            return (
-              <section key={block.id} className="space-y-2 py-2">
-                {block.eyebrow?.content?.length > 0 && (
-                  <div className="font-semibold text-primary text-xs uppercase tracking-wider">
-                    <RichTextRenderer doc={block.eyebrow} />
-                  </div>
-                )}
-                <h2 className="font-bold text-xl tracking-tight">
-                  <RichTextRenderer doc={block.title} />
-                </h2>
-                {block.lead?.content?.length > 0 && (
-                  <div className="text-base text-muted-foreground leading-relaxed">
-                    <RichTextRenderer doc={block.lead} />
-                  </div>
-                )}
-                {block.content && <RichTextRenderer doc={block.content} />}
-              </section>
-            )
-          }
-
-          return null
-        })}
+        {/* Fallback Pricing block if not in composition */}
+        {!hasPricingBlock && invoice.pricing && (
+          <DocumentBlockRenderer
+            block={{
+              id: "fallback-pricing",
+              type: "pricing",
+              version: 1,
+              binding: "invoice.pricing",
+              config: { title: "Invoice Line Items" },
+            }}
+            title={invoice.title}
+            issueDate={invoice.issueDate}
+            dueDate={invoice.dueDate}
+            invoiceNumber={invoice.invoiceNumber}
+            paymentTerms={invoice.paymentTerms}
+            seller={invoice.seller}
+            customer={invoice.customer}
+            locale={locale}
+            currency={currency}
+            pricing={invoice.pricing}
+          />
+        )}
 
         {/* Acceptance / Payment Area */}
-        <section className="border-border border-t pt-6">
+        <section className="border-[var(--document-border)] border-t pt-8">
           {effectiveAccepted ? (
             <Card className="border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30">
               <CardHeader className="pb-3">
@@ -446,11 +285,11 @@ export function InvoiceView({
             </Card>
           ) : (
             onAccept && (
-              <Card className="border-border">
+              <Card className="border-[var(--document-border)] bg-[color-mix(in_oklab,var(--document-page-background)_95%,transparent)]">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 font-bold text-lg">
-                    <LockClosedIcon className="h-5 w-5 text-primary" /> Accept &
-                    Confirm Invoice
+                  <CardTitle className="flex items-center gap-2 font-bold text-[var(--document-foreground)] text-lg">
+                    <LockClosedIcon className="h-5 w-5 text-[var(--document-accent)]" />{" "}
+                    Accept & Confirm Invoice
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

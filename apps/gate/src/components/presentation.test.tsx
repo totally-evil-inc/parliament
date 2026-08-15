@@ -2,10 +2,15 @@ import { describe, expect, test } from "bun:test"
 import {
   buildInvoiceRenderModel,
   buildProposalRenderModel,
+  getDocumentTemplate,
+  getDocumentTemplateStyle,
+  webStudioProposalTemplate,
 } from "@workspace/document"
 import { renderToString } from "react-dom/server"
 import { parsePathname } from "../App"
 import { DrawnCanvas } from "./DrawnCanvas"
+import { DocumentBlockRenderer } from "./document-block-renderer"
+import { DocumentHeaderRenderer } from "./document-header-renderer"
 import { GateChallenge } from "./GateChallenge"
 import { InvoiceView } from "./InvoiceView"
 import { ProposalView } from "./ProposalView"
@@ -275,6 +280,267 @@ describe("Document Presentation Components (apps/gate)", () => {
     })
   })
 
+  describe("DocumentHeaderRenderer Layouts", () => {
+    const seller = mockProposalInput.data.seller
+    const customer = mockProposalInput.data.customer
+
+    test("renders mark-left-dates-right layout", () => {
+      const html = renderToString(
+        <DocumentHeaderRenderer
+          kind="proposal"
+          layout="mark-left-dates-right"
+          title="Custom Architecture Proposal"
+          issueDate="2026-08-01"
+          validUntil="2026-09-01"
+          seller={seller}
+          customer={customer}
+        />
+      )
+      expect(html).toContain("Custom Architecture Proposal")
+      expect(html).toContain("Prepared By")
+      expect(html).toContain("Prepared For")
+      expect(html).toContain("Acme Software Studio")
+      expect(html).toContain("Global Retail Corp")
+      expect(html).toContain("Valid Until")
+    })
+
+    test("renders centered-stack layout", () => {
+      const html = renderToString(
+        <DocumentHeaderRenderer
+          kind="proposal"
+          layout="centered-stack"
+          title="Centered Proposal"
+          issueDate="2026-08-01"
+          seller={seller}
+          customer={customer}
+        />
+      )
+      expect(html).toContain("Centered Proposal")
+      expect(html).toContain("items-center")
+      expect(html).toContain("text-center")
+    })
+
+    test("renders editorial-band layout with invoice numbers", () => {
+      const html = renderToString(
+        <DocumentHeaderRenderer
+          kind="invoice"
+          layout="editorial-band"
+          title="Editorial Invoice"
+          issueDate="2026-08-05"
+          dueDate="2026-08-19"
+          invoiceNumber="INV-1001"
+          paymentTerms="Net 30"
+          seller={seller}
+          customer={customer}
+        />
+      )
+      expect(html).toContain("Editorial Invoice")
+      expect(html).toContain("INV-1001")
+      expect(html).toContain("Net 30")
+      expect(html).toContain("Billed By")
+      expect(html).toContain("Billed To")
+    })
+
+    test("renders left-stack layout", () => {
+      const html = renderToString(
+        <DocumentHeaderRenderer
+          kind="proposal"
+          layout="left-stack"
+          title="Left Stack Proposal"
+          issueDate="2026-08-01"
+          seller={seller}
+          customer={customer}
+        />
+      )
+      expect(html).toContain("Left Stack Proposal")
+      expect(html).toContain("max-w-3xl space-y-5")
+    })
+  })
+
+  describe("DocumentBlockRenderer Block Variants", () => {
+    const seller = mockProposalInput.data.seller
+    const customer = mockProposalInput.data.customer
+
+    test("renders section block with accent variant", () => {
+      const block = {
+        id: "sec_1",
+        version: 1 as const,
+        type: "section" as const,
+        variant: "accent" as const,
+        eyebrow: {
+          type: "doc" as const,
+          content: [{ type: "text" as const, text: "Executive Summary" }],
+        },
+        title: {
+          type: "doc" as const,
+          content: [{ type: "text" as const, text: "Strategic Overview" }],
+        },
+        lead: {
+          type: "doc" as const,
+          content: [
+            {
+              type: "text" as const,
+              text: "Key strategic pillars for execution.",
+            },
+          ],
+        },
+        content: {
+          type: "doc" as const,
+          content: [
+            {
+              type: "paragraph" as const,
+              content: [
+                { type: "text" as const, text: "Detailed description." },
+              ],
+            },
+          ],
+        },
+      }
+      const html = renderToString(
+        <DocumentBlockRenderer
+          block={block}
+          title="Test"
+          issueDate="2026-08-01"
+          seller={seller}
+          customer={customer}
+        />
+      )
+      expect(html).toContain("Executive Summary")
+      expect(html).toContain("Strategic Overview")
+      expect(html).toContain("Key strategic pillars for execution.")
+      expect(html).toContain("Detailed description.")
+      expect(html).toContain("rounded-[calc(var(--document-radius)*1.5)]")
+    })
+
+    test("renders metrics (keyNumbers) block with large typography", () => {
+      const block = {
+        id: "metrics_1",
+        version: 1 as const,
+        type: "metrics" as const,
+        columns: 3 as const,
+        items: [
+          {
+            id: "m_1",
+            value: {
+              type: "doc" as const,
+              content: [{ type: "text" as const, text: "99.9%" }],
+            },
+            label: {
+              type: "doc" as const,
+              content: [{ type: "text" as const, text: "Uptime SLA" }],
+            },
+            detail: {
+              type: "doc" as const,
+              content: [
+                { type: "text" as const, text: "Enterprise guaranteed" },
+              ],
+            },
+          },
+        ],
+      }
+      const html = renderToString(
+        <DocumentBlockRenderer
+          block={block}
+          title="Test"
+          issueDate="2026-08-01"
+          seller={seller}
+          customer={customer}
+        />
+      )
+      expect(html).toContain("99.9%")
+      expect(html).toContain("Uptime SLA")
+      expect(html).toContain("Enterprise guaranteed")
+      expect(html).toContain("text-[var(--document-accent)]")
+    })
+
+    test("renders team block with avatars", () => {
+      const block = {
+        id: "team_1",
+        version: 1 as const,
+        type: "team" as const,
+        columns: 2 as const,
+        items: [
+          {
+            id: "tm_1",
+            name: {
+              type: "doc" as const,
+              content: [{ type: "text" as const, text: "Sarah Connor" }],
+            },
+            role: {
+              type: "doc" as const,
+              content: [{ type: "text" as const, text: "Lead Architect" }],
+            },
+            bio: {
+              type: "doc" as const,
+              content: [
+                {
+                  type: "text" as const,
+                  text: "10+ years scaling cloud platforms",
+                },
+              ],
+            },
+          },
+        ],
+      }
+      const html = renderToString(
+        <DocumentBlockRenderer
+          block={block}
+          title="Test"
+          issueDate="2026-08-01"
+          seller={seller}
+          customer={customer}
+        />
+      )
+      expect(html).toContain("Sarah Connor")
+      expect(html).toContain("Lead Architect")
+      expect(html).toContain("10+ years scaling cloud platforms")
+    })
+
+    test("renders testimonials block with quotes", () => {
+      const block = {
+        id: "test_1",
+        version: 1 as const,
+        type: "testimonials" as const,
+        columns: 1 as const,
+        items: [
+          {
+            id: "t_1",
+            quote: {
+              type: "doc" as const,
+              content: [
+                {
+                  type: "text" as const,
+                  text: "Delivered on time and exceeded expectations.",
+                },
+              ],
+            },
+            author: {
+              type: "doc" as const,
+              content: [{ type: "text" as const, text: "Alex Rivera" }],
+            },
+            role: {
+              type: "doc" as const,
+              content: [{ type: "text" as const, text: "VP Engineering" }],
+            },
+          },
+        ],
+      }
+      const html = renderToString(
+        <DocumentBlockRenderer
+          block={block}
+          title="Test"
+          issueDate="2026-08-01"
+          seller={seller}
+          customer={customer}
+        />
+      )
+      expect(html).toContain("Delivered on time and exceeded expectations.")
+      expect(html).toContain("Alex Rivera")
+      expect(html).toContain("VP Engineering")
+      expect(html).toContain("border-[var(--document-accent)]")
+    })
+  })
+
   describe("StatusScreen", () => {
     test("renders not_found status correctly", () => {
       const html = renderToString(
@@ -397,7 +663,7 @@ describe("Document Presentation Components (apps/gate)", () => {
       expect(html).toContain("Accept Proposal")
     })
 
-    test("uses responsive 375px mobile container and CSS variable design tokens", () => {
+    test("uses responsive container and CSS variable design tokens", () => {
       const model = buildProposalRenderModel(mockProposalInput)
       const html = renderToString(
         <ProposalView proposal={model} appTheme="light" />
@@ -405,8 +671,28 @@ describe("Document Presentation Components (apps/gate)", () => {
 
       expect(html).toContain("min-h-screen")
       expect(html).toContain('data-testid="proposal-view-container"')
-      expect(html).toContain("max-w-3xl")
-      expect(html).toContain("grid-cols-1")
+      expect(html).toContain("bg-[var(--document-canvas-background)]")
+      expect(html).toContain("bg-[var(--document-page-background)]")
+    })
+
+    test("applies Web Studio template tokens when configured in proposal template", () => {
+      const webStudioInput = {
+        ...mockProposalInput,
+        template: {
+          id: webStudioProposalTemplate.id,
+          version: 1,
+        },
+      }
+      const model = buildProposalRenderModel(webStudioInput)
+      const template = getDocumentTemplate(model.template, "light")
+      const style = getDocumentTemplateStyle(template)
+      const html = renderToString(
+        <ProposalView proposal={model} appTheme="light" />
+      )
+
+      expect(style["--document-accent"]).toBe("#0f766e")
+      expect(style["--document-canvas-background"]).toBe("#eef4f1")
+      expect(html).toContain("--document-canvas-background:#eef4f1")
     })
 
     test("renders typed vs drawn signature mode buttons when onAccept is provided", () => {

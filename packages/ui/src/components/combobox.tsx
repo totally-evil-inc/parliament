@@ -1,4 +1,9 @@
 import { Combobox as ComboboxPrimitive } from "@base-ui/react"
+import {
+  CheckIcon,
+  ChevronUpDownIcon,
+  XMarkIcon,
+} from "@heroicons/react/20/solid"
 import { Button } from "@workspace/ui/components/button"
 import {
   InputGroup,
@@ -6,11 +11,6 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@workspace/ui/components/input-group"
-import {
-  CheckIcon,
-  ChevronUpDownIcon,
-  XMarkIcon,
-} from "@heroicons/react/20/solid"
 import { cn } from "@workspace/ui/lib/utils"
 import * as React from "react"
 

@@ -214,6 +214,12 @@ export function getDefaultDocumentTemplateForScheme(scheme: "light" | "dark") {
   return defaultDocumentTemplates[scheme]
 }
 
+export const documentPresets: ReadonlyArray<DocumentTemplate> = [
+  defaultDocumentTemplate,
+  darkDocumentTemplate,
+  webStudioProposalTemplate,
+]
+
 export function getDocumentTemplate(
   reference: {
     id: string
@@ -223,6 +229,7 @@ export function getDocumentTemplate(
 ): DocumentTemplate {
   const isClassic =
     reference.id === "proposal-classic" ||
+    reference.id === "invoice-classic" ||
     reference.id === "classic-light" ||
     reference.id === "classic-dark"
 

@@ -1,14 +1,14 @@
 import {
+  ClockIcon,
+  DocumentMinusIcon,
+  ShieldExclamationIcon,
+} from "@heroicons/react/24/outline"
+import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
-import {
-  ClockIcon,
-  DocumentMinusIcon,
-  ShieldExclamationIcon,
-} from "@heroicons/react/24/outline"
 
 export type StatusScreenProps = {
   status: "not_found" | "expired" | "unavailable" | "error"

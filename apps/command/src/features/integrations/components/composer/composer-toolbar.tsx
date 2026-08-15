@@ -1,5 +1,6 @@
 import {
   ArrowTopRightOnSquareIcon,
+  CalendarDaysIcon,
   CheckIcon,
   ChevronDownIcon,
   ClockIcon,
@@ -15,9 +16,13 @@ import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import {
@@ -27,6 +32,7 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 import * as React from "react"
+import { CustomScheduleSubmenu } from "./custom-schedule-submenu"
 
 interface ComposerToolbarProps {
   isSending: boolean
@@ -137,34 +143,36 @@ export function ComposerToolbar({
               <TooltipContent>Insert quick snippet</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuLabel>Quick Snippets</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() =>
-                  onInsertGreeting(
-                    "Great catching up earlier! I've put together the full proposal details below for your review."
-                  )
-                }
-              >
-                Catching up earlier...
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  onInsertGreeting(
-                    "Please find attached the finalized draft for your review and digital signature."
-                  )
-                }
-              >
-                Review and sign...
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  onInsertGreeting(
-                    "Please let me know if you need any adjustments or have questions before moving forward."
-                  )
-                }
-              >
-                Questions or adjustments...
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Quick Snippets</DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={() =>
+                    onInsertGreeting(
+                      "Great catching up earlier! I've put together the full proposal details below for your review."
+                    )
+                  }
+                >
+                  Catching up earlier...
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    onInsertGreeting(
+                      "Please find attached the finalized draft for your review and digital signature."
+                    )
+                  }
+                >
+                  Review and sign...
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    onInsertGreeting(
+                      "Please let me know if you need any adjustments or have questions before moving forward."
+                    )
+                  }
+                >
+                  Questions or adjustments...
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -247,35 +255,58 @@ export function ComposerToolbar({
               />
 
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel>Send Options</DropdownMenuLabel>
-                <DropdownMenuItem onClick={onSend}>
-                  <PaperAirplaneIcon className="mr-1 size-3.5 text-primary" />
-                  Send via Gmail API
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onOpenGmailWeb}>
-                  <ArrowTopRightOnSquareIcon className="mr-1 size-3.5" />
-                  Open in Gmail Web
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleCopyLinkClick}>
-                  <DocumentDuplicateIcon className="mr-1 size-3.5" />
-                  Copy Share Link
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Send Options</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={onSend}>
+                    <PaperAirplaneIcon className="mr-1 size-3.5 text-primary" />
+                    Send via Gmail API
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onOpenGmailWeb}>
+                    <ArrowTopRightOnSquareIcon className="mr-1 size-3.5" />
+                    Open in Gmail Web
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleCopyLinkClick}>
+                    <DocumentDuplicateIcon className="mr-1 size-3.5" />
+                    Copy Share Link
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                  Schedule Preset
-                </DropdownMenuLabel>
-                <DropdownMenuItem
-                  onClick={() => onScheduleSend?.("Tomorrow at 9:00 AM")}
-                >
-                  <ClockIcon className="mr-1 size-3.5" />
-                  Tomorrow at 9:00 AM
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onScheduleSend?.("Next Monday at 9:00 AM")}
-                >
-                  <ClockIcon className="mr-1 size-3.5" />
-                  Next Monday at 9:00 AM
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                    Schedule Presets
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => onScheduleSend?.("Tomorrow at 9:00 AM")}
+                  >
+                    <ClockIcon className="mr-1 size-3.5" />
+                    Tomorrow at 9:00 AM
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onScheduleSend?.("Next Monday at 9:00 AM")}
+                  >
+                    <ClockIcon className="mr-1 size-3.5" />
+                    Next Monday at 9:00 AM
+                  </DropdownMenuItem>
+
+                  {/* Submenu for Custom Date & Time (comp-503) */}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <CalendarDaysIcon className="mr-1 size-3.5 text-primary" />
+                      Custom Date &amp; Time
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent
+                      side="left"
+                      align="start"
+                      sideOffset={8}
+                      className="p-2"
+                    >
+                      <CustomScheduleSubmenu
+                        documentType={documentType}
+                        onSchedule={(label) => onScheduleSend?.(label)}
+                      />
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

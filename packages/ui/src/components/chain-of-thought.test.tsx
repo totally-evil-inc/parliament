@@ -22,8 +22,12 @@ describe("ChainOfThought", () => {
             status="complete"
           >
             <ChainOfThoughtSearchResults>
-              <ChainOfThoughtSearchResult>acme-corp.com</ChainOfThoughtSearchResult>
-              <ChainOfThoughtSearchResult>crm-deals/2026</ChainOfThoughtSearchResult>
+              <ChainOfThoughtSearchResult>
+                acme-corp.com
+              </ChainOfThoughtSearchResult>
+              <ChainOfThoughtSearchResult>
+                crm-deals/2026
+              </ChainOfThoughtSearchResult>
             </ChainOfThoughtSearchResults>
           </ChainOfThoughtStep>
 

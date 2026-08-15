@@ -1,6 +1,10 @@
 import {
-  formatDateOnly,
-  formatMoneyMinor,
+  CheckCircleIcon,
+  ClipboardDocumentCheckIcon,
+  LockClosedIcon,
+  ShieldCheckIcon,
+} from "@heroicons/react/24/outline"
+import {
   getDocumentTemplate,
   getDocumentTemplateStyle,
   type ProposalRenderModel,
@@ -17,17 +21,12 @@ import {
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import {
-  CheckCircleIcon,
-  ClipboardDocumentCheckIcon,
-  LockClosedIcon,
-  ShieldCheckIcon,
-} from "@heroicons/react/24/outline"
 import type React from "react"
 import { useState } from "react"
 import type { AcceptancePayload } from "../lib/api"
 import { DrawnCanvas } from "./DrawnCanvas"
-import { RichTextRenderer } from "./RichTextRenderer"
+import { DocumentBlockRenderer } from "./document-block-renderer"
+import { DocumentHeaderRenderer } from "./document-header-renderer"
 
 export type ProposalViewProps = {
   proposal: ProposalRenderModel
@@ -120,380 +119,88 @@ export function ProposalView({
   const locale = proposal.locale || "en-US"
   const currency = proposal.pricing?.currency || "USD"
 
+  const hasPartyHeaderBlock = proposal.blocks.some(
+    (b) => b.type === "partyHeader"
+  )
+  const hasPricingBlock = proposal.blocks.some((b) => b.type === "pricing")
+
   return (
     <div
       style={templateStyle as React.CSSProperties}
-      className="flex min-h-screen justify-center bg-[var(--document-canvas-background)] px-3 py-4 text-[var(--document-foreground)] sm:px-6 sm:py-8"
+      className="flex min-h-screen justify-center bg-[var(--document-canvas-background)] px-3 py-6 text-[var(--document-foreground)] sm:px-6 sm:py-12"
       data-testid="proposal-view-container"
     >
-      <article className="w-full max-w-3xl space-y-8 rounded-[var(--document-radius)] border border-[var(--document-border)] bg-[var(--document-page-background)] p-4 shadow-sm sm:p-8">
-        {/* Proposal Header */}
-        <header className="space-y-3 border-border border-b pb-6">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+      <article className="w-full max-w-4xl space-y-8 rounded-[var(--document-radius)] border border-[var(--document-border)] bg-[var(--document-page-background)] p-6 text-[var(--document-foreground)] shadow-black/10 shadow-xl [font-family:var(--document-font-family)] sm:p-12">
+        {/* Status indicator badge */}
+        <div className="flex items-center justify-between gap-2 border-[var(--document-border)] border-b pb-4">
+          <Badge
+            variant="outline"
+            className="font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-wider"
+          >
+            Proposal
+          </Badge>
+          {effectiveAccepted && (
             <Badge
-              variant="outline"
-              className="font-semibold text-xs uppercase tracking-wider"
+              variant="default"
+              className="flex items-center gap-1 bg-emerald-600 font-semibold text-white text-xs"
             >
-              Proposal
+              <CheckCircleIcon className="h-3.5 w-3.5" /> Proposal Accepted
             </Badge>
-            {effectiveAccepted && (
-              <Badge
-                variant="default"
-                className="flex items-center gap-1 bg-emerald-600 text-white"
-              >
-                <CheckCircleIcon className="h-3.5 w-3.5" /> Accepted
-              </Badge>
-            )}
-          </div>
-          <h1 className="font-bold text-2xl text-foreground tracking-tight sm:text-3xl">
-            {proposal.title}
-          </h1>
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-muted-foreground text-xs sm:text-sm">
-            <div>
-              <span className="font-medium text-foreground">Date: </span>
-              {formatDateOnly(proposal.issueDate, locale)}
-            </div>
-            {proposal.validUntil && (
-              <div>
-                <span className="font-medium text-foreground">
-                  Valid Until:{" "}
-                </span>
-                {formatDateOnly(proposal.validUntil, locale)}
-              </div>
-            )}
-          </div>
-        </header>
+          )}
+        </div>
 
-        {/* Parties Grid */}
-        <section className="grid grid-cols-1 gap-6 border-border border-b pb-6 sm:grid-cols-2">
-          {/* Seller */}
-          <div className="space-y-1 text-sm">
-            <h3 className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-              From (Provider)
-            </h3>
-            <p className="font-medium text-base text-foreground">
-              {proposal.seller.name}
-            </p>
-            {proposal.seller.email && (
-              <p className="text-muted-foreground">{proposal.seller.email}</p>
-            )}
-            {proposal.seller.phone && (
-              <p className="text-muted-foreground">{proposal.seller.phone}</p>
-            )}
-            {proposal.seller.address && (
-              <p className="whitespace-pre-line text-muted-foreground">
-                {proposal.seller.address}
-              </p>
-            )}
-            {proposal.seller.taxId && (
-              <p className="text-muted-foreground text-xs">
-                Tax ID: {proposal.seller.taxId}
-              </p>
-            )}
-          </div>
+        {/* Fallback header if not explicitly in blocks */}
+        {!hasPartyHeaderBlock && (
+          <DocumentHeaderRenderer
+            kind="proposal"
+            layout="mark-left-dates-right"
+            title={proposal.title}
+            issueDate={proposal.issueDate}
+            validUntil={proposal.validUntil}
+            seller={proposal.seller}
+            customer={proposal.customer}
+            locale={locale}
+          />
+        )}
 
-          {/* Customer */}
-          <div className="space-y-1 text-sm">
-            <h3 className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-              To (Client)
-            </h3>
-            <p className="font-medium text-base text-foreground">
-              {proposal.customer.name}
-            </p>
-            {proposal.customer.email && (
-              <p className="text-muted-foreground">{proposal.customer.email}</p>
-            )}
-            {proposal.customer.phone && (
-              <p className="text-muted-foreground">{proposal.customer.phone}</p>
-            )}
-            {proposal.customer.address && (
-              <p className="whitespace-pre-line text-muted-foreground">
-                {proposal.customer.address}
-              </p>
-            )}
-            {proposal.customer.taxId && (
-              <p className="text-muted-foreground text-xs">
-                Tax ID: {proposal.customer.taxId}
-              </p>
-            )}
-          </div>
-        </section>
+        {/* Dynamic Composition Blocks */}
+        {proposal.blocks.map((block) => (
+          <DocumentBlockRenderer
+            key={block.id}
+            block={block}
+            title={proposal.title}
+            issueDate={proposal.issueDate}
+            validUntil={proposal.validUntil}
+            seller={proposal.seller}
+            customer={proposal.customer}
+            locale={locale}
+            currency={currency}
+            pricing={proposal.pricing}
+          />
+        ))}
 
-        {/* Composition Blocks */}
-        {proposal.blocks.map((block) => {
-          if (block.type === "partyHeader") return null
-
-          if (block.type === "pricing" && proposal.pricing) {
-            const { items, calculation } = proposal.pricing
-            return (
-              <section
-                key={block.id}
-                className="space-y-4 border-border border-b pb-6"
-              >
-                <h2 className="font-bold text-xl tracking-tight">
-                  {block.config?.title || "Pricing Breakdown"}
-                </h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-border border-b font-medium text-muted-foreground">
-                        <th className="py-2 pr-4">Description</th>
-                        <th className="px-2 py-2 text-center">Qty</th>
-                        <th className="px-2 py-2 text-right">Price</th>
-                        <th className="py-2 pl-4 text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/50">
-                      {items.map((item, idx) => {
-                        const line = calculation?.lines?.find(
-                          (l) => l.id === item.id
-                        )
-                        const lineAmount = line
-                          ? line.amountMinor
-                          : item.unitPriceMinor * Number(item.quantity)
-                        return (
-                          <tr key={item.id || idx}>
-                            <td className="py-3 pr-4">
-                              <div className="font-medium">
-                                {item.description}
-                              </div>
-                              {item.details && (
-                                <div className="mt-0.5 text-muted-foreground text-xs">
-                                  {item.details}
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-2 py-3 text-center align-top">
-                              {item.quantity}
-                            </td>
-                            <td className="px-2 py-3 text-right align-top">
-                              {formatMoneyMinor(
-                                item.unitPriceMinor,
-                                currency,
-                                locale
-                              )}
-                            </td>
-                            <td className="py-3 pl-4 text-right align-top font-medium">
-                              {formatMoneyMinor(lineAmount, currency, locale)}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {calculation && (
-                  <div className="flex justify-end pt-2">
-                    <div className="w-full space-y-1.5 text-sm sm:w-64">
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Subtotal:</span>
-                        <span>
-                          {formatMoneyMinor(
-                            calculation.subtotalMinor,
-                            currency,
-                            locale
-                          )}
-                        </span>
-                      </div>
-                      {calculation.discountMinor > 0 && (
-                        <div className="flex justify-between text-muted-foreground">
-                          <span>Discount:</span>
-                          <span>
-                            -
-                            {formatMoneyMinor(
-                              calculation.discountMinor,
-                              currency,
-                              locale
-                            )}
-                          </span>
-                        </div>
-                      )}
-                      {calculation.taxMinor > 0 && (
-                        <div className="flex justify-between text-muted-foreground">
-                          <span>Tax:</span>
-                          <span>
-                            {formatMoneyMinor(
-                              calculation.taxMinor,
-                              currency,
-                              locale
-                            )}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex justify-between border-border border-t pt-2 font-bold text-base">
-                        <span>Total:</span>
-                        <span>
-                          {formatMoneyMinor(
-                            calculation.totalMinor,
-                            currency,
-                            locale
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </section>
-            )
-          }
-
-          if (block.type === "richText") {
-            return (
-              <section key={block.id} className="py-2">
-                <RichTextRenderer doc={block.content} />
-              </section>
-            )
-          }
-
-          if (block.type === "section") {
-            return (
-              <section key={block.id} className="space-y-2 py-2">
-                {block.eyebrow?.content?.length > 0 && (
-                  <div className="font-semibold text-primary text-xs uppercase tracking-wider">
-                    <RichTextRenderer doc={block.eyebrow} />
-                  </div>
-                )}
-                <h2 className="font-bold text-xl tracking-tight">
-                  <RichTextRenderer doc={block.title} />
-                </h2>
-                {block.lead?.content?.length > 0 && (
-                  <div className="text-base text-muted-foreground leading-relaxed">
-                    <RichTextRenderer doc={block.lead} />
-                  </div>
-                )}
-                {block.content && <RichTextRenderer doc={block.content} />}
-              </section>
-            )
-          }
-
-          if (block.type === "cover") {
-            return (
-              <section
-                key={block.id}
-                className="space-y-3 rounded-lg bg-muted/30 p-6 py-4"
-              >
-                {block.eyebrow?.content?.length > 0 && (
-                  <div className="font-semibold text-primary text-xs uppercase tracking-wider">
-                    <RichTextRenderer doc={block.eyebrow} />
-                  </div>
-                )}
-                <h2 className="font-bold text-2xl">
-                  <RichTextRenderer doc={block.title} />
-                </h2>
-                {block.subtitle?.content?.length > 0 && (
-                  <div className="text-muted-foreground">
-                    <RichTextRenderer doc={block.subtitle} />
-                  </div>
-                )}
-              </section>
-            )
-          }
-
-          if (block.type === "columns") {
-            return (
-              <section key={block.id} className="space-y-4 py-2">
-                {block.title && (
-                  <h3 className="font-bold text-lg">
-                    <RichTextRenderer doc={block.title} />
-                  </h3>
-                )}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-                  {block.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="space-y-2 rounded-md border border-border p-4"
-                    >
-                      <h4 className="font-semibold text-sm">
-                        <RichTextRenderer doc={item.heading} />
-                      </h4>
-                      <RichTextRenderer
-                        doc={item.body}
-                        className="text-muted-foreground text-xs"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )
-          }
-
-          if (block.type === "metrics") {
-            return (
-              <section
-                key={block.id}
-                className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2 md:grid-cols-3"
-              >
-                {block.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="space-y-1 rounded-lg bg-muted/40 p-4 text-center"
-                  >
-                    <div className="font-bold text-2xl text-primary">
-                      <RichTextRenderer doc={item.value} />
-                    </div>
-                    <div className="font-medium text-sm">
-                      <RichTextRenderer doc={item.label} />
-                    </div>
-                    {item.detail && (
-                      <div className="text-muted-foreground text-xs">
-                        <RichTextRenderer doc={item.detail} />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </section>
-            )
-          }
-
-          if (block.type === "faq") {
-            return (
-              <section key={block.id} className="space-y-4 py-2">
-                <h3 className="font-bold text-lg">
-                  Frequently Asked Questions
-                </h3>
-                <div className="space-y-3">
-                  {block.items.map((item, idx) => (
-                    <div
-                      key={item.id || idx}
-                      className="space-y-1 rounded-md border border-border p-4"
-                    >
-                      <h4 className="font-semibold text-sm">
-                        <RichTextRenderer doc={item.question} />
-                      </h4>
-                      <RichTextRenderer
-                        doc={item.answer}
-                        className="text-muted-foreground text-xs"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )
-          }
-
-          if (block.type === "signature") {
-            return (
-              <section
-                key={block.id}
-                className="space-y-3 border-border border-t py-4"
-              >
-                <h3 className="font-bold text-lg">
-                  <RichTextRenderer doc={block.title} />
-                </h3>
-                <RichTextRenderer
-                  doc={block.terms}
-                  className="text-muted-foreground text-xs"
-                />
-              </section>
-            )
-          }
-
-          return null
-        })}
+        {/* Fallback Pricing block if not in composition */}
+        {!hasPricingBlock && proposal.pricing && (
+          <DocumentBlockRenderer
+            block={{
+              id: "fallback-pricing",
+              type: "pricing",
+              version: 1,
+              binding: "proposal.pricing",
+              config: { title: "Pricing Breakdown" },
+            }}
+            title={proposal.title}
+            issueDate={proposal.issueDate}
+            seller={proposal.seller}
+            customer={proposal.customer}
+            locale={locale}
+            currency={currency}
+            pricing={proposal.pricing}
+          />
+        )}
 
         {/* Acceptance / Signature Area */}
-        <section className="border-border border-t pt-6">
+        <section className="border-[var(--document-border)] border-t pt-8">
           {effectiveAccepted ? (
             <Card className="border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30">
               <CardHeader className="pb-3">
@@ -540,11 +247,11 @@ export function ProposalView({
             </Card>
           ) : (
             onAccept && (
-              <Card className="border-border">
+              <Card className="border-[var(--document-border)] bg-[color-mix(in_oklab,var(--document-page-background)_95%,transparent)]">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 font-bold text-lg">
-                    <LockClosedIcon className="h-5 w-5 text-primary" /> Accept &
-                    Sign Proposal
+                  <CardTitle className="flex items-center gap-2 font-bold text-[var(--document-foreground)] text-lg">
+                    <LockClosedIcon className="h-5 w-5 text-[var(--document-accent)]" />{" "}
+                    Accept & Sign Proposal
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

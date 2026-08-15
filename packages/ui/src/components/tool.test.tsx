@@ -13,9 +13,15 @@ describe("Tool", () => {
   test("getStatusBadge returns appropriate badges for all states", () => {
     const pendingHtml = renderToString(<>{getStatusBadge("input-streaming")}</>)
     const runningHtml = renderToString(<>{getStatusBadge("input-available")}</>)
-    const approvalHtml = renderToString(<>{getStatusBadge("approval-requested")}</>)
-    const respondedHtml = renderToString(<>{getStatusBadge("approval-responded")}</>)
-    const completedHtml = renderToString(<>{getStatusBadge("output-available")}</>)
+    const approvalHtml = renderToString(
+      <>{getStatusBadge("approval-requested")}</>
+    )
+    const respondedHtml = renderToString(
+      <>{getStatusBadge("approval-responded")}</>
+    )
+    const completedHtml = renderToString(
+      <>{getStatusBadge("output-available")}</>
+    )
     const errorHtml = renderToString(<>{getStatusBadge("output-error")}</>)
     const deniedHtml = renderToString(<>{getStatusBadge("output-denied")}</>)
 
@@ -38,7 +44,9 @@ describe("Tool", () => {
         />
         <ToolContent>
           <ToolInput input={{ stage: "negotiation", limit: 5 }} />
-          <ToolOutput output={{ count: 3, items: ["Deal A", "Deal B", "Deal C"] }} />
+          <ToolOutput
+            output={{ count: 3, items: ["Deal A", "Deal B", "Deal C"] }}
+          />
         </ToolContent>
       </Tool>
     )
