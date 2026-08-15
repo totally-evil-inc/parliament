@@ -13,9 +13,20 @@ import {
   finalizeInvoiceDraft as buildInvoiceSnapshotPayload,
   finalizeProposalDraft as buildProposalSnapshotPayload,
 } from "@workspace/document/finalize"
+import {
+  type InvoiceDraft,
+  type ProposalDraft,
+  safeParseInvoiceDraft,
+  safeParseProposalDraft,
+} from "@workspace/document/schema"
+import { stripHtml } from "@workspace/document/text"
+import { generateDocumentPdfBuffer } from "@workspace/document-pdf"
 import { logger, logWideEvent } from "@workspace/logger"
-import { renderEmail, sendEmail } from "../email"
-import { sendGmailMessage } from "../gmail/send-service"
+import { type EmailAttachment, renderEmail, sendEmail } from "../email"
+import {
+  type SendEmailAttachment,
+  sendGmailMessage,
+} from "../gmail/send-service"
 
 export interface ProcessDispatchesResult {
   processed: number
@@ -85,6 +96,7 @@ export async function processDueScheduledDispatches(options?: {
       }
 
       let shareUrl = ""
+      let snapshotDoc: ProposalDraft | InvoiceDraft | null = null
 
       // 2. Ensure document snapshot & public client gate link exist
       if (dispatch.documentType === "proposal") {
@@ -107,6 +119,7 @@ export async function processDueScheduledDispatches(options?: {
         const existingLinks = await db
           .select({
             token: proposalPublicLink.token,
+            document: proposalSnapshot.document,
           })
           .from(proposalSnapshot)
           .innerJoin(
@@ -123,11 +136,18 @@ export async function processDueScheduledDispatches(options?: {
           .limit(1)
 
         let token = existingLinks[0]?.token
+        if (existingLinks[0]?.document) {
+          const parsed = safeParseProposalDraft(existingLinks[0].document)
+          if (parsed.success) {
+            snapshotDoc = parsed.data
+          }
+        }
 
         if (!token) {
           // Finalize new snapshot and create public link
           const snapshotPayload = buildProposalSnapshotPayload(pDraft.document)
           token = createPublicToken()
+          snapshotDoc = snapshotPayload.document
 
           await db.transaction(async (tx) => {
             const [snap] = await tx
@@ -176,6 +196,7 @@ export async function processDueScheduledDispatches(options?: {
         const existingLinks = await db
           .select({
             token: invoicePublicLink.token,
+            document: invoiceSnapshot.document,
           })
           .from(invoiceSnapshot)
           .innerJoin(
@@ -192,10 +213,17 @@ export async function processDueScheduledDispatches(options?: {
           .limit(1)
 
         let token = existingLinks[0]?.token
+        if (existingLinks[0]?.document) {
+          const parsed = safeParseInvoiceDraft(existingLinks[0].document)
+          if (parsed.success) {
+            snapshotDoc = parsed.data
+          }
+        }
 
         if (!token) {
           const snapshotPayload = buildInvoiceSnapshotPayload(iDraft.document)
           token = createPublicToken()
+          snapshotDoc = snapshotPayload.document
 
           await db.transaction(async (tx) => {
             const [snap] = await tx
@@ -238,7 +266,35 @@ export async function processDueScheduledDispatches(options?: {
         recipientEmail: dispatch.recipientEmail,
       })
 
-      // 4. Deliver email (Gmail API with fallback to SMTP/Resend)
+      // 4. Optionally generate PDF attachment if requested
+      let gmailAttachment: SendEmailAttachment | undefined
+      let smtpAttachments: EmailAttachment[] | undefined
+
+      if (dispatch.includePdf && snapshotDoc) {
+        const pdfBuffer = await generateDocumentPdfBuffer({
+          document: snapshotDoc,
+        })
+        const cleanTitle =
+          stripHtml(dispatch.documentTitle)
+            .trim()
+            .replace(/[^\w.-]/g, "_") || "document"
+        const pdfFilename = `${cleanTitle}.pdf`
+
+        gmailAttachment = {
+          filename: pdfFilename,
+          mimeType: "application/pdf",
+          content: pdfBuffer.toString("base64"),
+        }
+        smtpAttachments = [
+          {
+            filename: pdfFilename,
+            content: pdfBuffer,
+            contentType: "application/pdf",
+          },
+        ]
+      }
+
+      // 5. Deliver email (Gmail API with fallback to SMTP/Resend)
       let sentVia = dispatch.sendMethod
       let deliverySuccess = false
 
@@ -249,6 +305,7 @@ export async function processDueScheduledDispatches(options?: {
             to: dispatch.recipientEmail,
             subject: dispatch.subject,
             htmlText: htmlBody,
+            attachment: gmailAttachment,
           })
           deliverySuccess = true
         } catch (gmailErr: unknown) {
@@ -262,6 +319,7 @@ export async function processDueScheduledDispatches(options?: {
               to: dispatch.recipientEmail,
               subject: dispatch.subject,
               html: htmlBody,
+              attachments: smtpAttachments,
             })
             sentVia = "smtp_resend"
             deliverySuccess = true
@@ -276,6 +334,7 @@ export async function processDueScheduledDispatches(options?: {
           to: dispatch.recipientEmail,
           subject: dispatch.subject,
           html: htmlBody,
+          attachments: smtpAttachments,
         })
         deliverySuccess = true
       }

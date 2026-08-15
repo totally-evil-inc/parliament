@@ -25,6 +25,7 @@ export const scheduleDispatchInputSchema = z.object({
       message: "Scheduled time must be in the future",
     }),
   sendMethod: z.enum(["gmail", "smtp_resend"]).default("gmail"),
+  includePdf: z.boolean().optional().default(false),
 })
 
 export const updateScheduleInputSchema = z.object({
@@ -34,6 +35,7 @@ export const updateScheduleInputSchema = z.object({
   bccRecipients: z.array(z.string().trim().email()).optional(),
   subject: z.string().trim().min(1).optional(),
   message: z.string().trim().min(1).optional(),
+  includePdf: z.boolean().optional(),
   scheduledFor: z
     .string()
     .datetime()
@@ -68,6 +70,7 @@ export type ScheduledDispatchItem = {
   scheduledFor: string
   status: "pending" | "processing" | "sent" | "cancelled" | "failed"
   sendMethod: "gmail" | "smtp_resend"
+  includePdf: boolean
   lastError: string | null
   attempts: number
   sentAt: string | null
@@ -94,6 +97,7 @@ function serializeDispatch(
     scheduledFor: row.scheduledFor.toISOString(),
     status: row.status as ScheduledDispatchItem["status"],
     sendMethod: row.sendMethod as ScheduledDispatchItem["sendMethod"],
+    includePdf: Boolean(row.includePdf),
     lastError: row.lastError,
     attempts: row.attempts,
     sentAt: row.sentAt?.toISOString() ?? null,
@@ -178,6 +182,7 @@ export const scheduleDocumentDispatch = createServerFn({ method: "POST" })
           scheduledFor: scheduledDate,
           status: "pending",
           sendMethod: data.sendMethod,
+          includePdf: data.includePdf ?? false,
           attempts: 0,
         })
         .returning()
@@ -309,6 +314,8 @@ export const updateScheduledDispatch = createServerFn({ method: "POST" })
     if (data.bccRecipients) updates.bccRecipients = data.bccRecipients
     if (data.subject) updates.subject = data.subject
     if (data.message) updates.message = data.message
+    if (typeof data.includePdf === "boolean")
+      updates.includePdf = data.includePdf
     if (data.scheduledFor) updates.scheduledFor = new Date(data.scheduledFor)
 
     const [updated] = await db
