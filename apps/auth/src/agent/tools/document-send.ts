@@ -1,8 +1,13 @@
 import { toolDefinition } from "@tanstack/ai"
 import { sendDocumentInput, sendDocumentOutput } from "@workspace/agent"
+import { stripHtml } from "@workspace/document/text"
+import { generateDocumentPdfBuffer } from "@workspace/document-pdf"
 import { logWideEvent } from "@workspace/logger"
 import { renderEmail } from "../../lib/email"
-import { sendGmailMessage } from "../../lib/gmail/send-service"
+import {
+  type SendEmailAttachment,
+  sendGmailMessage,
+} from "../../lib/gmail/send-service"
 import { finalizeInvoiceSend, finalizeProposalSend } from "../document-send"
 import type { AgentContext } from "../tool-ctx"
 
@@ -10,7 +15,7 @@ export function sendProposalTool(ctx: AgentContext) {
   return toolDefinition({
     name: "send_proposal",
     description:
-      "Finalize a proposal draft and email it to the recipient through Gmail with a public link. Requires human approval before sending.",
+      "Finalize a proposal draft and email it to the recipient through Gmail with a public link and optional PDF attachment. Requires human approval before sending.",
     inputSchema: sendDocumentInput,
     outputSchema: sendDocumentOutput,
     needsApproval: true,
@@ -50,6 +55,22 @@ export function sendProposalTool(ctx: AgentContext) {
         htmlText = `<p>Hello,</p><p>Please review the proposal <strong>${finalized.documentTitle}</strong> from ${ctx.orgName}:</p><p><a href="${finalized.shareUrl}">View Proposal</a></p>${args.personalMessage ? `<p>${args.personalMessage}</p>` : ""}`
       }
 
+      let attachment: SendEmailAttachment | undefined
+      if (args.includePdf && finalized.document) {
+        const pdfBuffer = await generateDocumentPdfBuffer({
+          document: finalized.document,
+        })
+        const cleanTitle =
+          stripHtml(finalized.documentTitle)
+            .trim()
+            .replace(/[^\w.-]/g, "_") || "proposal"
+        attachment = {
+          filename: `${cleanTitle}.pdf`,
+          mimeType: "application/pdf",
+          content: pdfBuffer.toString("base64"),
+        }
+      }
+
       let messageId: string | undefined
       let threadId: string | undefined
 
@@ -59,6 +80,7 @@ export function sendProposalTool(ctx: AgentContext) {
           to: recipientEmail,
           subject,
           htmlText,
+          attachment,
         })
         messageId = dispatchResult.id
         threadId = dispatchResult.threadId
@@ -95,6 +117,7 @@ export function sendProposalTool(ctx: AgentContext) {
           type: "proposal",
           shareUrl: finalized.shareUrl,
           recipientEmail,
+          includePdf: Boolean(args.includePdf),
         },
       })
 
@@ -108,6 +131,7 @@ export function sendProposalTool(ctx: AgentContext) {
         totalMinorUnits: finalized.totalMinorUnits,
         currency: finalized.currency,
         recipientEmail,
+        includedPdf: Boolean(args.includePdf),
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -129,7 +153,7 @@ export function sendInvoiceTool(ctx: AgentContext) {
   return toolDefinition({
     name: "send_invoice",
     description:
-      "Finalize an invoice draft and email it to the recipient through Gmail with a public link. Requires human approval before sending.",
+      "Finalize an invoice draft and email it to the recipient through Gmail with a public link and optional PDF attachment. Requires human approval before sending.",
     inputSchema: sendDocumentInput,
     outputSchema: sendDocumentOutput,
     needsApproval: true,
@@ -169,6 +193,22 @@ export function sendInvoiceTool(ctx: AgentContext) {
         htmlText = `<p>Hello,</p><p>Please review the invoice <strong>${finalized.documentTitle}</strong> from ${ctx.orgName}:</p><p><a href="${finalized.shareUrl}">View Invoice</a></p>${args.personalMessage ? `<p>${args.personalMessage}</p>` : ""}`
       }
 
+      let attachment: SendEmailAttachment | undefined
+      if (args.includePdf && finalized.document) {
+        const pdfBuffer = await generateDocumentPdfBuffer({
+          document: finalized.document,
+        })
+        const cleanTitle =
+          stripHtml(finalized.documentTitle)
+            .trim()
+            .replace(/[^\w.-]/g, "_") || "invoice"
+        attachment = {
+          filename: `${cleanTitle}.pdf`,
+          mimeType: "application/pdf",
+          content: pdfBuffer.toString("base64"),
+        }
+      }
+
       let messageId: string | undefined
       let threadId: string | undefined
 
@@ -178,6 +218,7 @@ export function sendInvoiceTool(ctx: AgentContext) {
           to: recipientEmail,
           subject,
           htmlText,
+          attachment,
         })
         messageId = dispatchResult.id
         threadId = dispatchResult.threadId
@@ -214,6 +255,7 @@ export function sendInvoiceTool(ctx: AgentContext) {
           type: "invoice",
           shareUrl: finalized.shareUrl,
           recipientEmail,
+          includePdf: Boolean(args.includePdf),
         },
       })
 
@@ -227,6 +269,7 @@ export function sendInvoiceTool(ctx: AgentContext) {
         totalMinorUnits: finalized.totalMinorUnits,
         currency: finalized.currency,
         recipientEmail,
+        includedPdf: Boolean(args.includePdf),
       }
     } catch (err: unknown) {
       if (err instanceof Error) {

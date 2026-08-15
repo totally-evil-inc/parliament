@@ -9,6 +9,8 @@ import {
   finalizeProposalDraft as buildProposalSnapshotPayload,
 } from "@workspace/document/finalize"
 import {
+  type InvoiceDraft,
+  type ProposalDraft,
   safeParseInvoiceDraft,
   safeParseProposalDraft,
 } from "@workspace/document/schema"
@@ -19,6 +21,7 @@ export interface FinalizeSendResult {
   shareUrl: string
   documentType: "proposal" | "invoice"
   documentTitle: string
+  document: ProposalDraft | InvoiceDraft
   totalMinorUnits?: number
   currency?: string
   recipientEmail?: string
@@ -116,6 +119,7 @@ export async function finalizeProposalSend(
     shareUrl,
     documentType: "proposal",
     documentTitle: current.title,
+    document: snapshotPayload.document,
     totalMinorUnits,
     currency,
     recipientEmail,
@@ -206,6 +210,7 @@ export async function finalizeInvoiceSend(
     shareUrl,
     documentType: "invoice",
     documentTitle: current.title,
+    document: snapshotPayload.document,
     totalMinorUnits,
     currency,
     recipientEmail,

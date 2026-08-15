@@ -399,6 +399,7 @@ export const sendDocumentInput = z.object({
   recipientEmail: emailAddress.optional(),
   subject: z.string().trim().min(1).max(200).optional(),
   personalMessage: z.string().max(2000).optional(),
+  includePdf: z.boolean().optional().default(false),
 })
 
 export const sendDocumentOutput = z.union([
@@ -412,6 +413,7 @@ export const sendDocumentOutput = z.union([
     totalMinorUnits: moneyMinorUnits.optional(),
     currency: currencyCode.optional(),
     recipientEmail: emailAddress.optional(),
+    includedPdf: z.boolean().optional(),
   }),
   toolError,
 ])
@@ -911,6 +913,7 @@ export const scheduleDocumentSendInput = z.object({
   scheduledFor: isoDateTime,
   subject: z.string().trim().min(1).max(200).optional(),
   personalMessage: z.string().max(2000).optional(),
+  includePdf: z.boolean().optional().default(false),
 })
 
 export const scheduleDocumentSendOutput = z.union([
@@ -922,6 +925,7 @@ export const scheduleDocumentSendOutput = z.union([
     scheduledFor: z.string(),
     status: z.literal("pending"),
     subject: z.string(),
+    includePdf: z.boolean().optional(),
   }),
   toolError,
 ])
@@ -944,6 +948,7 @@ export const listScheduledDispatchesOutput = z.union([
         scheduledFor: z.string(),
         status: z.string(),
         subject: z.string(),
+        includePdf: z.boolean().optional(),
         createdAt: z.string(),
       })
     ),
