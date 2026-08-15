@@ -38,6 +38,7 @@ export interface SendDocumentDialogProps {
   onOpenChange: (open: boolean) => void
   documentType: "proposal" | "invoice"
   documentTitle: string
+  documentId?: string
   defaultRecipientEmail?: string
   shareUrl?: string
   onFinalizeAndGetShareUrl?: (recipientEmail?: string) => Promise<string>

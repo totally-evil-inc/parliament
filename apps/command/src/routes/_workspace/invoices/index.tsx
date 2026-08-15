@@ -507,11 +507,13 @@ function InvoicesRoute() {
                                 className={`rounded px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider ${
                                   invoice.status === "paid"
                                     ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
-                                    : invoice.status === "sent"
-                                      ? isOverdue
-                                        ? "border-red-500/25 bg-red-500/10 text-red-400"
-                                        : "border-blue-500/25 bg-blue-500/10 text-blue-400"
-                                      : "border-neutral-800 bg-neutral-900 text-neutral-500"
+                                    : invoice.status === "scheduled"
+                                      ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                                      : invoice.status === "sent"
+                                        ? isOverdue
+                                          ? "border-red-500/25 bg-red-500/10 text-red-400"
+                                          : "border-blue-500/25 bg-blue-500/10 text-blue-400"
+                                        : "border-neutral-800 bg-neutral-900 text-neutral-500"
                                 }`}
                               >
                                 {invoice.status === "sent" && isOverdue

@@ -214,6 +214,8 @@ import { integrationsRouter } from "./routes/integrations"
 import { inviteRouter } from "./routes/invite"
 import { magicLinkRouter } from "./routes/magic-link"
 import { publicDocumentRouter } from "./routes/public-document"
+import { schedulerRouter } from "./routes/scheduler"
+import { processDueScheduledDispatches } from "./lib/scheduler/dispatch-worker"
 
 app.route("/auth/magic-link", magicLinkRouter)
 app.route("/auth/invite", inviteRouter)
@@ -227,6 +229,17 @@ app.route("/api/gmail/addon", addonRouter)
 app.route("/api/gmail", gmailRouter)
 app.route("/api/inbound", inboundRouter)
 app.route("/api/public", publicDocumentRouter)
+app.route("/api/scheduler", schedulerRouter)
+
+// Background worker: Poll and process scheduled document emails every 30 seconds
+if (process.env.NODE_ENV !== "test") {
+  const SCHEDULER_INTERVAL_MS = 30000
+  setInterval(() => {
+    processDueScheduledDispatches().catch((err) => {
+      logger.error({ err }, "Background scheduled dispatches tick failed")
+    })
+  }, SCHEDULER_INTERVAL_MS)
+}
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw)

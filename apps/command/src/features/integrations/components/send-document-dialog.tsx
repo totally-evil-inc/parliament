@@ -18,6 +18,7 @@ import * as React from "react"
 import { authClient } from "@/lib/auth-client"
 import { DocumentDispatchEmail } from "../../email/templates/DocumentDispatchEmail"
 import { useSendGmailEmail } from "../hooks/use-gmail-operations"
+import { useScheduleDocumentDispatch } from "../hooks/use-scheduled-dispatches"
 import { generateGoogleWebComposeUrl } from "../utils/mailto-generator"
 import { ComposerAttachmentCard } from "./composer/composer-attachment-card"
 import {
@@ -67,6 +68,7 @@ export function SendDocumentDialog({
   onOpenChange,
   documentType,
   documentTitle,
+  documentId,
   defaultRecipientEmail = "",
   shareUrl: initialShareUrl,
   onFinalizeAndGetShareUrl,
@@ -98,6 +100,7 @@ export function SendDocumentDialog({
   )
 
   const sendGmailMutation = useSendGmailEmail()
+  const scheduleMutation = useScheduleDocumentDispatch()
 
   const defaultSubject = React.useMemo(() => {
     return `${documentType === "proposal" ? "Proposal" : "Invoice"}: ${documentTitle}`
@@ -261,6 +264,68 @@ export function SendDocumentDialog({
       }, 1500)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to send email"
+      setErrorMessage(msg)
+      setStatusMessage(null)
+    }
+  }
+
+  const handleScheduleSend = async (scheduledDate: Date, timeLabel: string) => {
+    setErrorMessage(null)
+    setStatusMessage(null)
+
+    if (toRecipients.length === 0) {
+      setErrorMessage(
+        "Please specify at least one recipient email address before scheduling."
+      )
+      return
+    }
+
+    if (!documentId) {
+      setErrorMessage("Document ID is required to schedule dispatch.")
+      return
+    }
+
+    if (scheduledDate.getTime() <= Date.now()) {
+      setErrorMessage("Scheduled time must be in the future.")
+      return
+    }
+
+    if (!subject.trim() && !defaultSubject) {
+      setErrorMessage("Please enter an email subject.")
+      return
+    }
+
+    if (!message.trim()) {
+      setErrorMessage("Please enter an email message note.")
+      return
+    }
+
+    const primaryTo = toRecipients[0].email
+    const ccList = ccRecipients.map((r) => r.email)
+    const bccList = bccRecipients.map((r) => r.email)
+
+    try {
+      setStatusMessage(`Scheduling dispatch for ${timeLabel}...`)
+      await scheduleMutation.mutateAsync({
+        documentType,
+        documentId,
+        documentTitle,
+        recipientEmail: primaryTo,
+        ccRecipients: ccList,
+        bccRecipients: bccList,
+        subject: subject.trim() || defaultSubject,
+        message: message.trim(),
+        scheduledFor: scheduledDate.toISOString(),
+        sendMethod: "gmail",
+      })
+
+      setStatusMessage(`Successfully scheduled for ${timeLabel}!`)
+      setTimeout(() => {
+        onOpenChange(false)
+      }, 1500)
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to schedule document send"
       setErrorMessage(msg)
       setStatusMessage(null)
     }
@@ -479,9 +544,7 @@ export function SendDocumentDialog({
             onInsertGreeting={handleInsertGreeting}
             onInsertSignature={handleInsertSignature}
             onDiscardDraft={handleDiscardDraft}
-            onScheduleSend={(label) => {
-              setStatusMessage(`Scheduled for ${label}`)
-            }}
+            onScheduleSend={handleScheduleSend}
           />
         </div>
       </DialogContent>

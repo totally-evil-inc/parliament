@@ -46,7 +46,23 @@ interface ComposerToolbarProps {
   onInsertGreeting: (snippet: string) => void
   onInsertSignature: () => void
   onDiscardDraft: () => void
-  onScheduleSend?: (timeLabel: string) => void
+  onScheduleSend?: (scheduledDate: Date, timeLabel: string) => void
+}
+
+function getTomorrowMorning(): Date {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  d.setHours(9, 0, 0, 0)
+  return d
+}
+
+function getNextMondayMorning(): Date {
+  const d = new Date()
+  const day = d.getDay()
+  const daysUntilNextMonday = ((7 - day + 1) % 7) || 7
+  d.setDate(d.getDate() + daysUntilNextMonday)
+  d.setHours(9, 0, 0, 0)
+  return d
 }
 
 export function ComposerToolbar({
@@ -276,13 +292,19 @@ export function ComposerToolbar({
                     Schedule Presets
                   </DropdownMenuLabel>
                   <DropdownMenuItem
-                    onClick={() => onScheduleSend?.("Tomorrow at 9:00 AM")}
+                    onClick={() => {
+                      const dt = getTomorrowMorning()
+                      onScheduleSend?.(dt, "Tomorrow at 9:00 AM")
+                    }}
                   >
                     <ClockIcon className="mr-1 size-3.5" />
                     Tomorrow at 9:00 AM
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => onScheduleSend?.("Next Monday at 9:00 AM")}
+                    onClick={() => {
+                      const dt = getNextMondayMorning()
+                      onScheduleSend?.(dt, "Next Monday at 9:00 AM")
+                    }}
                   >
                     <ClockIcon className="mr-1 size-3.5" />
                     Next Monday at 9:00 AM
@@ -302,7 +324,9 @@ export function ComposerToolbar({
                     >
                       <CustomScheduleSubmenu
                         documentType={documentType}
-                        onSchedule={(label) => onScheduleSend?.(label)}
+                        onSchedule={(label, scheduledDate) =>
+                          onScheduleSend?.(scheduledDate, label)
+                        }
                       />
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>

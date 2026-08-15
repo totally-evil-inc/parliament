@@ -485,9 +485,11 @@ function ProposalsRoute() {
                               className={`rounded px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider ${
                                 proposal.status === "accepted"
                                   ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
-                                  : proposal.status === "sent"
-                                    ? "border-neutral-700/60 bg-neutral-800/60 text-neutral-300"
-                                    : "border-neutral-800 bg-neutral-900 text-neutral-500"
+                                  : proposal.status === "scheduled"
+                                    ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                                    : proposal.status === "sent"
+                                      ? "border-neutral-700/60 bg-neutral-800/60 text-neutral-300"
+                                      : "border-neutral-800 bg-neutral-900 text-neutral-500"
                               }`}
                             >
                               {proposal.status}

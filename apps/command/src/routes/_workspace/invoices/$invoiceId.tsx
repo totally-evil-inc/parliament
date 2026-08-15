@@ -1,4 +1,4 @@
-import { PaperAirplaneIcon } from "@heroicons/react/24/outline"
+import { ClockIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline"
 import {
   useMutation,
   useQueryClient,
@@ -27,11 +27,14 @@ import { Button } from "@workspace/ui/components/button"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
+import { cn } from "@workspace/ui/lib/utils"
 import * as React from "react"
 import { invoiceDraftQuery } from "@/api/invoices"
 import { useConfirm } from "@/components/confirm-dialog-provider"
 import { useTheme } from "@/components/theme-provider"
+import { ScheduledEmailModal } from "@/features/integrations/components/scheduled-email-modal"
 import { SendDocumentDialog } from "@/features/integrations/components/send-document-dialog"
+import { useScheduledDispatch } from "@/features/integrations/hooks/use-scheduled-dispatches"
 import { HeaderPortal } from "@/layouts/header-portal"
 import { createId } from "@/lib/create-id"
 import { buildPublicLink } from "@/lib/public-links"
@@ -218,6 +221,7 @@ function InvoiceEditorScreen({
   })
 
   const [sendDialogOpen, setSendDialogOpen] = React.useState(false)
+  const [scheduleModalOpen, setScheduleModalOpen] = React.useState(false)
 
   const handleAction = React.useCallback(
     (actionId: string) => {
@@ -243,6 +247,11 @@ function InvoiceEditorScreen({
   const defaultClientEmail = snapshot.data?.customer?.email || ""
   const invoiceTitle = snapshot.data?.title || "Untitled Invoice"
 
+  const { data: scheduledDispatch } = useScheduledDispatch(snapshot.id)
+  const isScheduled =
+    status === "scheduled" ||
+    (scheduledDispatch && scheduledDispatch.status === "pending")
+
   const handleFinalizeAndGetShareUrl = React.useCallback(
     async (recipientEmail?: string): Promise<string> => {
       const result = await sendDraft.mutateAsync(recipientEmail)
@@ -265,13 +274,39 @@ function InvoiceEditorScreen({
           <div className="flex min-w-0 items-center gap-2">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
-            <div className="min-w-0 truncate text-xs">
+            <div className="flex min-w-0 items-center gap-2 truncate text-xs">
               <span className="font-medium text-foreground">
                 {invoiceTitle}
               </span>
-              <span className="ml-2 rounded border border-border bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground uppercase">
-                {status}
+              <span
+                className={cn(
+                  "rounded border px-1.5 py-0.5 font-medium text-[10px] uppercase",
+                  isScheduled
+                    ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    : "border-border bg-muted/60 text-muted-foreground"
+                )}
+              >
+                {isScheduled ? "scheduled" : status}
               </span>
+              {isScheduled && scheduledDispatch ? (
+                <button
+                  type="button"
+                  onClick={() => setScheduleModalOpen(true)}
+                  className="flex cursor-pointer items-center gap-1 font-medium text-[11px] text-amber-600 underline underline-offset-4 hover:opacity-80 dark:text-amber-400"
+                >
+                  <ClockIcon className="size-3" />
+                  Scheduled for{" "}
+                  {new Date(
+                    scheduledDispatch.scheduledFor
+                  ).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}{" "}
+                  • View / Edit
+                </button>
+              ) : null}
               {message ? (
                 <span className="ml-3 text-muted-foreground">{message}</span>
               ) : null}
@@ -297,16 +332,29 @@ function InvoiceEditorScreen({
             >
               {saveDraft.isPending ? "Saving..." : "Save"}
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => setSendDialogOpen(true)}
-              disabled={saveDraft.isPending || sendDraft.isPending}
-              className="gap-1.5"
-            >
-              <PaperAirplaneIcon className="h-4 w-4" />
-              {sendDraft.isPending ? "Sending..." : "Send"}
-            </Button>
+            {isScheduled ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setScheduleModalOpen(true)}
+                className="gap-1.5 border-amber-500/40 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400"
+              >
+                <ClockIcon className="h-4 w-4" />
+                Manage Schedule
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setSendDialogOpen(true)}
+                disabled={saveDraft.isPending || sendDraft.isPending}
+                className="gap-1.5"
+              >
+                <PaperAirplaneIcon className="h-4 w-4" />
+                {sendDraft.isPending ? "Sending..." : "Send"}
+              </Button>
+            )}
           </div>
         </header>
       </HeaderPortal>
@@ -315,10 +363,18 @@ function InvoiceEditorScreen({
         open={sendDialogOpen}
         onOpenChange={setSendDialogOpen}
         documentType="invoice"
+        documentId={snapshot.id}
         documentTitle={invoiceTitle}
         defaultRecipientEmail={defaultClientEmail}
         shareUrl={shareUrl || undefined}
         onFinalizeAndGetShareUrl={handleFinalizeAndGetShareUrl}
+      />
+
+      <ScheduledEmailModal
+        open={scheduleModalOpen}
+        onOpenChange={setScheduleModalOpen}
+        dispatch={scheduledDispatch ?? null}
+        documentTitle={invoiceTitle}
       />
       <DocumentSidebarProvider defaultOpen={true}>
         <div

@@ -293,4 +293,42 @@ describe("Milestone 1 schema extensions", () => {
     expect(versionCols.versionNumber.notNull).toBe(true)
     expect(versionCols.hash.notNull).toBe(true)
   })
+
+  it("verifies scheduledDocumentDispatch schema table definition, columns, and indexes", () => {
+    expect(schema.scheduledDocumentDispatch).toBeDefined()
+    expect(getTableName(schema.scheduledDocumentDispatch)).toBe(
+      "scheduled_document_dispatch"
+    )
+
+    const cols = getTableColumns(schema.scheduledDocumentDispatch)
+    expect(cols.id.notNull).toBe(true)
+    expect(cols.organizationId.notNull).toBe(true)
+    expect(cols.userId.notNull).toBe(true)
+    expect(cols.documentType.notNull).toBe(true)
+    expect(cols.documentId.notNull).toBe(true)
+    expect(cols.documentTitle.notNull).toBe(true)
+    expect(cols.recipientEmail.notNull).toBe(true)
+    expect(cols.subject.notNull).toBe(true)
+    expect(cols.message.notNull).toBe(true)
+    expect(cols.scheduledFor.notNull).toBe(true)
+    expect(cols.status.notNull).toBe(true)
+    expect(cols.sendMethod.notNull).toBe(true)
+    expect(cols.attempts.notNull).toBe(true)
+    expect(cols.createdAt.notNull).toBe(true)
+    expect(cols.updatedAt.notNull).toBe(true)
+
+    expect(cols.status.hasDefault).toBe(true)
+    expect(cols.status.default).toBe("pending")
+    expect(cols.sendMethod.hasDefault).toBe(true)
+    expect(cols.sendMethod.default).toBe("gmail")
+    expect(cols.attempts.hasDefault).toBe(true)
+    expect(cols.attempts.default).toBe(0)
+
+    const config = getTableConfig(schema.scheduledDocumentDispatch)
+    const indexNames = config.indexes.map((idx) => idx.config.name)
+    expect(indexNames).toContain("idx_scheduled_dispatch_due")
+    expect(indexNames).toContain("idx_scheduled_dispatch_doc")
+    expect(indexNames).toContain("idx_scheduled_dispatch_user")
+    expect(indexNames).toContain("idx_scheduled_dispatch_org")
+  })
 })
