@@ -94,13 +94,22 @@ export class ContextGovernor {
    * Applies a sliding window to conversation turns while preserving the initial user goal.
    */
   compactMessages(messages: ModelMessage[]): ModelMessage[] {
-    if (messages.length <= this.config.slidingWindowTurns * 2) {
+    const windowSize = this.config.slidingWindowTurns * 2
+    if (messages.length <= windowSize) {
       return messages
     }
 
     // Always keep the initial user prompt (turn 0)
     const initialUserMessage = messages[0]
-    const recentMessages = messages.slice(-this.config.slidingWindowTurns * 2)
+    let sliceStart = messages.length - windowSize
+
+    // Invariant: Never start recentMessages slice on a 'tool' response message
+    // without its preceding assistant 'tool-call' message.
+    if (sliceStart > 0 && messages[sliceStart]?.role === "tool") {
+      sliceStart = Math.max(0, sliceStart - 1)
+    }
+
+    const recentMessages = messages.slice(sliceStart)
 
     if (initialUserMessage && !recentMessages.includes(initialUserMessage)) {
       return [initialUserMessage, ...recentMessages]

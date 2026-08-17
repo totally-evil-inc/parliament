@@ -154,7 +154,8 @@ export class ToolDispatcher {
    */
   async executeTool(
     name: string,
-    args: unknown
+    args: unknown,
+    options?: { skipApprovalGate?: boolean }
   ): Promise<{
     result: unknown
     isError: boolean
@@ -180,7 +181,7 @@ export class ToolDispatcher {
     }
 
     // 2. Check if Tool is Gated by Human Approval
-    if (catalogEntry.needsApproval) {
+    if (catalogEntry.needsApproval && !options?.skipApprovalGate) {
       return {
         result: {
           status: "pending_approval",

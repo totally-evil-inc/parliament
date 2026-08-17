@@ -92,38 +92,60 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
   const startTime = Date.now()
 
   try {
-    // 1. Atomically resolve and lock the action record
-    const [action] = await db
-      .select()
-      .from(schema.chatActionApproval)
+    // 1. Atomically lock and transition status from pending to approved/rejected
+    const nextStatus = approved ? "approved" : "rejected"
+
+    const [updatedRow] = await db
+      .update(schema.chatActionApproval)
+      .set({
+        status: nextStatus,
+        resolvedByUserId: ctx.userId,
+        resolutionFeedback: feedback || null,
+        updatedAt: new Date(),
+      })
       .where(
         and(
           eq(schema.chatActionApproval.id, id),
-          eq(schema.chatActionApproval.organizationId, ctx.organizationId)
+          eq(schema.chatActionApproval.organizationId, ctx.organizationId),
+          eq(schema.chatActionApproval.status, "pending")
         )
       )
-      .limit(1)
+      .returning()
 
-    if (!action) {
-      return c.json(
-        { error: { code: "not_found", message: "Action approval not found" } },
-        404
-      )
-    }
+    if (!updatedRow) {
+      // Check if it exists in another state or was not found
+      const [existing] = await db
+        .select()
+        .from(schema.chatActionApproval)
+        .where(
+          and(
+            eq(schema.chatActionApproval.id, id),
+            eq(schema.chatActionApproval.organizationId, ctx.organizationId)
+          )
+        )
+        .limit(1)
 
-    if (action.status !== "pending") {
+      if (!existing) {
+        return c.json(
+          {
+            error: { code: "not_found", message: "Action approval not found" },
+          },
+          404
+        )
+      }
+
       return c.json(
         {
           error: {
             code: "already_resolved",
-            message: `This action has already been ${action.status}.`,
+            message: `This action has already been ${existing.status}.`,
           },
         },
         409
       )
     }
 
-    if (new Date() > new Date(action.expiresAt)) {
+    if (new Date() > new Date(updatedRow.expiresAt)) {
       await db
         .update(schema.chatActionApproval)
         .set({ status: "expired", updatedAt: new Date() })
@@ -140,28 +162,17 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
       )
     }
 
-    const nextStatus = approved ? "approved" : "rejected"
-
-    await db
-      .update(schema.chatActionApproval)
-      .set({
-        status: nextStatus,
-        resolvedByUserId: ctx.userId,
-        resolutionFeedback: feedback || null,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.chatActionApproval.id, id))
-
     let executionResult: unknown = null
     let isError = false
 
     // 2. If approved, execute the tool directly through the dispatcher
     if (approved) {
       const dispatcher = new ToolDispatcher(ctx)
-      // Execute without approval gate check
+      // Execute with approval gate check bypassed
       const exec = await dispatcher.executeTool(
-        action.toolName,
-        action.toolArgs
+        updatedRow.toolName,
+        updatedRow.toolArgs,
+        { skipApprovalGate: true }
       )
       executionResult = exec.result
       isError = exec.isError
@@ -182,7 +193,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
       userId: ctx.userId,
       metadata: {
         approvalId: id,
-        toolName: action.toolName,
+        toolName: updatedRow.toolName,
         approved,
         feedback,
       },
@@ -191,7 +202,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
     return c.json({
       id,
       status: nextStatus,
-      toolName: action.toolName,
+      toolName: updatedRow.toolName,
       result: executionResult,
       isError,
     })

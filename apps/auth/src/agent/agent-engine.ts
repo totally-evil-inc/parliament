@@ -145,9 +145,35 @@ export class AgentEngine {
         return
       }
 
-      // Record assistant text in history
+      if (abortSignal?.aborted) {
+        yield {
+          type: "turn:error",
+          code: "aborted",
+          message: "Agent turn was aborted by client request.",
+          recoverable: false,
+        }
+        return
+      }
+
+      // Record assistant message with text and tool calls in model history
+      const assistantContent: any[] = []
       if (assistantText.trim()) {
-        activeMessages.push({ role: "assistant", content: assistantText })
+        assistantContent.push({ type: "text", text: assistantText })
+      }
+      for (const call of toolCallsToProcess) {
+        assistantContent.push({
+          type: "tool-call",
+          toolCallId: call.id,
+          toolName: call.name,
+          input: call.args,
+        })
+      }
+
+      if (assistantContent.length > 0) {
+        activeMessages.push({
+          role: "assistant",
+          content: assistantContent as any,
+        })
       }
 
       // 1. Termination condition: Model produced text with no tool calls

@@ -51,23 +51,68 @@ function convertToModelMessages(
     const role = (
       m.role === "assistant" || m.role === "system" ? m.role : "user"
     ) as "user" | "assistant" | "system"
-    let textContent = ""
 
     if (Array.isArray(m.parts) && m.parts.length > 0) {
-      textContent = m.parts
+      if (role === "assistant") {
+        const assistantParts: any[] = []
+        const toolResultParts: any[] = []
+
+        for (const p of m.parts) {
+          if (!p) continue
+          if (p.type === "text") {
+            const text = p.text ?? p.content ?? ""
+            if (text.trim()) assistantParts.push({ type: "text", text })
+          } else if (p.type === "tool-call" || p.type === "tool-invocation") {
+            assistantParts.push({
+              type: "tool-call",
+              toolCallId: p.toolCallId ?? p.id ?? crypto.randomUUID(),
+              toolName: p.toolName ?? p.name ?? "",
+              input: p.args ?? p.input ?? {},
+            })
+          } else if (p.type === "tool-result") {
+            toolResultParts.push({
+              type: "tool-result",
+              toolCallId: p.toolCallId ?? p.id ?? crypto.randomUUID(),
+              toolName: p.toolName ?? p.name ?? "",
+              output: p.result ?? p.output ?? {},
+              isError: p.isError ?? false,
+            })
+          }
+        }
+
+        if (assistantParts.length > 0) {
+          result.push({
+            role: "assistant",
+            content: assistantParts as any,
+          })
+        }
+
+        if (toolResultParts.length > 0) {
+          result.push({
+            role: "tool",
+            content: toolResultParts as any,
+          })
+        }
+        continue
+      }
+
+      // User role
+      const textContent = m.parts
         .filter((p) => p && (p.type === "text" || p.type === "thinking"))
         .map((p) => p.text ?? p.content ?? p.thinking ?? "")
         .join("")
+
+      if (textContent.trim()) {
+        result.push({ role: "user", content: textContent })
+      }
+      continue
     }
 
-    if (!textContent && typeof m.content === "string") {
-      textContent = m.content
-    }
-
-    if (textContent.trim()) {
+    // Fallback for simple content string
+    if (typeof m.content === "string" && m.content.trim()) {
       result.push({
         role,
-        content: textContent,
+        content: m.content.trim(),
       })
     }
   }

@@ -138,7 +138,7 @@ export async function getLanguageModel(
         baseURL: config.baseUrl,
         apiKey: config.apiKey,
       })
-      return { model: openRouter(modelName), modelName }
+      return { model: openRouter.chat(modelName), modelName }
     }
     const anthropic = createAnthropic({
       baseURL: config.baseUrl.includes("anthropic.com")
@@ -150,10 +150,16 @@ export async function getLanguageModel(
     return { model: anthropic(cleanAnthropicName), modelName }
   }
 
+  const isStandardOpenAi =
+    config.baseUrl.includes("api.openai.com") || !config.baseUrl.trim()
+
   const openai = createOpenAI({
     baseURL: config.baseUrl,
     apiKey: config.apiKey,
   })
 
-  return { model: openai(modelName), modelName }
+  // Use chat completions model for third-party compatibility (vLLM, Groq, LM Studio, etc.)
+  const model = isStandardOpenAi ? openai(modelName) : openai.chat(modelName)
+
+  return { model, modelName }
 }

@@ -211,14 +211,34 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       abortControllerRef.current = abortController
 
       try {
-        const payloadMessages = [...messages, userMsg].map((m) => ({
-          role: m.role,
-          content: m.content,
-          parts: [
-            ...(m.thinking ? [{ type: "thinking", text: m.thinking }] : []),
-            ...(m.content ? [{ type: "text", text: m.content }] : []),
-          ],
-        }))
+        const payloadMessages = [...messages, userMsg].map((m) => {
+          const parts: any[] = []
+          if (m.thinking) parts.push({ type: "thinking", text: m.thinking })
+          if (m.content) parts.push({ type: "text", text: m.content })
+          if (Array.isArray(m.toolCalls)) {
+            for (const tc of m.toolCalls) {
+              parts.push({
+                type: "tool-call",
+                toolCallId: tc.id,
+                toolName: tc.name,
+                args: tc.args,
+              })
+              if (tc.result !== undefined) {
+                parts.push({
+                  type: "tool-result",
+                  toolCallId: tc.id,
+                  toolName: tc.name,
+                  result: tc.result,
+                })
+              }
+            }
+          }
+          return {
+            role: m.role,
+            content: m.content,
+            parts,
+          }
+        })
 
         const res = await fetch(`${AUTH_SERVER_URL}/api/agent/chat`, {
           method: "POST",
@@ -458,6 +478,15 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                   if (existing) {
                     existing.result = p.result ?? p.output
                   }
+                } else if (p?.type === "approval-requested") {
+                  toolCalls.push({
+                    id: String(p.id ?? p.approvalId ?? "approval"),
+                    name: String(p.toolName ?? "action"),
+                    args: p.toolArgs ?? p.args ?? {},
+                    status: "pending_approval",
+                    needsApproval: true,
+                    approvalId: String(p.approvalId ?? p.id),
+                  })
                 }
               }
             }
