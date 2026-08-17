@@ -1,6 +1,13 @@
 import { toolDefinition } from "@tanstack/ai"
-import { dealAnalyticsOutput, listDealsOutput } from "@workspace/agent"
-import { db, desc, eq, schema } from "@workspace/database"
+import {
+  createDealInput,
+  dealAnalyticsOutput,
+  listDealsOutput,
+  toolOutputSchemas,
+  updateDealStageInput,
+} from "@workspace/agent"
+import { and, db, desc, eq, schema } from "@workspace/database"
+import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
 
 const STAGES = [
@@ -166,5 +173,101 @@ export function dealAnalyticsTool(ctx: AgentContext) {
       monthlyPipeline,
       stageBreakdown,
     }
+  })
+}
+
+/**
+ * `create_deal`: org-scoped deal creation mirroring
+ * `apps/command/src/server/deals.ts` `createDealServerFn`. Approval-gated.
+ */
+export function createDealTool(ctx: AgentContext) {
+  return toolDefinition({
+    name: "create_deal",
+    description:
+      "Create a new deal in the pipeline with optional company, contact, stage, value and expected close date. Approval required.",
+    inputSchema: createDealInput,
+    outputSchema: toolOutputSchemas.create_deal,
+    needsApproval: true,
+  }).server(async (args) => {
+    const id = crypto.randomUUID()
+    const [newDeal] = await db
+      .insert(schema.deal)
+      .values({
+        id,
+        organizationId: ctx.organizationId,
+        companyId: args.companyId ?? null,
+        contactId: args.contactId ?? null,
+        title: args.title,
+        stage: args.stage ?? "lead",
+        valueMinorUnits: args.valueMinorUnits ?? 0,
+        currency: args.currency ?? "USD",
+        expectedCloseDate: args.expectedCloseDate ?? null,
+        createdById: ctx.userId ?? null,
+      })
+      .returning()
+
+    if (!newDeal) {
+      throw new Error("Failed to create deal")
+    }
+
+    logWideEvent({
+      event: "agent.deal.created",
+      organizationId: ctx.organizationId,
+      userId: ctx.userId,
+      entityId: id,
+      outcome: "success",
+      metadata: {
+        stage: args.stage,
+        valueMinorUnits: args.valueMinorUnits,
+        currency: args.currency,
+      },
+    })
+
+    return newDeal
+  })
+}
+
+/**
+ * `update_deal_stage`: move a deal to a new pipeline stage, mirroring
+ * `apps/command/src/server/deals.ts` `updateDealStageServerFn`. Approval-gated.
+ */
+export function updateDealStageTool(ctx: AgentContext) {
+  return toolDefinition({
+    name: "update_deal_stage",
+    description: "Move a deal to a new pipeline stage. Approval required.",
+    inputSchema: updateDealStageInput,
+    outputSchema: toolOutputSchemas.update_deal_stage,
+    needsApproval: true,
+  }).server(async (args) => {
+    const [updatedDeal] = await db
+      .update(schema.deal)
+      .set({
+        stage: args.stage,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.deal.id, args.id),
+          eq(schema.deal.organizationId, ctx.organizationId)
+        )
+      )
+      .returning()
+
+    if (!updatedDeal) {
+      throw new Error("Deal not found or unauthorized")
+    }
+
+    logWideEvent({
+      event: "agent.deal.stage_updated",
+      organizationId: ctx.organizationId,
+      userId: ctx.userId,
+      entityId: args.id,
+      outcome: "success",
+      metadata: {
+        newStage: args.stage,
+      },
+    })
+
+    return updatedDeal
   })
 }

@@ -1,10 +1,15 @@
 import { toolDefinition } from "@tanstack/ai"
 import {
+  createCustomerInput,
   customerAnalyticsOutput,
   customerDetailsInput,
   customerDetailsOutput,
   listCustomersOutput,
+  toolOutputSchemas,
+  updateCustomerInput,
 } from "@workspace/agent"
+import { and, db, eq, schema } from "@workspace/database"
+import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
 import {
   customerAnalyticsTool as implCustomerAnalytics,
@@ -46,5 +51,120 @@ export function customerDetailsTool(ctx: AgentContext) {
     needsApproval: false,
   }).server(async (args) => {
     return implCustomerDetails(args, ctx)
+  })
+}
+
+/**
+ * `create_customer`: org-scoped customer creation mirroring
+ * `apps/command/src/server/customers.ts` `createCustomerServerFn`. Approval-gated.
+ */
+export function createCustomerTool(ctx: AgentContext) {
+  return toolDefinition({
+    name: "create_customer",
+    description:
+      "Create a new customer (company) with optional contact details. Approval required.",
+    inputSchema: createCustomerInput,
+    outputSchema: toolOutputSchemas.create_customer,
+    needsApproval: true,
+  }).server(async (args) => {
+    const id = crypto.randomUUID()
+    const [newCustomer] = await db
+      .insert(schema.company)
+      .values({
+        id,
+        organizationId: ctx.organizationId,
+        name: args.name,
+        billingEmail: args.billingEmail || null,
+        phone: args.phone || null,
+        website: args.website || null,
+        vatNumber: args.vatNumber || null,
+        city: args.city || null,
+        country: args.country || null,
+        note: args.note || null,
+        status: args.status ?? "active",
+        preferredCurrency: args.preferredCurrency ?? "USD",
+        industry: args.industry || null,
+      })
+      .returning()
+
+    if (!newCustomer) {
+      throw new Error("Failed to save client entity")
+    }
+
+    logWideEvent({
+      event: "agent.customer.created",
+      organizationId: ctx.organizationId,
+      userId: ctx.userId,
+      entityId: id,
+      outcome: "success",
+      metadata: {
+        status: args.status,
+        currency: args.preferredCurrency,
+      },
+    })
+
+    return newCustomer
+  })
+}
+
+/**
+ * `update_customer`: update mutable fields of an existing customer, mirroring
+ * `apps/command/src/server/customers.ts` `updateCustomerServerFn`. Approval-gated.
+ */
+export function updateCustomerTool(ctx: AgentContext) {
+  return toolDefinition({
+    name: "update_customer",
+    description: "Update mutable fields of an existing customer. Approval required.",
+    inputSchema: updateCustomerInput,
+    outputSchema: toolOutputSchemas.update_customer,
+    needsApproval: true,
+  }).server(async (args) => {
+    const [updatedCustomer] = await db
+      .update(schema.company)
+      .set({
+        ...(args.name !== undefined && { name: args.name }),
+        ...(args.billingEmail !== undefined && {
+          billingEmail: args.billingEmail || null,
+        }),
+        ...(args.phone !== undefined && { phone: args.phone || null }),
+        ...(args.website !== undefined && { website: args.website || null }),
+        ...(args.vatNumber !== undefined && {
+          vatNumber: args.vatNumber || null,
+        }),
+        ...(args.city !== undefined && { city: args.city || null }),
+        ...(args.country !== undefined && { country: args.country || null }),
+        ...(args.note !== undefined && { note: args.note || null }),
+        ...(args.status !== undefined && { status: args.status }),
+        ...(args.preferredCurrency !== undefined && {
+          preferredCurrency: args.preferredCurrency,
+        }),
+        ...(args.industry !== undefined && { industry: args.industry || null }),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.company.id, args.id),
+          eq(schema.company.organizationId, ctx.organizationId)
+        )
+      )
+      .returning()
+
+    if (!updatedCustomer) {
+      throw new Error("Customer not found or unauthorized")
+    }
+
+    logWideEvent({
+      event: "agent.customer.updated",
+      organizationId: ctx.organizationId,
+      userId: ctx.userId,
+      entityId: args.id,
+      outcome: "success",
+      metadata: {
+        status: args.status,
+        currency: args.preferredCurrency,
+      },
+    })
+
+    return updatedCustomer
   })
 }
