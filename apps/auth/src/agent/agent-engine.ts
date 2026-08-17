@@ -79,7 +79,7 @@ export class AgentEngine {
       }
 
       let assistantText = ""
-      let assistantThinking = ""
+      let _assistantThinking = ""
       let inThinkTag = false
       const toolCallsToProcess: Array<{
         id: string
@@ -108,7 +108,7 @@ export class AgentEngine {
               (chunk as any).reasoning ??
               ""
             if (text) {
-              assistantThinking += text
+              _assistantThinking += text
               yield { type: "thinking:delta", text }
             }
             continue
@@ -142,13 +142,13 @@ export class AgentEngine {
                 if (closeIdx !== -1) {
                   const thinkPart = remaining.slice(0, closeIdx)
                   if (thinkPart) {
-                    assistantThinking += thinkPart
+                    _assistantThinking += thinkPart
                     yield { type: "thinking:delta", text: thinkPart }
                   }
                   inThinkTag = false
                   remaining = remaining.slice(closeIdx + 8)
                 } else {
-                  assistantThinking += remaining
+                  _assistantThinking += remaining
                   yield { type: "thinking:delta", text: remaining }
                   remaining = ""
                 }
@@ -219,14 +219,8 @@ export class AgentEngine {
         return
       }
 
-      // Record assistant message with text, reasoning, and tool calls in model history
+      // Record assistant message with text and tool calls in model history for next turn
       const assistantContent: any[] = []
-      if (assistantThinking.trim()) {
-        assistantContent.push({
-          type: "reasoning",
-          text: assistantThinking,
-        })
-      }
       if (assistantText.trim()) {
         assistantContent.push({ type: "text", text: assistantText })
       }
@@ -235,6 +229,7 @@ export class AgentEngine {
           type: "tool-call",
           toolCallId: call.id,
           toolName: call.name,
+          args: call.args,
           input: call.args,
         })
       }
@@ -379,6 +374,7 @@ export class AgentEngine {
           type: "tool-result" as const,
           toolCallId: tr.callId,
           toolName: tr.name,
+          result: tr.processedContent,
           output: tr.processedContent,
           isError: tr.isError,
         })) as any,
