@@ -35,6 +35,7 @@ describe("AgentEvent Stream Protocol", () => {
     const approval = agentEventSchema.safeParse({
       type: "action:approval_required",
       approvalId: "appr-456",
+      callId: "call-789",
       toolName: "send_proposal",
       args: { documentId: "doc-123", recipientEmail: "client@acme.com" },
       summary: "Send Proposal to client@acme.com",
