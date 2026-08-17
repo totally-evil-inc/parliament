@@ -1,3 +1,4 @@
+export * from "./chat/events"
 export * from "./chat/message-parts"
 export * from "./config"
 export * from "./spec"
