@@ -1,4 +1,3 @@
-import { Shimmer } from "@workspace/ui/components/shimmer"
 import type { TaskStatus } from "@workspace/ui/components/task"
 import type React from "react"
 import { ChatMarkdown } from "./chat-markdown"
@@ -128,26 +127,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         onRejectTool={onRejectTool}
       />
 
-      {/* 5. Text Message Content / Waiting indicator */}
-      {extractedContent ? (
-        <ChatMarkdown content={extractedContent} />
-      ) : isStreaming && !message.openuiCode && !thinkingText ? (
-        <div className="flex items-center gap-2 py-1 text-muted-foreground text-xs">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-          </span>
-          <Shimmer duration={1.5} className="font-medium text-xs">
-            {message.toolCalls?.some(
-              (tc) => tc.status === "running" || tc.result === undefined
-            )
-              ? "Executing operations & updating draft…"
-              : message.toolCalls && message.toolCalls.length > 0
-                ? "Synthesizing document summary & breakdown…"
-                : "Thinking & analyzing requirements…"}
-          </Shimmer>
-        </div>
-      ) : null}
+      {/* 5. Text Message Content */}
+      {extractedContent ? <ChatMarkdown content={extractedContent} /> : null}
 
       {/* 6. OpenUI Generative Spec Element */}
       {message.openuiCode && (

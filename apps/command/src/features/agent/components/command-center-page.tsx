@@ -428,7 +428,6 @@ export const CommandCenterPage: React.FC = () => {
               onSend={sendPrompt}
               onStop={stop}
               isLoading={isLoading}
-              thinking={activeThinking}
               selectedModel={selectedModel}
               onSelectModel={setSelectedModel}
               showPrompts={false}

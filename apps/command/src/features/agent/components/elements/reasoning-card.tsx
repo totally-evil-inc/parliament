@@ -3,7 +3,6 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from "@workspace/ui/components/reasoning"
-import { Shimmer } from "@workspace/ui/components/shimmer"
 import type React from "react"
 import { useEffect, useRef } from "react"
 
@@ -32,28 +31,18 @@ export const ReasoningCard: React.FC<ReasoningCardProps> = ({
     <Reasoning
       isStreaming={isStreaming}
       duration={duration}
-      defaultOpen={isStreaming}
+      defaultOpen={isStreaming && Boolean(thinking)}
       className="my-2"
     >
       <ReasoningTrigger />
-      <ReasoningContent
-        ref={contentRef}
-        className="max-h-96 overflow-y-auto break-words font-mono text-xs leading-relaxed"
-      >
-        {thinking ? (
+      {thinking ? (
+        <ReasoningContent
+          ref={contentRef}
+          className="max-h-96 overflow-y-auto break-words font-mono text-xs leading-relaxed"
+        >
           <div className="whitespace-pre-wrap">{thinking}</div>
-        ) : (
-          <div className="flex items-center gap-2 py-1 text-muted-foreground text-xs italic">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-            </span>
-            <Shimmer duration={1.5}>
-              Analyzing requirements &amp; formulating reasoning…
-            </Shimmer>
-          </div>
-        )}
-      </ReasoningContent>
+        </ReasoningContent>
+      ) : null}
     </Reasoning>
   )
 }
