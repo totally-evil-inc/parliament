@@ -218,18 +218,43 @@ export async function runAgentTurn(
           controller.enqueue(encoder.encode(sseString))
         }
 
-        if (thinkingBuffer.trim()) {
+        let finalText = textBuffer
+        let finalThinking = thinkingBuffer
+
+        if (finalText.includes("<think>")) {
+          const thinkMatch = finalText.match(/<think>([\s\S]*?)<\/think>/)
+          if (thinkMatch) {
+            const extracted = thinkMatch[1].trim()
+            finalThinking = finalThinking
+              ? `${finalThinking}\n\n${extracted}`
+              : extracted
+            finalText = finalText
+              .replace(/<think>[\s\S]*?<\/think>/g, "")
+              .trim()
+          } else {
+            const openMatch = finalText.match(/<think>([\s\S]*)$/)
+            if (openMatch) {
+              const extracted = openMatch[1].trim()
+              finalThinking = finalThinking
+                ? `${finalThinking}\n\n${extracted}`
+                : extracted
+              finalText = finalText.replace(/<think>[\s\S]*$/, "").trim()
+            }
+          }
+        }
+
+        if (finalThinking.trim()) {
           collectedParts.unshift({
             type: "thinking",
-            thinking: thinkingBuffer,
-            content: thinkingBuffer,
+            thinking: finalThinking,
+            content: finalThinking,
           })
         }
-        if (textBuffer.trim()) {
+        if (finalText.trim()) {
           collectedParts.push({
             type: "text",
-            text: textBuffer,
-            content: textBuffer,
+            text: finalText,
+            content: finalText,
           })
         }
 

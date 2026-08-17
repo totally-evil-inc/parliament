@@ -79,6 +79,8 @@ export class AgentEngine {
       }
 
       let assistantText = ""
+      let assistantThinking = ""
+      let inThinkTag = false
       const toolCallsToProcess: Array<{
         id: string
         name: string
@@ -86,56 +88,114 @@ export class AgentEngine {
       }> = []
 
       try {
-        for await (const chunk of result.stream) {
+        const streamSource =
+          (result as any).fullStream || (result as any).stream || result
+
+        for await (const chunk of streamSource) {
           if (abortSignal?.aborted) break
 
-          switch (chunk.type) {
-            case "text-delta":
-              assistantText += chunk.text
-              yield { type: "content:delta", text: chunk.text }
-              break
+          const chunkType = chunk.type
 
-            case "reasoning-delta":
-              yield { type: "thinking:delta", text: chunk.text }
-              break
-
-            case "tool-call": {
-              const typedChunk = chunk as any
-              const callId =
-                typedChunk.toolCallId ?? typedChunk.id ?? crypto.randomUUID()
-              const toolName = typedChunk.toolName ?? ""
-              const args = (typedChunk.input ??
-                typedChunk.args ??
-                {}) as Record<string, unknown>
-
-              toolCallsToProcess.push({
-                id: callId,
-                name: toolName,
-                args,
-              })
-              yield {
-                type: "tool:called",
-                callId,
-                name: toolName,
-                args,
-              }
-              break
+          if (
+            chunkType === "reasoning-delta" ||
+            chunkType === "reasoning" ||
+            chunkType === "reasoning_content"
+          ) {
+            const text =
+              (chunk as any).textDelta ??
+              (chunk as any).text ??
+              (chunk as any).delta ??
+              (chunk as any).reasoning ??
+              ""
+            if (text) {
+              assistantThinking += text
+              yield { type: "thinking:delta", text }
             }
+            continue
+          }
 
-            case "error": {
-              const err = (chunk as any)?.error ?? chunk
-              const message =
-                typeof err === "string"
-                  ? err
-                  : err?.message || err?.errorText || String(err || "Stream failed")
-              yield {
-                type: "turn:error",
-                code: "stream_error",
-                message,
-                recoverable: true,
+          if (chunkType === "text-delta" || chunkType === "text") {
+            const raw = (chunk as any).text ?? (chunk as any).delta ?? ""
+            if (!raw) continue
+
+            // Stateful demultiplexer for models emitting <think>...</think> in text stream
+            let remaining = raw
+
+            while (remaining.length > 0) {
+              if (!inThinkTag) {
+                const openIdx = remaining.indexOf("<think>")
+                if (openIdx !== -1) {
+                  const before = remaining.slice(0, openIdx)
+                  if (before) {
+                    assistantText += before
+                    yield { type: "content:delta", text: before }
+                  }
+                  inThinkTag = true
+                  remaining = remaining.slice(openIdx + 7)
+                } else {
+                  assistantText += remaining
+                  yield { type: "content:delta", text: remaining }
+                  remaining = ""
+                }
+              } else {
+                const closeIdx = remaining.indexOf("</think>")
+                if (closeIdx !== -1) {
+                  const thinkPart = remaining.slice(0, closeIdx)
+                  if (thinkPart) {
+                    assistantThinking += thinkPart
+                    yield { type: "thinking:delta", text: thinkPart }
+                  }
+                  inThinkTag = false
+                  remaining = remaining.slice(closeIdx + 8)
+                } else {
+                  assistantThinking += remaining
+                  yield { type: "thinking:delta", text: remaining }
+                  remaining = ""
+                }
               }
-              return
             }
+            continue
+          }
+
+          if (chunkType === "tool-call") {
+            const typedChunk = chunk as any
+            const callId =
+              typedChunk.toolCallId ?? typedChunk.id ?? crypto.randomUUID()
+            const toolName = typedChunk.toolName ?? ""
+            const args = (typedChunk.input ?? typedChunk.args ?? {}) as Record<
+              string,
+              unknown
+            >
+
+            toolCallsToProcess.push({
+              id: callId,
+              name: toolName,
+              args,
+            })
+            yield {
+              type: "tool:called",
+              callId,
+              name: toolName,
+              args,
+            }
+            continue
+          }
+
+          if (chunkType === "error") {
+            const err = (chunk as any)?.error ?? chunk
+            const message =
+              typeof err === "string"
+                ? err
+                : err?.message ||
+                  err?.errorText ||
+                  String(err || "Stream failed")
+            yield {
+              type: "turn:error",
+              code: "stream_error",
+              message,
+              recoverable: true,
+            }
+            return
           }
         }
       } catch (err: unknown) {
@@ -159,8 +219,14 @@ export class AgentEngine {
         return
       }
 
-      // Record assistant message with text and tool calls in model history
+      // Record assistant message with text, reasoning, and tool calls in model history
       const assistantContent: any[] = []
+      if (assistantThinking.trim()) {
+        assistantContent.push({
+          type: "reasoning",
+          text: assistantThinking,
+        })
+      }
       if (assistantText.trim()) {
         assistantContent.push({ type: "text", text: assistantText })
       }

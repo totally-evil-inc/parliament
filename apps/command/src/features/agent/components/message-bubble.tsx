@@ -51,10 +51,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 }) => {
   const isUser = message.role === "user"
 
-  let { content: extractedContent, thinking: extractedThinking } =
-    typeof message.content === "string" && message.content.trim()
-      ? { content: message.content, thinking: message.thinking }
-      : extractThinkingAndContent(message)
+  const extracted = extractThinkingAndContent(message)
+  let extractedContent = extracted.content
+  const extractedThinking = extracted.thinking
 
   if (isUser && !extractedContent) {
     if (
@@ -71,7 +70,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   }
 
-  const thinkingText = message.thinking || extractedThinking
+  const thinkingText = message.thinking || extractedThinking || ""
 
   if (isUser) {
     return (
@@ -105,7 +104,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       </div>
 
       {/* 1. Reasoning / Thinking Element */}
-      <ReasoningCard thinking={thinkingText || ""} isStreaming={isStreaming} />
+      <ReasoningCard thinking={thinkingText} isStreaming={isStreaming} />
 
       {/* 2. Chain of Thought Steps Element */}
       {message.chainOfThought && message.chainOfThought.length > 0 && (
@@ -132,7 +131,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       {/* 5. Text Message Content / Waiting indicator */}
       {extractedContent ? (
         <ChatMarkdown content={extractedContent} />
-      ) : isStreaming && !message.openuiCode ? (
+      ) : isStreaming && !message.openuiCode && !thinkingText ? (
         <div className="flex items-center gap-2 py-1 text-muted-foreground text-xs">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />

@@ -79,6 +79,8 @@ export function Reasoning({
         )
         setElapsedSeconds(finalDuration)
       }
+      if (!isControlled) setUncontrolledOpen(false)
+      onOpenChange?.(false)
     }
     prevStreamingRef.current = isStreaming
   }, [isStreaming, isControlled, onOpenChange])
