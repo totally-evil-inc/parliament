@@ -170,7 +170,7 @@ export async function runAgentTurn(
   const collectedParts: any[] = []
   let textBuffer = ""
   let thinkingBuffer = ""
-  let status: "complete" | "interrupted" = "interrupted"
+  let status: "complete" | "interrupted" | "error" = "interrupted"
 
   const readable = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -200,11 +200,18 @@ export async function runAgentTurn(
             collectedParts.push({
               type: "approval-requested",
               toolName: event.toolName,
+              callId: event.callId,
               args: event.args,
               approvalId: event.approvalId,
               resumeId: event.approvalId,
               summary: event.summary,
             })
+          } else if (event.type === "turn:error") {
+            status = "error"
+          } else if (event.type === "turn:suspended") {
+            status = "interrupted"
+          } else if (event.type === "turn:completed") {
+            status = "complete"
           }
 
           const sseString = formatServerSentEvent(event)
@@ -226,7 +233,6 @@ export async function runAgentTurn(
           })
         }
 
-        status = "complete"
         controller.close()
       } catch (err) {
         status = "interrupted"

@@ -19,10 +19,17 @@ import {
 } from "./tools/calendar"
 import {
   customerAnalyticsTool,
+  createCustomerTool,
   customerDetailsTool,
   listCustomersTool,
+  updateCustomerTool,
 } from "./tools/customers"
-import { dealAnalyticsTool, listDealsTool } from "./tools/deals"
+import {
+  createDealTool,
+  dealAnalyticsTool,
+  listDealsTool,
+  updateDealStageTool,
+} from "./tools/deals"
 import {
   createInvoiceTool,
   createProposalTool,
@@ -94,6 +101,10 @@ function createToolExecutorMap(
   register("list_customers", listCustomersTool)
   register("customer_analytics", customerAnalyticsTool)
   register("customer_details", customerDetailsTool)
+  register("create_customer", createCustomerTool)
+  register("update_customer", updateCustomerTool)
+  register("create_deal", createDealTool)
+  register("update_deal_stage", updateDealStageTool)
   register("list_proposals", listProposalsTool)
   register("list_invoices", listInvoicesTool)
   register("get_proposal_summary", getProposalSummaryTool)
@@ -207,19 +218,52 @@ export class ToolDispatcher {
 
     return this.concurrency(async () => {
       let timeoutHandle: ReturnType<typeof setTimeout> | undefined
+      let timedOut = false
+
+      const execution = executor(parseResult.data)
+      execution.then(
+        () => {
+          if (timedOut) {
+            logWideEvent({
+              event: "agent.tool.late_completion",
+              outcome: "success",
+              durationMs: Date.now() - startTime,
+              organizationId: this.ctx.organizationId,
+              userId: this.ctx.userId,
+              metadata: {
+                tool: name,
+                note: "executor settled after timeout; side effect may have occurred",
+              },
+            })
+          }
+        },
+        () => {
+          if (timedOut) {
+            logWideEvent({
+              event: "agent.tool.late_completion",
+              outcome: "failure",
+              durationMs: Date.now() - startTime,
+              organizationId: this.ctx.organizationId,
+              userId: this.ctx.userId,
+              metadata: {
+                tool: name,
+                note: "executor settled after timeout",
+              },
+            })
+          }
+        }
+      )
+
       try {
         const timeoutMs = 30_000
         const timeoutPromise = new Promise((_, reject) => {
-          timeoutHandle = setTimeout(
-            () => reject(new Error(`Execution timed out after ${timeoutMs}ms`)),
-            timeoutMs
-          )
+          timeoutHandle = setTimeout(() => {
+            timedOut = true
+            reject(new Error(`Execution timed out after ${timeoutMs}ms`))
+          }, timeoutMs)
         })
 
-        const result = await Promise.race([
-          executor(parseResult.data),
-          timeoutPromise,
-        ])
+        const result = await Promise.race([execution, timeoutPromise])
 
         logWideEvent({
           event: "agent.tool.called",
@@ -246,6 +290,7 @@ export class ToolDispatcher {
           metadata: {
             tool: name,
             error: errorMessage,
+            timedOut,
           },
         })
 

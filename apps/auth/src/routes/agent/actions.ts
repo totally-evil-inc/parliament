@@ -4,6 +4,7 @@ import { Hono } from "hono"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 import { z } from "zod"
 import { AgentContextError, httpStatusFor } from "../../agent/org-context"
+import { persistApprovalResolution } from "../../agent/persist"
 import { type AgentContext, buildToolContext } from "../../agent/tool-ctx"
 import { ToolDispatcher } from "../../agent/tool-dispatcher"
 
@@ -176,6 +177,44 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
       )
       executionResult = exec.result
       isError = exec.isError
+
+      if (exec.isError) {
+        // Revert to pending so the user can retry the action instead of
+        // being locked out with a stale "approved" row.
+        await db
+          .update(schema.chatActionApproval)
+          .set({
+            status: "pending",
+            resolvedByUserId: null,
+            resolutionFeedback: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.chatActionApproval.id, id))
+
+        logWideEvent({
+          event: "agent.action.resolve_failed",
+          outcome: "failure",
+          durationMs: Date.now() - startTime,
+          organizationId: ctx.organizationId,
+          userId: ctx.userId,
+          metadata: {
+            approvalId: id,
+            toolName: updatedRow.toolName,
+            revertedToPending: true,
+            error: String(exec.result),
+          },
+        })
+
+        return c.json(
+          {
+            error: {
+              code: "execution_failed",
+              message: String(exec.result),
+            },
+          },
+          502
+        )
+      }
     } else {
       executionResult = {
         status: "rejected",
@@ -184,6 +223,25 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
           : "Action was rejected by user.",
       }
     }
+
+    // Persist the resolution outcome back into the assistant message parts so
+    // reloads show the real result and later turns feed it to the model.
+    await persistApprovalResolution({
+      approvalId: id,
+      conversationId: updatedRow.conversationId,
+      organizationId: ctx.organizationId,
+      toolName: updatedRow.toolName,
+      result: executionResult,
+      isError,
+    }).catch((err) => {
+      logWideEvent({
+        event: "agent.action.resolution_persist_failed",
+        outcome: "failure",
+        organizationId: ctx.organizationId,
+        userId: ctx.userId,
+        metadata: { approvalId: id, error: String(err) },
+      })
+    })
 
     logWideEvent({
       event: "agent.action.resolved",

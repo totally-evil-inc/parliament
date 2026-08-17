@@ -249,6 +249,7 @@ export class AgentEngine {
           yield {
             type: "action:approval_required",
             approvalId,
+            callId: call.id,
             toolName: call.name,
             args: call.args,
             summary,
@@ -289,6 +290,19 @@ export class AgentEngine {
       }
 
       if (hasApprovalSuspension) {
+        // Emit skipped results for any tool calls after the approval-gated one
+        // so the client never leaves them stuck in "running".
+        const processedIds = new Set(toolResults.map((tr) => tr.callId))
+        for (const call of toolCallsToProcess) {
+          if (processedIds.has(call.id)) continue
+          yield {
+            type: "tool:result",
+            callId: call.id,
+            name: call.name,
+            result: `Tool call skipped: turn is suspended awaiting human approval for another action.`,
+            isError: true,
+          }
+        }
         return
       }
 

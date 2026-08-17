@@ -287,3 +287,78 @@ export async function logPersistenceError(
 ): Promise<void> {
   logger.error({ err, operation }, `chat persistence ${operation} failed`)
 }
+
+/**
+ * Persists the outcome of a resolved action approval back into the assistant
+ * message parts: replaces the `approval-requested` part with a paired
+ * `tool-result` part so reloads render the actual outcome and the next turn
+ * feeds the real result (never `{}`) into the model history.
+ * No-op when the message was already rewritten (e.g. retried execution).
+ */
+export async function persistApprovalResolution(options: {
+  approvalId: string
+  conversationId: string
+  organizationId: string
+  toolName: string
+  result: unknown
+  isError: boolean
+}): Promise<void> {
+  const {
+    approvalId,
+    conversationId,
+    organizationId,
+    toolName,
+    result,
+    isError,
+  } = options
+
+  const messages = await db
+    .select()
+    .from(chatMessage)
+    .where(
+      and(
+        eq(chatMessage.conversationId, conversationId),
+        eq(chatMessage.organizationId, organizationId),
+        eq(chatMessage.role, "assistant")
+      )
+    )
+    .orderBy(desc(chatMessage.createdAt))
+
+  for (const msg of messages) {
+    const parts = (msg.parts ?? []) as any[]
+    const approvalIdx = parts.findIndex(
+      (p) =>
+        p?.type === "approval-requested" &&
+        String(p.approvalId ?? p.resumeId ?? "") === approvalId
+    )
+    if (approvalIdx === -1) continue
+
+    const approvalPart = parts[approvalIdx] as any
+    const resolvedToolName = approvalPart.toolName ?? toolName
+    const callId =
+      approvalPart.callId ??
+      approvalPart.toolCallId ??
+      (parts
+        .slice(0, approvalIdx)
+        .reverse()
+        .find(
+          (p) =>
+            p?.type === "tool-call" && p.toolName === resolvedToolName
+        ) as any)?.toolCallId
+
+    const updatedParts = parts.filter((_, i) => i !== approvalIdx)
+    updatedParts.push({
+      type: "tool-result",
+      toolCallId: callId ?? crypto.randomUUID(),
+      toolName: resolvedToolName,
+      result,
+      isError,
+    })
+
+    await db
+      .update(chatMessage)
+      .set({ parts: parseMessageParts(updatedParts) })
+      .where(eq(chatMessage.id, msg.id))
+    return
+  }
+}

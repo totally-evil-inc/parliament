@@ -2,11 +2,13 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test"
 import { db, eq, schema } from "@workspace/database"
 import { app } from "../index"
 import { ContextGovernor } from "./context-governor"
+import { ToolDispatcher } from "./tool-dispatcher"
 import type { AgentContext } from "./tool-ctx"
 
 describe("AgentEngine FSM & ContextGovernor", () => {
   let orgId: string
   let userId: string
+  let conversationId: string
 
   const ctx: AgentContext = {
     organizationId: "",
@@ -47,6 +49,16 @@ describe("AgentEngine FSM & ContextGovernor", () => {
       role: "owner",
       createdAt: now,
     })
+
+    const [conversation] = await db
+      .insert(schema.chatConversation)
+      .values({
+        organizationId: orgId,
+        createdById: userId,
+        title: "Kernel Test Conversation",
+      })
+      .returning({ id: schema.chatConversation.id })
+    conversationId = conversation.id
   })
 
   afterAll(async () => {
@@ -68,7 +80,7 @@ describe("AgentEngine FSM & ContextGovernor", () => {
       })),
     }
 
-    const convId = crypto.randomUUID()
+    const convId = conversationId
     const { content, spilled, artifactId } = await governor.processToolResult({
       toolName: "list_deals",
       rawResult: largeResult,
@@ -116,7 +128,7 @@ describe("AgentEngine FSM & ContextGovernor", () => {
     await db.insert(schema.chatActionApproval).values({
       id: approvalId,
       organizationId: orgId,
-      conversationId: crypto.randomUUID(),
+      conversationId,
       toolName: "create_deal",
       toolArgs: { title: "Dunder Mifflin Deal", valueMinorUnits: 500000 },
       summary: "Create deal: Dunder Mifflin Deal",
@@ -166,5 +178,57 @@ describe("AgentEngine FSM & ContextGovernor", () => {
       )
     )
     expect(secondRes.status).toBe(409)
+  })
+
+  test("approval-gated CRM tools require approval without the bypass flag", async () => {
+    const dispatcher = new ToolDispatcher(ctx)
+    const gated = await dispatcher.executeTool("create_customer", {
+      name: "Acme Co",
+    })
+    expect(gated.approvalRequired).toBe(true)
+    expect(gated.isError).toBe(false)
+  })
+
+  test("CRM mutation tools execute through the dispatcher with the gate bypassed", async () => {
+    const dispatcher = new ToolDispatcher(ctx)
+
+    const createdCustomer = await dispatcher.executeTool(
+      "create_customer",
+      { name: "Dunder Mifflin Paper Co" },
+      { skipApprovalGate: true }
+    )
+    expect(createdCustomer.isError).toBe(false)
+    const customerId = (createdCustomer.result as any).id
+    expect(customerId).toBeDefined()
+
+    const createdDeal = await dispatcher.executeTool(
+      "create_deal",
+      {
+        title: "Dunder Mifflin Enterprise Deal",
+        valueMinorUnits: 500000,
+        currency: "USD",
+        companyId: customerId,
+      },
+      { skipApprovalGate: true }
+    )
+    expect(createdDeal.isError).toBe(false)
+    const dealId = (createdDeal.result as any).id
+    expect(dealId).toBeDefined()
+
+    const staged = await dispatcher.executeTool(
+      "update_deal_stage",
+      { id: dealId, stage: "proposal_sent" },
+      { skipApprovalGate: true }
+    )
+    expect(staged.isError).toBe(false)
+    expect((staged.result as any).stage).toBe("proposal_sent")
+
+    const updated = await dispatcher.executeTool(
+      "update_customer",
+      { id: customerId, status: "inactive" },
+      { skipApprovalGate: true }
+    )
+    expect(updated.isError).toBe(false)
+    expect((updated.result as any).status).toBe("inactive")
   })
 })
