@@ -10,7 +10,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { cn } from "@workspace/ui/lib/utils"
+import type React from "react"
 import { useMemo, useState } from "react"
 
 export interface ModelOption {
@@ -34,12 +36,12 @@ interface ModelConfigPopoverProps {
 const SPEED_OPTIONS = ["Slow", "Balanced", "Fast"]
 const EFFORT_OPTIONS = ["Low", "Medium", "Max"]
 
-export function ModelConfigPopover({
+export const ModelConfigPopover: React.FC<ModelConfigPopoverProps> = ({
   models,
   selectedModel,
   onSelectModel,
   disabled = false,
-}: ModelConfigPopoverProps) {
+}) => {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [activeConfigModel, setActiveConfigModel] =
@@ -91,7 +93,6 @@ export function ModelConfigPopover({
           />
         }
       >
-        {/* Coral/Orange asterisk icon like in reference */}
         <span className="text-[#ff6b6b] text-sm leading-none">✳</span>
         <span className="max-w-[160px] truncate font-medium text-foreground/90">
           {currentModelName}
@@ -104,6 +105,8 @@ export function ModelConfigPopover({
 
       <PopoverContent
         align="start"
+        side="top"
+        sideOffset={8}
         className="w-72 border-border/80 bg-popover/95 p-3 shadow-xl backdrop-blur-md"
       >
         {activeConfigModel ? (
@@ -176,8 +179,8 @@ export function ModelConfigPopover({
               />
             </div>
 
-            {/* Model List */}
-            <div className="max-h-56 overflow-y-auto pr-1">
+            {/* Model List with ScrollArea */}
+            <ScrollArea className="max-h-56 pr-1">
               {filteredModels.length === 0 ? (
                 <div className="py-4 text-center text-muted-foreground text-xs">
                   No models found
@@ -225,7 +228,7 @@ export function ModelConfigPopover({
                   })}
                 </div>
               )}
-            </div>
+            </ScrollArea>
           </div>
         )}
       </PopoverContent>

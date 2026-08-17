@@ -3,6 +3,7 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from "@workspace/ui/components/reasoning"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import type React from "react"
 import { useEffect, useRef } from "react"
 
@@ -36,11 +37,13 @@ export const ReasoningCard: React.FC<ReasoningCardProps> = ({
     >
       <ReasoningTrigger />
       {thinking ? (
-        <ReasoningContent
-          ref={contentRef}
-          className="max-h-96 overflow-y-auto break-words font-mono text-xs leading-relaxed"
-        >
-          <div className="whitespace-pre-wrap">{thinking}</div>
+        <ReasoningContent className="p-0">
+          <ScrollArea
+            ref={contentRef}
+            className="max-h-96 w-full break-words p-3.5 font-mono text-xs leading-relaxed"
+          >
+            <div className="whitespace-pre-wrap">{thinking}</div>
+          </ScrollArea>
         </ReasoningContent>
       ) : null}
     </Reasoning>

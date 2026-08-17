@@ -68,6 +68,7 @@ function convertToModelMessages(
               type: "tool-call",
               toolCallId: p.toolCallId ?? p.id ?? crypto.randomUUID(),
               toolName: p.toolName ?? p.name ?? "",
+              args: p.args ?? p.input ?? {},
               input: p.args ?? p.input ?? {},
             })
           } else if (p.type === "tool-result") {
@@ -75,6 +76,7 @@ function convertToModelMessages(
               type: "tool-result",
               toolCallId: p.toolCallId ?? p.id ?? crypto.randomUUID(),
               toolName: p.toolName ?? p.name ?? "",
+              result: p.result ?? p.output ?? {},
               output: p.result ?? p.output ?? {},
               isError: p.isError ?? false,
             })

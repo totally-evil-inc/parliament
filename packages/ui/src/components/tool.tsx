@@ -17,6 +17,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./collapsible"
+import { ScrollArea } from "./scroll-area"
 
 export type ToolState =
   | "input-streaming"
@@ -273,11 +274,11 @@ export function ToolInput({ input, className, ...props }: ToolInputProps) {
       <h4 className="font-medium font-mono text-[10px] text-muted-foreground uppercase tracking-wide">
         Parameters
       </h4>
-      <div className="max-h-56 max-w-full overflow-auto rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px]">
+      <ScrollArea className="max-h-56 max-w-full rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px]">
         <pre className="whitespace-pre-wrap break-words text-foreground/90 leading-relaxed">
           {jsonString}
         </pre>
-      </div>
+      </ScrollArea>
     </div>
   )
 }
@@ -307,26 +308,26 @@ export function ToolOutput({
       </h4>
 
       {errorText ? (
-        <div className="max-h-64 max-w-full overflow-auto break-words rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 font-mono text-[11px] text-destructive">
+        <ScrollArea className="max-h-64 max-w-full break-words rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 font-mono text-[11px] text-destructive">
           {errorText}
-        </div>
+        </ScrollArea>
       ) : output !== undefined ? (
         typeof output === "string" ? (
-          <div className="max-h-80 max-w-full overflow-auto whitespace-pre-wrap break-words rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px] text-foreground/90">
+          <ScrollArea className="max-h-80 max-w-full whitespace-pre-wrap break-words rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px] text-foreground/90">
             {output}
-          </div>
+          </ScrollArea>
         ) : typeof output === "object" &&
           output !== null &&
           !isValidElement(output) ? (
-          <div className="max-h-80 max-w-full overflow-auto rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px]">
+          <ScrollArea className="max-h-80 max-w-full rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px]">
             <pre className="whitespace-pre-wrap break-words text-foreground/90 leading-relaxed">
               {JSON.stringify(output, null, 2)}
             </pre>
-          </div>
+          </ScrollArea>
         ) : (
-          <div className="max-h-80 max-w-full overflow-auto break-words rounded-lg border border-border/80 bg-background/80 p-2.5 text-[11px] text-foreground/90">
+          <ScrollArea className="max-h-80 max-w-full break-words rounded-lg border border-border/80 bg-background/80 p-2.5 text-[11px] text-foreground/90">
             {output as React.ReactNode}
-          </div>
+          </ScrollArea>
         )
       ) : (
         children
