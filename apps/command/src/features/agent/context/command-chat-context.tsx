@@ -217,9 +217,10 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
           if (m.content) parts.push({ type: "text", text: m.content })
           if (Array.isArray(m.toolCalls)) {
             for (const tc of m.toolCalls) {
-              // Invariant: Only send tool-call if it has a paired result or completed status,
-              // preventing provider schema rejections (HTTP 400).
-              if (tc.result !== undefined || tc.status === "completed") {
+              // Invariant: Only send tool-call if it has a paired result,
+              // preventing provider schema rejections (HTTP 400) and never
+              // fabricating `{}` outcomes for unexecuted (e.g. pending approval) calls.
+              if (tc.result !== undefined) {
                 parts.push({
                   type: "tool-call",
                   toolCallId: tc.id,
@@ -353,7 +354,10 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
                     case "action:approval_required": {
                       const updatedTools = (msg.toolCalls ?? []).map((tc) => {
-                        if (tc.name === event.toolName) {
+                        if (
+                          event.callId !== undefined &&
+                          tc.id === event.callId
+                        ) {
                           return {
                             ...tc,
                             needsApproval: true,
@@ -494,7 +498,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                     id: String(p.id ?? p.toolCallId ?? "tool"),
                     name: String(p.name ?? p.toolName ?? "tool"),
                     args: p.args ?? p.input ?? {},
-                    status: "completed",
+                    status: "pending",
                   })
                 } else if (p?.type === "tool-result") {
                   const existing = toolCalls.find(
@@ -502,19 +506,37 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                   )
                   if (existing) {
                     existing.result = p.result ?? p.output
+                    existing.status = p.isError ? "error" : "completed"
+                    if (p.isError) {
+                      existing.errorText = String(
+                        p.result ?? p.output ?? ""
+                      )
+                    }
                   }
                 } else if (p?.type === "approval-requested") {
                   const resolvedApprovalId = String(
                     p.approvalId ?? p.resumeId ?? p.id ?? "approval"
                   )
-                  toolCalls.push({
-                    id: resolvedApprovalId,
-                    name: String(p.toolName ?? "action"),
-                    args: p.toolArgs ?? p.args ?? {},
-                    status: "pending_approval",
-                    needsApproval: true,
-                    approvalId: resolvedApprovalId,
-                  })
+                  const existing = toolCalls.find(
+                    (tc) =>
+                      (p.callId !== undefined && tc.id === String(p.callId)) ||
+                      (tc.name === String(p.toolName ?? "action") &&
+                        tc.status === "pending")
+                  )
+                  if (existing) {
+                    existing.status = "pending_approval"
+                    existing.needsApproval = true
+                    existing.approvalId = resolvedApprovalId
+                  } else {
+                    toolCalls.push({
+                      id: resolvedApprovalId,
+                      name: String(p.toolName ?? "action"),
+                      args: p.toolArgs ?? p.args ?? {},
+                      status: "pending_approval",
+                      needsApproval: true,
+                      approvalId: resolvedApprovalId,
+                    })
+                  }
                 }
               }
             }
