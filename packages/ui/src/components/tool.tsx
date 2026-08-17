@@ -1,8 +1,6 @@
 import {
   ArrowPathIcon,
-  CheckCircleIcon,
   ChevronDownIcon,
-  ClockIcon,
   ExclamationCircleIcon,
   NoSymbolIcon,
   ShieldExclamationIcon,
@@ -52,27 +50,13 @@ export function useTool() {
 
 export function getStatusBadge(state: ToolState): React.ReactNode {
   switch (state) {
-    case "input-streaming":
-    case "pending":
-      return (
-        <Badge
-          variant="secondary"
-          className="gap-1 rounded-full border-border/80 px-2 py-0.5 font-normal text-[10px] text-muted-foreground"
-        >
-          <ClockIcon className="size-3 shrink-0" />
-          <span>Pending</span>
-        </Badge>
-      )
     case "input-available":
     case "running":
       return (
-        <Badge
-          variant="secondary"
-          className="gap-1 rounded-full border-border/80 px-2 py-0.5 font-normal text-[10px] text-amber-600 dark:text-amber-400"
-        >
+        <span className="inline-flex items-center gap-1 font-medium text-[10px] text-amber-600 dark:text-amber-400">
           <ArrowPathIcon className="size-3 shrink-0 animate-spin" />
           <span>Running</span>
-        </Badge>
+        </span>
       )
     case "approval-requested":
     case "awaiting-approval":
@@ -83,17 +67,6 @@ export function getStatusBadge(state: ToolState): React.ReactNode {
         >
           <ShieldExclamationIcon className="size-3 shrink-0 text-amber-500" />
           <span>Awaiting Approval</span>
-        </Badge>
-      )
-    case "approval-responded":
-    case "approved":
-      return (
-        <Badge
-          variant="secondary"
-          className="gap-1 rounded-full border-blue-500/40 bg-blue-500/10 px-2 py-0.5 font-medium text-[10px] text-blue-700 dark:text-blue-300"
-        >
-          <CheckCircleIcon className="size-3 shrink-0 text-blue-500" />
-          <span>Approved</span>
         </Badge>
       )
     case "output-error":
@@ -119,15 +92,8 @@ export function getStatusBadge(state: ToolState): React.ReactNode {
         </Badge>
       )
     default:
-      return (
-        <Badge
-          variant="secondary"
-          className="gap-1 rounded-full border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-normal text-[10px] text-emerald-700 dark:text-emerald-300"
-        >
-          <CheckCircleIcon className="size-3 shrink-0 text-emerald-500" />
-          <span>Completed</span>
-        </Badge>
-      )
+      // No badge for completed/standard states to keep chat sleek and uncluttered
+      return null
   }
 }
 
@@ -168,7 +134,7 @@ export function Tool({
         open={isOpen}
         onOpenChange={handleOpenChange}
         className={cn(
-          "group not-prose my-2 w-full max-w-full overflow-hidden rounded-xl border border-border/80 bg-card text-xs shadow-xs transition-all",
+          "group not-prose my-1.5 w-full max-w-full overflow-hidden rounded-lg border border-border/40 bg-muted/15 text-xs transition-colors hover:border-border/60 hover:bg-muted/25",
           className
         )}
         {...props}
@@ -205,25 +171,27 @@ export function ToolHeader({
       .replace(/_/g, " ")
       .replace(/^./, (c) => c.toUpperCase())
 
+  const badge = getStatusBadge(state)
+
   return (
     <CollapsibleTrigger
       data-slot="tool-header"
       className={cn(
-        "flex w-full min-w-0 cursor-pointer items-center justify-between gap-3 p-3 text-left font-mono transition-colors hover:bg-muted/40",
+        "flex w-full min-w-0 cursor-pointer items-center justify-between gap-2.5 px-2.5 py-1.5 text-left font-mono transition-colors hover:bg-muted/30",
         className
       )}
       {...props}
     >
       <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-        <WrenchScrewdriverIcon className="size-4 shrink-0 text-muted-foreground" />
-        <span className="truncate font-semibold text-foreground text-xs">
+        <WrenchScrewdriverIcon className="size-3.5 shrink-0 text-muted-foreground/80" />
+        <span className="truncate font-medium text-foreground/80 text-xs">
           {displayName}
         </span>
-        <div className="shrink-0">{getStatusBadge(state)}</div>
+        {badge && <div className="shrink-0">{badge}</div>}
       </div>
       <ChevronDownIcon
         className={cn(
-          "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200",
+          "size-3 shrink-0 text-muted-foreground/70 transition-transform duration-200",
           isOpen && "rotate-180"
         )}
       />
@@ -240,7 +208,7 @@ export function ToolContent({
     <CollapsibleContent
       data-slot="tool-content"
       className={cn(
-        "max-w-full space-y-3 overflow-hidden border-border/60 border-t bg-muted/20 p-3.5 text-xs transition-all",
+        "max-w-full space-y-2.5 overflow-hidden border-border/40 border-t bg-muted/10 p-2.5 text-xs transition-all",
         className
       )}
       {...props}

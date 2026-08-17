@@ -124,15 +124,11 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
           const hasArgs = tc.args && Object.keys(tc.args).length > 0
           const hasOutput = tc.result !== undefined || tc.errorText
 
-          const shouldDefaultOpen =
-            isRunning ||
-            toolState === "approval-requested" ||
-            toolState === "awaiting-approval" ||
-            Boolean(
-              tc.needsApproval &&
-                tc.status !== "approved" &&
-                tc.status !== "rejected"
-            )
+          const shouldDefaultOpen = Boolean(
+            tc.needsApproval &&
+              tc.status !== "approved" &&
+              tc.status !== "rejected"
+          )
 
           const res =
             tc.result && typeof tc.result === "object"
@@ -184,7 +180,7 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
                     {/* Rich Action Banner for Document Drafts */}
                     {isDocumentDraftResult && (
                       <div className="my-2.5 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                             <DocumentTextIcon className="h-4 w-4" />
                           </div>
@@ -249,7 +245,7 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
                           <div className="font-medium text-foreground">
                             Dispatch Scheduled
                           </div>
-                          <div className="text-muted-foreground text-[11px]">
+                          <div className="text-[11px] text-muted-foreground">
                             Will send to {res.recipientEmail} at{" "}
                             {new Date(res.scheduledFor).toLocaleString()}
                           </div>
