@@ -1,6 +1,7 @@
 import { Shimmer } from "@workspace/ui/components/shimmer"
 import type { TaskStatus } from "@workspace/ui/components/task"
 import type React from "react"
+import { ChatMarkdown } from "./chat-markdown"
 import { extractThinkingAndContent } from "./command-center-page"
 import {
   ChainOfThoughtCard,
@@ -75,8 +76,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   if (isUser) {
     return (
       <div className="my-3 flex justify-end">
-        <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl bg-primary px-4 py-2.5 font-medium text-primary-foreground text-sm shadow-xs">
-          {extractedContent || "Message"}
+        <div className="max-w-[80%] rounded-2xl bg-primary px-4 py-2.5 font-medium text-primary-foreground text-sm shadow-xs">
+          <ChatMarkdown
+            content={extractedContent || "Message"}
+            className="text-primary-foreground [&_*]:text-primary-foreground"
+          />
         </div>
       </div>
     )
@@ -109,15 +113,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       )}
 
       {/* 3. Task Workflow Progress Element */}
-      {message.tasks &&
-        message.tasks.map((task, tIdx) => (
-          <TaskCard
-            key={tIdx}
-            title={task.title}
-            status={task.status}
-            items={task.items}
-          />
-        ))}
+      {message.tasks?.map((task) => (
+        <TaskCard
+          key={task.title}
+          title={task.title}
+          status={task.status}
+          items={task.items}
+        />
+      ))}
 
       {/* 4. Tool Calls & Approval Element */}
       <ToolCallCard
@@ -128,9 +131,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
       {/* 5. Text Message Content / Waiting indicator */}
       {extractedContent ? (
-        <div className="whitespace-pre-wrap text-foreground text-sm leading-relaxed">
-          {extractedContent}
-        </div>
+        <ChatMarkdown content={extractedContent} />
       ) : isStreaming && !message.openuiCode ? (
         <div className="flex items-center gap-2 py-1 text-muted-foreground text-xs">
           <span className="relative flex h-2 w-2">
@@ -138,8 +139,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
           </span>
           <Shimmer duration={1.5} className="font-medium text-xs">
-            {message.toolCalls &&
-            message.toolCalls.some(
+            {message.toolCalls?.some(
               (tc) => tc.status === "running" || tc.result === undefined
             )
               ? "Executing operations & updating draft…"
