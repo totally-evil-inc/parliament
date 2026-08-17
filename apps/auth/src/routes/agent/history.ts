@@ -1,9 +1,9 @@
+import { parseMessageParts } from "@workspace/agent"
 import { and, count, db, desc, eq } from "@workspace/database"
 import { chatConversation, chatMessage } from "@workspace/database/schema"
 import { logWideEvent } from "@workspace/logger"
 import { Hono } from "hono"
 import { z } from "zod"
-import { sanitizeMessagesForAI } from "../../agent/loop"
 import {
   AgentContextError,
   httpStatusFor,
@@ -147,9 +147,7 @@ agentHistoryRouter.get("/conversations/:id", async (c) => {
         ) {
           parts = (parts[0] as any).parts
         }
-        const safeParts =
-          sanitizeMessagesForAI([{ id: m.id, role: m.role, parts }])[0]
-            ?.parts ?? []
+        const safeParts = parseMessageParts(parts)
         return {
           id: m.id,
           role: m.role,

@@ -1,0 +1,149 @@
+import { afterAll, beforeAll, describe, expect, test } from "bun:test"
+import { db, eq, schema } from "@workspace/database"
+import { app } from "../index"
+import { ContextGovernor } from "./context-governor"
+import type { AgentContext } from "./tool-ctx"
+
+describe("AgentEngine FSM & ContextGovernor", () => {
+  let orgId: string
+  let userId: string
+
+  const ctx: AgentContext = {
+    organizationId: "",
+    userId: "",
+    userEmail: "kernel@test.local",
+    orgName: "Kernel Test Org",
+  }
+
+  beforeAll(async () => {
+    const now = new Date()
+    const [org] = await db
+      .insert(schema.organization)
+      .values({
+        name: "Kernel Test Org",
+        slug: `kernel-test-org-${crypto.randomUUID()}`,
+        createdAt: now,
+      })
+      .returning()
+    orgId = org.id
+    ctx.organizationId = orgId
+
+    const [user] = await db
+      .insert(schema.user)
+      .values({
+        id: crypto.randomUUID(),
+        name: "Kernel Tester",
+        email: `kernel-${crypto.randomUUID()}@test.local`,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning()
+    userId = user.id
+    ctx.userId = userId
+
+    await db.insert(schema.member).values({
+      organizationId: orgId,
+      userId,
+      role: "owner",
+      createdAt: now,
+    })
+  })
+
+  afterAll(async () => {
+    await db.delete(schema.organization).where(eq(schema.organization.id, orgId))
+    await db.delete(schema.user).where(eq(schema.user.id, userId))
+  })
+
+  test("ContextGovernor compacts tool output when exceeding inline limit (Spill-to-Blob)", async () => {
+    const governor = new ContextGovernor({ maxInlineToolChars: 100, slidingWindowTurns: 5 })
+    const largeResult = {
+      deals: Array.from({ length: 50 }, (_, i) => ({
+        id: `deal-${i}`,
+        title: `Big Enterprise Deal ${i} with long description and milestone requirements`,
+      })),
+    }
+
+    const convId = crypto.randomUUID()
+    const { content, spilled, artifactId } = await governor.processToolResult({
+      toolName: "list_deals",
+      rawResult: largeResult,
+      organizationId: orgId,
+      conversationId: convId,
+    })
+
+    expect(spilled).toBe(true)
+    expect(artifactId).toBeDefined()
+    expect(content).toContain("[OUTPUT OVERFLOW TRUNCATED — SPILLED TO ARTIFACT STORE]")
+    expect(content).toContain(`artifact://${artifactId}`)
+  })
+
+  test("ContextGovernor applies sliding window while preserving user goal", () => {
+    const governor = new ContextGovernor({ maxInlineToolChars: 4800, slidingWindowTurns: 2 })
+    const messages: any[] = [
+      { role: "user", content: "Initial project goal: Build invoicing portal" },
+      { role: "assistant", content: "Got it, checking deals..." },
+      { role: "user", content: "Turn 1 question" },
+      { role: "assistant", content: "Turn 1 answer" },
+      { role: "user", content: "Turn 2 question" },
+      { role: "assistant", content: "Turn 2 answer" },
+      { role: "user", content: "Turn 3 question" },
+      { role: "assistant", content: "Turn 3 answer" },
+    ]
+
+    const compacted = governor.compactMessages(messages)
+    // Should preserve initial user message + last 4 messages (slidingWindowTurns * 2)
+    expect(compacted[0].content).toBe("Initial project goal: Build invoicing portal")
+    expect(compacted.length).toBeLessThanOrEqual(5)
+  })
+
+  test("Action approval endpoints manage pending approvals and resolution lifecycle", async () => {
+    const approvalId = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+    // 1. Insert pending action approval
+    await db.insert(schema.chatActionApproval).values({
+      id: approvalId,
+      organizationId: orgId,
+      conversationId: crypto.randomUUID(),
+      toolName: "create_deal",
+      toolArgs: { title: "Dunder Mifflin Deal", valueMinorUnits: 500000 },
+      summary: "Create deal: Dunder Mifflin Deal",
+      status: "pending",
+      expiresAt,
+    })
+
+    // 2. Reject action
+    const rejectRes = await app.fetch(
+      new Request(`http://localhost:4000/api/agent/actions/${approvalId}/resolve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-test-session-email": "kernel@test.local",
+          "x-test-org-id": orgId,
+          "x-test-user-id": userId,
+        },
+        body: JSON.stringify({ approved: false, feedback: "Budget exceeded" }),
+      })
+    )
+
+    expect(rejectRes.status).toBe(200)
+    const rejectData = (await rejectRes.json()) as any
+    expect(rejectData.status).toBe("rejected")
+    expect(rejectData.result.message).toContain("Budget exceeded")
+
+    // 3. Trying to resolve again should return 409 Conflict
+    const secondRes = await app.fetch(
+      new Request(`http://localhost:4000/api/agent/actions/${approvalId}/resolve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-test-session-email": "kernel@test.local",
+          "x-test-org-id": orgId,
+          "x-test-user-id": userId,
+        },
+        body: JSON.stringify({ approved: true }),
+      })
+    )
+    expect(secondRes.status).toBe(409)
+  })
+})

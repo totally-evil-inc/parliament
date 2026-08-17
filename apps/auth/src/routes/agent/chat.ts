@@ -8,8 +8,14 @@ import { AgentContextError, httpStatusFor } from "../../agent/org-context"
 import { findConversationById } from "../../agent/persist"
 import { type AgentContext, buildToolContext } from "../../agent/tool-ctx"
 
+const chatMessageSchema = z.object({
+  role: z.string(),
+  content: z.string().nullish(),
+  parts: z.array(z.any()).optional(),
+})
+
 const chatBodySchema = z.object({
-  messages: z.array(z.unknown()).min(1),
+  messages: z.array(chatMessageSchema).min(1),
   threadId: z.string().min(1).nullish(),
   forwardedProps: z
     .object({

@@ -204,6 +204,7 @@ app.use("*", async (c, next) => {
 
 import { processDueScheduledDispatches } from "./lib/scheduler/dispatch-worker"
 import { addonRouter } from "./routes/addon"
+import { agentActionsRouter } from "./routes/agent/actions"
 import { agentChatRouter } from "./routes/agent/chat"
 import { agentHistoryRouter } from "./routes/agent/history"
 import { agentSettingsRouter } from "./routes/agent/settings"
@@ -223,6 +224,7 @@ app.route("/api/auth/integrations", integrationsRouter)
 app.route("/api/auth/agent", agentAuthRouter)
 app.route("/api/agent", agentHistoryRouter)
 app.route("/api/agent", agentChatRouter)
+app.route("/api/agent", agentActionsRouter)
 app.route("/api/agent", agentSettingsRouter)
 app.route("/api/agent/tools", agentToolsRouter)
 app.route("/api/gmail/addon", addonRouter)
