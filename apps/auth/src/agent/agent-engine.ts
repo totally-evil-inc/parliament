@@ -27,7 +27,8 @@ export class AgentEngine {
     messages: ModelMessage[]
     abortSignal?: AbortSignal
   }): AsyncGenerator<AgentEvent, void, void> {
-    const { ctx, model, modelName, conversationId, messages, abortSignal } = options
+    const { ctx, model, modelName, conversationId, messages, abortSignal } =
+      options
     const maxSteps = this.config.maxSteps ?? 8
 
     yield {
@@ -78,7 +79,11 @@ export class AgentEngine {
       }
 
       let assistantText = ""
-      const toolCallsToProcess: Array<{ id: string; name: string; args: Record<string, unknown> }> = []
+      const toolCallsToProcess: Array<{
+        id: string
+        name: string
+        args: Record<string, unknown>
+      }> = []
 
       try {
         for await (const chunk of result.stream) {
@@ -96,9 +101,12 @@ export class AgentEngine {
 
             case "tool-call": {
               const typedChunk = chunk as any
-              const callId = typedChunk.toolCallId ?? typedChunk.id ?? crypto.randomUUID()
+              const callId =
+                typedChunk.toolCallId ?? typedChunk.id ?? crypto.randomUUID()
               const toolName = typedChunk.toolName ?? ""
-              const args = (typedChunk.input ?? typedChunk.args ?? {}) as Record<string, unknown>
+              const args = (typedChunk.input ??
+                typedChunk.args ??
+                {}) as Record<string, unknown>
 
               toolCallsToProcess.push({
                 id: callId,
@@ -162,17 +170,19 @@ export class AgentEngine {
 
       // Check for human-in-the-loop approval triggers
       for (const call of toolCallsToProcess) {
-        const { result: rawResult, isError, approvalRequired } = await dispatcher.executeTool(
-          call.name,
-          call.args
-        )
+        const {
+          result: rawResult,
+          isError,
+          approvalRequired,
+        } = await dispatcher.executeTool(call.name, call.args)
 
         if (approvalRequired) {
           // Persist durable pending action approval to PostgreSQL
           const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
           const summary = `Action '${call.name}' awaiting approval`
 
-          let approvalId: `${string}-${string}-${string}-${string}-${string}` = crypto.randomUUID()
+          let approvalId: `${string}-${string}-${string}-${string}-${string}` =
+            crypto.randomUUID()
           try {
             const [row] = await db
               .insert(schema.chatActionApproval)
@@ -188,7 +198,9 @@ export class AgentEngine {
               })
               .returning({ id: schema.chatActionApproval.id })
 
-            if (row?.id) approvalId = row.id as `${string}-${string}-${string}-${string}-${string}`
+            if (row?.id)
+              approvalId =
+                row.id as `${string}-${string}-${string}-${string}-${string}`
           } catch (err) {
             logWideEvent({
               event: "agent.approval.persist_failed",

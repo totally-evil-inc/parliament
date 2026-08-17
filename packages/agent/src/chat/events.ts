@@ -62,7 +62,11 @@ export const agentEventSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("turn:suspended"),
-    reason: z.enum(["awaiting_approval", "questionnaire_submitted", "budget_cap"]),
+    reason: z.enum([
+      "awaiting_approval",
+      "questionnaire_submitted",
+      "budget_cap",
+    ]),
     approvalId: z.string().optional(),
   }),
   z.object({

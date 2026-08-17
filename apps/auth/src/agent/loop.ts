@@ -48,7 +48,9 @@ function convertToModelMessages(
   const result: ModelMessage[] = []
 
   for (const m of messages) {
-    const role = (m.role === "assistant" || m.role === "system" ? m.role : "user") as "user" | "assistant" | "system"
+    const role = (
+      m.role === "assistant" || m.role === "system" ? m.role : "user"
+    ) as "user" | "assistant" | "system"
     let textContent = ""
 
     if (Array.isArray(m.parts) && m.parts.length > 0) {

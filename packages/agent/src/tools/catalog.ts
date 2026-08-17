@@ -1,7 +1,10 @@
 import type { z } from "zod"
 import { toolInputSchemas, toolOutputSchemas } from "./schemas"
 
-export type ToolCapability = "READ_ONLY" | "WORKSPACE_WRITE" | "EXTERNAL_DISPATCH"
+export type ToolCapability =
+  | "READ_ONLY"
+  | "WORKSPACE_WRITE"
+  | "EXTERNAL_DISPATCH"
 
 export type ToolGroupId = "core" | "crm" | "documents" | "dispatch"
 
@@ -371,10 +374,47 @@ export type ToolCategory = ToolEntry["category"]
 export const TOOL_NAMES = Object.keys(TOOL_CATALOG) as ToolName[]
 
 export const TOOL_GROUPS: Record<ToolGroupId, ToolName[]> = {
-  core: ["get_current_user_name", "verify_org_access", "ask_clarifying_questions", "list_integrations"],
-  crm: ["list_deals", "deal_analytics", "list_customers", "customer_analytics", "customer_details", "create_deal", "update_deal_stage", "create_customer", "update_customer"],
-  documents: ["list_proposals", "list_invoices", "get_proposal_summary", "get_invoice_summary", "get_proposal", "get_invoice", "create_proposal", "create_invoice", "update_proposal", "update_invoice"],
-  dispatch: ["schedule_document_send", "cancel_scheduled_dispatch", "list_scheduled_dispatches", "send_proposal", "send_invoice", "gmail_send_email", "gmail_create_draft", "gcal_list_events", "gcal_create_event", "gcal_cancel_event"],
+  core: [
+    "get_current_user_name",
+    "verify_org_access",
+    "ask_clarifying_questions",
+    "list_integrations",
+  ],
+  crm: [
+    "list_deals",
+    "deal_analytics",
+    "list_customers",
+    "customer_analytics",
+    "customer_details",
+    "create_deal",
+    "update_deal_stage",
+    "create_customer",
+    "update_customer",
+  ],
+  documents: [
+    "list_proposals",
+    "list_invoices",
+    "get_proposal_summary",
+    "get_invoice_summary",
+    "get_proposal",
+    "get_invoice",
+    "create_proposal",
+    "create_invoice",
+    "update_proposal",
+    "update_invoice",
+  ],
+  dispatch: [
+    "schedule_document_send",
+    "cancel_scheduled_dispatch",
+    "list_scheduled_dispatches",
+    "send_proposal",
+    "send_invoice",
+    "gmail_send_email",
+    "gmail_create_draft",
+    "gcal_list_events",
+    "gcal_create_event",
+    "gcal_cancel_event",
+  ],
 }
 
 export function getToolsForGroups(groups: ToolGroupId[]): ToolName[] {

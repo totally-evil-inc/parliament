@@ -1,10 +1,10 @@
 import {
+  getToolsForGroups,
+  TOOL_CATALOG,
   type ToolCapability,
   type ToolEntry,
   type ToolGroupId,
   type ToolName,
-  TOOL_CATALOG,
-  getToolsForGroups,
 } from "@workspace/agent"
 import { logWideEvent } from "@workspace/logger"
 import type { ToolSet } from "ai"
@@ -12,8 +12,16 @@ import pLimit from "p-limit"
 import type { AgentContext } from "./tool-ctx"
 
 // Import existing underlying execution logic
-import { gcalCancelEventTool, gcalCreateEventTool, gcalListEventsTool } from "./tools/calendar"
-import { customerAnalyticsTool, customerDetailsTool, listCustomersTool } from "./tools/customers"
+import {
+  gcalCancelEventTool,
+  gcalCreateEventTool,
+  gcalListEventsTool,
+} from "./tools/calendar"
+import {
+  customerAnalyticsTool,
+  customerDetailsTool,
+  listCustomersTool,
+} from "./tools/customers"
 import { dealAnalyticsTool, listDealsTool } from "./tools/deals"
 import {
   createInvoiceTool,
@@ -55,14 +63,17 @@ export interface ServerToolDefinition {
 /**
  * Registry of all server tool execution handlers.
  */
-function createToolExecutorMap(ctx: AgentContext): Map<ToolName, (args: any) => Promise<any>> {
+function createToolExecutorMap(
+  ctx: AgentContext
+): Map<ToolName, (args: any) => Promise<any>> {
   const map = new Map<ToolName, (args: any) => Promise<any>>()
 
   // Helper to extract execute from existing tool factory
   const register = (toolName: ToolName, factory: (c: AgentContext) => any) => {
     const instance = factory(ctx)
     // TanStack server tool defines handler on instance
-    const handler = instance["~server"] || instance.execute || instance._serverFn
+    const handler =
+      instance["~server"] || instance.execute || instance._serverFn
     if (typeof handler === "function") {
       map.set(toolName, (args: any) => handler(args))
     } else {
@@ -116,7 +127,9 @@ export class ToolDispatcher {
    * Resolves CoreTool map formatted for Vercel AI SDK Core (`streamText`).
    * Supports dynamic capability scoping by tool group.
    */
-  getToolsForModel(groups: ToolGroupId[] = ["core", "crm", "documents", "dispatch"]): ToolSet {
+  getToolsForModel(
+    groups: ToolGroupId[] = ["core", "crm", "documents", "dispatch"]
+  ): ToolSet {
     const activeToolNames = getToolsForGroups(groups)
     const result: Record<string, any> = {}
 
@@ -142,7 +155,11 @@ export class ToolDispatcher {
   async executeTool(
     name: string,
     args: unknown
-  ): Promise<{ result: unknown; isError: boolean; approvalRequired?: boolean }> {
+  ): Promise<{
+    result: unknown
+    isError: boolean
+    approvalRequired?: boolean
+  }> {
     const toolName = name as ToolName
     const catalogEntry = TOOL_CATALOG[toolName] as ToolEntry
 
@@ -193,7 +210,11 @@ export class ToolDispatcher {
         const result = await Promise.race([
           executor(parseResult.data),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error(`Execution timed out after ${timeoutMs}ms`)), timeoutMs)
+            setTimeout(
+              () =>
+                reject(new Error(`Execution timed out after ${timeoutMs}ms`)),
+              timeoutMs
+            )
           ),
         ])
 

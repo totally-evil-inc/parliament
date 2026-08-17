@@ -138,7 +138,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
           </span>
           <Shimmer duration={1.5} className="font-medium text-xs">
-            {message.toolCalls && message.toolCalls.some((tc) => tc.status === "running" || tc.result === undefined)
+            {message.toolCalls &&
+            message.toolCalls.some(
+              (tc) => tc.status === "running" || tc.result === undefined
+            )
               ? "Executing operations & updating draft…"
               : message.toolCalls && message.toolCalls.length > 0
                 ? "Synthesizing document summary & breakdown…"

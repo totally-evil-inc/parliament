@@ -50,12 +50,17 @@ describe("AgentEngine FSM & ContextGovernor", () => {
   })
 
   afterAll(async () => {
-    await db.delete(schema.organization).where(eq(schema.organization.id, orgId))
+    await db
+      .delete(schema.organization)
+      .where(eq(schema.organization.id, orgId))
     await db.delete(schema.user).where(eq(schema.user.id, userId))
   })
 
   test("ContextGovernor compacts tool output when exceeding inline limit (Spill-to-Blob)", async () => {
-    const governor = new ContextGovernor({ maxInlineToolChars: 100, slidingWindowTurns: 5 })
+    const governor = new ContextGovernor({
+      maxInlineToolChars: 100,
+      slidingWindowTurns: 5,
+    })
     const largeResult = {
       deals: Array.from({ length: 50 }, (_, i) => ({
         id: `deal-${i}`,
@@ -73,12 +78,17 @@ describe("AgentEngine FSM & ContextGovernor", () => {
 
     expect(spilled).toBe(true)
     expect(artifactId).toBeDefined()
-    expect(content).toContain("[OUTPUT OVERFLOW TRUNCATED — SPILLED TO ARTIFACT STORE]")
+    expect(content).toContain(
+      "[OUTPUT OVERFLOW TRUNCATED — SPILLED TO ARTIFACT STORE]"
+    )
     expect(content).toContain(`artifact://${artifactId}`)
   })
 
   test("ContextGovernor applies sliding window while preserving user goal", () => {
-    const governor = new ContextGovernor({ maxInlineToolChars: 4800, slidingWindowTurns: 2 })
+    const governor = new ContextGovernor({
+      maxInlineToolChars: 4800,
+      slidingWindowTurns: 2,
+    })
     const messages: any[] = [
       { role: "user", content: "Initial project goal: Build invoicing portal" },
       { role: "assistant", content: "Got it, checking deals..." },
@@ -92,7 +102,9 @@ describe("AgentEngine FSM & ContextGovernor", () => {
 
     const compacted = governor.compactMessages(messages)
     // Should preserve initial user message + last 4 messages (slidingWindowTurns * 2)
-    expect(compacted[0].content).toBe("Initial project goal: Build invoicing portal")
+    expect(compacted[0].content).toBe(
+      "Initial project goal: Build invoicing portal"
+    )
     expect(compacted.length).toBeLessThanOrEqual(5)
   })
 
@@ -114,16 +126,22 @@ describe("AgentEngine FSM & ContextGovernor", () => {
 
     // 2. Reject action
     const rejectRes = await app.fetch(
-      new Request(`http://localhost:4000/api/agent/actions/${approvalId}/resolve`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-test-session-email": "kernel@test.local",
-          "x-test-org-id": orgId,
-          "x-test-user-id": userId,
-        },
-        body: JSON.stringify({ approved: false, feedback: "Budget exceeded" }),
-      })
+      new Request(
+        `http://localhost:4000/api/agent/actions/${approvalId}/resolve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "kernel@test.local",
+            "x-test-org-id": orgId,
+            "x-test-user-id": userId,
+          },
+          body: JSON.stringify({
+            approved: false,
+            feedback: "Budget exceeded",
+          }),
+        }
+      )
     )
 
     expect(rejectRes.status).toBe(200)
@@ -133,16 +151,19 @@ describe("AgentEngine FSM & ContextGovernor", () => {
 
     // 3. Trying to resolve again should return 409 Conflict
     const secondRes = await app.fetch(
-      new Request(`http://localhost:4000/api/agent/actions/${approvalId}/resolve`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-test-session-email": "kernel@test.local",
-          "x-test-org-id": orgId,
-          "x-test-user-id": userId,
-        },
-        body: JSON.stringify({ approved: true }),
-      })
+      new Request(
+        `http://localhost:4000/api/agent/actions/${approvalId}/resolve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "kernel@test.local",
+            "x-test-org-id": orgId,
+            "x-test-user-id": userId,
+          },
+          body: JSON.stringify({ approved: true }),
+        }
+      )
     )
     expect(secondRes.status).toBe(409)
   })

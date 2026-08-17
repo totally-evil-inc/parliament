@@ -1,6 +1,6 @@
-import { fetchServerSentEvents, useChat } from "@tanstack/ai-react"
-import { useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { type AgentEvent, agentEventSchema } from "@workspace/agent"
 import type React from "react"
 import {
   createContext,
@@ -22,8 +22,29 @@ export interface AgentChatError {
   message: string
 }
 
+export interface ToolCallItem {
+  id: string
+  name: string
+  args?: Record<string, unknown>
+  result?: unknown
+  status?: string
+  needsApproval?: boolean
+  approvalId?: string
+  errorText?: string
+}
+
+export interface ChatMessage {
+  id: string
+  role: "user" | "assistant" | "system"
+  content: string
+  thinking?: string
+  openuiCode?: string
+  toolCalls?: ToolCallItem[]
+  error?: AgentChatError
+}
+
 export interface CommandChatContextValue {
-  messages: any[]
+  messages: ChatMessage[]
   isLoading: boolean
   isHydrating: boolean
   threadId?: string
@@ -53,6 +74,8 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [threadId, setThreadId] = useState<string | undefined>(undefined)
   const [activeTitle, setActiveTitle] = useState<string | undefined>(undefined)
   const [isHydrating, setIsHydrating] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [selectedModel, setSelectedModel] = useState<string>("")
   const [chatError, setChatError] = useState<AgentChatError | null>(null)
   const [lastPrompt, setLastPrompt] = useState<string>("")
@@ -62,6 +85,8 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
     threadIdRef.current = threadId
   }, [threadId])
 
+  const abortControllerRef = useRef<AbortController | null>(null)
+
   // Sync default model from server settings on first load
   const { data: modelsData } = useAIModels()
   useEffect(() => {
@@ -70,85 +95,85 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [modelsData?.defaultModel, selectedModel])
 
-  const chat = (useChat as any)({
-    connection: fetchServerSentEvents(`${AUTH_SERVER_URL}/api/agent/chat`, {
-      credentials: "include",
-      fetchClient: (async (input: RequestInfo | URL, init?: RequestInit) => {
-        try {
-          let updatedInit = init
-          if (init?.body && typeof init.body === "string") {
-            try {
-              const parsed = JSON.parse(init.body)
-              if (threadIdRef.current) {
-                parsed.threadId = threadIdRef.current
-                updatedInit = {
-                  ...init,
-                  body: JSON.stringify(parsed),
+  const invalidateAgentQueries = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["agent", "conversations"] })
+    queryClient.invalidateQueries({ queryKey: ["proposals"] })
+    queryClient.invalidateQueries({ queryKey: ["invoices"] })
+    queryClient.invalidateQueries({ queryKey: ["scheduled-dispatches"] })
+    queryClient.invalidateQueries({ queryKey: ["deals"] })
+    queryClient.invalidateQueries({ queryKey: ["customers"] })
+    queryClient.invalidateQueries({ queryKey: ["deal-analytics"] })
+    queryClient.invalidateQueries({ queryKey: ["customer-analytics"] })
+    if (threadIdRef.current) {
+      queryClient.invalidateQueries({
+        queryKey: ["agent", "conversations", threadIdRef.current],
+      })
+    }
+  }, [queryClient])
+
+  // TanStack Query Mutation for Action Approval Resolution
+  const resolveActionMutation = useMutation({
+    mutationFn: async ({
+      approvalId,
+      approved,
+      feedback,
+    }: {
+      approvalId: string
+      approved: boolean
+      feedback?: string
+    }) => {
+      const res = await fetch(
+        `${AUTH_SERVER_URL}/api/agent/actions/${approvalId}/resolve`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ approved, feedback }),
+        }
+      )
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error?.message || `HTTP ${res.status}`)
+      }
+      return await res.json()
+    },
+    onSuccess: (data, variables) => {
+      // Update local tool state
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (!msg.toolCalls) return msg
+          return {
+            ...msg,
+            toolCalls: msg.toolCalls.map((tc) => {
+              if (
+                tc.approvalId === variables.approvalId ||
+                tc.id === variables.approvalId
+              ) {
+                return {
+                  ...tc,
+                  status: variables.approved ? "approved" : "rejected",
+                  result: data.result,
+                  needsApproval: false,
                 }
               }
-            } catch {
-              // ignore json parse errors
-            }
+              return tc
+            }),
           }
-          const response = await fetch(input, updatedInit)
-          if (!response.ok) {
-            const body = await response.json().catch(() => null)
-            const code = body?.error?.code || `http_${response.status}`
-            const message =
-              body?.error?.message ||
-              `Request failed with HTTP status ${response.status}`
-            const errObj = { code, message }
-            setChatError(errObj)
-            throw new Error(`${code}: ${message}`)
-          }
-          setChatError(null)
-          return response
-        } catch (err) {
-          if (err instanceof Error) {
-            setChatError({
-              code: "connection_error",
-              message: err.message || "Failed to connect to agent server",
-            })
-          } else {
-            setChatError({
-              code: "unknown_stream_error",
-              message: "An unknown stream error occurred",
-            })
-          }
-          throw err
-        }
-      }) as typeof fetch,
-    }),
-    forwardedProps: {
-      model: selectedModel || null,
-    },
-    onFinish: () => {
-      queryClient.invalidateQueries({ queryKey: ["agent", "conversations"] })
-      queryClient.invalidateQueries({ queryKey: ["proposals"] })
-      queryClient.invalidateQueries({ queryKey: ["invoices"] })
-      queryClient.invalidateQueries({ queryKey: ["scheduled-dispatches"] })
-      queryClient.invalidateQueries({ queryKey: ["deals"] })
-      queryClient.invalidateQueries({ queryKey: ["customers"] })
-      queryClient.invalidateQueries({ queryKey: ["deal-analytics"] })
-      queryClient.invalidateQueries({ queryKey: ["customer-analytics"] })
-      if (threadIdRef.current) {
-        queryClient.invalidateQueries({
-          queryKey: ["agent", "conversations", threadIdRef.current],
         })
-      }
+      )
+      invalidateAgentQueries()
     },
-    onError: (err: any) => {
-      const message = err?.message || "Agent request encountered an error"
+    onError: (err: Error) => {
       setChatError({
-        code: "agent_error",
-        message,
+        code: "approval_failed",
+        message: err.message || "Failed to resolve action approval",
       })
     },
   })
 
   const sendPrompt = useCallback(
     async (text: string) => {
-      if (!text.trim()) return
+      if (!text.trim() || isLoading) return
       setChatError(null)
       setLastPrompt(text)
 
@@ -165,76 +190,218 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
         })
       }
 
+      const userMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: text,
+      }
+
+      const assistantMsgId = crypto.randomUUID()
+      const initialAssistantMsg: ChatMessage = {
+        id: assistantMsgId,
+        role: "assistant",
+        content: "",
+        toolCalls: [],
+      }
+
+      setMessages((prev) => [...prev, userMsg, initialAssistantMsg])
+      setIsLoading(true)
+
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+
       try {
-        await chat.sendMessage(text)
-      } catch (err: any) {
-        setChatError({
-          code: "send_failed",
-          message: err?.message || "Failed to send prompt to agent",
+        const payloadMessages = [...messages, userMsg].map((m) => ({
+          role: m.role,
+          content: m.content,
+          parts: [
+            ...(m.thinking ? [{ type: "thinking", text: m.thinking }] : []),
+            ...(m.content ? [{ type: "text", text: m.content }] : []),
+          ],
+        }))
+
+        const res = await fetch(`${AUTH_SERVER_URL}/api/agent/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+          },
+          credentials: "include",
+          signal: abortController.signal,
+          body: JSON.stringify({
+            messages: payloadMessages,
+            threadId: targetThreadId,
+            forwardedProps: {
+              model: selectedModel || null,
+            },
+          }),
         })
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => null)
+          const code = body?.error?.code || `http_${res.status}`
+          const message =
+            body?.error?.message ||
+            `Request failed with HTTP status ${res.status}`
+          setChatError({ code, message })
+          setIsLoading(false)
+          return
+        }
+
+        if (!res.body) {
+          throw new Error("No SSE response body returned from agent server")
+        }
+
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ""
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split("\n\n")
+          buffer = lines.pop() ?? ""
+
+          for (const block of lines) {
+            if (!block.trim() || block.startsWith(":")) continue // Skip heartbeats/comments
+            const dataLine = block
+              .split("\n")
+              .find((l) => l.startsWith("data: "))
+            if (!dataLine) continue
+
+            const rawJson = dataLine.slice(6).trim()
+            try {
+              const eventParsed = JSON.parse(rawJson)
+              const eventValidation = agentEventSchema.safeParse(eventParsed)
+              if (!eventValidation.success) continue
+
+              const event: AgentEvent = eventValidation.data
+
+              setMessages((prev) =>
+                prev.map((msg) => {
+                  if (msg.id !== assistantMsgId) return msg
+
+                  switch (event.type) {
+                    case "content:delta":
+                      return {
+                        ...msg,
+                        content: (msg.content || "") + event.text,
+                      }
+
+                    case "thinking:delta":
+                      return {
+                        ...msg,
+                        thinking: (msg.thinking || "") + event.text,
+                      }
+
+                    case "tool:called": {
+                      const existing = msg.toolCalls ?? []
+                      return {
+                        ...msg,
+                        toolCalls: [
+                          ...existing,
+                          {
+                            id: event.callId,
+                            name: event.name,
+                            args: event.args,
+                            status: "running",
+                          },
+                        ],
+                      }
+                    }
+
+                    case "tool:result": {
+                      const updatedTools = (msg.toolCalls ?? []).map((tc) => {
+                        if (tc.id === event.callId) {
+                          return {
+                            ...tc,
+                            result: event.result,
+                            status: event.isError ? "error" : "completed",
+                            errorText: event.isError
+                              ? String(event.result)
+                              : undefined,
+                          }
+                        }
+                        return tc
+                      })
+                      return { ...msg, toolCalls: updatedTools }
+                    }
+
+                    case "action:approval_required": {
+                      const updatedTools = (msg.toolCalls ?? []).map((tc) => {
+                        if (tc.name === event.toolName) {
+                          return {
+                            ...tc,
+                            needsApproval: true,
+                            approvalId: event.approvalId,
+                            status: "pending_approval",
+                          }
+                        }
+                        return tc
+                      })
+                      return { ...msg, toolCalls: updatedTools }
+                    }
+
+                    case "turn:error":
+                      return {
+                        ...msg,
+                        error: { code: event.code, message: event.message },
+                      }
+
+                    default:
+                      return msg
+                  }
+                })
+              )
+            } catch {
+              // Ignore partial JSON parse errors
+            }
+          }
+        }
+
+        invalidateAgentQueries()
+      } catch (err: unknown) {
+        if ((err as Error)?.name !== "AbortError") {
+          const message =
+            err instanceof Error ? err.message : "Agent stream failed"
+          setChatError({ code: "stream_failed", message })
+        }
+      } finally {
+        setIsLoading(false)
       }
     },
-    [chat, navigate]
+    [isLoading, messages, navigate, selectedModel, invalidateAgentQueries]
   )
+
+  const stop = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+      setIsLoading(false)
+    }
+  }, [])
+
+  const retryLastPrompt = useCallback(async () => {
+    if (lastPrompt) {
+      await sendPrompt(lastPrompt)
+    }
+  }, [lastPrompt, sendPrompt])
 
   const approveTool = useCallback(
     async (approvalId: string) => {
-      if (!approvalId || typeof chat.addToolApprovalResponse !== "function") {
-        setChatError({
-          code: "approval_unavailable",
-          message:
-            "This approval request cannot be resumed. Please retry the request.",
-        })
-        return
-      }
-      setChatError(null)
-      try {
-        await chat.addToolApprovalResponse({ id: approvalId, approved: true })
-      } catch (err: any) {
-        setChatError({
-          code: "approval_failed",
-          message: err?.message || "Failed to approve agent action",
-        })
-      }
+      await resolveActionMutation.mutateAsync({ approvalId, approved: true })
     },
-    [chat]
+    [resolveActionMutation]
   )
 
   const rejectTool = useCallback(
     async (approvalId: string) => {
-      if (!approvalId || typeof chat.addToolApprovalResponse !== "function") {
-        setChatError({
-          code: "approval_unavailable",
-          message:
-            "This approval request cannot be resumed. Please retry the request.",
-        })
-        return
-      }
-      setChatError(null)
-      try {
-        await chat.addToolApprovalResponse({ id: approvalId, approved: false })
-      } catch (err: any) {
-        setChatError({
-          code: "approval_failed",
-          message: err?.message || "Failed to reject agent action",
-        })
-      }
+      await resolveActionMutation.mutateAsync({ approvalId, approved: false })
     },
-    [chat]
+    [resolveActionMutation]
   )
-
-  const retryLastPrompt = useCallback(async () => {
-    if (!lastPrompt) return
-    setChatError(null)
-    try {
-      await chat.sendMessage(lastPrompt)
-    } catch (err: any) {
-      setChatError({
-        code: "retry_failed",
-        message: err?.message || "Failed to retry prompt",
-      })
-    }
-  }, [chat, lastPrompt])
 
   const clearError = useCallback(() => {
     setChatError(null)
@@ -242,147 +409,90 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const loadThread = useCallback(
     async (id: string) => {
-      if (threadIdRef.current === id && chat.messages.length > 0) {
-        // Already loaded or actively streaming in memory
-        return
-      }
+      if (threadIdRef.current === id && messages.length > 0) return
 
       setIsHydrating(true)
       setThreadId(id)
       threadIdRef.current = id
-      setChatError(null)
 
       try {
         const res = await fetch(
           `${AUTH_SERVER_URL}/api/agent/conversations/${id}`,
-          { credentials: "include" }
+          {
+            credentials: "include",
+          }
         )
-        if (!res.ok) {
-          throw new Error(`Failed to load conversation (${res.status})`)
-        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
         const data = await res.json()
-        setActiveTitle(data.conversation?.title || "Conversation")
+        if (data.conversation?.title) {
+          setActiveTitle(data.conversation.title)
+        }
+
         if (Array.isArray(data.messages)) {
-          const formatted = data.messages.map((m: any) => {
-            let parts = m.parts
-            if (
-              Array.isArray(parts) &&
-              parts.length === 1 &&
-              parts[0]?.role &&
-              Array.isArray(parts[0]?.parts)
-            ) {
-              parts = parts[0].parts
+          const loaded: ChatMessage[] = data.messages.map((m: any) => {
+            let text = ""
+            let thinking = ""
+            const toolCalls: ToolCallItem[] = []
+
+            if (Array.isArray(m.parts)) {
+              for (const p of m.parts) {
+                if (p?.type === "text") {
+                  text += p.text ?? p.content ?? ""
+                } else if (p?.type === "thinking") {
+                  thinking += p.text ?? p.thinking ?? p.content ?? ""
+                } else if (
+                  p?.type === "tool-call" ||
+                  p?.type === "tool-invocation"
+                ) {
+                  toolCalls.push({
+                    id: String(p.id ?? p.toolCallId ?? "tool"),
+                    name: String(p.name ?? p.toolName ?? "tool"),
+                    args: p.args ?? p.input ?? {},
+                    status: "completed",
+                  })
+                } else if (p?.type === "tool-result") {
+                  const existing = toolCalls.find(
+                    (tc) => tc.id === p.toolCallId
+                  )
+                  if (existing) {
+                    existing.result = p.result ?? p.output
+                  }
+                }
+              }
             }
-            parts = Array.isArray(parts)
-              ? parts.filter((p: any) => p && typeof p === "object")
-              : []
-            const text = Array.isArray(parts)
-              ? parts
-                  .filter((p: any) => p?.type === "text")
-                  .map((p: any) => p.text ?? p.content ?? "")
-                  .join("")
-              : typeof m.content === "string"
-                ? m.content
-                : ""
-            const normalizedParts = Array.isArray(parts)
-              ? parts.map((p: any) => {
-                  if (p?.type === "text") {
-                    const t = p.text ?? p.content ?? ""
-                    return { ...p, text: t, content: t }
-                  }
-                  if (p?.type === "thinking") {
-                    const t = p.thinking ?? p.content ?? ""
-                    return { ...p, thinking: t, content: t }
-                  }
-                  if (
-                    p?.type === "tool-call" ||
-                    p?.type === "tool_call" ||
-                    p?.type === "tool-invocation" ||
-                    p?.type === "tool"
-                  ) {
-                    const id = String(p.id ?? p.toolCallId ?? "tool")
-                    const name = String(p.name ?? p.toolName ?? "unknown_tool")
-                    const argsObj =
-                      typeof p.args === "object" && p.args !== null
-                        ? p.args
-                        : typeof p.arguments === "string"
-                          ? (() => {
-                              try {
-                                return JSON.parse(p.arguments)
-                              } catch {
-                                return {}
-                              }
-                            })()
-                          : {}
-                    const argsStr =
-                      typeof p.arguments === "string"
-                        ? p.arguments
-                        : JSON.stringify(argsObj)
-                    return {
-                      ...p,
-                      type: "tool-call",
-                      id,
-                      toolCallId: id,
-                      name,
-                      toolName: name,
-                      arguments: argsStr,
-                      args: argsObj,
-                      state: p.state || "input-complete",
-                    }
-                  }
-                  if (p?.type === "tool-result" || p?.type === "tool_result") {
-                    const toolCallId = String(p.toolCallId ?? p.id ?? "tool")
-                    const contentStr =
-                      typeof p.content === "string"
-                        ? p.content
-                        : JSON.stringify(p.result ?? p.output ?? {})
-                    return {
-                      ...p,
-                      type: "tool-result",
-                      id: toolCallId,
-                      toolCallId,
-                      content: contentStr,
-                      result: p.result ?? p.output ?? {},
-                      output: p.result ?? p.output ?? {},
-                      state: p.state || "complete",
-                    }
-                  }
-                  return p
-                })
-              : text
-                ? [{ type: "text", text, content: text }]
-                : []
+
             return {
               id: m.id,
               role: m.role,
-              content: text || null,
-              parts: normalizedParts,
+              content: text,
+              thinking: thinking || undefined,
+              toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
             }
           })
-          chat.setMessages(formatted)
+
+          setMessages(loaded)
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         setChatError({
           code: "load_failed",
-          message: err?.message || "Could not load past conversation",
+          message: err instanceof Error ? err.message : "Failed to load thread",
         })
       } finally {
         setIsHydrating(false)
       }
     },
-    [chat]
+    [messages.length]
   )
 
   const resetNewChat = useCallback(() => {
-    if (chat.isLoading) return
-    if (!threadIdRef.current && chat.messages.length === 0) return
-
+    if (isLoading) return
     setThreadId(undefined)
     threadIdRef.current = undefined
     setActiveTitle(undefined)
+    setMessages([])
     setChatError(null)
-    chat.clear()
-  }, [chat])
+  }, [isLoading])
 
   const isCurrentThread = useCallback((id: string) => {
     return threadIdRef.current === id
@@ -391,18 +501,18 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <CommandChatContext.Provider
       value={{
-        messages: chat.messages,
-        isLoading: chat.isLoading,
+        messages,
+        isLoading,
         isHydrating,
         threadId,
         activeTitle:
           activeTitle ||
-          (chat.messages.length > 0 ? "Conversation" : "New Conversation"),
+          (messages.length > 0 ? "Conversation" : "New Conversation"),
         selectedModel,
         setSelectedModel,
         chatError,
         sendPrompt,
-        stop: chat.stop,
+        stop,
         retryLastPrompt,
         approveTool,
         rejectTool,

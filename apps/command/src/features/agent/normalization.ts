@@ -274,9 +274,7 @@ export function normalizeAssistantMessage(
     const invTool = toolList.find(
       (c) => c.name === "create_invoice" || c.name === "update_invoice"
     )
-    const schedTool = toolList.find(
-      (c) => c.name === "schedule_document_send"
-    )
+    const schedTool = toolList.find((c) => c.name === "schedule_document_send")
 
     if (propTool) {
       const isCompleted = propTool.status === "completed"

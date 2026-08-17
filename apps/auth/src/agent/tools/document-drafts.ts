@@ -20,9 +20,9 @@ import {
   normalizeCompositionBlocks,
 } from "@workspace/document/builders"
 import {
-  type ProposalPricing,
   calculateInvoicePricing,
   calculateProposalPricing,
+  type ProposalPricing,
 } from "@workspace/document/calculate"
 import {
   type DocumentBlock,

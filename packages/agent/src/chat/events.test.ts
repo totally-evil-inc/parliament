@@ -62,6 +62,8 @@ describe("AgentEvent Stream Protocol", () => {
       type: "content:delta",
       text: "Hello",
     })
-    expect(sse).toBe('event: content:delta\ndata: {"type":"content:delta","text":"Hello"}\n\n')
+    expect(sse).toBe(
+      'event: content:delta\ndata: {"type":"content:delta","text":"Hello"}\n\n'
+    )
   })
 })

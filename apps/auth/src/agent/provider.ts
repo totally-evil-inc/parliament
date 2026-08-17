@@ -141,7 +141,9 @@ export async function getLanguageModel(
       return { model: openRouter(modelName), modelName }
     }
     const anthropic = createAnthropic({
-      baseURL: config.baseUrl.includes("anthropic.com") ? config.baseUrl : undefined,
+      baseURL: config.baseUrl.includes("anthropic.com")
+        ? config.baseUrl
+        : undefined,
       apiKey: config.apiKey,
     })
     const cleanAnthropicName = modelName.replace(/^anthropic\//, "")

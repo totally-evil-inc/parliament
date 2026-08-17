@@ -28,9 +28,15 @@ agentActionsRouter.get("/actions/pending", async (c) => {
     ctx = await buildToolContext(c)
   } catch (err) {
     if (err instanceof AgentContextError) {
-      return c.json({ error: { code: err.code, message: err.message } }, httpStatusFor(err.code) as ContentfulStatusCode)
+      return c.json(
+        { error: { code: err.code, message: err.message } },
+        httpStatusFor(err.code) as ContentfulStatusCode
+      )
     }
-    return c.json({ error: { code: "unauthorized", message: "Unauthorized" } }, 401)
+    return c.json(
+      { error: { code: "unauthorized", message: "Unauthorized" } },
+      401
+    )
   }
 
   const rows = await db
@@ -57,15 +63,29 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
     ctx = await buildToolContext(c)
   } catch (err) {
     if (err instanceof AgentContextError) {
-      return c.json({ error: { code: err.code, message: err.message } }, httpStatusFor(err.code) as ContentfulStatusCode)
+      return c.json(
+        { error: { code: err.code, message: err.message } },
+        httpStatusFor(err.code) as ContentfulStatusCode
+      )
     }
-    return c.json({ error: { code: "unauthorized", message: "Unauthorized" } }, 401)
+    return c.json(
+      { error: { code: "unauthorized", message: "Unauthorized" } },
+      401
+    )
   }
 
   const body = await c.req.json().catch(() => null)
   const parsed = resolveActionSchema.safeParse(body)
   if (!parsed.success) {
-    return c.json({ error: { code: "invalid_body", message: "Invalid approval resolution payload" } }, 422)
+    return c.json(
+      {
+        error: {
+          code: "invalid_body",
+          message: "Invalid approval resolution payload",
+        },
+      },
+      422
+    )
   }
 
   const { approved, feedback } = parsed.data
@@ -85,16 +105,22 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
       .limit(1)
 
     if (!action) {
-      return c.json({ error: { code: "not_found", message: "Action approval not found" } }, 404)
+      return c.json(
+        { error: { code: "not_found", message: "Action approval not found" } },
+        404
+      )
     }
 
     if (action.status !== "pending") {
-      return c.json({
-        error: {
-          code: "already_resolved",
-          message: `This action has already been ${action.status}.`,
+      return c.json(
+        {
+          error: {
+            code: "already_resolved",
+            message: `This action has already been ${action.status}.`,
+          },
         },
-      }, 409)
+        409
+      )
     }
 
     if (new Date() > new Date(action.expiresAt)) {
@@ -103,12 +129,15 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
         .set({ status: "expired", updatedAt: new Date() })
         .where(eq(schema.chatActionApproval.id, id))
 
-      return c.json({
-        error: {
-          code: "action_expired",
-          message: "This action approval request has expired.",
+      return c.json(
+        {
+          error: {
+            code: "action_expired",
+            message: "This action approval request has expired.",
+          },
         },
-      }, 410)
+        410
+      )
     }
 
     const nextStatus = approved ? "approved" : "rejected"
@@ -130,13 +159,18 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
     if (approved) {
       const dispatcher = new ToolDispatcher(ctx)
       // Execute without approval gate check
-      const exec = await dispatcher.executeTool(action.toolName, action.toolArgs)
+      const exec = await dispatcher.executeTool(
+        action.toolName,
+        action.toolArgs
+      )
       executionResult = exec.result
       isError = exec.isError
     } else {
       executionResult = {
         status: "rejected",
-        message: feedback ? `Action rejected by user: ${feedback}` : "Action was rejected by user.",
+        message: feedback
+          ? `Action rejected by user: ${feedback}`
+          : "Action was rejected by user.",
       }
     }
 
@@ -174,6 +208,9 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
         error: errorMsg,
       },
     })
-    return c.json({ error: { code: "resolution_failed", message: errorMsg } }, 500)
+    return c.json(
+      { error: { code: "resolution_failed", message: errorMsg } },
+      500
+    )
   }
 })

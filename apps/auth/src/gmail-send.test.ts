@@ -69,9 +69,8 @@ describe("Gmail Direct Send & Draft Backend", () => {
     })
 
     it("throws error when payload is missing %PDF- signature", () => {
-      const invalidContent = Buffer.from("NOT A PDF DOCUMENT").toString(
-        "base64"
-      )
+      const invalidContent =
+        Buffer.from("NOT A PDF DOCUMENT").toString("base64")
       expect(() =>
         validatePdfAttachment({
           filename: "fake.pdf",
@@ -131,7 +130,9 @@ describe("Gmail Direct Send & Draft Backend", () => {
       // Verify line wrapping (no lines in base64 attachment block exceed 76 characters)
       const lines = decoded.split("\r\n")
       const attachmentSectionStart = lines.findIndex((l) =>
-        l.includes('Content-Disposition: attachment; filename="North_Proposal.pdf"')
+        l.includes(
+          'Content-Disposition: attachment; filename="North_Proposal.pdf"'
+        )
       )
       expect(attachmentSectionStart).toBeGreaterThan(-1)
 

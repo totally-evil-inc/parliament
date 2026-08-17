@@ -335,8 +335,7 @@ function applyMarks(
     if (mark.type === "strike") textStyle.push(styles.strike)
     if (mark.type === "code") textStyle.push(styles.code)
     if (mark.type === "link") {
-      linkHref =
-        typeof mark.attrs?.href === "string" ? mark.attrs.href : "#"
+      linkHref = typeof mark.attrs?.href === "string" ? mark.attrs.href : "#"
       textStyle.push(styles.link)
     }
   }

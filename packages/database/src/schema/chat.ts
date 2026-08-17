@@ -94,9 +94,7 @@ export const chatActionApproval = pgTable(
       onDelete: "cascade",
     }),
     toolName: text("tool_name").notNull(),
-    toolArgs: jsonb("tool_args")
-      .$type<Record<string, unknown>>()
-      .notNull(),
+    toolArgs: jsonb("tool_args").$type<Record<string, unknown>>().notNull(),
     summary: text("summary").notNull(),
     status: text("status")
       .$type<"pending" | "approved" | "rejected" | "expired">()
