@@ -43,7 +43,7 @@ export class AgentPhaseError extends Error {
 /**
  * Converts stored/inbound message parts to ModelMessage array for Vercel AI SDK Core.
  */
-function convertToModelMessages(
+export function convertToModelMessages(
   messages: Array<{ role: string; content?: string | null; parts?: any[] }>
 ): ModelMessage[] {
   const result: ModelMessage[] = []
@@ -68,17 +68,21 @@ function convertToModelMessages(
               type: "tool-call",
               toolCallId: p.toolCallId ?? p.id ?? crypto.randomUUID(),
               toolName: p.toolName ?? p.name ?? "",
-              args: p.args ?? p.input ?? {},
-              input: p.args ?? p.input ?? {},
+              input: p.input ?? p.args ?? {},
             })
           } else if (p.type === "tool-result") {
+            const rawOutput = p.result ?? p.output ?? {}
+            const stringVal =
+              typeof rawOutput === "string"
+                ? rawOutput
+                : JSON.stringify(rawOutput)
             toolResultParts.push({
               type: "tool-result",
               toolCallId: p.toolCallId ?? p.id ?? crypto.randomUUID(),
               toolName: p.toolName ?? p.name ?? "",
-              result: p.result ?? p.output ?? {},
-              output: p.result ?? p.output ?? {},
-              isError: p.isError ?? false,
+              output: p.isError
+                ? { type: "error-text" as const, value: stringVal }
+                : { type: "text" as const, value: stringVal },
             })
           }
         }

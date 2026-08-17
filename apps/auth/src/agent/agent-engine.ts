@@ -229,8 +229,7 @@ export class AgentEngine {
           type: "tool-call",
           toolCallId: call.id,
           toolName: call.name,
-          args: call.args,
-          input: call.args,
+          input: call.args ?? {},
         })
       }
 
@@ -370,14 +369,20 @@ export class AgentEngine {
       // Append tool results to message history for next turn iteration
       const toolMessage: ModelMessage = {
         role: "tool",
-        content: toolResults.map((tr) => ({
-          type: "tool-result" as const,
-          toolCallId: tr.callId,
-          toolName: tr.name,
-          result: tr.processedContent,
-          output: tr.processedContent,
-          isError: tr.isError,
-        })) as any,
+        content: toolResults.map((tr) => {
+          const stringVal =
+            typeof tr.processedContent === "string"
+              ? tr.processedContent
+              : JSON.stringify(tr.processedContent)
+          return {
+            type: "tool-result" as const,
+            toolCallId: tr.callId,
+            toolName: tr.name,
+            output: tr.isError
+              ? { type: "error-text" as const, value: stringVal }
+              : { type: "text" as const, value: stringVal },
+          }
+        }) as any,
       }
 
       activeMessages.push(toolMessage)
