@@ -190,7 +190,7 @@ describe("Milestone 1 schema extensions", () => {
       }
     })
 
-    expect(proposalFks).toHaveLength(2)
+    expect(proposalFks).toHaveLength(3)
     expect(proposalFks).toContainEqual({
       localCol: "proposal_snapshot_id",
       foreignTable: "proposal_snapshot",
@@ -199,6 +199,11 @@ describe("Milestone 1 schema extensions", () => {
     expect(proposalFks).toContainEqual({
       localCol: "public_link_id",
       foreignTable: "proposal_public_link",
+      foreignCol: "id",
+    })
+    expect(proposalFks).toContainEqual({
+      localCol: "organization_id",
+      foreignTable: "organization",
       foreignCol: "id",
     })
 
@@ -245,5 +250,85 @@ describe("Milestone 1 schema extensions", () => {
     const otpIndexes = otpConfig.indexes.map((idx) => idx.config.name)
     expect(otpIndexes).toContain("public_link_otp_public_link_id_idx")
     expect(otpIndexes).toContain("public_link_otp_email_idx")
+  })
+
+  it("verifies company, contact, proposal, and proposalVersion schema tables", () => {
+    expect(schema.company).toBeDefined()
+    expect(schema.contact).toBeDefined()
+    expect(schema.proposal).toBeDefined()
+    expect(schema.proposalVersion).toBeDefined()
+
+    expect(getTableName(schema.company)).toBe("company")
+    expect(getTableName(schema.contact)).toBe("contact")
+    expect(getTableName(schema.proposal)).toBe("proposal")
+    expect(getTableName(schema.proposalVersion)).toBe("proposal_version")
+
+    const companyCols = getTableColumns(schema.company)
+    expect(companyCols.id.notNull).toBe(true)
+    expect(companyCols.organizationId.notNull).toBe(true)
+    expect(companyCols.name.notNull).toBe(true)
+    expect(companyCols.billingEmail.name).toBe("billing_email")
+    expect(companyCols.vatNumber.name).toBe("vat_number")
+    expect(companyCols.status.name).toBe("status")
+    expect(companyCols.isArchived.name).toBe("is_archived")
+
+    const contactCols = getTableColumns(schema.contact)
+    expect(contactCols.id.notNull).toBe(true)
+    expect(contactCols.organizationId.notNull).toBe(true)
+    expect(contactCols.email.notNull).toBe(true)
+    expect(contactCols.title.name).toBe("title")
+    expect(contactCols.isPrimary.name).toBe("is_primary")
+
+    const proposalCols = getTableColumns(schema.proposal)
+    expect(proposalCols.id.notNull).toBe(true)
+    expect(proposalCols.organizationId.notNull).toBe(true)
+    expect(proposalCols.subtotalMinorUnits.notNull).toBe(true)
+    expect(proposalCols.taxMinorUnits.notNull).toBe(true)
+    expect(proposalCols.totalMinorUnits.notNull).toBe(true)
+
+    const versionCols = getTableColumns(schema.proposalVersion)
+    expect(versionCols.id.notNull).toBe(true)
+    expect(versionCols.proposalId.notNull).toBe(true)
+    expect(versionCols.organizationId.notNull).toBe(true)
+    expect(versionCols.versionNumber.notNull).toBe(true)
+    expect(versionCols.hash.notNull).toBe(true)
+  })
+
+  it("verifies scheduledDocumentDispatch schema table definition, columns, and indexes", () => {
+    expect(schema.scheduledDocumentDispatch).toBeDefined()
+    expect(getTableName(schema.scheduledDocumentDispatch)).toBe(
+      "scheduled_document_dispatch"
+    )
+
+    const cols = getTableColumns(schema.scheduledDocumentDispatch)
+    expect(cols.id.notNull).toBe(true)
+    expect(cols.organizationId.notNull).toBe(true)
+    expect(cols.userId.notNull).toBe(true)
+    expect(cols.documentType.notNull).toBe(true)
+    expect(cols.documentId.notNull).toBe(true)
+    expect(cols.documentTitle.notNull).toBe(true)
+    expect(cols.recipientEmail.notNull).toBe(true)
+    expect(cols.subject.notNull).toBe(true)
+    expect(cols.message.notNull).toBe(true)
+    expect(cols.scheduledFor.notNull).toBe(true)
+    expect(cols.status.notNull).toBe(true)
+    expect(cols.sendMethod.notNull).toBe(true)
+    expect(cols.attempts.notNull).toBe(true)
+    expect(cols.createdAt.notNull).toBe(true)
+    expect(cols.updatedAt.notNull).toBe(true)
+
+    expect(cols.status.hasDefault).toBe(true)
+    expect(cols.status.default).toBe("pending")
+    expect(cols.sendMethod.hasDefault).toBe(true)
+    expect(cols.sendMethod.default).toBe("gmail")
+    expect(cols.attempts.hasDefault).toBe(true)
+    expect(cols.attempts.default).toBe(0)
+
+    const config = getTableConfig(schema.scheduledDocumentDispatch)
+    const indexNames = config.indexes.map((idx) => idx.config.name)
+    expect(indexNames).toContain("idx_scheduled_dispatch_due")
+    expect(indexNames).toContain("idx_scheduled_dispatch_doc")
+    expect(indexNames).toContain("idx_scheduled_dispatch_user")
+    expect(indexNames).toContain("idx_scheduled_dispatch_org")
   })
 })

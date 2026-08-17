@@ -1,10 +1,14 @@
 import {
+  ClockIcon,
+  DocumentMinusIcon,
+  ShieldExclamationIcon,
+} from "@heroicons/react/24/outline"
+import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
-import { Clock, FileX, ShieldAlert } from "lucide-react"
 
 export type StatusScreenProps = {
   status: "not_found" | "expired" | "unavailable" | "error"
@@ -27,20 +31,26 @@ export function StatusScreen({
 
   const docLabel = documentType === "invoice" ? "Invoice" : "Proposal"
 
-  let icon = <FileX className="mx-auto mb-3 h-12 w-12 text-destructive" />
+  let icon = (
+    <DocumentMinusIcon className="mx-auto mb-3 h-12 w-12 text-destructive" />
+  )
   let defaultTitle = `${docLabel} Not Found`
   let defaultMessage = `The requested ${docLabel.toLowerCase()} link does not exist or may have been removed.`
 
   if (isExpired) {
-    icon = <Clock className="mx-auto mb-3 h-12 w-12 text-amber-500" />
+    icon = <ClockIcon className="mx-auto mb-3 h-12 w-12 text-amber-500" />
     defaultTitle = `${docLabel} Link Expired`
     defaultMessage = `This ${docLabel.toLowerCase()} link has expired and is no longer accessible. Please contact the sender for an updated link.`
   } else if (isRevoked) {
-    icon = <ShieldAlert className="mx-auto mb-3 h-12 w-12 text-destructive" />
+    icon = (
+      <ShieldExclamationIcon className="mx-auto mb-3 h-12 w-12 text-destructive" />
+    )
     defaultTitle = `${docLabel} Link Unavailable`
     defaultMessage = `This ${docLabel.toLowerCase()} link is no longer active or has been revoked by the issuer.`
   } else if (status === "error") {
-    icon = <ShieldAlert className="mx-auto mb-3 h-12 w-12 text-destructive" />
+    icon = (
+      <ShieldExclamationIcon className="mx-auto mb-3 h-12 w-12 text-destructive" />
+    )
     defaultTitle = `${docLabel} Temporarily Unavailable`
     defaultMessage = `We couldn't load this ${docLabel.toLowerCase()} right now. Please try again or contact the sender.`
   }

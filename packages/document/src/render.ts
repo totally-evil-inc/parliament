@@ -5,7 +5,7 @@ import type {
   PartySnapshot,
   ProposalDraft,
 } from "./schema"
-import { parseInvoiceDraft, parseProposalDraft } from "./schema"
+import { normalizeInvoiceDraft, normalizeProposalDraft } from "./schema"
 
 export type ProposalRenderModel = {
   id: string
@@ -23,8 +23,11 @@ export type ProposalRenderModel = {
   blocks: Array<DocumentBlock>
 }
 
-export function buildProposalRenderModel(input: unknown): ProposalRenderModel {
-  const document = parseProposalDraft(input)
+export function buildProposalRenderModel(
+  input: unknown,
+  fallbackScheme: "light" | "dark" = "light"
+): ProposalRenderModel {
+  const document = normalizeProposalDraft(input, fallbackScheme)
   const pricing = document.data.pricing
 
   return {
@@ -62,8 +65,11 @@ export type InvoiceRenderModel = {
   blocks: Array<DocumentBlock>
 }
 
-export function buildInvoiceRenderModel(input: unknown): InvoiceRenderModel {
-  const document = parseInvoiceDraft(input)
+export function buildInvoiceRenderModel(
+  input: unknown,
+  fallbackScheme: "light" | "dark" = "light"
+): InvoiceRenderModel {
+  const document = normalizeInvoiceDraft(input, fallbackScheme)
   const pricing = document.data.pricing
 
   return {

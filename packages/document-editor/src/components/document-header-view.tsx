@@ -1,10 +1,9 @@
 import {
-  Calendar03Icon,
-  Delete02Icon,
-  Image01Icon,
-  PlusSignIcon,
-} from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+  CalendarIcon,
+  PhotoIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline"
 import type { NodeViewProps } from "@tiptap/react"
 import { NodeViewWrapper } from "@tiptap/react"
 import type { PartySnapshot } from "@workspace/document/schema"
@@ -253,7 +252,7 @@ function LogoPlaceholder() {
       aria-label="Logo placeholder"
     >
       <div className="flex flex-col items-center gap-1">
-        <HugeiconsIcon icon={Image01Icon} className="h-5 w-5" />
+        <PhotoIcon className="h-5 w-5" />
         <span className="font-bold text-[10px] uppercase tracking-widest">
           Logo
         </span>
@@ -346,10 +345,7 @@ function DatePicker({
             />
           }
         >
-          <HugeiconsIcon
-            icon={Calendar03Icon}
-            className="h-4 w-4 text-[var(--document-muted-foreground)]"
-          />
+          <CalendarIcon className="h-4 w-4 text-[var(--document-muted-foreground)]" />
           <span>{parsed ? dateFormatter.format(parsed) : "Select date"}</span>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-auto p-0">
@@ -455,7 +451,7 @@ function PartyFields({
               onClick={() => onRemoveCustomField(index)}
               aria-label="Remove custom field"
             >
-              <HugeiconsIcon icon={Delete02Icon} className="h-3 w-3" />
+              <TrashIcon className="h-3 w-3" />
             </Button>
           </div>
         ))}
@@ -466,7 +462,7 @@ function PartyFields({
           onClick={onAddCustomField}
           className="h-7 gap-1.5 px-2 font-bold text-[10px] uppercase tracking-wider"
         >
-          <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
+          <PlusIcon className="h-3 w-3" />
           Add Field
         </Button>
       </div>

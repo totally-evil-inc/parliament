@@ -1,11 +1,10 @@
-import { Button } from "@workspace/ui/components/button"
-
-import { cn } from "@workspace/ui/lib/utils"
 import {
-  IconArrowBoldLeft,
-  IconArrowBoldRight,
-  IconCircleDots,
-} from "nucleo-glass"
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  EllipsisHorizontalIcon,
+} from "@heroicons/react/20/solid"
+import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 import type * as React from "react"
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
@@ -77,7 +76,7 @@ function PaginationPrevious({
       className={cn("pl-2!", className)}
       {...props}
     >
-      <IconArrowBoldLeft data-icon="inline-start" />
+      <ChevronLeftIcon data-icon="inline-start" className="size-4" />
       <span className="hidden sm:block">{text}</span>
     </PaginationLink>
   )
@@ -96,7 +95,7 @@ function PaginationNext({
       {...props}
     >
       <span className="hidden sm:block">{text}</span>
-      <IconArrowBoldRight data-icon="inline-end" />
+      <ChevronRightIcon data-icon="inline-end" className="size-4" />
     </PaginationLink>
   )
 }
@@ -115,7 +114,7 @@ function PaginationEllipsis({
       )}
       {...props}
     >
-      <IconCircleDots />
+      <EllipsisHorizontalIcon />
       <span className="sr-only">More pages</span>
     </span>
   )

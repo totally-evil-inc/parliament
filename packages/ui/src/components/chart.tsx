@@ -1,13 +1,25 @@
 import { cn } from "@workspace/ui/lib/utils"
 import * as React from "react"
-import type { TooltipValueType } from "recharts"
 import * as RechartsPrimitive from "recharts"
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  Cell,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
 
 const INITIAL_DIMENSION = { width: 320, height: 200 } as const
 type TooltipNameType = number | string
+type TooltipValueType = number | string | Array<number | string>
 
 export type ChartConfig = Record<
   string,
@@ -361,10 +373,21 @@ function getPayloadConfigFromPayload(
 }
 
 export {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  Cell,
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
   ChartStyle,
   ChartTooltip,
   ChartTooltipContent,
+  Line,
+  LineChart,
+  RechartsPrimitive,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
 }

@@ -1,7 +1,7 @@
 import { NavigationMenu as NavigationMenuPrimitive } from "@base-ui/react/navigation-menu"
+import { ChevronDownIcon } from "@heroicons/react/20/solid"
 import { cn } from "@workspace/ui/lib/utils"
 import { cva } from "class-variance-authority"
-import { IconArrowBoldDown } from "nucleo-glass"
 
 function NavigationMenu({
   align = "start",
@@ -70,7 +70,7 @@ function NavigationMenuTrigger({
       {...props}
     >
       {children}{" "}
-      <IconArrowBoldDown
+      <ChevronDownIcon
         className="relative top-px ml-1 size-3 transition duration-300 group-data-open/navigation-menu-trigger:rotate-180 group-data-popup-open/navigation-menu-trigger:rotate-180"
         aria-hidden="true"
       />

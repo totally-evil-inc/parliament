@@ -1,5 +1,4 @@
-import { PlusSignIcon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { PlusIcon } from "@heroicons/react/24/outline"
 import { Button } from "@workspace/ui/components/button"
 import {
   Table,
@@ -93,7 +92,7 @@ export function LineItemsTable({
           onClick={addItem}
           className="h-7 gap-1.5 px-2 font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-wider hover:text-[var(--document-foreground)]"
         >
-          <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
+          <PlusIcon className="h-3 w-3" />
           Add Line Item
         </Button>
         <Button
@@ -103,7 +102,7 @@ export function LineItemsTable({
           onClick={addCatalogItem}
           className="h-7 gap-1.5 px-2 font-bold text-[10px] text-[var(--document-muted-foreground)] uppercase tracking-wider hover:text-[var(--document-foreground)]"
         >
-          <HugeiconsIcon icon={PlusSignIcon} className="h-3 w-3" />
+          <PlusIcon className="h-3 w-3" />
           From Catalog
         </Button>
       </div>

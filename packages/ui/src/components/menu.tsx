@@ -1,8 +1,8 @@
 "use client"
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
+import { ChevronRightIcon } from "@heroicons/react/20/solid"
 import { cn } from "@workspace/ui/lib/utils"
-import { IconArrowBoldRight } from "nucleo-glass"
 import type * as React from "react"
 
 export const MenuCreateHandle: typeof MenuPrimitive.createHandle =
@@ -205,11 +205,11 @@ export function MenuGroupLabel({
   className,
   inset,
   ...props
-}: MenuPrimitive.GroupLabel.Props & {
+}: React.ComponentProps<"div"> & {
   inset?: boolean
 }): React.ReactElement {
   return (
-    <MenuPrimitive.GroupLabel
+    <div
       className={cn(
         "px-2 py-1.5 font-medium text-muted-foreground text-xs data-inset:ps-9 sm:data-inset:ps-8",
         className
@@ -275,7 +275,7 @@ export function MenuSubTrigger({
       {...props}
     >
       {children}
-      <IconArrowBoldRight className="ms-auto -me-0.5 opacity-80" />
+      <ChevronRightIcon className="ms-auto -me-0.5 opacity-80" />
     </MenuPrimitive.SubmenuTrigger>
   )
 }

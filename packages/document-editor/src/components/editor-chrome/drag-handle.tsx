@@ -1,5 +1,4 @@
-import { Delete02Icon, Plus } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline"
 import type { DragHandleRule } from "@tiptap/extension-drag-handle"
 import DragHandle from "@tiptap/extension-drag-handle-react"
 import type { Editor } from "@tiptap/react"
@@ -129,7 +128,7 @@ export function DocumentDragHandle({
               />
             }
           >
-            <HugeiconsIcon icon={Plus} className="size-4" />
+            <PlusIcon className="size-4" />
           </PopoverTrigger>
           <PopoverContent
             align="start"
@@ -169,7 +168,7 @@ export function DocumentDragHandle({
           title="Delete block"
           type="button"
         >
-          <HugeiconsIcon icon={Delete02Icon} className="h-3.5 w-3.5" />
+          <TrashIcon className="h-3.5 w-3.5" />
         </button>
       </DragHandle>
     </>

@@ -7,6 +7,8 @@ export type DocumentFontToken =
   | "playfair"
   | "spacemono"
 
+export type DocumentSpacingScale = "compact" | "comfortable" | "spacious"
+
 export type DocumentTemplateTokens = {
   canvasBackground: string
   pageBackground: string
@@ -17,13 +19,25 @@ export type DocumentTemplateTokens = {
   fontFamily: DocumentFontToken
   headingFontFamily: DocumentFontToken
   radius: string
-  spacingScale: "compact" | "comfortable" | "spacious"
+  spacingScale: DocumentSpacingScale
 }
 
 export type DocumentTemplate = {
   id: string
   name: string
   tokens: DocumentTemplateTokens
+}
+
+export type DocumentTemplateReference = {
+  id: string
+  version: number
+  overrides?: Record<string, string | number | boolean | null | undefined>
+}
+
+export type DocumentTemplateNormalizedReference = {
+  id: string
+  version: number
+  overrides: DocumentTemplateTokens
 }
 
 export type DocumentTemplateStyle = Record<string, string>
@@ -43,10 +57,7 @@ const fontFamilies: Record<DocumentFontToken, string> = {
   spacemono: "'Space Mono', var(--font-heading)",
 }
 
-const sectionSpacing: Record<
-  DocumentTemplate["tokens"]["spacingScale"],
-  string
-> = {
+const sectionSpacing: Record<DocumentSpacingScale, string> = {
   compact: "2rem",
   comfortable: "3rem",
   spacious: "4rem",
@@ -66,7 +77,7 @@ export const documentSpacingOptions = [
   { value: "compact", label: "Compact" },
   { value: "comfortable", label: "Comfortable" },
   { value: "spacious", label: "Spacious" },
-] satisfies Array<TemplateTokenOption<DocumentTemplateTokens["spacingScale"]>>
+] satisfies Array<TemplateTokenOption<DocumentSpacingScale>>
 
 export const documentRadiusOptions = [
   { value: "0.375rem", label: "Small" },
@@ -102,11 +113,8 @@ const greyscaleColors = [
 ] as const
 
 const backgroundColors = greyscaleColors
-
 const textColors = greyscaleColors
-
 const accentColors = greyscaleColors
-
 const borderColors = greyscaleColors
 
 export const documentColorTokenOptions = [
@@ -210,41 +218,258 @@ const defaultDocumentTemplates = {
   dark: darkDocumentTemplate,
 } satisfies Record<"light" | "dark", DocumentTemplate>
 
-export function getDefaultDocumentTemplateForScheme(scheme: "light" | "dark") {
+export function getDefaultDocumentTemplateForScheme(
+  scheme: "light" | "dark"
+): DocumentTemplate {
   return defaultDocumentTemplates[scheme]
+}
+
+export const documentPresets: ReadonlyArray<DocumentTemplate> = [
+  defaultDocumentTemplate,
+  darkDocumentTemplate,
+  webStudioProposalTemplate,
+]
+
+const validFontTokens = new Set<DocumentFontToken>([
+  "sans",
+  "serif",
+  "mono",
+  "satoshi",
+  "cabinet",
+  "playfair",
+  "spacemono",
+])
+
+const validSpacingScales = new Set<DocumentSpacingScale>([
+  "compact",
+  "comfortable",
+  "spacious",
+])
+
+export function isDocumentFontToken(
+  value: unknown
+): value is DocumentFontToken {
+  return (
+    typeof value === "string" && validFontTokens.has(value as DocumentFontToken)
+  )
+}
+
+export function isDocumentSpacingScale(
+  value: unknown
+): value is DocumentSpacingScale {
+  return (
+    typeof value === "string" &&
+    validSpacingScales.has(value as DocumentSpacingScale)
+  )
+}
+
+const CSS_COLOR_HEX_REGEX =
+  /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/
+const CSS_COLOR_FN_REGEX =
+  /^(rgb|rgba|hsl|hsla|oklch|oklab|color)\([^;{}<>()]*\)$/i
+const SAFE_NAMED_COLORS = new Set([
+  "transparent",
+  "currentcolor",
+  "inherit",
+  "white",
+  "black",
+])
+
+export function isSafeCssColor(value: unknown): value is string {
+  if (typeof value !== "string") return false
+  const trimmed = value.trim()
+  if (CSS_COLOR_HEX_REGEX.test(trimmed)) return true
+  if (SAFE_NAMED_COLORS.has(trimmed.toLowerCase())) return true
+  if (CSS_COLOR_FN_REGEX.test(trimmed)) return true
+  return false
+}
+
+const RADIUS_REGEX = /^(\d+(\.\d+)?(rem|px|em|%)|0)$/
+
+export function isSafeRadius(value: unknown): value is string {
+  if (typeof value !== "string") return false
+  return RADIUS_REGEX.test(value.trim())
+}
+
+export function getPresetById(
+  id: string,
+  fallbackScheme: "light" | "dark" = "light"
+): DocumentTemplate {
+  if (id === "proposal-web-studio" || id === "web-studio") {
+    return webStudioProposalTemplate
+  }
+  if (id === "classic-dark") {
+    return darkDocumentTemplate
+  }
+  if (id === "classic-light") {
+    return defaultDocumentTemplate
+  }
+  if (id === "proposal-classic" || id === "invoice-classic") {
+    return fallbackScheme === "dark"
+      ? darkDocumentTemplate
+      : defaultDocumentTemplate
+  }
+  return fallbackScheme === "dark"
+    ? darkDocumentTemplate
+    : defaultDocumentTemplate
+}
+
+export function normalizeDocumentTemplateTokens(
+  rawTokens?: unknown,
+  fallbackScheme: "light" | "dark" = "light",
+  presetId?: string
+): DocumentTemplateTokens {
+  const base = getPresetById(presetId ?? "", fallbackScheme).tokens
+  if (!rawTokens || typeof rawTokens !== "object") {
+    return { ...base }
+  }
+
+  const record = rawTokens as Record<string, unknown>
+
+  const canvasBackground = isSafeCssColor(record.canvasBackground)
+    ? record.canvasBackground.trim()
+    : base.canvasBackground
+  const pageBackground = isSafeCssColor(record.pageBackground)
+    ? record.pageBackground.trim()
+    : base.pageBackground
+  const foreground = isSafeCssColor(record.foreground)
+    ? record.foreground.trim()
+    : base.foreground
+  const mutedForeground = isSafeCssColor(record.mutedForeground)
+    ? record.mutedForeground.trim()
+    : base.mutedForeground
+  const accent = isSafeCssColor(record.accent)
+    ? record.accent.trim()
+    : base.accent
+  const border = isSafeCssColor(record.border)
+    ? record.border.trim()
+    : base.border
+  const fontFamily = isDocumentFontToken(record.fontFamily)
+    ? record.fontFamily
+    : base.fontFamily
+  const headingFontFamily = isDocumentFontToken(record.headingFontFamily)
+    ? record.headingFontFamily
+    : base.headingFontFamily
+  const radius = isSafeRadius(record.radius)
+    ? record.radius.trim()
+    : base.radius
+  const spacingScale = isDocumentSpacingScale(record.spacingScale)
+    ? record.spacingScale
+    : base.spacingScale
+
+  return {
+    canvasBackground,
+    pageBackground,
+    foreground,
+    mutedForeground,
+    accent,
+    border,
+    fontFamily,
+    headingFontFamily,
+    radius,
+    spacingScale,
+  }
+}
+
+export function normalizeDocumentTemplateReference(
+  reference: {
+    id: string
+    version?: number
+    overrides?: unknown
+  },
+  fallbackScheme: "light" | "dark" = "light"
+): DocumentTemplateNormalizedReference {
+  const id = reference.id || "proposal-classic"
+  const version =
+    typeof reference.version === "number" && reference.version > 0
+      ? reference.version
+      : 1
+  const overrides = normalizeDocumentTemplateTokens(
+    reference.overrides,
+    fallbackScheme,
+    id
+  )
+
+  return {
+    id,
+    version,
+    overrides,
+  }
+}
+
+export function normalizeDocumentTemplate(
+  reference: {
+    id: string
+    version?: number
+    overrides?: unknown
+  },
+  fallbackScheme: "light" | "dark" = "light"
+): DocumentTemplate {
+  const base = getPresetById(reference.id, fallbackScheme)
+  const tokens = normalizeDocumentTemplateTokens(
+    reference.overrides,
+    fallbackScheme,
+    reference.id
+  )
+
+  const isClassic =
+    reference.id === "proposal-classic" ||
+    reference.id === "invoice-classic" ||
+    reference.id === "classic-light" ||
+    reference.id === "classic-dark"
+
+  return {
+    id: isClassic ? base.id : reference.id,
+    name: base.name,
+    tokens,
+  }
+}
+
+export function resolveDocumentTemplate(
+  reference: {
+    id: string
+    version?: number
+    overrides?: unknown
+  },
+  appTheme?: "light" | "dark"
+): DocumentTemplate {
+  const effectiveScheme: "light" | "dark" =
+    reference.id === "classic-dark"
+      ? "dark"
+      : reference.id === "classic-light"
+        ? "light"
+        : (appTheme ?? "light")
+
+  const baseTemplate = getPresetById(reference.id, effectiveScheme)
+
+  const tokens = normalizeDocumentTemplateTokens(
+    reference.overrides,
+    effectiveScheme,
+    reference.id
+  )
+
+  const isClassic =
+    reference.id === "proposal-classic" ||
+    reference.id === "invoice-classic" ||
+    reference.id === "classic-light" ||
+    reference.id === "classic-dark"
+
+  return {
+    ...baseTemplate,
+    id: isClassic ? baseTemplate.id : reference.id,
+    tokens,
+  }
 }
 
 export function getDocumentTemplate(
   reference: {
     id: string
-    overrides?: Record<string, string | number | boolean | null>
+    version?: number
+    overrides?: unknown
   },
-  appTheme: "light" | "dark"
+  appTheme: "light" | "dark" = "light"
 ): DocumentTemplate {
-  const isClassic =
-    reference.id === "proposal-classic" ||
-    reference.id === "classic-light" ||
-    reference.id === "classic-dark"
-
-  const baseTemplate =
-    reference.id === webStudioProposalTemplate.id
-      ? webStudioProposalTemplate
-      : appTheme === "dark"
-        ? darkDocumentTemplate
-        : defaultDocumentTemplate
-
-  const overrides = reference.overrides ?? {}
-  const tokens = Object.fromEntries(
-    Object.entries(overrides).filter(
-      (entry): entry is [string, string] => typeof entry[1] === "string"
-    )
-  )
-
-  return {
-    ...baseTemplate,
-    id: isClassic ? baseTemplate.id : reference.id,
-    tokens: { ...baseTemplate.tokens, ...tokens },
-  }
+  return resolveDocumentTemplate(reference, appTheme)
 }
 
 export function updateDocumentTemplateToken<
@@ -264,11 +489,26 @@ export function updateDocumentTemplateToken<
 }
 
 export function getDocumentTemplateStyle(
-  template: DocumentTemplate
+  templateOrTokens:
+    | DocumentTemplate
+    | DocumentTemplateTokens
+    | { tokens: DocumentTemplateTokens }
+    | DocumentTemplateNormalizedReference
 ): DocumentTemplateStyle {
-  const { tokens } = template
-  const fontFamily = fontFamilies[tokens.fontFamily]
-  const headingFontFamily = fontFamilies[tokens.headingFontFamily]
+  let tokens: DocumentTemplateTokens
+  if ("tokens" in templateOrTokens) {
+    tokens = templateOrTokens.tokens
+  } else if ("overrides" in templateOrTokens && templateOrTokens.overrides) {
+    tokens = templateOrTokens.overrides as DocumentTemplateTokens
+  } else {
+    tokens = templateOrTokens as DocumentTemplateTokens
+  }
+
+  const fontFamily = fontFamilies[tokens.fontFamily] ?? fontFamilies.sans
+  const headingFontFamily =
+    fontFamilies[tokens.headingFontFamily] ?? fontFamilies.sans
+  const spacing =
+    sectionSpacing[tokens.spacingScale] ?? sectionSpacing.comfortable
 
   return {
     "--document-canvas-background": tokens.canvasBackground,
@@ -280,7 +520,7 @@ export function getDocumentTemplateStyle(
     "--document-radius": tokens.radius,
     "--document-font-family": fontFamily,
     "--document-heading-font-family": headingFontFamily,
-    "--document-section-spacing": sectionSpacing[tokens.spacingScale],
+    "--document-section-spacing": spacing,
     "--background": tokens.pageBackground,
     "--foreground": tokens.foreground,
     "--muted-foreground": tokens.mutedForeground,

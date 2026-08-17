@@ -4,6 +4,7 @@ import {
   getWorkspaceSettingsTab,
   isWorkspaceSettingsParamTab,
 } from "@/features/workspace/settings"
+import { AISettingsPage } from "@/features/workspace/settings/ai-settings-page"
 import { SettingsPlaceholder } from "@/features/workspace/settings/settings-placeholder"
 
 export const Route = createFileRoute("/_workspace/settings/$tab")({
@@ -19,6 +20,10 @@ function SettingsTabPage() {
 
   if (tab === "members") {
     return <MembersPage />
+  }
+
+  if (tab === "ai") {
+    return <AISettingsPage />
   }
 
   return <SettingsPlaceholder tab={getWorkspaceSettingsTab(tab)} />

@@ -1,11 +1,11 @@
 "use client"
 
+import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react"
-import { IconArrowBoldLeft, IconArrowBoldRight } from "nucleo-glass"
 import * as React from "react"
 
 type CarouselApi = UseEmblaCarouselType[1]
@@ -194,7 +194,7 @@ function CarouselPrevious({
       onClick={scrollPrev}
       {...props}
     >
-      <IconArrowBoldLeft />
+      <ArrowLeftIcon />
       <span className="sr-only">Previous slide</span>
     </Button>
   )
@@ -224,7 +224,7 @@ function CarouselNext({
       onClick={scrollNext}
       {...props}
     >
-      <IconArrowBoldRight />
+      <ArrowRightIcon />
       <span className="sr-only">Next slide</span>
     </Button>
   )

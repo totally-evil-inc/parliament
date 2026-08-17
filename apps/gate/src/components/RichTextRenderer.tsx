@@ -30,7 +30,7 @@ function renderMarks(
         return (
           <code
             key={key}
-            className="rounded bg-muted/60 px-1 py-0.5 font-mono text-xs"
+            className="rounded bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] px-1.5 py-0.5 font-mono text-[var(--document-foreground)] text-xs"
           >
             {acc}
           </code>
@@ -45,7 +45,7 @@ function renderMarks(
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary underline transition-opacity hover:opacity-80"
+            className="text-[var(--document-accent)] underline transition-opacity hover:opacity-80"
           >
             {acc}
           </a>
@@ -57,10 +57,7 @@ function renderMarks(
   }, text)
 }
 
-// Stable, path-based React keys derived from node position. Read-only rich
-// text has no per-node IDs in the document model, so the full tree path
-// ("0.3.1") is a deterministic key that stays valid when siblings are
-// appended or reordered within an unaffected subtree.
+// Stable, path-based React keys derived from node position.
 export function renderRichTextNode(
   node: RichTextNode,
   keyPath: string
@@ -87,7 +84,10 @@ export function renderRichTextNode(
       )
     case "paragraph":
       return (
-        <p key={nodeKey} className="leading-relaxed">
+        <p
+          key={nodeKey}
+          className="text-[var(--document-foreground)] leading-relaxed"
+        >
           {children.length > 0 ? children : <br />}
         </p>
       )
@@ -97,7 +97,7 @@ export function renderRichTextNode(
         return (
           <h1
             key={nodeKey}
-            className="mt-4 mb-2 font-bold text-2xl tracking-tight"
+            className="mt-6 mb-3 font-bold text-2xl text-[var(--document-foreground)] tracking-tight [font-family:var(--document-heading-font-family)] sm:text-3xl"
           >
             {children}
           </h1>
@@ -107,7 +107,7 @@ export function renderRichTextNode(
         return (
           <h2
             key={nodeKey}
-            className="mt-3 mb-2 font-semibold text-xl tracking-tight"
+            className="mt-5 mb-2 font-bold text-[var(--document-foreground)] text-xl tracking-tight [font-family:var(--document-heading-font-family)] sm:text-2xl"
           >
             {children}
           </h2>
@@ -117,27 +117,36 @@ export function renderRichTextNode(
         return (
           <h3
             key={nodeKey}
-            className="mt-2 mb-1 font-medium text-lg tracking-tight"
+            className="mt-4 mb-2 font-semibold text-[var(--document-foreground)] text-lg tracking-tight [font-family:var(--document-heading-font-family)]"
           >
             {children}
           </h3>
         )
       }
       return (
-        <h4 key={nodeKey} className="mt-2 mb-1 font-medium text-base">
+        <h4
+          key={nodeKey}
+          className="mt-3 mb-1 font-semibold text-[var(--document-foreground)] text-base [font-family:var(--document-heading-font-family)]"
+        >
           {children}
         </h4>
       )
     }
     case "bulletList":
       return (
-        <ul key={nodeKey} className="my-2 list-inside list-disc space-y-1">
+        <ul
+          key={nodeKey}
+          className="my-2 list-inside list-disc space-y-1 text-[var(--document-foreground)]"
+        >
           {children}
         </ul>
       )
     case "orderedList":
       return (
-        <ol key={nodeKey} className="my-2 list-inside list-decimal space-y-1">
+        <ol
+          key={nodeKey}
+          className="my-2 list-inside list-decimal space-y-1 text-[var(--document-foreground)]"
+        >
           {children}
         </ol>
       )
@@ -151,7 +160,7 @@ export function renderRichTextNode(
       return (
         <blockquote
           key={nodeKey}
-          className="my-2 border-primary/40 border-l-3 py-1 pl-3 text-muted-foreground italic"
+          className="my-3 border-[var(--document-accent)] border-l-2 py-1 pl-4 text-[var(--document-muted-foreground)] italic"
         >
           {children}
         </blockquote>
@@ -160,19 +169,53 @@ export function renderRichTextNode(
       return (
         <pre
           key={nodeKey}
-          className="my-2 overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs"
+          className="my-3 overflow-x-auto rounded-[var(--document-radius)] bg-[color-mix(in_oklab,var(--document-accent)_8%,transparent)] p-4 font-mono text-[var(--document-foreground)] text-xs"
         >
           <code>{children}</code>
         </pre>
       )
+    case "table":
+      return (
+        <div key={nodeKey} className="my-4 overflow-x-auto">
+          <table className="w-full border-collapse border border-[var(--document-border)] text-left text-sm">
+            {children}
+          </table>
+        </div>
+      )
+    case "tableRow":
+      return (
+        <tr key={nodeKey} className="border-[var(--document-border)] border-b">
+          {children}
+        </tr>
+      )
+    case "tableHeader":
+      return (
+        <th
+          key={nodeKey}
+          className="border border-[var(--document-border)] bg-[color-mix(in_oklab,var(--document-accent)_6%,transparent)] p-2.5 font-semibold text-[var(--document-foreground)]"
+        >
+          {children}
+        </th>
+      )
+    case "tableCell":
+      return (
+        <td
+          key={nodeKey}
+          className="border border-[var(--document-border)] p-2.5 text-[var(--document-foreground)]"
+        >
+          {children}
+        </td>
+      )
     case "horizontalRule":
     case "hr":
-      return <hr key={nodeKey} className="my-4 border-border" />
+      return (
+        <hr key={nodeKey} className="my-6 border-[var(--document-border)]" />
+      )
     case "hardBreak":
       return <br key={nodeKey} />
     default:
       return (
-        <div key={nodeKey} className="my-1">
+        <div key={nodeKey} className="my-1 text-[var(--document-foreground)]">
           {children}
         </div>
       )
@@ -183,7 +226,13 @@ export function RichTextRenderer({ doc, className }: RichTextRendererProps) {
   if (!doc) return null
 
   if (typeof doc === "string") {
-    return <p className={`leading-relaxed ${className ?? ""}`}>{doc}</p>
+    return (
+      <p
+        className={`text-[var(--document-foreground)] leading-relaxed ${className ?? ""}`}
+      >
+        {doc}
+      </p>
+    )
   }
 
   return (

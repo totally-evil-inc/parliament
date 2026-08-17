@@ -1,6 +1,8 @@
 import type { z } from "zod"
 import type { invoicePricingSchema, proposalPricingSchema } from "./schema"
 
+export * from "./calculate/currency"
+
 export type ProposalPricing = z.infer<typeof proposalPricingSchema>
 export type InvoicePricing = z.infer<typeof invoicePricingSchema>
 
@@ -109,12 +111,17 @@ export function calculateInvoicePricing(
 }
 
 export function formatMoneyMinor(
-  valueMinor: number,
+  valueMinor: number | string | null | undefined,
   currency: string,
   locale: string
 ) {
+  const numeric =
+    typeof valueMinor === "string"
+      ? Number.parseFloat(valueMinor)
+      : (valueMinor ?? 0)
+  const safeNumber = Number.isNaN(numeric) ? 0 : numeric
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(
-    valueMinor / 100
+    safeNumber / 100
   )
 }
 

@@ -46,14 +46,15 @@ export function useIntegrations() {
   })
 
   const mergedIntegrations: Integration[] = DEFAULT_INTEGRATIONS.map((item) => {
-    const isGoogleIntegration = [
+    const isSupportedIntegration = [
       "gmail",
       "google-calendar",
       "google-drive",
       "google",
+      "cal",
     ].includes(item.providerId)
 
-    if (!isGoogleIntegration) {
+    if (!isSupportedIntegration) {
       return {
         ...item,
         status: "coming_soon",

@@ -1,3 +1,4 @@
+import { BoltIcon, CheckCircleIcon } from "@heroicons/react/24/outline"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -6,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
-import { IconBolt, IconCircleCheck } from "nucleo-glass"
 import {
   useGmailThreadActivity,
   useRegisterGmailWatch,
@@ -40,7 +40,7 @@ export function GmailActivityHeatmap() {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <IconBolt className="size-4 text-emerald-500" />
+            <BoltIcon className="size-4 text-emerald-500" />
             <CardTitle className="font-medium text-sm">
               Gmail Real-Time Thread Activity
             </CardTitle>
@@ -96,7 +96,7 @@ export function GmailActivityHeatmap() {
                     variant="outline"
                     className="border-emerald-500/30 text-[10px] text-emerald-600"
                   >
-                    <IconCircleCheck className="mr-1 inline size-3" />
+                    <CheckCircleIcon className="mr-1 inline size-3" />
                     Active
                   </Badge>
                 )}

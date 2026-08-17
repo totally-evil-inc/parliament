@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
+import { CommandChatProvider } from "@/features/agent/context/command-chat-context"
 import { AppShell } from "@/layouts/app-shell"
 import { getSession, getViewer } from "@/server/auth"
 
@@ -24,8 +25,10 @@ export const Route = createFileRoute("/_workspace")({
 
 function WorkspaceRoute() {
   return (
-    <AppShell>
-      <Outlet />
-    </AppShell>
+    <CommandChatProvider>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </CommandChatProvider>
   )
 }

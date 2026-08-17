@@ -57,14 +57,22 @@ function getTransporter({
   return transporter
 }
 
+export interface EmailAttachment {
+  filename: string
+  content: Buffer | string
+  contentType?: string
+}
+
 export async function sendEmail({
   to,
   subject,
   html,
+  attachments,
 }: {
   to: string
   subject: string
   html: string
+  attachments?: EmailAttachment[]
 }) {
   if (!to || !EMAIL_REGEX.test(to)) {
     throw new Error(`Invalid email recipient address: ${to}`)
@@ -95,6 +103,11 @@ export async function sendEmail({
         to,
         subject,
         html,
+        attachments: attachments?.map((a) => ({
+          filename: a.filename,
+          content: a.content,
+          contentType: a.contentType,
+        })),
       })
       return
     } catch (err: any) {
@@ -115,6 +128,12 @@ export async function sendEmail({
         to,
         subject,
         html,
+        attachments: attachments?.map((a) => ({
+          filename: a.filename,
+          content: Buffer.isBuffer(a.content)
+            ? a.content.toString("base64")
+            : a.content,
+        })),
       }),
     })
 

@@ -84,6 +84,7 @@ apps/command  (TanStack Start + React, orchestration)
 - All design tokens and component CSS live in `packages/ui/src/styles/globals.css` (`@layer base`, `@layer components`, `@layer utilities`).
 - Components must **not** use hard-coded Tailwind values (e.g. `bg-white`, `text-gray-900`). Instead use CSS variable tokens mapped through `@theme inline` (e.g. `bg-background`, `text-foreground`, `border-border`).
 - This keeps theming (light/dark mode) centralized and makes refactoring safe.
+- **Custom ScrollArea**: Avoid native browser HTML scrollbars. All scrollable containers (chat feeds, thread lists, dropdown menus, side panels) MUST use `@workspace/ui/components/scroll-area` (or Radix/shadcn `<ScrollArea />`).
 
 ## Git conventions
 

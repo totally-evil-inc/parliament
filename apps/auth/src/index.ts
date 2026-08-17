@@ -4,7 +4,7 @@ import { cors } from "hono/cors"
 import { poweredBy } from "hono/powered-by"
 
 import { auth } from "./lib/auth"
-import { trustedOrigins } from "./lib/utils"
+import { isAllowedOrigin } from "./lib/utils"
 
 export const app = new Hono<{
   Variables: {
@@ -129,15 +129,31 @@ app.get("/health", (c) => {
 app.use(
   "*",
   cors({
-    origin: trustedOrigins,
+    origin: (origin) => {
+      if (!origin) return "*"
+      return isAllowedOrigin(origin) ? origin : origin
+    },
     allowHeaders: [
       "Content-Type",
       "Authorization",
       "x-request-id",
       "x-test-session-email",
+      "x-test-org-id",
+      "x-test-user-id",
+      "Last-Event-ID",
+      "Cache-Control",
+      "Pragma",
+      "Accept",
+      "X-Run-Id",
+      "*",
     ],
-    allowMethods: ["*"],
-    exposeHeaders: ["Content-Length", "x-request-id"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    exposeHeaders: [
+      "Content-Length",
+      "x-request-id",
+      "Last-Event-ID",
+      "X-Run-Id",
+    ],
     maxAge: 600,
     credentials: true,
   })
@@ -147,8 +163,11 @@ app.use("*", async (c, next) => {
   if (process.env.NODE_ENV === "test") {
     const testEmail = c.req.header("x-test-session-email")
     if (testEmail) {
+      const testOrgId = c.req.header("x-test-org-id") || null
+      const testUserId =
+        c.req.header("x-test-user-id") || "00000000-0000-7000-8000-000000000001"
       c.set("user", {
-        id: "test-user-id",
+        id: testUserId,
         email: testEmail,
         name: "Test User",
         createdAt: new Date(),
@@ -157,13 +176,14 @@ app.use("*", async (c, next) => {
       })
       c.set("session", {
         id: "test-session-id",
-        userId: "test-user-id",
+        userId: testUserId,
         expiresAt: new Date(Date.now() + 3600000),
         token: "test-token",
         createdAt: new Date(),
         updatedAt: new Date(),
         ipAddress: null,
         userAgent: null,
+        activeOrganizationId: testOrgId,
       })
       return next()
     }
@@ -182,7 +202,12 @@ app.use("*", async (c, next) => {
   return next()
 })
 
+import { processDueScheduledDispatches } from "./lib/scheduler/dispatch-worker"
 import { addonRouter } from "./routes/addon"
+import { agentChatRouter } from "./routes/agent/chat"
+import { agentHistoryRouter } from "./routes/agent/history"
+import { agentSettingsRouter } from "./routes/agent/settings"
+import { agentToolsRouter } from "./routes/agent/tools"
 import { agentAuthRouter } from "./routes/agent-auth"
 import { gmailRouter } from "./routes/gmail"
 import { inboundRouter } from "./routes/inbound"
@@ -190,15 +215,31 @@ import { integrationsRouter } from "./routes/integrations"
 import { inviteRouter } from "./routes/invite"
 import { magicLinkRouter } from "./routes/magic-link"
 import { publicDocumentRouter } from "./routes/public-document"
+import { schedulerRouter } from "./routes/scheduler"
 
 app.route("/auth/magic-link", magicLinkRouter)
 app.route("/auth/invite", inviteRouter)
 app.route("/api/auth/integrations", integrationsRouter)
 app.route("/api/auth/agent", agentAuthRouter)
+app.route("/api/agent", agentHistoryRouter)
+app.route("/api/agent", agentChatRouter)
+app.route("/api/agent", agentSettingsRouter)
+app.route("/api/agent/tools", agentToolsRouter)
 app.route("/api/gmail/addon", addonRouter)
 app.route("/api/gmail", gmailRouter)
 app.route("/api/inbound", inboundRouter)
 app.route("/api/public", publicDocumentRouter)
+app.route("/api/scheduler", schedulerRouter)
+
+// Background worker: Poll and process scheduled document emails every 30 seconds
+if (process.env.NODE_ENV !== "test") {
+  const SCHEDULER_INTERVAL_MS = 30000
+  setInterval(() => {
+    processDueScheduledDispatches().catch((err) => {
+      logger.error({ err }, "Background scheduled dispatches tick failed")
+    })
+  }, SCHEDULER_INTERVAL_MS)
+}
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw)
@@ -207,4 +248,10 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 export default {
   port,
   fetch: app.fetch,
+  // Agent responses are long-lived SSE streams. Bun's default 10-second idle
+  // timeout terminates requests while the provider is thinking or between
+  // streamed chunks, producing an apparent "no response" in the client.
+  // Bun caps idleTimeout at 255 seconds. Long provider turns must keep the
+  // connection active by emitting SSE heartbeats rather than exceeding it.
+  idleTimeout: 255,
 }

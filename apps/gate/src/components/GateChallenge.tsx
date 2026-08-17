@@ -1,3 +1,11 @@
+import {
+  ArrowRightIcon,
+  CheckCircleIcon,
+  ChevronLeftIcon,
+  EnvelopeIcon,
+  LockClosedIcon,
+  ShieldCheckIcon,
+} from "@heroicons/react/24/outline"
 import { Button } from "@workspace/ui/components/button"
 import {
   Card,
@@ -14,14 +22,6 @@ import {
 } from "@workspace/ui/components/input-otp"
 import { Label } from "@workspace/ui/components/label"
 import { Spinner } from "@workspace/ui/components/spinner"
-import {
-  ArrowRight,
-  CheckCircle2,
-  ChevronLeft,
-  Lock,
-  Mail,
-  Shield,
-} from "lucide-react"
 import type React from "react"
 import { useEffect, useState } from "react"
 import { gateAuthClient } from "../lib/auth-client"
@@ -138,7 +138,7 @@ export function GateChallenge({
       <Card className="w-full max-w-md border-border shadow-md">
         <CardHeader className="space-y-2 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Shield className="h-6 w-6" />
+            <ShieldCheckIcon className="h-6 w-6" />
           </div>
           <CardTitle className="font-bold text-xl tracking-tight">
             {step === "email"
@@ -181,7 +181,7 @@ export function GateChallenge({
 
           {successMsg && (
             <div className="flex items-center gap-2 rounded-md bg-emerald-500/10 p-3 text-emerald-600 text-xs dark:text-emerald-400">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <CheckCircleIcon className="h-4 w-4 shrink-0" />
               <span>{successMsg}</span>
             </div>
           )}
@@ -192,11 +192,11 @@ export function GateChallenge({
                 <Label className="flex items-center justify-between font-medium text-muted-foreground text-xs">
                   <span>Recipient Email Address</span>
                   <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Lock className="h-3 w-3" /> Unchangeable
+                    <LockClosedIcon className="h-3 w-3" /> Unchangeable
                   </span>
                 </Label>
                 <div className="flex items-center gap-2 rounded-md border border-input bg-muted/40 px-3 py-2 text-foreground text-xs shadow-xs">
-                  <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <EnvelopeIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="truncate font-medium">
                     {targetEmail || "No recipient email bound"}
                   </span>
@@ -219,7 +219,7 @@ export function GateChallenge({
                 ) : (
                   <>
                     Request OTP
-                    <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                    <ArrowRightIcon className="ml-2 h-3.5 w-3.5" />
                   </>
                 )}
               </Button>
@@ -290,7 +290,7 @@ export function GateChallenge({
                   }}
                   className="inline-flex items-center gap-1 text-muted-foreground text-xs transition-colors hover:text-foreground"
                 >
-                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <ChevronLeftIcon className="h-3.5 w-3.5" />
                   Back to request OTP
                 </button>
               </div>

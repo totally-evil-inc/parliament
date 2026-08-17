@@ -7,8 +7,13 @@ import { InvitationEmail } from "../../../features/email/templates/InvitationEma
 import { MagicLinkEmail } from "../../../features/email/templates/MagicLinkEmail"
 
 const renderPayloadSchema = z.object({
-  template: z.enum(["magic-link", "invitation", "document"]),
-  props: z.record(z.unknown()).optional().default({}),
+  template: z.enum([
+    "magic-link",
+    "invitation",
+    "document",
+    "document-dispatch",
+  ]),
+  props: z.record(z.string(), z.unknown()).optional().default({}),
 })
 
 const magicLinkPropsSchema = z.object({
@@ -58,7 +63,10 @@ export const Route = createFileRoute("/internal/email/render")({
           } else if (template === "invitation") {
             const safeProps = invitationPropsSchema.parse(props)
             element = React.createElement(InvitationEmail, safeProps)
-          } else if (template === "document") {
+          } else if (
+            template === "document" ||
+            template === "document-dispatch"
+          ) {
             const safeProps = documentPropsSchema.parse(props)
             element = React.createElement(DocumentDispatchEmail, safeProps)
           } else {

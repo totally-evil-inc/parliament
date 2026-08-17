@@ -1,8 +1,8 @@
 "use client"
 
 import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu"
+import { CheckIcon, ChevronRightIcon } from "@heroicons/react/20/solid"
 import { cn } from "@workspace/ui/lib/utils"
-import { IconArrowBoldRight, IconCircleCheck } from "nucleo-glass"
 import type * as React from "react"
 
 function ContextMenu({ ...props }: ContextMenuPrimitive.Root.Props) {
@@ -136,7 +136,7 @@ function ContextMenuSubTrigger({
       {...props}
     >
       {children}
-      <IconArrowBoldRight className="ml-auto" />
+      <ChevronRightIcon className="ml-auto" />
     </ContextMenuPrimitive.SubmenuTrigger>
   )
 }
@@ -176,7 +176,7 @@ function ContextMenuCheckboxItem({
     >
       <span className="pointer-events-none absolute right-2 flex items-center justify-center">
         <ContextMenuPrimitive.CheckboxItemIndicator>
-          <IconCircleCheck />
+          <CheckIcon />
         </ContextMenuPrimitive.CheckboxItemIndicator>
       </span>
       {children}
@@ -215,7 +215,7 @@ function ContextMenuRadioItem({
     >
       <span className="pointer-events-none absolute right-2 flex items-center justify-center">
         <ContextMenuPrimitive.RadioItemIndicator>
-          <IconCircleCheck />
+          <CheckIcon />
         </ContextMenuPrimitive.RadioItemIndicator>
       </span>
       {children}

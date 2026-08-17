@@ -16,6 +16,7 @@ import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
 import { Route as ProposalPublicTokenRouteImport } from './routes/proposal/$publicToken'
 import { Route as DocumentsPrintRouteImport } from './routes/documents/print'
 import { Route as WorkspaceApprovalsRouteImport } from './routes/_workspace/approvals'
+import { Route as WorkspaceIdRouteImport } from './routes/_workspace/$id'
 import { Route as WorkspaceSettingsRouteRouteImport } from './routes/_workspace/settings/route'
 import { Route as AuthSignInIndexRouteImport } from './routes/auth/sign-in/index'
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
@@ -23,11 +24,13 @@ import { Route as WorkspaceSettingsIndexRouteImport } from './routes/_workspace/
 import { Route as WorkspaceProposalsIndexRouteImport } from './routes/_workspace/proposals/index'
 import { Route as WorkspaceInvoicesIndexRouteImport } from './routes/_workspace/invoices/index'
 import { Route as WorkspaceIntegrationsIndexRouteImport } from './routes/_workspace/integrations/index'
+import { Route as WorkspaceClientsIndexRouteImport } from './routes/_workspace/clients/index'
 import { Route as InternalEmailRenderRouteImport } from './routes/internal/email/render'
 import { Route as AuthInviteAcceptRouteImport } from './routes/auth/invite/accept'
 import { Route as WorkspaceSettingsTabRouteImport } from './routes/_workspace/settings/$tab'
 import { Route as WorkspaceProposalsProposalIdRouteImport } from './routes/_workspace/proposals/$proposalId'
 import { Route as WorkspaceInvoicesInvoiceIdRouteImport } from './routes/_workspace/invoices/$invoiceId'
+import { Route as WorkspaceClientsDealsRouteImport } from './routes/_workspace/clients/deals'
 
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
@@ -61,6 +64,11 @@ const DocumentsPrintRoute = DocumentsPrintRouteImport.update({
 const WorkspaceApprovalsRoute = WorkspaceApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
+const WorkspaceIdRoute = WorkspaceIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceSettingsRouteRoute = WorkspaceSettingsRouteRouteImport.update({
@@ -99,6 +107,11 @@ const WorkspaceIntegrationsIndexRoute =
     path: '/integrations/',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceClientsIndexRoute = WorkspaceClientsIndexRouteImport.update({
+  id: '/clients/',
+  path: '/clients/',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
 const InternalEmailRenderRoute = InternalEmailRenderRouteImport.update({
   id: '/internal/email/render',
   path: '/internal/email/render',
@@ -126,20 +139,28 @@ const WorkspaceInvoicesInvoiceIdRoute =
     path: '/invoices/$invoiceId',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceClientsDealsRoute = WorkspaceClientsDealsRouteImport.update({
+  id: '/clients/deals',
+  path: '/clients/deals',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof WorkspaceIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
   '/$': typeof SplatRoute
   '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
+  '/$id': typeof WorkspaceIdRoute
   '/approvals': typeof WorkspaceApprovalsRoute
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
+  '/clients/deals': typeof WorkspaceClientsDealsRoute
   '/invoices/$invoiceId': typeof WorkspaceInvoicesInvoiceIdRoute
   '/proposals/$proposalId': typeof WorkspaceProposalsProposalIdRoute
   '/settings/$tab': typeof WorkspaceSettingsTabRoute
   '/auth/invite/accept': typeof AuthInviteAcceptRoute
   '/internal/email/render': typeof InternalEmailRenderRoute
+  '/clients/': typeof WorkspaceClientsIndexRoute
   '/integrations/': typeof WorkspaceIntegrationsIndexRoute
   '/invoices/': typeof WorkspaceInvoicesIndexRoute
   '/proposals/': typeof WorkspaceProposalsIndexRoute
@@ -150,15 +171,18 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteRouteWithChildren
   '/$': typeof SplatRoute
+  '/$id': typeof WorkspaceIdRoute
   '/approvals': typeof WorkspaceApprovalsRoute
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
   '/': typeof WorkspaceIndexRoute
+  '/clients/deals': typeof WorkspaceClientsDealsRoute
   '/invoices/$invoiceId': typeof WorkspaceInvoicesInvoiceIdRoute
   '/proposals/$proposalId': typeof WorkspaceProposalsProposalIdRoute
   '/settings/$tab': typeof WorkspaceSettingsTabRoute
   '/auth/invite/accept': typeof AuthInviteAcceptRoute
   '/internal/email/render': typeof InternalEmailRenderRoute
+  '/clients': typeof WorkspaceClientsIndexRoute
   '/integrations': typeof WorkspaceIntegrationsIndexRoute
   '/invoices': typeof WorkspaceInvoicesIndexRoute
   '/proposals': typeof WorkspaceProposalsIndexRoute
@@ -172,15 +196,18 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteRouteWithChildren
   '/$': typeof SplatRoute
   '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
+  '/_workspace/$id': typeof WorkspaceIdRoute
   '/_workspace/approvals': typeof WorkspaceApprovalsRoute
   '/documents/print': typeof DocumentsPrintRoute
   '/proposal/$publicToken': typeof ProposalPublicTokenRoute
   '/_workspace/': typeof WorkspaceIndexRoute
+  '/_workspace/clients/deals': typeof WorkspaceClientsDealsRoute
   '/_workspace/invoices/$invoiceId': typeof WorkspaceInvoicesInvoiceIdRoute
   '/_workspace/proposals/$proposalId': typeof WorkspaceProposalsProposalIdRoute
   '/_workspace/settings/$tab': typeof WorkspaceSettingsTabRoute
   '/auth/invite/accept': typeof AuthInviteAcceptRoute
   '/internal/email/render': typeof InternalEmailRenderRoute
+  '/_workspace/clients/': typeof WorkspaceClientsIndexRoute
   '/_workspace/integrations/': typeof WorkspaceIntegrationsIndexRoute
   '/_workspace/invoices/': typeof WorkspaceInvoicesIndexRoute
   '/_workspace/proposals/': typeof WorkspaceProposalsIndexRoute
@@ -195,14 +222,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/$'
     | '/settings'
+    | '/$id'
     | '/approvals'
     | '/documents/print'
     | '/proposal/$publicToken'
+    | '/clients/deals'
     | '/invoices/$invoiceId'
     | '/proposals/$proposalId'
     | '/settings/$tab'
     | '/auth/invite/accept'
     | '/internal/email/render'
+    | '/clients/'
     | '/integrations/'
     | '/invoices/'
     | '/proposals/'
@@ -213,15 +243,18 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/$'
+    | '/$id'
     | '/approvals'
     | '/documents/print'
     | '/proposal/$publicToken'
     | '/'
+    | '/clients/deals'
     | '/invoices/$invoiceId'
     | '/proposals/$proposalId'
     | '/settings/$tab'
     | '/auth/invite/accept'
     | '/internal/email/render'
+    | '/clients'
     | '/integrations'
     | '/invoices'
     | '/proposals'
@@ -234,15 +267,18 @@ export interface FileRouteTypes {
     | '/auth'
     | '/$'
     | '/_workspace/settings'
+    | '/_workspace/$id'
     | '/_workspace/approvals'
     | '/documents/print'
     | '/proposal/$publicToken'
     | '/_workspace/'
+    | '/_workspace/clients/deals'
     | '/_workspace/invoices/$invoiceId'
     | '/_workspace/proposals/$proposalId'
     | '/_workspace/settings/$tab'
     | '/auth/invite/accept'
     | '/internal/email/render'
+    | '/_workspace/clients/'
     | '/_workspace/integrations/'
     | '/_workspace/invoices/'
     | '/_workspace/proposals/'
@@ -311,6 +347,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceApprovalsRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/$id': {
+      id: '/_workspace/$id'
+      path: '/$id'
+      fullPath: '/$id'
+      preLoaderRoute: typeof WorkspaceIdRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/settings': {
       id: '/_workspace/settings'
       path: '/settings'
@@ -360,6 +403,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIntegrationsIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/clients/': {
+      id: '/_workspace/clients/'
+      path: '/clients'
+      fullPath: '/clients/'
+      preLoaderRoute: typeof WorkspaceClientsIndexRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/internal/email/render': {
       id: '/internal/email/render'
       path: '/internal/email/render'
@@ -395,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceInvoicesInvoiceIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/clients/deals': {
+      id: '/_workspace/clients/deals'
+      path: '/clients/deals'
+      fullPath: '/clients/deals'
+      preLoaderRoute: typeof WorkspaceClientsDealsRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
   }
 }
 
@@ -416,10 +473,13 @@ const WorkspaceSettingsRouteRouteWithChildren =
 
 interface WorkspaceRouteRouteChildren {
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
+  WorkspaceIdRoute: typeof WorkspaceIdRoute
   WorkspaceApprovalsRoute: typeof WorkspaceApprovalsRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
+  WorkspaceClientsDealsRoute: typeof WorkspaceClientsDealsRoute
   WorkspaceInvoicesInvoiceIdRoute: typeof WorkspaceInvoicesInvoiceIdRoute
   WorkspaceProposalsProposalIdRoute: typeof WorkspaceProposalsProposalIdRoute
+  WorkspaceClientsIndexRoute: typeof WorkspaceClientsIndexRoute
   WorkspaceIntegrationsIndexRoute: typeof WorkspaceIntegrationsIndexRoute
   WorkspaceInvoicesIndexRoute: typeof WorkspaceInvoicesIndexRoute
   WorkspaceProposalsIndexRoute: typeof WorkspaceProposalsIndexRoute
@@ -427,10 +487,13 @@ interface WorkspaceRouteRouteChildren {
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
+  WorkspaceIdRoute: WorkspaceIdRoute,
   WorkspaceApprovalsRoute: WorkspaceApprovalsRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
+  WorkspaceClientsDealsRoute: WorkspaceClientsDealsRoute,
   WorkspaceInvoicesInvoiceIdRoute: WorkspaceInvoicesInvoiceIdRoute,
   WorkspaceProposalsProposalIdRoute: WorkspaceProposalsProposalIdRoute,
+  WorkspaceClientsIndexRoute: WorkspaceClientsIndexRoute,
   WorkspaceIntegrationsIndexRoute: WorkspaceIntegrationsIndexRoute,
   WorkspaceInvoicesIndexRoute: WorkspaceInvoicesIndexRoute,
   WorkspaceProposalsIndexRoute: WorkspaceProposalsIndexRoute,

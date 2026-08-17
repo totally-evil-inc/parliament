@@ -1,8 +1,7 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
+import { XMarkIcon } from "@heroicons/react/24/outline"
 import { Button } from "@workspace/ui/components/button"
-
 import { cn } from "@workspace/ui/lib/utils"
-import { IconDeleteX } from "nucleo-glass"
 import type * as React from "react"
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
@@ -68,7 +67,7 @@ function DialogContent({
               />
             }
           >
-            <IconDeleteX />
+            <XMarkIcon />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}

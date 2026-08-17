@@ -32,6 +32,10 @@ npm-debug.log*
 # Ideation
 ideation
 
+# Planning
+PLAN.md
+plans/
+
 # Misc
 .DS_Store
 *.pem

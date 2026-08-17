@@ -4,6 +4,7 @@ import {
   Outlet,
   useParams,
 } from "@tanstack/react-router"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { cn } from "@workspace/ui/lib/utils"
 import { PageHeader } from "@/components/page-header"
 import {
@@ -12,6 +13,7 @@ import {
   workspaceSettingsTabs,
 } from "@/features/workspace/settings"
 import { SettingsProvider } from "@/features/workspace/settings/settings-provider"
+import { AppHeader } from "@/layouts/header-portal"
 
 export const Route = createFileRoute("/_workspace/settings")({
   component: SettingsLayout,
@@ -20,16 +22,19 @@ export const Route = createFileRoute("/_workspace/settings")({
 function SettingsLayout() {
   return (
     <SettingsProvider>
+      <AppHeader />
       <PageHeader
         title="Workspace settings"
         description="Manage workspace identity, account access, billing, and developer keys."
       />
-      <div className="grid min-h-[calc(100svh-7rem)] md:grid-cols-[180px_minmax(0,1fr)]">
-        <SettingsTabs />
-        <div className="min-w-0">
-          <Outlet />
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="grid min-h-[calc(100svh-7rem)] md:grid-cols-[180px_minmax(0,1fr)]">
+          <SettingsTabs />
+          <div className="min-w-0">
+            <Outlet />
+          </div>
         </div>
-      </div>
+      </ScrollArea>
     </SettingsProvider>
   )
 }

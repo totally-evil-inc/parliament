@@ -5,6 +5,7 @@ import {
 } from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 import { Hono } from "hono"
+import { z } from "zod"
 import { createGmailDraft, sendGmailMessage } from "../lib/gmail/send-service"
 import {
   processPubSubNotification,
@@ -20,6 +21,29 @@ export const gmailRouter = new Hono<{
   }
 }>()
 
+const pdfAttachmentSchema = z.object({
+  filename: z.string().min(1).max(200),
+  mimeType: z.literal("application/pdf"),
+  content: z.string().min(1),
+})
+
+const sendGmailSchema = z.object({
+  to: z.string().min(1),
+  subject: z.string().min(1),
+  htmlText: z.string().min(1),
+  plainText: z.string().optional(),
+  replyTo: z.string().optional(),
+  attachment: pdfAttachmentSchema.optional(),
+})
+
+const draftGmailSchema = z.object({
+  to: z.string().min(1),
+  subject: z.string().min(1),
+  htmlText: z.string().min(1),
+  plainText: z.string().optional(),
+  attachment: pdfAttachmentSchema.optional(),
+})
+
 /**
  * Send an email directly via the authenticated user's Gmail account (gmail.send scope)
  */
@@ -30,15 +54,20 @@ gmailRouter.post("/send", async (c) => {
   }
 
   try {
-    const body = await c.req.json()
-    const { to, subject, htmlText, plainText, replyTo } = body
+    const rawBody = await c.req.json().catch(() => null)
+    const parsed = sendGmailSchema.safeParse(rawBody)
 
-    if (!to || !subject || !htmlText) {
+    if (!parsed.success) {
       return c.json(
-        { error: "Missing required fields: to, subject, htmlText" },
+        {
+          error: `Invalid request payload: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
+        },
         400
       )
     }
+
+    const { to, subject, htmlText, plainText, replyTo, attachment } =
+      parsed.data
 
     const result = await sendGmailMessage({
       userId: user.id,
@@ -47,6 +76,7 @@ gmailRouter.post("/send", async (c) => {
       htmlText,
       plainText,
       replyTo,
+      attachment,
     })
 
     return c.json({
@@ -74,15 +104,19 @@ gmailRouter.post("/draft", async (c) => {
   }
 
   try {
-    const body = await c.req.json()
-    const { to, subject, htmlText, plainText } = body
+    const rawBody = await c.req.json().catch(() => null)
+    const parsed = draftGmailSchema.safeParse(rawBody)
 
-    if (!to || !subject || !htmlText) {
+    if (!parsed.success) {
       return c.json(
-        { error: "Missing required fields: to, subject, htmlText" },
+        {
+          error: `Invalid request payload: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
+        },
         400
       )
     }
+
+    const { to, subject, htmlText, plainText, attachment } = parsed.data
 
     const result = await createGmailDraft({
       userId: user.id,
@@ -90,6 +124,7 @@ gmailRouter.post("/draft", async (c) => {
       subject,
       htmlText,
       plainText,
+      attachment,
     })
 
     return c.json({

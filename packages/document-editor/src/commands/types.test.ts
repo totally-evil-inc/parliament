@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { Text } from "@hugeicons/core-free-icons"
+import { DocumentTextIcon } from "@heroicons/react/24/outline"
 import type { EditorCommand } from "./types"
 
 import {
@@ -15,7 +15,7 @@ const commands: Array<EditorCommand> = [
     title: "Text",
     description: "Start writing plain text.",
     searchTerms: ["paragraph"],
-    icon: Text,
+    icon: DocumentTextIcon,
     group: "block",
     showInBubbleMenu: true,
     showInSlashMenu: true,
@@ -27,7 +27,7 @@ const commands: Array<EditorCommand> = [
     title: "Heading",
     description: "Add a section heading.",
     searchTerms: ["title", "h1"],
-    icon: Text,
+    icon: DocumentTextIcon,
     group: "block",
     showInBubbleMenu: true,
     showInSlashMenu: true,
@@ -39,7 +39,7 @@ const commands: Array<EditorCommand> = [
     title: "Bold",
     description: "Make text bold.",
     searchTerms: ["strong"],
-    icon: Text,
+    icon: DocumentTextIcon,
     group: "mark",
     showInBubbleMenu: true,
     showInSlashMenu: true,
@@ -52,7 +52,7 @@ const commands: Array<EditorCommand> = [
     title: "Italic",
     description: "Make text italic.",
     searchTerms: ["emphasis"],
-    icon: Text,
+    icon: DocumentTextIcon,
     group: "mark",
     showInBubbleMenu: true,
     command: () => undefined,
@@ -63,7 +63,7 @@ const commands: Array<EditorCommand> = [
     title: "Code",
     description: "Make text code.",
     searchTerms: ["monospace"],
-    icon: Text,
+    icon: DocumentTextIcon,
     group: "mark",
     showInBubbleMenu: true,
     command: () => undefined,
@@ -74,7 +74,7 @@ const commands: Array<EditorCommand> = [
     title: "Section",
     description: "Insert a proposal section.",
     searchTerms: ["proposal"],
-    icon: Text,
+    icon: DocumentTextIcon,
     group: "block",
     showInSlashMenu: true,
     showInFloatingMenu: true,

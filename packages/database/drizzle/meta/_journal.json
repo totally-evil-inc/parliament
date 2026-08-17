@@ -57,6 +57,69 @@
       "when": 1786141043617,
       "tag": "0007_awesome_the_hunter",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786383317318,
+      "tag": "0008_open_the_executioner",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786383451521,
+      "tag": "0009_cooing_leech",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786383860377,
+      "tag": "0010_dizzy_obadiah_stane",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786383999999,
+      "tag": "0011_customer_crm_enhancements",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786613610506,
+      "tag": "0012_chat",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786613700000,
+      "tag": "0013_ai_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786623825017,
+      "tag": "0014_condemned_raza",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1786800182136,
+      "tag": "0015_puzzling_polaris",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1786800182137,
+      "tag": "0016_add_include_pdf_to_scheduled_dispatch",
+      "breakpoints": true
     }
   ]
 }

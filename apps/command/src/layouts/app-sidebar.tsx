@@ -32,7 +32,9 @@ export function AppSidebar({
     <Sidebar
       variant={variant}
       collapsible="icon"
+      innerClassName="liquid-glass"
       className={cn(
+        "liquid-glass-sidebar",
         variant === "floating"
           ? "border-none bg-transparent"
           : "border-sidebar-border/80 border-r bg-sidebar"

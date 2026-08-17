@@ -1,7 +1,7 @@
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion"
 
+import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline"
 import { cn } from "@workspace/ui/lib/utils"
-import { IconArrowBoldDown, IconArrowBoldUp } from "nucleo-glass"
 
 function Accordion({ className, ...props }: AccordionPrimitive.Root.Props) {
   return (
@@ -42,11 +42,11 @@ function AccordionTrigger({
         {...props}
       >
         {children}
-        <IconArrowBoldDown
+        <ChevronDownIcon
           data-slot="accordion-trigger-icon"
           className="pointer-events-none shrink-0 group-aria-expanded/accordion-trigger:hidden"
         />
-        <IconArrowBoldUp
+        <ChevronUpIcon
           data-slot="accordion-trigger-icon"
           className="pointer-events-none hidden shrink-0 group-aria-expanded/accordion-trigger:inline"
         />

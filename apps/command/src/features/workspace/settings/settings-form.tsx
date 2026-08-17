@@ -1,3 +1,4 @@
+import { ArrowUpTrayIcon } from "@heroicons/react/24/outline"
 import { Button } from "@workspace/ui/components/button"
 import {
   Field,
@@ -11,7 +12,6 @@ import {
   NativeSelectOption,
 } from "@workspace/ui/components/native-select"
 import { Switch } from "@workspace/ui/components/switch"
-import { IconFileUpload } from "nucleo-glass"
 import { useId } from "react"
 import { SettingsSection } from "./settings-section"
 
@@ -56,7 +56,7 @@ export function SettingsForm({ values, onChange }: SettingsFormProps) {
           <div className="size-14 rounded-lg bg-gradient-to-br from-primary/40 to-primary/10 ring-1 ring-border/60" />
           <div className="min-w-0 flex-1">
             <Button size="sm" variant="outline" type="button">
-              <IconFileUpload />
+              <ArrowUpTrayIcon className="size-4" />
               Upload avatar
             </Button>
             <p className="mt-1.5 text-muted-foreground text-xs">

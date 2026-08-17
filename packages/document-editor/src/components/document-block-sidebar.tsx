@@ -1,11 +1,10 @@
 import {
-  ArrowLeft01Icon,
-  Cancel01Icon,
-  LayoutGridIcon,
-  StarIcon,
-  TextFontIcon,
-} from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+  ArrowLeftIcon,
+  DocumentTextIcon,
+  SparklesIcon,
+  Squares2X2Icon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline"
 import type { Editor } from "@tiptap/react"
 import type { DocumentTemplateTokens } from "@workspace/document/presentation"
 import {
@@ -16,6 +15,7 @@ import {
   documentRadiusOptions,
   documentSpacingOptions,
   updateDocumentTemplateToken,
+  webStudioProposalTemplate,
 } from "@workspace/document/presentation"
 import { ColorPicker } from "@workspace/ui/components/color-picker"
 import {
@@ -91,7 +91,7 @@ export function DocumentBlockSidebar({
       {
         id: "presets",
         label: "Presets",
-        icon: StarIcon,
+        icon: SparklesIcon,
         presets: [
           {
             id: defaultDocumentTemplate.id,
@@ -99,16 +99,21 @@ export function DocumentBlockSidebar({
             description: "Clean, professional light theme",
           },
           {
-            id: "classic-dark",
-            name: "Classic Dark",
+            id: darkDocumentTemplate.id,
+            name: darkDocumentTemplate.name,
             description: "Sleek, professional dark theme",
+          },
+          {
+            id: webStudioProposalTemplate.id,
+            name: webStudioProposalTemplate.name,
+            description: "Editorial mint theme with distinct typography",
           },
         ],
       },
       {
         id: "colors",
         label: "Colors",
-        icon: LayoutGridIcon,
+        icon: Squares2X2Icon,
         description: "Canvas, page, text, and accent colors",
         presets: documentColorTokenOptions.map((opt) => ({
           id: opt.key,
@@ -119,7 +124,7 @@ export function DocumentBlockSidebar({
       {
         id: "typography",
         label: "Typography",
-        icon: TextFontIcon,
+        icon: DocumentTextIcon,
         description: "Body and heading fonts",
         presets: [
           {
@@ -137,7 +142,7 @@ export function DocumentBlockSidebar({
       {
         id: "layout",
         label: "Layout",
-        icon: LayoutGridIcon,
+        icon: Squares2X2Icon,
         description: "Spacing and border radius",
         presets: [
           {
@@ -155,7 +160,7 @@ export function DocumentBlockSidebar({
       {
         id: "header",
         label: "Header layout",
-        icon: LayoutGridIcon,
+        icon: Squares2X2Icon,
         description: "Document header arrangement",
         presets: documentHeaderLayouts.map((layout) => ({
           id: layout.id,
@@ -245,10 +250,7 @@ export function DocumentBlockSidebar({
               onClick={() => setSelectedBlockId(null)}
               className="group/back flex items-center gap-1.5 font-semibold text-muted-foreground text-xs transition-colors hover:text-foreground"
             >
-              <HugeiconsIcon
-                icon={ArrowLeft01Icon}
-                className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
-              />
+              <ArrowLeftIcon className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5" />
               Back
             </button>
             <div className="absolute left-1/2 -translate-x-1/2">
@@ -261,7 +263,7 @@ export function DocumentBlockSidebar({
               onClick={closeSidebar}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
             >
-              <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
+              <XMarkIcon className="h-4 w-4" />
             </button>
           </div>
 
@@ -304,7 +306,7 @@ export function DocumentBlockSidebar({
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
+                  <Squares2X2Icon className="h-4 w-4" />
                 </div>
                 <span className="font-bold text-sm">
                   {definition.title} Builder
@@ -315,7 +317,7 @@ export function DocumentBlockSidebar({
                 onClick={closeSidebar}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
               >
-                <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
+                <XMarkIcon className="h-4 w-4" />
               </button>
             </div>
             <div className="flex rounded-xl border border-border/15 bg-muted/65 p-1">
@@ -371,10 +373,7 @@ export function DocumentBlockSidebar({
               onClick={() => setSelectedBlockId(null)}
               className="group/back flex items-center gap-1.5 font-semibold text-muted-foreground text-xs transition-colors hover:text-foreground"
             >
-              <HugeiconsIcon
-                icon={ArrowLeft01Icon}
-                className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
-              />
+              <ArrowLeftIcon className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5" />
               Back
             </button>
             <div className="absolute left-1/2 -translate-x-1/2">
@@ -387,7 +386,7 @@ export function DocumentBlockSidebar({
               onClick={closeSidebar}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
             >
-              <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
+              <XMarkIcon className="h-4 w-4" />
             </button>
           </div>
 
@@ -426,7 +425,7 @@ export function DocumentBlockSidebar({
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <HugeiconsIcon icon={LayoutGridIcon} className="h-4 w-4" />
+                  <Squares2X2Icon className="h-4 w-4" />
                 </div>
                 <span className="font-bold text-sm">
                   {definition.title} Builder
@@ -437,7 +436,7 @@ export function DocumentBlockSidebar({
                 onClick={closeSidebar}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
               >
-                <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
+                <XMarkIcon className="h-4 w-4" />
               </button>
             </div>
             <div className="flex rounded-xl border border-border/15 bg-muted/65 p-1">
@@ -553,10 +552,7 @@ function BlocksPanel({
           >
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2">
-                <HugeiconsIcon
-                  icon={block.icon}
-                  className="h-4 w-4 text-muted-foreground"
-                />
+                <block.icon className="h-4 w-4 text-muted-foreground" />
                 <span className="font-bold text-foreground text-sm">
                   {block.label}
                 </span>
@@ -606,10 +602,7 @@ function MobileBlocksPanel({
           >
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2">
-                <HugeiconsIcon
-                  icon={block.icon}
-                  className="h-4 w-4 text-muted-foreground"
-                />
+                <block.icon className="h-4 w-4 text-muted-foreground" />
                 <span className="font-bold text-foreground text-sm">
                   {block.label}
                 </span>
@@ -800,7 +793,7 @@ function CustomizeGroupsPanel({
               <div className="flex w-full items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground transition-colors group-hover:bg-muted group-hover:text-foreground">
-                    <HugeiconsIcon icon={group.icon} className="h-4 w-4" />
+                    <group.icon className="h-4 w-4" />
                   </div>
                   <div>
                     <span className="font-bold text-foreground text-sm">
@@ -866,15 +859,12 @@ function CustomizeGroupPanel({
             onClick={onBack}
             className="group/back flex items-center gap-1.5 font-semibold text-muted-foreground text-xs transition-colors hover:text-foreground"
           >
-            <HugeiconsIcon
-              icon={ArrowLeft01Icon}
-              className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
-            />
+            <ArrowLeftIcon className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5" />
             Back
           </button>
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
-              <HugeiconsIcon icon={group.icon} className="h-4 w-4" />
+              <group.icon className="h-4 w-4" />
             </div>
             <span className="font-bold text-sm">{group.label}</span>
           </div>
@@ -889,8 +879,13 @@ function CustomizeGroupPanel({
                 onClick={() => {
                   if (preset.id === defaultDocumentTemplate.id) {
                     onTemplateChange(defaultDocumentTemplate)
-                  } else if (preset.id === "classic-dark") {
+                  } else if (
+                    preset.id === darkDocumentTemplate.id ||
+                    preset.id === "classic-dark"
+                  ) {
                     onTemplateChange(darkDocumentTemplate)
+                  } else if (preset.id === webStudioProposalTemplate.id) {
+                    onTemplateChange(webStudioProposalTemplate)
                   }
                 }}
                 className={cn(
@@ -1024,15 +1019,12 @@ function MobileCustomizeGroupPanel({
             onClick={onBack}
             className="group/back flex items-center gap-1.5 font-semibold text-muted-foreground text-xs transition-colors hover:text-foreground"
           >
-            <HugeiconsIcon
-              icon={ArrowLeft01Icon}
-              className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5"
-            />
+            <ArrowLeftIcon className="h-4 w-4 transition-transform group-hover/back:-translate-x-0.5" />
             Back
           </button>
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
-              <HugeiconsIcon icon={group.icon} className="h-4 w-4" />
+              <group.icon className="h-4 w-4" />
             </div>
             <span className="font-bold text-sm">{group.label}</span>
           </div>
@@ -1047,8 +1039,13 @@ function MobileCustomizeGroupPanel({
                 onClick={() => {
                   if (preset.id === defaultDocumentTemplate.id) {
                     onTemplateChange(defaultDocumentTemplate)
-                  } else if (preset.id === "classic-dark") {
+                  } else if (
+                    preset.id === darkDocumentTemplate.id ||
+                    preset.id === "classic-dark"
+                  ) {
                     onTemplateChange(darkDocumentTemplate)
+                  } else if (preset.id === webStudioProposalTemplate.id) {
+                    onTemplateChange(webStudioProposalTemplate)
                   }
                 }}
                 className={cn(
