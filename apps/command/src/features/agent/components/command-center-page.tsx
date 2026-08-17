@@ -18,6 +18,7 @@ import {
   latestAssistantThinking,
   normalizeAssistantMessage,
 } from "../normalization"
+import { extractOpenUI } from "../openui/parser"
 import { ChatInput } from "./chat-input"
 import { MessageErrorCard, type ToolCallItem } from "./elements"
 import { HistoryPanel } from "./history-panel"
@@ -131,23 +132,16 @@ export function extractThinkingAndContent(m: any): ExtractedMessage {
         }))
     : []
 
-  const openuiParts: string[] = []
-  rawContent = rawContent.replace(
-    /```openui\s*([\s\S]*?)(?:```|$)/gi,
-    (_match, code: string) => {
-      if (code.trim()) openuiParts.push(code.trim())
-      return ""
-    }
-  )
+  const ui = extractOpenUI(rawContent)
 
   const thinking = thinkingParts
     .filter((t): t is string => typeof t === "string" && Boolean(t))
     .join("\n\n")
     .trim()
   return {
-    content: rawContent.trim(),
+    content: (ui.hasOpenUI ? ui.prose : rawContent).trim(),
     thinking: thinking.length > 0 ? thinking : undefined,
-    openuiCode: openuiParts.length > 0 ? openuiParts.join("\n") : undefined,
+    openuiCode: ui.hasOpenUI ? ui.program : undefined,
     toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
   }
 }
