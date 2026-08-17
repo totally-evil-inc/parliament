@@ -135,6 +135,7 @@ agentChatRouter.post("/chat", async (c) => {
         threadId: threadId ?? null,
         model: forwardedProps?.model ?? null,
         regenerate: forwardedProps?.regenerate ?? false,
+        abortSignal: c.req.raw.signal,
       })
 
     logWideEvent({

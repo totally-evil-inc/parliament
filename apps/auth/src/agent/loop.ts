@@ -17,6 +17,7 @@ export interface ChatTurnInput {
   threadId?: string | null
   model?: string | null
   regenerate?: boolean
+  abortSignal?: AbortSignal
 }
 
 export interface ChatTurnResult {
@@ -162,6 +163,7 @@ export async function runAgentTurn(
     modelName,
     conversationId: conversation.id,
     messages: modelMessages,
+    abortSignal: input.abortSignal,
   })
 
   const encoder = new TextEncoder()
@@ -199,7 +201,9 @@ export async function runAgentTurn(
               type: "approval-requested",
               toolName: event.toolName,
               args: event.args,
+              approvalId: event.approvalId,
               resumeId: event.approvalId,
+              summary: event.summary,
             })
           }
 

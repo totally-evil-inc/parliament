@@ -206,17 +206,19 @@ export class ToolDispatcher {
     const startTime = Date.now()
 
     return this.concurrency(async () => {
+      let timeoutHandle: ReturnType<typeof setTimeout> | undefined
       try {
         const timeoutMs = 30_000
+        const timeoutPromise = new Promise((_, reject) => {
+          timeoutHandle = setTimeout(
+            () => reject(new Error(`Execution timed out after ${timeoutMs}ms`)),
+            timeoutMs
+          )
+        })
+
         const result = await Promise.race([
           executor(parseResult.data),
-          new Promise((_, reject) =>
-            setTimeout(
-              () =>
-                reject(new Error(`Execution timed out after ${timeoutMs}ms`)),
-              timeoutMs
-            )
-          ),
+          timeoutPromise,
         ])
 
         logWideEvent({
@@ -251,6 +253,8 @@ export class ToolDispatcher {
           result: `Tool execution failed: ${errorMessage}`,
           isError: true,
         }
+      } finally {
+        if (timeoutHandle) clearTimeout(timeoutHandle)
       }
     })
   }

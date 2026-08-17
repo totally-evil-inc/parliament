@@ -217,18 +217,20 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
           if (m.content) parts.push({ type: "text", text: m.content })
           if (Array.isArray(m.toolCalls)) {
             for (const tc of m.toolCalls) {
-              parts.push({
-                type: "tool-call",
-                toolCallId: tc.id,
-                toolName: tc.name,
-                args: tc.args,
-              })
-              if (tc.result !== undefined) {
+              // Invariant: Only send tool-call if it has a paired result or completed status,
+              // preventing provider schema rejections (HTTP 400).
+              if (tc.result !== undefined || tc.status === "completed") {
+                parts.push({
+                  type: "tool-call",
+                  toolCallId: tc.id,
+                  toolName: tc.name,
+                  args: tc.args,
+                })
                 parts.push({
                   type: "tool-result",
                   toolCallId: tc.id,
                   toolName: tc.name,
-                  result: tc.result,
+                  result: tc.result ?? {},
                 })
               }
             }
@@ -364,6 +366,29 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                       return { ...msg, toolCalls: updatedTools }
                     }
 
+                    case "tool:executing": {
+                      const updatedTools = (msg.toolCalls ?? []).map((tc) => {
+                        if (tc.id === event.callId || tc.name === event.name) {
+                          return { ...tc, status: "running" }
+                        }
+                        return tc
+                      })
+                      return { ...msg, toolCalls: updatedTools }
+                    }
+
+                    case "turn:suspended": {
+                      if (event.reason === "budget_cap") {
+                        const updatedTools = (msg.toolCalls ?? []).map((tc) => {
+                          if (tc.status === "running") {
+                            return { ...tc, status: "suspended" }
+                          }
+                          return tc
+                        })
+                        return { ...msg, toolCalls: updatedTools }
+                      }
+                      return msg
+                    }
+
                     case "turn:error":
                       return {
                         ...msg,
@@ -479,13 +504,16 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                     existing.result = p.result ?? p.output
                   }
                 } else if (p?.type === "approval-requested") {
+                  const resolvedApprovalId = String(
+                    p.approvalId ?? p.resumeId ?? p.id ?? "approval"
+                  )
                   toolCalls.push({
-                    id: String(p.id ?? p.approvalId ?? "approval"),
+                    id: resolvedApprovalId,
                     name: String(p.toolName ?? "action"),
                     args: p.toolArgs ?? p.args ?? {},
                     status: "pending_approval",
                     needsApproval: true,
-                    approvalId: String(p.approvalId ?? p.id),
+                    approvalId: resolvedApprovalId,
                   })
                 }
               }

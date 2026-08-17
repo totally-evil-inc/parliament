@@ -140,10 +140,12 @@ export async function getLanguageModel(
       })
       return { model: openRouter.chat(modelName), modelName }
     }
+    const cleanAnthropicBaseUrl = config.baseUrl.includes("anthropic.com")
+      ? config.baseUrl.replace(/\/v1\/?$/, "")
+      : undefined
+
     const anthropic = createAnthropic({
-      baseURL: config.baseUrl.includes("anthropic.com")
-        ? config.baseUrl
-        : undefined,
+      baseURL: cleanAnthropicBaseUrl,
       apiKey: config.apiKey,
     })
     const cleanAnthropicName = modelName.replace(/^anthropic\//, "")

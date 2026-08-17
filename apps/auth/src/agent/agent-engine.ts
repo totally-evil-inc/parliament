@@ -123,11 +123,15 @@ export class AgentEngine {
             }
 
             case "error": {
-              const err = chunk as any
+              const err = (chunk as any)?.error ?? chunk
+              const message =
+                typeof err === "string"
+                  ? err
+                  : err?.message || err?.errorText || String(err || "Stream failed")
               yield {
                 type: "turn:error",
                 code: "stream_error",
-                message: err?.errorText || err?.message || "Stream failed",
+                message,
                 recoverable: true,
               }
               return
@@ -196,6 +200,12 @@ export class AgentEngine {
 
       // Check for human-in-the-loop approval triggers
       for (const call of toolCallsToProcess) {
+        yield {
+          type: "tool:executing",
+          callId: call.id,
+          name: call.name,
+        }
+
         const {
           result: rawResult,
           isError,
@@ -253,12 +263,6 @@ export class AgentEngine {
 
           hasApprovalSuspension = true
           break
-        }
-
-        yield {
-          type: "tool:executing",
-          callId: call.id,
-          name: call.name,
         }
 
         const { content } = await this.governor.processToolResult({
