@@ -109,4 +109,75 @@ describe("convertToModelMessages for AI SDK 7 ModelMessage format", () => {
       ],
     })
   })
+
+  test("preserves chronological interleaving of text, tool calls, and subsequent narration", () => {
+    const raw = [
+      {
+        role: "assistant",
+        parts: [
+          { type: "text", text: "Checking your active deals now..." },
+          {
+            type: "tool-call",
+            toolCallId: "call-deals",
+            toolName: "list_deals",
+            args: { limit: 5 },
+          },
+          {
+            type: "tool-result",
+            toolCallId: "call-deals",
+            toolName: "list_deals",
+            result: [{ id: "deal-1", title: "Enterprise Pilot" }],
+          },
+          {
+            type: "text",
+            text: "You have 1 active deal in your pipeline.",
+          },
+        ],
+      },
+    ]
+
+    const converted = convertToModelMessages(raw)
+    expect(converted).toHaveLength(3)
+
+    // Message 1: Preceding narration + tool-call
+    expect(converted[0]).toEqual({
+      role: "assistant",
+      content: [
+        { type: "text", text: "Checking your active deals now..." },
+        {
+          type: "tool-call",
+          toolCallId: "call-deals",
+          toolName: "list_deals",
+          input: { limit: 5 },
+        },
+      ],
+    })
+
+    // Message 2: Tool execution result
+    expect(converted[1]).toEqual({
+      role: "tool",
+      content: [
+        {
+          type: "tool-result",
+          toolCallId: "call-deals",
+          toolName: "list_deals",
+          output: {
+            type: "text",
+            value: JSON.stringify([{ id: "deal-1", title: "Enterprise Pilot" }]),
+          },
+        },
+      ],
+    })
+
+    // Message 3: Post-execution explanation
+    expect(converted[2]).toEqual({
+      role: "assistant",
+      content: [
+        {
+          type: "text",
+          text: "You have 1 active deal in your pipeline.",
+        },
+      ],
+    })
+  })
 })

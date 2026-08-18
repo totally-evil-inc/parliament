@@ -56,28 +56,53 @@ export function convertToModelMessages(
 
     if (Array.isArray(m.parts) && m.parts.length > 0) {
       if (role === "assistant") {
-        const assistantParts: any[] = []
-        const toolResultParts: any[] = []
+        let currentAssistantParts: any[] = []
+        let currentToolParts: any[] = []
+
+        const flushAssistant = () => {
+          if (currentAssistantParts.length > 0) {
+            result.push({
+              role: "assistant",
+              content: currentAssistantParts as any,
+            })
+            currentAssistantParts = []
+          }
+        }
+
+        const flushTool = () => {
+          if (currentToolParts.length > 0) {
+            result.push({
+              role: "tool",
+              content: currentToolParts as any,
+            })
+            currentToolParts = []
+          }
+        }
 
         for (const p of m.parts) {
           if (!p) continue
           if (p.type === "text") {
             const text = p.text ?? p.content ?? ""
-            if (text.trim()) assistantParts.push({ type: "text", text })
+            if (text.trim()) {
+              flushTool()
+              currentAssistantParts.push({ type: "text", text })
+            }
           } else if (p.type === "tool-call" || p.type === "tool-invocation") {
-            assistantParts.push({
+            flushTool()
+            currentAssistantParts.push({
               type: "tool-call",
               toolCallId: p.toolCallId ?? p.id ?? crypto.randomUUID(),
               toolName: p.toolName ?? p.name ?? "",
               input: p.input ?? p.args ?? {},
             })
           } else if (p.type === "tool-result") {
+            flushAssistant()
             const rawOutput = p.result ?? p.output ?? {}
             const stringVal =
               typeof rawOutput === "string"
                 ? rawOutput
                 : JSON.stringify(rawOutput)
-            toolResultParts.push({
+            currentToolParts.push({
               type: "tool-result",
               toolCallId: p.toolCallId ?? p.id ?? crypto.randomUUID(),
               toolName: p.toolName ?? p.name ?? "",
@@ -88,19 +113,8 @@ export function convertToModelMessages(
           }
         }
 
-        if (assistantParts.length > 0) {
-          result.push({
-            role: "assistant",
-            content: assistantParts as any,
-          })
-        }
-
-        if (toolResultParts.length > 0) {
-          result.push({
-            role: "tool",
-            content: toolResultParts as any,
-          })
-        }
+        flushAssistant()
+        flushTool()
         continue
       }
 
