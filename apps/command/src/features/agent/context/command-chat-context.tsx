@@ -86,6 +86,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [threadId])
 
   const abortControllerRef = useRef<AbortController | null>(null)
+  const isSubmittingRef = useRef<boolean>(false)
 
   // Sync default model from server settings on first load
   const { data: modelsData } = useAIModels()
@@ -173,7 +174,8 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const sendPrompt = useCallback(
     async (text: string) => {
-      if (!text.trim() || isLoading) return
+      if (!text.trim() || isSubmittingRef.current || isLoading) return
+      isSubmittingRef.current = true
       setChatError(null)
       setLastPrompt(text)
 
@@ -267,6 +269,9 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
             body?.error?.message ||
             `Request failed with HTTP status ${res.status}`
           setChatError({ code, message })
+          // Remove the optimistic assistant placeholder on error response
+          setMessages((prev) => prev.filter((m) => m.id !== assistantMsgId))
+          isSubmittingRef.current = false
           setIsLoading(false)
           return
         }
@@ -393,11 +398,19 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                       return msg
                     }
 
-                    case "turn:error":
+                    case "turn:error": {
+                      const updatedTools = (msg.toolCalls ?? []).map((tc) => {
+                        if (tc.status === "running") {
+                          return { ...tc, status: "error" as const }
+                        }
+                        return tc
+                      })
                       return {
                         ...msg,
+                        toolCalls: updatedTools,
                         error: { code: event.code, message: event.message },
                       }
+                    }
 
                     default:
                       return msg
@@ -416,8 +429,25 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
           const message =
             err instanceof Error ? err.message : "Agent stream failed"
           setChatError({ code: "stream_failed", message })
+          // If stream failed before any content was emitted, update the assistant message
+          setMessages((prev) =>
+            prev.map((msg) => {
+              if (
+                msg.id === assistantMsgId &&
+                !msg.content &&
+                (!msg.toolCalls || msg.toolCalls.length === 0)
+              ) {
+                return {
+                  ...msg,
+                  error: { code: "stream_failed", message },
+                }
+              }
+              return msg
+            })
+          )
         }
       } finally {
+        isSubmittingRef.current = false
         setIsLoading(false)
       }
     },
@@ -428,7 +458,24 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
       abortControllerRef.current = null
+      isSubmittingRef.current = false
       setIsLoading(false)
+      // Transition running tools to suspended state
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (!msg.toolCalls) return msg
+          const hasRunning = msg.toolCalls.some((tc) => tc.status === "running")
+          if (!hasRunning) return msg
+          return {
+            ...msg,
+            toolCalls: msg.toolCalls.map((tc) =>
+              tc.status === "running"
+                ? { ...tc, status: "suspended" as const }
+                : tc
+            ),
+          }
+        })
+      )
     }
   }, [])
 

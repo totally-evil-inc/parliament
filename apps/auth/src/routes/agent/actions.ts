@@ -1,5 +1,5 @@
 import { isUuid } from "@workspace/agent"
-import { and, db, desc, eq, schema } from "@workspace/database"
+import { and, db, eq, schema } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import { Hono } from "hono"
 import type { ContentfulStatusCode } from "hono/utils/http-status"

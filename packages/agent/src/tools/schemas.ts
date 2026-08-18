@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { zodToJsonSchema } from "zod-to-json-schema"
-import { UUID_REGEX, isUuid } from "../utils/uuid"
+import { isUuid } from "../utils/uuid"
 
 export function withJsonSchema<T extends z.ZodTypeAny>(schema: T): T {
   if (schema && typeof schema === "object") {
