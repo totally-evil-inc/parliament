@@ -6,9 +6,12 @@ import {
   toolOutputSchemas,
   updateDealStageInput,
 } from "@workspace/agent"
-import { and, db, desc, eq, schema } from "@workspace/database"
+import { and, db, desc, eq, schema, sql } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const STAGES = [
   "lead",
@@ -239,6 +242,27 @@ export function updateDealStageTool(ctx: AgentContext) {
     outputSchema: toolOutputSchemas.update_deal_stage,
     needsApproval: true,
   }).server(async (args) => {
+    let dealId = args.id
+    const isUuid = typeof args.id === "string" && UUID_REGEX.test(args.id)
+
+    if (!isUuid && args.id) {
+      const [found] = await db
+        .select({ id: schema.deal.id })
+        .from(schema.deal)
+        .where(
+          and(
+            eq(schema.deal.organizationId, ctx.organizationId),
+            sql`lower(${schema.deal.title}) LIKE lower(${`%${args.id}%`})`
+          )
+        )
+        .limit(1)
+      if (found) {
+        dealId = found.id
+      } else {
+        throw new Error(`Deal "${args.id}" was not found or unauthorized`)
+      }
+    }
+
     const [updatedDeal] = await db
       .update(schema.deal)
       .set({
@@ -247,21 +271,21 @@ export function updateDealStageTool(ctx: AgentContext) {
       })
       .where(
         and(
-          eq(schema.deal.id, args.id),
+          eq(schema.deal.id, dealId),
           eq(schema.deal.organizationId, ctx.organizationId)
         )
       )
       .returning()
 
     if (!updatedDeal) {
-      throw new Error("Deal not found or unauthorized")
+      throw new Error(`Deal "${args.id}" was not found or unauthorized`)
     }
 
     logWideEvent({
       event: "agent.deal.stage_updated",
       organizationId: ctx.organizationId,
       userId: ctx.userId,
-      entityId: args.id,
+      entityId: dealId,
       outcome: "success",
       metadata: {
         newStage: args.stage,

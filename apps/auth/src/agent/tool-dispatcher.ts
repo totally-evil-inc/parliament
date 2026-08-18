@@ -1,12 +1,11 @@
 import {
   getToolsForGroups,
   TOOL_CATALOG,
-  type ToolCapability,
   type ToolEntry,
   type ToolGroupId,
   type ToolName,
 } from "@workspace/agent"
-import { logWideEvent } from "@workspace/logger"
+import { logger, logWideEvent } from "@workspace/logger"
 import type { ToolSet } from "ai"
 import pLimit from "p-limit"
 import type { AgentContext } from "./tool-ctx"
@@ -18,8 +17,8 @@ import {
   gcalListEventsTool,
 } from "./tools/calendar"
 import {
-  customerAnalyticsTool,
   createCustomerTool,
+  customerAnalyticsTool,
   customerDetailsTool,
   listCustomersTool,
   updateCustomerTool,
@@ -56,68 +55,63 @@ import { verifyOrgAccessTool } from "./tools/org"
 import { askClarifyingQuestionsTool } from "./tools/questionnaire"
 import { getCurrentUserNameTool } from "./tools/user"
 
-export interface ServerToolDefinition {
-  name: ToolName
-  description: string
-  inputSchema: any
-  category: "read" | "mutate"
-  capability: ToolCapability
-  group: ToolGroupId
-  needsApproval: boolean
-  execute: (args: unknown, ctx: AgentContext) => Promise<unknown>
-}
-
 /**
- * Registry of all server tool execution handlers.
+ * Maps static tool names to their runtime executable handlers.
  */
 function createToolExecutorMap(
   ctx: AgentContext
 ): Map<ToolName, (args: any) => Promise<any>> {
   const map = new Map<ToolName, (args: any) => Promise<any>>()
 
-  // Helper to extract execute from existing tool factory
-  const register = (toolName: ToolName, factory: (c: AgentContext) => any) => {
-    const instance = factory(ctx)
-    // TanStack server tool defines handler on instance
-    const handler =
-      instance["~server"] || instance.execute || instance._serverFn
-    if (typeof handler === "function") {
-      map.set(toolName, (args: any) => handler(args))
-    } else {
-      // Fallback
-      map.set(toolName, async (args: any) => {
-        if (typeof instance === "function") return instance(args)
-        return instance
-      })
+  const register = (name: ToolName, toolFactory: (c: AgentContext) => any) => {
+    const definedTool = toolFactory(ctx)
+    // TanStack AI toolDefinition returns a structure with .server handler
+    if (typeof definedTool?.server === "function") {
+      map.set(name, (args: any) => definedTool.server(args))
+    } else if (typeof definedTool?.execute === "function") {
+      map.set(name, (args: any) => definedTool.execute(args))
     }
   }
 
+  // Core
   register("get_current_user_name", getCurrentUserNameTool)
   register("verify_org_access", verifyOrgAccessTool)
   register("ask_clarifying_questions", askClarifyingQuestionsTool)
   register("list_integrations", listIntegrationsTool)
+
+  // CRM Deals
   register("list_deals", listDealsTool)
   register("deal_analytics", dealAnalyticsTool)
+  register("create_deal", createDealTool)
+  register("update_deal_stage", updateDealStageTool)
+
+  // CRM Customers
   register("list_customers", listCustomersTool)
   register("customer_analytics", customerAnalyticsTool)
   register("customer_details", customerDetailsTool)
   register("create_customer", createCustomerTool)
   register("update_customer", updateCustomerTool)
-  register("create_deal", createDealTool)
-  register("update_deal_stage", updateDealStageTool)
+
+  // Documents Read
   register("list_proposals", listProposalsTool)
   register("list_invoices", listInvoicesTool)
   register("get_proposal_summary", getProposalSummaryTool)
   register("get_invoice_summary", getInvoiceSummaryTool)
   register("get_proposal", getProposalTool)
   register("get_invoice", getInvoiceTool)
+
+  // Document Authoring
   register("create_proposal", createProposalTool)
   register("create_invoice", createInvoiceTool)
   register("update_proposal", updateProposalTool)
   register("update_invoice", updateInvoiceTool)
+
+  // Scheduled Dispatch
   register("schedule_document_send", scheduleDocumentSendTool)
-  register("cancel_scheduled_dispatch", cancelScheduledDispatchTool)
   register("list_scheduled_dispatches", listScheduledDispatchesTool)
+  register("cancel_scheduled_dispatch", cancelScheduledDispatchTool)
+
+  // Instant External Dispatch
   register("send_proposal", sendProposalTool)
   register("send_invoice", sendInvoiceTool)
   register("gmail_send_email", gmailSendEmailTool)
@@ -127,6 +121,35 @@ function createToolExecutorMap(
   register("gcal_cancel_event", gcalCancelEventTool)
 
   return map
+}
+
+function deepUnpackStringifiedJson(val: unknown): unknown {
+  if (typeof val === "string") {
+    const trimmed = val.trim()
+    if (
+      (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+      (trimmed.startsWith("[") && trimmed.endsWith("]"))
+    ) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        return deepUnpackStringifiedJson(parsed)
+      } catch {
+        return val
+      }
+    }
+    return val
+  }
+  if (Array.isArray(val)) {
+    return val.map((item) => deepUnpackStringifiedJson(item))
+  }
+  if (val && typeof val === "object") {
+    const res: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+      res[k] = deepUnpackStringifiedJson(v)
+    }
+    return res
+  }
+  return val
 }
 
 export class ToolDispatcher {
@@ -175,18 +198,104 @@ export class ToolDispatcher {
     const toolName = name as ToolName
     const catalogEntry = TOOL_CATALOG[toolName] as ToolEntry
 
+    // Unpack / coerce common model payload wraps
+    let parsedArgs = deepUnpackStringifiedJson(args)
+    if (
+      parsedArgs &&
+      typeof parsedArgs === "object" &&
+      !Array.isArray(parsedArgs)
+    ) {
+      const obj = parsedArgs as Record<string, unknown>
+      if (
+        obj.parameters &&
+        typeof obj.parameters === "object" &&
+        Object.keys(obj).length === 1
+      ) {
+        parsedArgs = obj.parameters
+      } else if (
+        obj.input &&
+        typeof obj.input === "object" &&
+        Object.keys(obj).length === 1
+      ) {
+        parsedArgs = obj.input
+      } else if (
+        obj.args &&
+        typeof obj.args === "object" &&
+        Object.keys(obj).length === 1
+      ) {
+        parsedArgs = obj.args
+      }
+    }
+    if (parsedArgs === undefined || parsedArgs === null) {
+      parsedArgs = {}
+    }
+
     if (!catalogEntry) {
+      const errorMessage = `Tool '${name}' is not recognized in the system catalog.`
+      logger.warn(
+        { tool: name, rawArgs: args },
+        `[Agent Tool] Unrecognized tool called: '${name}'`
+      )
+      logWideEvent({
+        event: "agent.tool.rejected",
+        outcome: "failure",
+        organizationId: this.ctx.organizationId,
+        userId: this.ctx.userId,
+        error: {
+          code: "tool_not_found",
+          message: errorMessage,
+        },
+        metadata: { tool: name, rawArgs: args },
+      })
       return {
-        result: `Tool error: Tool '${name}' is not recognized in the system catalog.`,
+        result: `Tool error: ${errorMessage} Available tools: ${Object.keys(TOOL_CATALOG).join(", ")}`,
         isError: true,
       }
     }
 
     // 1. Zod Input Schema Validation Isolation
-    const parseResult = catalogEntry.input.safeParse(args)
+    const parseResult = catalogEntry.input.safeParse(parsedArgs)
     if (!parseResult.success) {
+      const issues = parseResult.error.issues
+      const formattedIssues = issues
+        .map((i) => `• [${i.path.join(".") || "root"}]: ${i.message}`)
+        .join("\n")
+      const errorMessage = `Parameter Schema Violation for '${name}':\n${formattedIssues}\n\nPlease adjust parameters to match the expected format and try again.`
+
+      logger.error(
+        {
+          tool: name,
+          receivedArgs: parsedArgs,
+          issues: issues.map((i) => ({
+            path: i.path.join("."),
+            message: i.message,
+          })),
+        },
+        `[Agent Tool Validation Error] Parameter schema violation for '${name}'`
+      )
+
+      logWideEvent({
+        event: "agent.tool.validation_failed",
+        outcome: "failure",
+        organizationId: this.ctx.organizationId,
+        userId: this.ctx.userId,
+        error: {
+          code: "parameter_schema_violation",
+          message: `Schema validation failed for tool '${name}'`,
+        },
+        metadata: {
+          tool: name,
+          receivedArgs: parsedArgs,
+          issues: issues.map((i) => ({
+            path: i.path.join("."),
+            message: i.message,
+          })),
+          formattedError: parseResult.error.format(),
+        },
+      })
+
       return {
-        result: `Parameter Schema Violation for '${name}': ${JSON.stringify(parseResult.error.format())}. Please adjust parameters and try again.`,
+        result: errorMessage,
         isError: true,
       }
     }
@@ -208,13 +317,33 @@ export class ToolDispatcher {
     const executor = executorMap.get(toolName)
 
     if (!executor) {
+      const errorMessage = `No execution handler registered for '${name}'.`
+      logger.error(
+        { tool: name },
+        `[Agent Tool] Missing executor for '${name}'`
+      )
+      logWideEvent({
+        event: "agent.tool.missing_executor",
+        outcome: "error",
+        organizationId: this.ctx.organizationId,
+        userId: this.ctx.userId,
+        error: {
+          code: "missing_executor",
+          message: errorMessage,
+        },
+        metadata: { tool: name },
+      })
       return {
-        result: `Internal error: No execution handler registered for '${name}'.`,
+        result: `Internal error: ${errorMessage}`,
         isError: true,
       }
     }
 
     const startTime = Date.now()
+    logger.info(
+      { tool: name, args: parseResult.data },
+      `[Agent Tool] Executing tool '${name}'`
+    )
 
     return this.concurrency(async () => {
       let timeoutHandle: ReturnType<typeof setTimeout> | undefined
@@ -280,6 +409,12 @@ export class ToolDispatcher {
         }
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : String(err)
+        const stack = err instanceof Error ? err.stack : undefined
+
+        logger.error(
+          { tool: name, error: errorMessage, stack, timedOut },
+          `[Agent Tool Error] Execution failed for '${name}': ${errorMessage}`
+        )
 
         logWideEvent({
           event: "agent.tool.called",
@@ -287,6 +422,11 @@ export class ToolDispatcher {
           durationMs: Date.now() - startTime,
           organizationId: this.ctx.organizationId,
           userId: this.ctx.userId,
+          error: {
+            code: timedOut ? "tool_timeout" : "tool_execution_failed",
+            message: errorMessage,
+            stack,
+          },
           metadata: {
             tool: name,
             error: errorMessage,

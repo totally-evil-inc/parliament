@@ -2,8 +2,8 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test"
 import { db, eq, schema } from "@workspace/database"
 import { app } from "../index"
 import { ContextGovernor } from "./context-governor"
-import { ToolDispatcher } from "./tool-dispatcher"
 import type { AgentContext } from "./tool-ctx"
+import { ToolDispatcher } from "./tool-dispatcher"
 
 describe("AgentEngine FSM & ContextGovernor", () => {
   let orgId: string

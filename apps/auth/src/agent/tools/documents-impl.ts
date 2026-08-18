@@ -119,26 +119,47 @@ export async function listProposalsTool(
   return { rows: formattedRows }
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export async function getProposalSummaryTool(
   args: { id: string },
   ctx: AgentContext
 ) {
-  const [row] = await db
-    .select()
-    .from(schema.proposalDraft)
-    .where(
-      and(
-        eq(schema.proposalDraft.id, args.id),
-        eq(schema.proposalDraft.organizationId, ctx.organizationId)
+  let row: typeof schema.proposalDraft.$inferSelect | undefined
+  const isUuid = typeof args.id === "string" && UUID_REGEX.test(args.id)
+
+  if (isUuid) {
+    const [found] = await db
+      .select()
+      .from(schema.proposalDraft)
+      .where(
+        and(
+          eq(schema.proposalDraft.id, args.id),
+          eq(schema.proposalDraft.organizationId, ctx.organizationId)
+        )
       )
-    )
-    .limit(1)
+      .limit(1)
+    row = found
+  } else if (args.id) {
+    const [found] = await db
+      .select()
+      .from(schema.proposalDraft)
+      .where(
+        and(
+          eq(schema.proposalDraft.organizationId, ctx.organizationId),
+          sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${args.id}%`})`
+        )
+      )
+      .limit(1)
+    row = found
+  }
 
   if (!row) {
     return {
       error: {
         code: "not_found" as const,
-        message: `Proposal draft with id ${args.id} was not found.`,
+        message: `Proposal draft "${args.id}" was not found.`,
       },
     }
   }
@@ -286,22 +307,40 @@ export async function getInvoiceSummaryTool(
   args: { id: string },
   ctx: AgentContext
 ) {
-  const [row] = await db
-    .select()
-    .from(schema.invoiceDraft)
-    .where(
-      and(
-        eq(schema.invoiceDraft.id, args.id),
-        eq(schema.invoiceDraft.organizationId, ctx.organizationId)
+  let row: typeof schema.invoiceDraft.$inferSelect | undefined
+  const isUuid = typeof args.id === "string" && UUID_REGEX.test(args.id)
+
+  if (isUuid) {
+    const [found] = await db
+      .select()
+      .from(schema.invoiceDraft)
+      .where(
+        and(
+          eq(schema.invoiceDraft.id, args.id),
+          eq(schema.invoiceDraft.organizationId, ctx.organizationId)
+        )
       )
-    )
-    .limit(1)
+      .limit(1)
+    row = found
+  } else if (args.id) {
+    const [found] = await db
+      .select()
+      .from(schema.invoiceDraft)
+      .where(
+        and(
+          eq(schema.invoiceDraft.organizationId, ctx.organizationId),
+          sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${args.id}%`})`
+        )
+      )
+      .limit(1)
+    row = found
+  }
 
   if (!row) {
     return {
       error: {
         code: "not_found" as const,
-        message: `Invoice draft with id ${args.id} was not found.`,
+        message: `Invoice draft "${args.id}" was not found.`,
       },
     }
   }

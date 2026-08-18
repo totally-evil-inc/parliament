@@ -219,6 +219,19 @@ export class AgentEngine {
         return
       }
 
+      const hasQuestionnaire = toolCallsToProcess.some(
+        (c) =>
+          c.name === "ask_clarifying_questions" ||
+          c.name === "askClarifyingQuestions" ||
+          c.name.toLowerCase().includes("clarifying_question")
+      )
+      if (hasQuestionnaire && !assistantText.trim()) {
+        const defaultPrompt =
+          "Please answer the clarifying questions below so I can tailor this for you:"
+        assistantText = defaultPrompt
+        yield { type: "content:delta", text: defaultPrompt }
+      }
+
       // Record assistant message with text and tool calls in model history for next turn
       const assistantContent: any[] = []
       if (assistantText.trim()) {
@@ -326,12 +339,41 @@ export class AgentEngine {
           break
         }
 
+        if (isError) {
+          logWideEvent({
+            event: "agent.turn.tool_result_error",
+            outcome: "failure",
+            organizationId: ctx.organizationId,
+            userId: ctx.userId,
+            entityId: conversationId,
+            error: {
+              code: "tool_execution_error",
+              message:
+                typeof rawResult === "string"
+                  ? rawResult
+                  : JSON.stringify(rawResult),
+            },
+            metadata: {
+              step,
+              tool: call.name,
+              callId: call.id,
+              args: call.args,
+            },
+          })
+        }
+
         const { content } = await this.governor.processToolResult({
           toolName: call.name,
           rawResult,
           organizationId: ctx.organizationId,
           conversationId,
         })
+
+        // If tool failed repeatedly, append explicit model guidance to break retry loops
+        const finalModelFeedback =
+          isError && step > 1
+            ? `${content}\n\n[System Guidance]: Tool '${call.name}' returned an error. If parameters cannot be corrected, do not retry this tool call. Explain what information is missing to the user directly in your response.`
+            : content
 
         yield {
           type: "tool:result",
@@ -344,7 +386,7 @@ export class AgentEngine {
         toolResults.push({
           callId: call.id,
           name: call.name,
-          processedContent: content,
+          processedContent: finalModelFeedback,
           isError,
         })
       }

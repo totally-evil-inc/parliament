@@ -8,9 +8,12 @@ import {
   toolOutputSchemas,
   updateCustomerInput,
 } from "@workspace/agent"
-import { and, db, eq, schema } from "@workspace/database"
+import { and, db, eq, schema, sql } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 import {
   customerAnalyticsTool as implCustomerAnalytics,
   customerDetailsTool as implCustomerDetails,
@@ -114,11 +117,33 @@ export function createCustomerTool(ctx: AgentContext) {
 export function updateCustomerTool(ctx: AgentContext) {
   return toolDefinition({
     name: "update_customer",
-    description: "Update mutable fields of an existing customer. Approval required.",
+    description:
+      "Update mutable fields of an existing customer. Approval required.",
     inputSchema: updateCustomerInput,
     outputSchema: toolOutputSchemas.update_customer,
     needsApproval: true,
   }).server(async (args) => {
+    let customerId = args.id
+    const isUuid = typeof args.id === "string" && UUID_REGEX.test(args.id)
+
+    if (!isUuid && args.id) {
+      const [found] = await db
+        .select({ id: schema.company.id })
+        .from(schema.company)
+        .where(
+          and(
+            eq(schema.company.organizationId, ctx.organizationId),
+            sql`lower(${schema.company.name}) LIKE lower(${`%${args.id}%`})`
+          )
+        )
+        .limit(1)
+      if (found) {
+        customerId = found.id
+      } else {
+        throw new Error(`Customer "${args.id}" not found or unauthorized`)
+      }
+    }
+
     const [updatedCustomer] = await db
       .update(schema.company)
       .set({
@@ -143,21 +168,21 @@ export function updateCustomerTool(ctx: AgentContext) {
       })
       .where(
         and(
-          eq(schema.company.id, args.id),
+          eq(schema.company.id, customerId),
           eq(schema.company.organizationId, ctx.organizationId)
         )
       )
       .returning()
 
     if (!updatedCustomer) {
-      throw new Error("Customer not found or unauthorized")
+      throw new Error(`Customer "${args.id}" not found or unauthorized`)
     }
 
     logWideEvent({
       event: "agent.customer.updated",
       organizationId: ctx.organizationId,
       userId: ctx.userId,
-      entityId: args.id,
+      entityId: customerId,
       outcome: "success",
       metadata: {
         status: args.status,

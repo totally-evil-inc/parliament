@@ -115,36 +115,59 @@ export async function customerAnalyticsTool(
   }
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export async function customerDetailsTool(
   args: { id: string },
   ctx: AgentContext
 ) {
-  const [customerRow] = await db
-    .select()
-    .from(schema.company)
-    .where(
-      and(
-        eq(schema.company.id, args.id),
-        eq(schema.company.organizationId, ctx.organizationId)
+  let customerRow: typeof schema.company.$inferSelect | undefined
+  const isUuid = typeof args.id === "string" && UUID_REGEX.test(args.id)
+
+  if (isUuid) {
+    const [row] = await db
+      .select()
+      .from(schema.company)
+      .where(
+        and(
+          eq(schema.company.id, args.id),
+          eq(schema.company.organizationId, ctx.organizationId)
+        )
       )
-    )
-    .limit(1)
+      .limit(1)
+    customerRow = row
+  } else if (args.id) {
+    const [row] = await db
+      .select()
+      .from(schema.company)
+      .where(
+        and(
+          eq(schema.company.organizationId, ctx.organizationId),
+          sql`lower(${schema.company.name}) LIKE lower(${`%${args.id}%`})`
+        )
+      )
+      .limit(1)
+    customerRow = row
+  }
 
   if (!customerRow) {
     return {
       error: {
         code: "not_found" as const,
-        message: `Client with id ${args.id} was not found in this organization.`,
+        message: `Client "${args.id}" was not found in this organization.`,
       },
     }
   }
+
+  const companyId = customerRow.id
 
   const contacts = await db
     .select()
     .from(schema.contact)
     .where(
       and(
-        eq(schema.contact.companyId, args.id),
+        eq(schema.contact.companyId, companyId),
         eq(schema.contact.organizationId, ctx.organizationId)
       )
     )
@@ -155,7 +178,7 @@ export async function customerDetailsTool(
     .from(schema.deal)
     .where(
       and(
-        eq(schema.deal.companyId, args.id),
+        eq(schema.deal.companyId, companyId),
         eq(schema.deal.organizationId, ctx.organizationId)
       )
     )
@@ -173,7 +196,7 @@ export async function customerDetailsTool(
     .from(schema.proposal)
     .where(
       and(
-        eq(schema.proposal.companyId, args.id),
+        eq(schema.proposal.companyId, companyId),
         eq(schema.proposal.organizationId, ctx.organizationId)
       )
     )

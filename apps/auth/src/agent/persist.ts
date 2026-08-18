@@ -338,13 +338,14 @@ export async function persistApprovalResolution(options: {
     const callId =
       approvalPart.callId ??
       approvalPart.toolCallId ??
-      (parts
-        .slice(0, approvalIdx)
-        .reverse()
-        .find(
-          (p) =>
-            p?.type === "tool-call" && p.toolName === resolvedToolName
-        ) as any)?.toolCallId
+      (
+        parts
+          .slice(0, approvalIdx)
+          .reverse()
+          .find(
+            (p) => p?.type === "tool-call" && p.toolName === resolvedToolName
+          ) as any
+      )?.toolCallId
 
     const updatedParts = parts.filter((_, i) => i !== approvalIdx)
     updatedParts.push({
