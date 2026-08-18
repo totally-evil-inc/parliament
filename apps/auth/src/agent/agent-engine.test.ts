@@ -214,6 +214,39 @@ describe("AgentEngine FSM & ContextGovernor", () => {
       )
     )
     expect(missingUuidRes.status).toBe(404)
+
+    // 6. Expired action approval should atomically transition and return 410 Gone
+    const expiredApprovalId = crypto.randomUUID()
+    const pastDate = new Date(Date.now() - 60000) // 1 minute in the past
+    await db.insert(schema.chatActionApproval).values({
+      id: expiredApprovalId,
+      organizationId: orgId,
+      conversationId,
+      toolName: "create_deal",
+      toolArgs: { title: "Expired Deal" },
+      summary: "Create deal: Expired Deal",
+      status: "pending",
+      expiresAt: pastDate,
+    })
+
+    const expiredRes = await app.fetch(
+      new Request(
+        `http://localhost:4000/api/agent/actions/${expiredApprovalId}/resolve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "kernel@test.local",
+            "x-test-org-id": orgId,
+            "x-test-user-id": userId,
+          },
+          body: JSON.stringify({ approved: true }),
+        }
+      )
+    )
+    expect(expiredRes.status).toBe(410)
+    const expiredData = (await expiredRes.json()) as any
+    expect(expiredData.error.code).toBe("action_expired")
   })
 
   test("approval-gated CRM tools require approval without the bypass flag", async () => {

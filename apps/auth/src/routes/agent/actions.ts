@@ -1,6 +1,6 @@
 import { isUuid } from "@workspace/agent"
-import { and, db, eq, schema } from "@workspace/database"
-import { logWideEvent } from "@workspace/logger"
+import { and, db, eq, gte, schema } from "@workspace/database"
+import { logWideEvent, logger } from "@workspace/logger"
 import { Hono } from "hono"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 import { z } from "zod"
@@ -109,7 +109,8 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
 
     targetApprovalId = id.trim()
 
-    // 1. Atomically lock and transition status from pending to approved/rejected
+    // 1. Atomically lock and transition status from pending to approved/rejected ONLY if not expired
+    const now = new Date()
     const nextStatus = approved ? "approved" : "rejected"
 
     const [updatedRow] = await db
@@ -118,19 +119,20 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
         status: nextStatus,
         resolvedByUserId: ctx.userId,
         resolutionFeedback: feedback || null,
-        updatedAt: new Date(),
+        updatedAt: now,
       })
       .where(
         and(
           eq(schema.chatActionApproval.id, targetApprovalId),
           eq(schema.chatActionApproval.organizationId, ctx.organizationId),
-          eq(schema.chatActionApproval.status, "pending")
+          eq(schema.chatActionApproval.status, "pending"),
+          gte(schema.chatActionApproval.expiresAt, now)
         )
       )
       .returning()
 
     if (!updatedRow) {
-      // Check if it exists in another state or was not found
+      // Check if it exists in another state, expired, or was not found
       const [existing] = await db
         .select()
         .from(schema.chatActionApproval)
@@ -151,31 +153,32 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
         )
       }
 
+      if (existing.status === "pending" && new Date(existing.expiresAt) <= now) {
+        // Transition to expired
+        await db
+          .update(schema.chatActionApproval)
+          .set({ status: "expired", updatedAt: now })
+          .where(eq(schema.chatActionApproval.id, targetApprovalId))
+
+        return c.json(
+          {
+            error: {
+              code: "action_expired",
+              message: "This action approval request has expired.",
+            },
+          },
+          410
+        )
+      }
+
       return c.json(
         {
           error: {
-            code: "already_resolved",
+            code: existing.status === "expired" ? "action_expired" : "already_resolved",
             message: `This action has already been ${existing.status}.`,
           },
         },
-        409
-      )
-    }
-
-    if (new Date() > new Date(updatedRow.expiresAt)) {
-      await db
-        .update(schema.chatActionApproval)
-        .set({ status: "expired", updatedAt: new Date() })
-        .where(eq(schema.chatActionApproval.id, targetApprovalId))
-
-      return c.json(
-        {
-          error: {
-            code: "action_expired",
-            message: "This action approval request has expired.",
-          },
-        },
-        410
+        existing.status === "expired" ? 410 : 409
       )
     }
 
@@ -195,17 +198,22 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
       isError = exec.isError
 
       if (exec.isError) {
-        // Revert to pending so the user can retry the action instead of
-        // being locked out with a stale "approved" row.
-        await db
-          .update(schema.chatActionApproval)
-          .set({
-            status: "pending",
-            resolvedByUserId: null,
-            resolutionFeedback: null,
-            updatedAt: new Date(),
+        // Keep the approval marked as resolved/attempted to prevent double execution of external side effects
+        try {
+          await persistApprovalResolution({
+            approvalId: targetApprovalId,
+            conversationId: updatedRow.conversationId,
+            organizationId: ctx.organizationId,
+            toolName: updatedRow.toolName,
+            result: { error: String(exec.result) },
+            isError: true,
           })
-          .where(eq(schema.chatActionApproval.id, targetApprovalId))
+        } catch (persistErr) {
+          logger.warn(
+            { persistErr, approvalId: targetApprovalId },
+            "Failed to persist error approval resolution"
+          )
+        }
 
         logWideEvent({
           event: "agent.action.resolve_failed",
@@ -216,7 +224,6 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
           metadata: {
             approvalId: targetApprovalId,
             toolName: updatedRow.toolName,
-            revertedToPending: true,
             error: String(exec.result),
           },
         })
@@ -227,6 +234,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
               code: "execution_failed",
               message: String(exec.result),
             },
+            result: exec.result,
           },
           502
         )
