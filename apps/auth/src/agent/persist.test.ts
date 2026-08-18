@@ -6,6 +6,7 @@ import {
   deleteLastAssistantMessage,
   findConversation,
   listMessages,
+  persistApprovalResolution,
   persistAssistantMessage,
   resolveOrCreateConversation,
 } from "./persist"
@@ -199,4 +200,57 @@ describe("agent persistence (real DB, org-scoped)", () => {
     const crossOrg = await findConversation(conversation.id, orgId2)
     expect(crossOrg).toBeNull()
   })
+
+  test("persistApprovalResolution replaces approval-requested part in-place preserving order", async () => {
+    const { conversation } = await resolveOrCreateConversation({
+      organizationId: orgId,
+      userId,
+    })
+    conversationIds.push(conversation.id)
+
+    const approvalId = crypto.randomUUID()
+    await persistAssistantMessage({
+      conversationId: conversation.id,
+      organizationId: orgId,
+      parts: [
+        { type: "text", text: "Before approval" },
+        {
+          type: "approval-requested",
+          approvalId,
+          toolName: "create_deal",
+          args: { title: "Test Deal" },
+          summary: "Create deal",
+        },
+        { type: "text", text: "After approval" },
+      ],
+      status: "complete",
+    })
+
+    await persistApprovalResolution({
+      approvalId,
+      conversationId: conversation.id,
+      organizationId: orgId,
+      toolName: "create_deal",
+      result: { id: "deal-123", title: "Test Deal" },
+      isError: false,
+    })
+
+    const messages = await listMessages(conversation.id, orgId)
+    const assistantMsg = messages[messages.length - 1]
+    expect(assistantMsg.parts).toHaveLength(3)
+    expect(assistantMsg.parts[0]).toMatchObject({
+      type: "text",
+      text: "Before approval",
+    })
+    expect(assistantMsg.parts[1]).toMatchObject({
+      type: "tool-result",
+      toolName: "create_deal",
+      result: { id: "deal-123", title: "Test Deal" },
+    })
+    expect(assistantMsg.parts[2]).toMatchObject({
+      type: "text",
+      text: "After approval",
+    })
+  })
 })
+

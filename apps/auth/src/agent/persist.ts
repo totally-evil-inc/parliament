@@ -347,14 +347,17 @@ export async function persistApprovalResolution(options: {
           ) as any
       )?.toolCallId
 
-    const updatedParts = parts.filter((_, i) => i !== approvalIdx)
-    updatedParts.push({
+    const newToolResult = {
       type: "tool-result",
       toolCallId: callId ?? crypto.randomUUID(),
       toolName: resolvedToolName,
       result,
       isError,
-    })
+    }
+
+    const updatedParts = parts.map((p, i) =>
+      i === approvalIdx ? newToolResult : p
+    )
 
     await db
       .update(chatMessage)
