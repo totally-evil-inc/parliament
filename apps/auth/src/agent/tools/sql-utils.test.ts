@@ -18,6 +18,8 @@ describe("SQL LIKE Pattern Sanitization", () => {
 
   it("leaves standard alphanumeric and punctuation strings untouched", () => {
     expect(escapeLikePattern("Acme Corp")).toBe("Acme Corp")
-    expect(escapeLikePattern("Project Alpha - 2026")).toBe("Project Alpha - 2026")
+    expect(escapeLikePattern("Project Alpha - 2026")).toBe(
+      "Project Alpha - 2026"
+    )
   })
 })

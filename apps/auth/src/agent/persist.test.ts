@@ -253,4 +253,3 @@ describe("agent persistence (real DB, org-scoped)", () => {
     })
   })
 })
-

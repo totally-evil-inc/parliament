@@ -136,7 +136,10 @@ describe("Phase 3 business read tools (apps/auth)", () => {
     }
 
     // Padded UUID lookup
-    const paddedRes = await customerDetailsTool({ id: `  ${companyId}  ` }, ctx())
+    const paddedRes = await customerDetailsTool(
+      { id: `  ${companyId}  ` },
+      ctx()
+    )
     if ("customer" in paddedRes && paddedRes.customer) {
       expect(paddedRes.customer.name).toBe("Acme Corp")
     } else {

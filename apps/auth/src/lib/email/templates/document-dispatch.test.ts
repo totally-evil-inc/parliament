@@ -33,7 +33,8 @@ describe("Email HTML Escaping & Sanitization", () => {
   it("renders document dispatch email with escaped user and LLM inputs", () => {
     const html = renderDocumentDispatchEmailHtml({
       documentType: "proposal",
-      documentTitle: '<img src="x" onerror="alert(1)"> Q4 "Proposal" & Strategy',
+      documentTitle:
+        '<img src="x" onerror="alert(1)"> Q4 "Proposal" & Strategy',
       shareUrl: "https://parliament.app/gate/proposal-123",
       recipientEmail: '<victim@example.com">',
       personalMessage: "Please review the **scope** and *deliverables*.",

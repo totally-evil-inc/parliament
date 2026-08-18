@@ -73,20 +73,22 @@ export function formatMarkdownToEmailHtml(text: string): string {
 }
 
 function formatInlineMarkdown(text: string): string {
-  return text
-    // Escape HTML special characters
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    // Bold **text** or __text__
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/__(.*?)__/g, "<strong>$1</strong>")
-    // Italic *text* or _text_
-    .replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, "<em>$1</em>")
-    .replace(/(?<!_)_(?!_)(.*?)(?<!_)_(?!_)/g, "<em>$1</em>")
-    // Links [label](url)
-    .replace(
-      /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-      '<a href="$2" style="color: #0f172a; text-decoration: underline;">$1</a>'
-    )
+  return (
+    text
+      // Escape HTML special characters
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      // Bold **text** or __text__
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/__(.*?)__/g, "<strong>$1</strong>")
+      // Italic *text* or _text_
+      .replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, "<em>$1</em>")
+      .replace(/(?<!_)_(?!_)(.*?)(?<!_)_(?!_)/g, "<em>$1</em>")
+      // Links [label](url)
+      .replace(
+        /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+        '<a href="$2" style="color: #0f172a; text-decoration: underline;">$1</a>'
+      )
+  )
 }

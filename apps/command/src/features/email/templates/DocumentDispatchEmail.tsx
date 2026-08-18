@@ -59,7 +59,11 @@ export function DocumentDispatchEmail({
             <Section style={messageCard}>
               <Text style={messageLabel}>Message</Text>
               <div
-                style={{ fontSize: "13px", lineHeight: "1.6", color: "#334155" }}
+                style={{
+                  fontSize: "13px",
+                  lineHeight: "1.6",
+                  color: "#334155",
+                }}
                 dangerouslySetInnerHTML={{ __html: formattedMessageHtml }}
               />
             </Section>

@@ -12,7 +12,6 @@ import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
 import { escapeLikePattern } from "./sql-utils"
 
-
 const STAGES = [
   "lead",
   "discovery",

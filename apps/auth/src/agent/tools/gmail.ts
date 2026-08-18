@@ -15,7 +15,9 @@ import type { AgentContext } from "../tool-ctx"
 function ensureCleanEmailHtml(htmlOrMarkdown?: string): string {
   if (!htmlOrMarkdown) return ""
   // If string contains basic HTML tags, keep it; otherwise parse markdown/newlines to HTML
-  if (/<(p|div|br|strong|b|em|i|ul|ol|li|table|h[1-6]|a)\b/i.test(htmlOrMarkdown)) {
+  if (
+    /<(p|div|br|strong|b|em|i|ul|ol|li|table|h[1-6]|a)\b/i.test(htmlOrMarkdown)
+  ) {
     return htmlOrMarkdown
   }
   return formatMarkdownToEmailHtml(htmlOrMarkdown)

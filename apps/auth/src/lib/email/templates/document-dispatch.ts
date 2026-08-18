@@ -78,4 +78,3 @@ export function renderDocumentDispatchEmailHtml({
 </body>
 </html>`
 }
-
