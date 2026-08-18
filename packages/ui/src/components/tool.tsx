@@ -1,6 +1,8 @@
 import {
   ArrowPathIcon,
+  CheckIcon,
   ChevronDownIcon,
+  ClipboardDocumentIcon,
   ExclamationCircleIcon,
   NoSymbolIcon,
   ShieldExclamationIcon,
@@ -263,7 +265,16 @@ export function ToolOutput({
   children,
   ...props
 }: ToolOutputProps) {
+  const [copied, setCopied] = useState(false)
   if (!output && !errorText && !children) return null
+
+  const handleCopyError = () => {
+    if (!errorText) return
+    navigator.clipboard.writeText(errorText).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   return (
     <div
@@ -271,13 +282,36 @@ export function ToolOutput({
       className={cn("max-w-full space-y-1.5 overflow-hidden", className)}
       {...props}
     >
-      <h4 className="font-medium font-mono text-[10px] text-muted-foreground uppercase tracking-wide">
-        {errorText ? "Error Output" : "Result"}
-      </h4>
+      <div className="flex items-center justify-between">
+        <h4 className="font-medium font-mono text-[10px] text-muted-foreground uppercase tracking-wide">
+          {errorText ? "Error Output" : "Result"}
+        </h4>
+        {errorText && (
+          <button
+            type="button"
+            onClick={handleCopyError}
+            className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {copied ? (
+              <>
+                <CheckIcon className="size-3 text-emerald-500" />
+                <span className="text-emerald-500">Copied</span>
+              </>
+            ) : (
+              <>
+                <ClipboardDocumentIcon className="size-3" />
+                <span>Copy Error</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
 
       {errorText ? (
         <ScrollArea className="max-h-64 max-w-full break-words rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 font-mono text-[11px] text-destructive">
-          {errorText}
+          <pre className="whitespace-pre-wrap font-mono leading-relaxed">
+            {errorText}
+          </pre>
         </ScrollArea>
       ) : output !== undefined ? (
         typeof output === "string" ? (

@@ -140,17 +140,65 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
   onSubmitted,
 }) => {
   const { sendPrompt, isLoading } = useCommandChatContext()
-  const title = args.title || "Clarifying Questions"
+
+  const parsedArgs = useMemo(() => {
+    let target = args as unknown
+    if (typeof target === "string") {
+      try {
+        target = JSON.parse(target)
+      } catch {
+        // retain string
+      }
+    }
+    if (target && typeof target === "object") {
+      const obj = target as Record<string, unknown>
+      const inner = (obj.parameters ||
+        obj.input ||
+        obj.args ||
+        obj.data ||
+        obj) as Record<string, unknown>
+      let qCandidate =
+        inner.questions ?? inner.items ?? inner.inquiries ?? inner.fields
+      if (typeof qCandidate === "string") {
+        try {
+          qCandidate = JSON.parse(qCandidate)
+        } catch {
+          // retain
+        }
+      }
+      return {
+        ...inner,
+        title: (inner.title ||
+          inner.heading ||
+          inner.topic ||
+          "Clarifying Questions") as string,
+        subtitle: inner.subtitle as string | undefined,
+        questions: Array.isArray(qCandidate) ? qCandidate : [],
+        submitButtonText: (inner.submitButtonText ||
+          "Submit Answers") as string,
+      }
+    }
+    return {
+      title: "Clarifying Questions",
+      subtitle: undefined as string | undefined,
+      questions: [],
+      submitButtonText: "Submit Answers",
+    }
+  }, [args])
+
+  const title = parsedArgs.title || "Clarifying Questions"
   const subtitle =
-    args.subtitle ||
+    parsedArgs.subtitle ||
     "Please provide the details below so I can assist accurately."
 
-  const rawQuestions = Array.isArray(args.questions) ? args.questions : []
+  const rawQuestions = Array.isArray(parsedArgs.questions)
+    ? parsedArgs.questions
+    : []
   const questions = useMemo(() => {
     return rawQuestions.map((q, idx) => normalizeQuestionItem(q, idx))
   }, [rawQuestions])
 
-  const submitButtonText = args.submitButtonText || "Submit Answers"
+  const submitButtonText = parsedArgs.submitButtonText || "Submit Answers"
 
   const [answers, setAnswers] = useState<
     Record<string, string | string[] | number>
@@ -221,7 +269,6 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
     setAnswers((prev) => ({ ...prev, [questionId]: value }))
   }
 
-  // Check whether all required questions have valid answers
   const isFormValid = useMemo(() => {
     if (questions.length === 0) return false
     for (const q of questions) {
@@ -232,6 +279,10 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
     }
     return true
   }, [questions, answers])
+
+  if (questions.length === 0) {
+    return null
+  }
 
   const handleSubmit = async () => {
     if (!isFormValid || isSubmitted || isLoading) return

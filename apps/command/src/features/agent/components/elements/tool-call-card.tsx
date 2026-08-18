@@ -113,6 +113,10 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
       <div className="flex flex-col gap-2">
         {toolCalls.map((tc) => {
           const toolState = mapToToolState(tc)
+          const isError =
+            toolState === "output-error" ||
+            tc.status === "error" ||
+            Boolean(tc.errorText)
           const isRunning =
             toolState === "input-available" ||
             tc.status === "running" ||
@@ -122,12 +126,20 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
             tc.name === "askClarifyingQuestions" ||
             tc.name.toLowerCase().includes("clarifying_question")
           const hasArgs = tc.args && Object.keys(tc.args).length > 0
-          const hasOutput = tc.result !== undefined || tc.errorText
+          const errorText =
+            tc.errorText ||
+            (isError && tc.result !== undefined
+              ? typeof tc.result === "string"
+                ? tc.result
+                : JSON.stringify(tc.result, null, 2)
+              : undefined)
+          const hasOutput = tc.result !== undefined || Boolean(errorText)
 
           const shouldDefaultOpen = Boolean(
-            tc.needsApproval &&
+            (tc.needsApproval &&
               tc.status !== "approved" &&
-              tc.status !== "rejected"
+              tc.status !== "rejected") ||
+              isError
           )
 
           const res =
@@ -156,7 +168,7 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
                   state={toolState}
                   title={toolDisplayName(tc.name)}
                 />
-                {!isQuestionnaire && (hasArgs || hasOutput || isRunning) && (
+                {(hasArgs || hasOutput || isRunning) && (
                   <ToolContent>
                     {/* Live Execution Indicator when tool is in-flight */}
                     {isRunning && !hasOutput && (
@@ -254,14 +266,14 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
                     )}
 
                     {hasOutput && (
-                      <ToolOutput output={tc.result} errorText={tc.errorText} />
+                      <ToolOutput output={tc.result} errorText={errorText} />
                     )}
                   </ToolContent>
                 )}
               </Tool>
 
               {/* Interactive Questionnaires */}
-              {isQuestionnaire && (
+              {isQuestionnaire && !isError && (
                 <div className="mt-2">
                   <QuestionnaireCard
                     toolCallId={tc.id}
