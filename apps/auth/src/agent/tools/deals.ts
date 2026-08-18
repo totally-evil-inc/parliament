@@ -10,6 +10,7 @@ import {
 import { and, db, desc, eq, schema, sql } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
+import { escapeLikePattern } from "./sql-utils"
 
 
 const STAGES = [
@@ -245,13 +246,14 @@ export function updateDealStageTool(ctx: AgentContext) {
     const validUuid = isUuid(args.id)
 
     if (!validUuid && args.id) {
+      const escaped = escapeLikePattern(args.id)
       const [found] = await db
         .select({ id: schema.deal.id })
         .from(schema.deal)
         .where(
           and(
             eq(schema.deal.organizationId, ctx.organizationId),
-            sql`lower(${schema.deal.title}) LIKE lower(${`%${args.id}%`})`
+            sql`lower(${schema.deal.title}) LIKE lower(${`%${escaped}%`})`
           )
         )
         .limit(1)

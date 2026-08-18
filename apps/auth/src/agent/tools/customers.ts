@@ -12,6 +12,7 @@ import {
 import { and, db, eq, schema, sql } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
+import { escapeLikePattern } from "./sql-utils"
 
 import {
   customerAnalyticsTool as implCustomerAnalytics,
@@ -126,13 +127,14 @@ export function updateCustomerTool(ctx: AgentContext) {
     const validUuid = isUuid(args.id)
 
     if (!validUuid && args.id) {
+      const escaped = escapeLikePattern(args.id)
       const [found] = await db
         .select({ id: schema.company.id })
         .from(schema.company)
         .where(
           and(
             eq(schema.company.organizationId, ctx.organizationId),
-            sql`lower(${schema.company.name}) LIKE lower(${`%${args.id}%`})`
+            sql`lower(${schema.company.name}) LIKE lower(${`%${escaped}%`})`
           )
         )
         .limit(1)

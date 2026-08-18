@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto"
 import { isUuid } from "@workspace/agent"
 import { and, db, eq, schema, sql } from "@workspace/database"
+import { escapeLikePattern } from "./tools/sql-utils"
 import {
   calculateInvoicePricing,
   calculateProposalPricing,
@@ -58,13 +59,14 @@ export async function finalizeProposalSend(
       .limit(1)
     current = found
   } else if (draftId) {
+    const escaped = escapeLikePattern(draftId)
     const [found] = await db
       .select()
       .from(schema.proposalDraft)
       .where(
         and(
           eq(schema.proposalDraft.organizationId, organizationId),
-          sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${draftId}%`})`
+          sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${escaped}%`})`
         )
       )
       .limit(1)
@@ -167,13 +169,14 @@ export async function finalizeInvoiceSend(
       .limit(1)
     current = found
   } else if (draftId) {
+    const escaped = escapeLikePattern(draftId)
     const [found] = await db
       .select()
       .from(schema.invoiceDraft)
       .where(
         and(
           eq(schema.invoiceDraft.organizationId, organizationId),
-          sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${draftId}%`})`
+          sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${escaped}%`})`
         )
       )
       .limit(1)

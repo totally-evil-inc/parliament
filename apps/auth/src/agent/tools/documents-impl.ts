@@ -1,5 +1,6 @@
 import { isUuid } from "@workspace/agent"
 import { and, count, db, desc, eq, schema, sql } from "@workspace/database"
+import { escapeLikePattern } from "./sql-utils"
 import {
   calculateInvoicePricing,
   calculateProposalPricing,
@@ -140,13 +141,14 @@ export async function getProposalSummaryTool(
       .limit(1)
     row = found
   } else if (args.id) {
+    const escaped = escapeLikePattern(args.id)
     const [found] = await db
       .select()
       .from(schema.proposalDraft)
       .where(
         and(
           eq(schema.proposalDraft.organizationId, ctx.organizationId),
-          sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${args.id}%`})`
+          sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${escaped}%`})`
         )
       )
       .limit(1)
@@ -321,13 +323,14 @@ export async function getInvoiceSummaryTool(
       .limit(1)
     row = found
   } else if (args.id) {
+    const escaped = escapeLikePattern(args.id)
     const [found] = await db
       .select()
       .from(schema.invoiceDraft)
       .where(
         and(
           eq(schema.invoiceDraft.organizationId, ctx.organizationId),
-          sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${args.id}%`})`
+          sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${escaped}%`})`
         )
       )
       .limit(1)

@@ -11,6 +11,7 @@ import {
 import { and, db, desc, eq, schema, sql } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
+import { escapeLikePattern } from "./sql-utils"
 
 
 export function scheduleDocumentSendTool(ctx: AgentContext) {
@@ -64,6 +65,7 @@ export function scheduleDocumentSendTool(ctx: AgentContext) {
             .limit(1)
           doc = found
         } else if (args.documentId) {
+          const escaped = escapeLikePattern(args.documentId)
           const [found] = await db
             .select({
               id: schema.proposalDraft.id,
@@ -73,7 +75,7 @@ export function scheduleDocumentSendTool(ctx: AgentContext) {
             .where(
               and(
                 eq(schema.proposalDraft.organizationId, ctx.organizationId),
-                sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${args.documentId}%`})`
+                sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${escaped}%`})`
               )
             )
             .limit(1)
@@ -108,6 +110,7 @@ export function scheduleDocumentSendTool(ctx: AgentContext) {
             .limit(1)
           doc = found
         } else if (args.documentId) {
+          const escaped = escapeLikePattern(args.documentId)
           const [found] = await db
             .select({
               id: schema.invoiceDraft.id,
@@ -117,7 +120,7 @@ export function scheduleDocumentSendTool(ctx: AgentContext) {
             .where(
               and(
                 eq(schema.invoiceDraft.organizationId, ctx.organizationId),
-                sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${args.documentId}%`})`
+                sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${escaped}%`})`
               )
             )
             .limit(1)

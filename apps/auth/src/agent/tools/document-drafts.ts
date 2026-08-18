@@ -35,6 +35,7 @@ import {
 } from "@workspace/document/schema"
 import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
+import { escapeLikePattern } from "./sql-utils"
 
 function getCommandUrl(): string {
   return (
@@ -475,13 +476,14 @@ export function getProposalTool(ctx: AgentContext) {
         .limit(1)
       row = found
     } else if (args.id) {
+      const escaped = escapeLikePattern(args.id)
       const [found] = await db
         .select()
         .from(schema.proposalDraft)
         .where(
           and(
             eq(schema.proposalDraft.organizationId, ctx.organizationId),
-            sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${args.id}%`})`
+            sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${escaped}%`})`
           )
         )
         .limit(1)
@@ -587,13 +589,14 @@ export function getInvoiceTool(ctx: AgentContext) {
         .limit(1)
       row = found
     } else if (args.id) {
+      const escaped = escapeLikePattern(args.id)
       const [found] = await db
         .select()
         .from(schema.invoiceDraft)
         .where(
           and(
             eq(schema.invoiceDraft.organizationId, ctx.organizationId),
-            sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${args.id}%`})`
+            sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${escaped}%`})`
           )
         )
         .limit(1)
@@ -684,13 +687,14 @@ export function updateProposalTool(ctx: AgentContext) {
         .limit(1)
       row = found
     } else if (args.id) {
+      const escaped = escapeLikePattern(args.id)
       const [found] = await db
         .select()
         .from(schema.proposalDraft)
         .where(
           and(
             eq(schema.proposalDraft.organizationId, ctx.organizationId),
-            sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${args.id}%`})`
+            sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${escaped}%`})`
           )
         )
         .limit(1)
@@ -861,13 +865,14 @@ export function updateInvoiceTool(ctx: AgentContext) {
         .limit(1)
       row = found
     } else if (args.id) {
+      const escaped = escapeLikePattern(args.id)
       const [found] = await db
         .select()
         .from(schema.invoiceDraft)
         .where(
           and(
             eq(schema.invoiceDraft.organizationId, ctx.organizationId),
-            sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${args.id}%`})`
+            sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${escaped}%`})`
           )
         )
         .limit(1)

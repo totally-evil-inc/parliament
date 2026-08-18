@@ -1,5 +1,6 @@
 import { isUuid } from "@workspace/agent"
 import { and, count, db, desc, eq, gte, schema, sql } from "@workspace/database"
+import { escapeLikePattern } from "./sql-utils"
 import type { AgentContext } from "../tool-ctx"
 
 export async function listCustomersTool(
@@ -136,13 +137,14 @@ export async function customerDetailsTool(
       .limit(1)
     customerRow = row
   } else if (args.id) {
+    const escaped = escapeLikePattern(args.id)
     const [row] = await db
       .select()
       .from(schema.company)
       .where(
         and(
           eq(schema.company.organizationId, ctx.organizationId),
-          sql`lower(${schema.company.name}) LIKE lower(${`%${args.id}%`})`
+          sql`lower(${schema.company.name}) LIKE lower(${`%${escaped}%`})`
         )
       )
       .limit(1)
