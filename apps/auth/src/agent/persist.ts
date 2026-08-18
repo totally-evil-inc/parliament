@@ -1,3 +1,4 @@
+import { isUuid } from "@workspace/agent"
 import {
   type MessagePartJson,
   parseMessageParts,
@@ -101,12 +102,13 @@ export async function findConversation(
   threadId: string,
   organizationId: string
 ): Promise<ConversationRow | null> {
+  if (!isUuid(threadId)) return null
   const [row] = await db
     .select()
     .from(chatConversation)
     .where(
       and(
-        eq(chatConversation.id, threadId),
+        eq(chatConversation.id, threadId.trim()),
         eq(chatConversation.organizationId, organizationId)
       )
     )
@@ -117,10 +119,11 @@ export async function findConversation(
 export async function findConversationById(
   threadId: string
 ): Promise<ConversationRow | null> {
+  if (!isUuid(threadId)) return null
   const [row] = await db
     .select()
     .from(chatConversation)
-    .where(eq(chatConversation.id, threadId))
+    .where(eq(chatConversation.id, threadId.trim()))
     .limit(1)
   return row ?? null
 }
@@ -136,16 +139,16 @@ export async function resolveOrCreateConversation(options: {
   model?: string | null
 }): Promise<{ conversation: ConversationRow; isNew: boolean }> {
   const { threadId, organizationId, userId, model } = options
-  const isUuid = Boolean(threadId && /^[0-9a-f-]{36}$/i.test(threadId))
-  if (threadId && isUuid) {
-    const existing = await findConversation(threadId, organizationId)
+  const validThreadId = threadId && isUuid(threadId) ? threadId.trim() : null
+  if (validThreadId) {
+    const existing = await findConversation(validThreadId, organizationId)
     if (existing) return { conversation: existing, isNew: false }
   }
 
   const [row] = await db
     .insert(chatConversation)
     .values({
-      ...(threadId && isUuid ? { id: threadId } : {}),
+      ...(validThreadId ? { id: validThreadId } : {}),
       organizationId,
       createdById: userId,
       model: model ?? null,

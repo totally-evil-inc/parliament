@@ -252,4 +252,22 @@ describe("agent persistence (real DB, org-scoped)", () => {
       text: "After approval",
     })
   })
+
+  test("rejects malformed 36-character non-UUID threadId safely without DB errors", async () => {
+    const malformedId = "------------------------------------"
+    const notFound = await findConversation(malformedId, orgId)
+    expect(notFound).toBeNull()
+
+    const { conversation, isNew } = await resolveOrCreateConversation({
+      threadId: malformedId,
+      organizationId: orgId,
+      userId,
+    })
+    expect(isNew).toBe(true)
+    expect(conversation.id).not.toBe(malformedId)
+    expect(conversation.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    )
+    conversationIds.push(conversation.id)
+  })
 })
