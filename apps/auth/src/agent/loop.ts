@@ -1,6 +1,7 @@
 import { formatServerSentEvent } from "@workspace/agent"
 import type { ModelMessage } from "ai"
 import { AgentEngine } from "./agent-engine"
+import { ThinkTagDemuxer } from "./think-demuxer"
 import {
   appendUserMessage,
   type ConversationRow,
@@ -224,29 +225,14 @@ export async function runAgentTurn(
           controller.enqueue(encoder.encode(sseString))
         }
 
-        let finalText = textBuffer
+        const extracted = ThinkTagDemuxer.extractThinkBlocks(textBuffer)
+        const finalText = extracted.content
         let finalThinking = thinkingBuffer
 
-        if (finalText.includes("<think>")) {
-          const thinkMatch = finalText.match(/<think>([\s\S]*?)<\/think>/)
-          if (thinkMatch) {
-            const extracted = thinkMatch[1].trim()
-            finalThinking = finalThinking
-              ? `${finalThinking}\n\n${extracted}`
-              : extracted
-            finalText = finalText
-              .replace(/<think>[\s\S]*?<\/think>/g, "")
-              .trim()
-          } else {
-            const openMatch = finalText.match(/<think>([\s\S]*)$/)
-            if (openMatch) {
-              const extracted = openMatch[1].trim()
-              finalThinking = finalThinking
-                ? `${finalThinking}\n\n${extracted}`
-                : extracted
-              finalText = finalText.replace(/<think>[\s\S]*$/, "").trim()
-            }
-          }
+        if (extracted.thinking) {
+          finalThinking = finalThinking
+            ? `${finalThinking}\n\n${extracted.thinking}`
+            : extracted.thinking
         }
 
         if (finalThinking.trim()) {

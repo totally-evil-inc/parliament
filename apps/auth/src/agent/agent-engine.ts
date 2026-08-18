@@ -4,6 +4,7 @@ import { logWideEvent } from "@workspace/logger"
 import { type LanguageModel, type ModelMessage, streamText } from "ai"
 import { ContextGovernor } from "./context-governor"
 import { buildPrompt } from "./prompt"
+import { ThinkTagDemuxer } from "./think-demuxer"
 import type { AgentContext } from "./tool-ctx"
 import { ToolDispatcher } from "./tool-dispatcher"
 
@@ -80,7 +81,7 @@ export class AgentEngine {
 
       let assistantText = ""
       let _assistantThinking = ""
-      let inThinkTag = false
+      const demuxer = new ThinkTagDemuxer()
       const toolCallsToProcess: Array<{
         id: string
         name: string
@@ -118,40 +119,14 @@ export class AgentEngine {
             const raw = (chunk as any).text ?? (chunk as any).delta ?? ""
             if (!raw) continue
 
-            // Stateful demultiplexer for models emitting <think>...</think> in text stream
-            let remaining = raw
-
-            while (remaining.length > 0) {
-              if (!inThinkTag) {
-                const openIdx = remaining.indexOf("<think>")
-                if (openIdx !== -1) {
-                  const before = remaining.slice(0, openIdx)
-                  if (before) {
-                    assistantText += before
-                    yield { type: "content:delta", text: before }
-                  }
-                  inThinkTag = true
-                  remaining = remaining.slice(openIdx + 7)
-                } else {
-                  assistantText += remaining
-                  yield { type: "content:delta", text: remaining }
-                  remaining = ""
-                }
-              } else {
-                const closeIdx = remaining.indexOf("</think>")
-                if (closeIdx !== -1) {
-                  const thinkPart = remaining.slice(0, closeIdx)
-                  if (thinkPart) {
-                    _assistantThinking += thinkPart
-                    yield { type: "thinking:delta", text: thinkPart }
-                  }
-                  inThinkTag = false
-                  remaining = remaining.slice(closeIdx + 8)
-                } else {
-                  _assistantThinking += remaining
-                  yield { type: "thinking:delta", text: remaining }
-                  remaining = ""
-                }
+            const deltas = demuxer.process(raw)
+            for (const delta of deltas) {
+              if (delta.type === "content:delta") {
+                assistantText += delta.text
+                yield delta
+              } else if (delta.type === "thinking:delta") {
+                _assistantThinking += delta.text
+                yield delta
               }
             }
             continue
@@ -196,6 +171,17 @@ export class AgentEngine {
               recoverable: true,
             }
             return
+          }
+        }
+
+        const flushed = demuxer.flush()
+        for (const delta of flushed) {
+          if (delta.type === "content:delta") {
+            assistantText += delta.text
+            yield delta
+          } else if (delta.type === "thinking:delta") {
+            _assistantThinking += delta.text
+            yield delta
           }
         }
       } catch (err: unknown) {
