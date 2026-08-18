@@ -134,7 +134,9 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       )
       if (!res.ok) {
         const data = await res.json().catch(() => null)
-        throw new Error(data?.error?.message || `HTTP ${res.status}`)
+        const error = new Error(data?.error?.message || `HTTP ${res.status}`)
+        ;(error as any).code = data?.error?.code
+        throw error
       }
       return await res.json()
     },
@@ -166,9 +168,11 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     onError: (err: Error) => {
       setChatError({
-        code: "approval_failed",
+        code: (err as any).code || "approval_failed",
         message: err.message || "Failed to resolve action approval",
       })
+      // Sync queries on conflict or error
+      invalidateAgentQueries()
     },
   })
 
@@ -487,14 +491,22 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const approveTool = useCallback(
     async (approvalId: string) => {
-      await resolveActionMutation.mutateAsync({ approvalId, approved: true })
+      try {
+        await resolveActionMutation.mutateAsync({ approvalId, approved: true })
+      } catch {
+        // Handled in onError callback of resolveActionMutation
+      }
     },
     [resolveActionMutation]
   )
 
   const rejectTool = useCallback(
     async (approvalId: string) => {
-      await resolveActionMutation.mutateAsync({ approvalId, approved: false })
+      try {
+        await resolveActionMutation.mutateAsync({ approvalId, approved: false })
+      } catch {
+        // Handled in onError callback of resolveActionMutation
+      }
     },
     [resolveActionMutation]
   )
