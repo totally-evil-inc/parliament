@@ -9,6 +9,7 @@ import {
   Section,
   Text,
 } from "@react-email/components"
+import { formatMarkdownToEmailHtml } from "../format-markdown"
 
 export interface DocumentDispatchEmailProps {
   documentType: "proposal" | "invoice"
@@ -30,6 +31,10 @@ export function DocumentDispatchEmail({
   const actionLabel = isProposal ? "View Proposal" : "View Invoice"
   const previewText = `${typeLabel}: ${documentTitle}`
 
+  const formattedMessageHtml = personalMessage
+    ? formatMarkdownToEmailHtml(personalMessage)
+    : ""
+
   return (
     <Html>
       <Head />
@@ -50,10 +55,13 @@ export function DocumentDispatchEmail({
           </Text>
 
           {/* Personal Message Note */}
-          {personalMessage ? (
+          {formattedMessageHtml ? (
             <Section style={messageCard}>
               <Text style={messageLabel}>Message</Text>
-              <Text style={messageBody}>{personalMessage}</Text>
+              <div
+                style={{ fontSize: "13px", lineHeight: "1.6", color: "#334155" }}
+                dangerouslySetInnerHTML={{ __html: formattedMessageHtml }}
+              />
             </Section>
           ) : null}
 
@@ -167,14 +175,6 @@ const messageLabel = {
   textTransform: "uppercase" as const,
   letterSpacing: "0.05em",
   margin: "0 0 4px 0",
-}
-
-const messageBody = {
-  color: "#334155",
-  fontSize: "13px",
-  lineHeight: "1.5",
-  margin: "0",
-  whiteSpace: "pre-wrap" as const,
 }
 
 const buttonContainer = {

@@ -1,23 +1,45 @@
 import { logger } from "@workspace/logger"
 import nodemailer from "nodemailer"
+import { formatMarkdownToEmailHtml } from "./email/format-markdown"
+import {
+  type DocumentDispatchEmailProps,
+  renderDocumentDispatchEmailHtml,
+} from "./email/templates/document-dispatch"
+import {
+  type InvitationEmailProps,
+  renderInvitationEmailHtml,
+} from "./email/templates/invitation"
+import {
+  type MagicLinkEmailProps,
+  renderMagicLinkEmailHtml,
+} from "./email/templates/magic-link"
+
+export { formatMarkdownToEmailHtml }
 
 export async function renderEmail(
   template: string,
   props: Record<string, any>
 ): Promise<string> {
-  const commandUrl = Bun.env.COMMAND_SERVER_URL ?? "http://localhost:3000"
-  const response = await fetch(`${commandUrl}/internal/email/render`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ template, props }),
-  })
-  if (!response.ok) {
-    throw new Error(`Failed to render email: ${response.statusText}`)
+  try {
+    if (template === "document-dispatch" || template === "document") {
+      return renderDocumentDispatchEmailHtml(
+        props as DocumentDispatchEmailProps
+      )
+    }
+    if (template === "invitation") {
+      return renderInvitationEmailHtml(props as InvitationEmailProps)
+    }
+    if (template === "magic-link") {
+      return renderMagicLinkEmailHtml(props as MagicLinkEmailProps)
+    }
+  } catch (err) {
+    logger.warn(
+      { err, template },
+      "In-process email template render failed, falling back to minimal HTML"
+    )
   }
-  const data = (await response.json()) as { html: string }
-  return data.html
+
+  return `<p>${props.message || props.url || ""}</p>`
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
