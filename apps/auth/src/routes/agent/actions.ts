@@ -92,22 +92,21 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
 
   const { approved, feedback } = parsed.data
   const startTime = Date.now()
-  let targetApprovalId = id
+  const rawId = id
+  const targetApprovalId = typeof id === "string" ? id.trim() : ""
 
   try {
-    if (!isUuid(id)) {
+    if (!isUuid(targetApprovalId)) {
       return c.json(
         {
           error: {
             code: "not_found",
-            message: `Action approval "${id}" was not found`,
+            message: `Action approval "${rawId}" was not found`,
           },
         },
         404
       )
     }
-
-    targetApprovalId = id.trim()
 
     // 1. Atomically lock and transition status from pending to approved/rejected ONLY if not expired
     const now = new Date()

@@ -247,6 +247,36 @@ describe("AgentEngine FSM & ContextGovernor", () => {
     expect(expiredRes.status).toBe(410)
     const expiredData = (await expiredRes.json()) as any
     expect(expiredData.error.code).toBe("action_expired")
+
+    // 7. Whitespace-padded valid UUID should resolve successfully
+    const whitespaceApprovalId = crypto.randomUUID()
+    await db.insert(schema.chatActionApproval).values({
+      id: whitespaceApprovalId,
+      organizationId: orgId,
+      conversationId,
+      toolName: "create_deal",
+      toolArgs: { title: "Whitespace Deal" },
+      summary: "Create deal: Whitespace Deal",
+      status: "pending",
+      expiresAt,
+    })
+
+    const whitespaceRes = await app.fetch(
+      new Request(
+        `http://localhost:4000/api/agent/actions/  ${whitespaceApprovalId}  /resolve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "kernel@test.local",
+            "x-test-org-id": orgId,
+            "x-test-user-id": userId,
+          },
+          body: JSON.stringify({ approved: false, feedback: "Whitespace test" }),
+        }
+      )
+    )
+    expect(whitespaceRes.status).toBe(200)
   })
 
   test("approval-gated CRM tools require approval without the bypass flag", async () => {

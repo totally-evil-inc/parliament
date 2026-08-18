@@ -227,6 +227,11 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
               // preventing provider schema rejections (HTTP 400) and never
               // fabricating `{}` outcomes for unexecuted (e.g. pending approval) calls.
               if (tc.result !== undefined) {
+                const isErr =
+                  tc.status === "error" ||
+                  Boolean((tc as any).isError) ||
+                  (tc.result as any)?.status === "rejected" ||
+                  (tc.result as any)?.status === "denied"
                 parts.push({
                   type: "tool-call",
                   toolCallId: tc.id,
@@ -238,6 +243,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                   toolCallId: tc.id,
                   toolName: tc.name,
                   result: tc.result ?? {},
+                  isError: isErr,
                 })
               }
             }
