@@ -228,7 +228,7 @@ export async function runAgentTurn(
               summary: event.summary,
             })
           } else if (event.type === "turn:error") {
-            status = "error"
+            status = event.code === "aborted" ? "interrupted" : "error"
           } else if (event.type === "turn:suspended") {
             status = "interrupted"
           } else if (event.type === "turn:completed") {
@@ -269,14 +269,16 @@ export async function runAgentTurn(
         status = "interrupted"
         controller.error(err)
       } finally {
-        // Persist assistant message in DB
-        await persistAssistantMessage({
-          conversationId: conversation.id,
-          organizationId: ctx.organizationId,
-          parts: collectedParts,
-          status,
-          model: modelName,
-        }).catch((err) => logPersistenceError("assistant-message", err))
+        // Persist assistant message in DB (skip if completely empty and interrupted/aborted)
+        if (collectedParts.length > 0 || status === "complete") {
+          await persistAssistantMessage({
+            conversationId: conversation.id,
+            organizationId: ctx.organizationId,
+            parts: collectedParts,
+            status,
+            model: modelName,
+          }).catch((err) => logPersistenceError("assistant-message", err))
+        }
       }
     },
   })

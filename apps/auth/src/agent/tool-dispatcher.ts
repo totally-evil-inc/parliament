@@ -7,7 +7,6 @@ import {
 } from "@workspace/agent"
 import { logger, logWideEvent } from "@workspace/logger"
 import type { ToolSet } from "ai"
-import pLimit from "p-limit"
 import type { AgentContext } from "./tool-ctx"
 
 // Import existing underlying execution logic
@@ -153,8 +152,6 @@ function deepUnpackStringifiedJson(val: unknown): unknown {
 }
 
 export class ToolDispatcher {
-  private concurrency = pLimit(4) // Max 4 parallel tool executions
-
   constructor(private ctx: AgentContext) {}
 
   /**
@@ -345,102 +342,100 @@ export class ToolDispatcher {
       `[Agent Tool] Executing tool '${name}'`
     )
 
-    return this.concurrency(async () => {
-      let timeoutHandle: ReturnType<typeof setTimeout> | undefined
-      let timedOut = false
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined
+    let timedOut = false
 
-      const execution = executor(parseResult.data)
-      execution.then(
-        () => {
-          if (timedOut) {
-            logWideEvent({
-              event: "agent.tool.late_completion",
-              outcome: "success",
-              durationMs: Date.now() - startTime,
-              organizationId: this.ctx.organizationId,
-              userId: this.ctx.userId,
-              metadata: {
-                tool: name,
-                note: "executor settled after timeout; side effect may have occurred",
-              },
-            })
-          }
-        },
-        () => {
-          if (timedOut) {
-            logWideEvent({
-              event: "agent.tool.late_completion",
-              outcome: "failure",
-              durationMs: Date.now() - startTime,
-              organizationId: this.ctx.organizationId,
-              userId: this.ctx.userId,
-              metadata: {
-                tool: name,
-                note: "executor settled after timeout",
-              },
-            })
-          }
+    const execution = executor(parseResult.data)
+    execution.then(
+      () => {
+        if (timedOut) {
+          logWideEvent({
+            event: "agent.tool.late_completion",
+            outcome: "success",
+            durationMs: Date.now() - startTime,
+            organizationId: this.ctx.organizationId,
+            userId: this.ctx.userId,
+            metadata: {
+              tool: name,
+              note: "executor settled after timeout; side effect may have occurred",
+            },
+          })
         }
+      },
+      () => {
+        if (timedOut) {
+          logWideEvent({
+            event: "agent.tool.late_completion",
+            outcome: "failure",
+            durationMs: Date.now() - startTime,
+            organizationId: this.ctx.organizationId,
+            userId: this.ctx.userId,
+            metadata: {
+              tool: name,
+              note: "executor settled after timeout",
+            },
+          })
+        }
+      }
+    )
+
+    try {
+      const timeoutMs = 30_000
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          timedOut = true
+          reject(new Error(`Execution timed out after ${timeoutMs}ms`))
+        }, timeoutMs)
+      })
+
+      const result = await Promise.race([execution, timeoutPromise])
+
+      logWideEvent({
+        event: "agent.tool.called",
+        outcome: "success",
+        durationMs: Date.now() - startTime,
+        organizationId: this.ctx.organizationId,
+        userId: this.ctx.userId,
+        metadata: { tool: name },
+      })
+
+      return {
+        result: result ?? {},
+        isError: false,
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      const stack = err instanceof Error ? err.stack : undefined
+
+      logger.error(
+        { tool: name, error: errorMessage, stack, timedOut },
+        `[Agent Tool Error] Execution failed for '${name}': ${errorMessage}`
       )
 
-      try {
-        const timeoutMs = 30_000
-        const timeoutPromise = new Promise((_, reject) => {
-          timeoutHandle = setTimeout(() => {
-            timedOut = true
-            reject(new Error(`Execution timed out after ${timeoutMs}ms`))
-          }, timeoutMs)
-        })
+      logWideEvent({
+        event: "agent.tool.called",
+        outcome: "failure",
+        durationMs: Date.now() - startTime,
+        organizationId: this.ctx.organizationId,
+        userId: this.ctx.userId,
+        error: {
+          code: timedOut ? "tool_timeout" : "tool_execution_failed",
+          message: errorMessage,
+          stack,
+        },
+        metadata: {
+          tool: name,
+          error: errorMessage,
+          timedOut,
+        },
+      })
 
-        const result = await Promise.race([execution, timeoutPromise])
-
-        logWideEvent({
-          event: "agent.tool.called",
-          outcome: "success",
-          durationMs: Date.now() - startTime,
-          organizationId: this.ctx.organizationId,
-          userId: this.ctx.userId,
-          metadata: { tool: name },
-        })
-
-        return {
-          result: result ?? {},
-          isError: false,
-        }
-      } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : String(err)
-        const stack = err instanceof Error ? err.stack : undefined
-
-        logger.error(
-          { tool: name, error: errorMessage, stack, timedOut },
-          `[Agent Tool Error] Execution failed for '${name}': ${errorMessage}`
-        )
-
-        logWideEvent({
-          event: "agent.tool.called",
-          outcome: "failure",
-          durationMs: Date.now() - startTime,
-          organizationId: this.ctx.organizationId,
-          userId: this.ctx.userId,
-          error: {
-            code: timedOut ? "tool_timeout" : "tool_execution_failed",
-            message: errorMessage,
-            stack,
-          },
-          metadata: {
-            tool: name,
-            error: errorMessage,
-            timedOut,
-          },
-        })
-
-        return {
-          result: `Tool execution failed: ${errorMessage}`,
-          isError: true,
-        }
-      } finally {
-        if (timeoutHandle) clearTimeout(timeoutHandle)
+      return {
+        result: `Tool execution failed: ${errorMessage}`,
+        isError: true,
       }
-    })
+    } finally {
+      if (timeoutHandle) clearTimeout(timeoutHandle)
+    }
   }
 }

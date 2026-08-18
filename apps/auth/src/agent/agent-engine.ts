@@ -387,8 +387,12 @@ export class AgentEngine {
             type: "tool:result",
             callId: call.id,
             name: call.name,
-            result: `Tool call skipped: turn is suspended awaiting human approval for another action.`,
-            isError: true,
+            result: {
+              status: "skipped",
+              message:
+                "Tool call skipped: turn is suspended awaiting human approval for another action.",
+            },
+            isError: false,
           }
         }
         return
