@@ -508,9 +508,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                     existing.result = p.result ?? p.output
                     existing.status = p.isError ? "error" : "completed"
                     if (p.isError) {
-                      existing.errorText = String(
-                        p.result ?? p.output ?? ""
-                      )
+                      existing.errorText = String(p.result ?? p.output ?? "")
                     }
                   }
                 } else if (p?.type === "approval-requested") {

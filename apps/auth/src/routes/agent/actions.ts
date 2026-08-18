@@ -1,4 +1,4 @@
-import { and, db, eq, schema } from "@workspace/database"
+import { and, db, desc, eq, schema } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import { Hono } from "hono"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
@@ -7,6 +7,9 @@ import { AgentContextError, httpStatusFor } from "../../agent/org-context"
 import { persistApprovalResolution } from "../../agent/persist"
 import { type AgentContext, buildToolContext } from "../../agent/tool-ctx"
 import { ToolDispatcher } from "../../agent/tool-dispatcher"
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export const agentActionsRouter = new Hono<{
   Variables: {
@@ -91,8 +94,37 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
 
   const { approved, feedback } = parsed.data
   const startTime = Date.now()
+  let targetApprovalId = id
 
   try {
+    const isUuid = typeof id === "string" && UUID_REGEX.test(id)
+
+    if (!isUuid) {
+      // If client passed toolCallId (e.g. call-...) or non-UUID, locate the most recent pending approval
+      const [pendingApproval] = await db
+        .select({ id: schema.chatActionApproval.id })
+        .from(schema.chatActionApproval)
+        .where(
+          and(
+            eq(schema.chatActionApproval.organizationId, ctx.organizationId),
+            eq(schema.chatActionApproval.status, "pending")
+          )
+        )
+        .orderBy(desc(schema.chatActionApproval.createdAt))
+        .limit(1)
+
+      if (pendingApproval) {
+        targetApprovalId = pendingApproval.id
+      } else {
+        return c.json(
+          {
+            error: { code: "not_found", message: "Action approval not found" },
+          },
+          404
+        )
+      }
+    }
+
     // 1. Atomically lock and transition status from pending to approved/rejected
     const nextStatus = approved ? "approved" : "rejected"
 
@@ -106,7 +138,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
       })
       .where(
         and(
-          eq(schema.chatActionApproval.id, id),
+          eq(schema.chatActionApproval.id, targetApprovalId),
           eq(schema.chatActionApproval.organizationId, ctx.organizationId),
           eq(schema.chatActionApproval.status, "pending")
         )
@@ -120,7 +152,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
         .from(schema.chatActionApproval)
         .where(
           and(
-            eq(schema.chatActionApproval.id, id),
+            eq(schema.chatActionApproval.id, targetApprovalId),
             eq(schema.chatActionApproval.organizationId, ctx.organizationId)
           )
         )
@@ -150,7 +182,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
       await db
         .update(schema.chatActionApproval)
         .set({ status: "expired", updatedAt: new Date() })
-        .where(eq(schema.chatActionApproval.id, id))
+        .where(eq(schema.chatActionApproval.id, targetApprovalId))
 
       return c.json(
         {
@@ -189,7 +221,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
             resolutionFeedback: null,
             updatedAt: new Date(),
           })
-          .where(eq(schema.chatActionApproval.id, id))
+          .where(eq(schema.chatActionApproval.id, targetApprovalId))
 
         logWideEvent({
           event: "agent.action.resolve_failed",
@@ -198,7 +230,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
           organizationId: ctx.organizationId,
           userId: ctx.userId,
           metadata: {
-            approvalId: id,
+            approvalId: targetApprovalId,
             toolName: updatedRow.toolName,
             revertedToPending: true,
             error: String(exec.result),
@@ -227,7 +259,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
     // Persist the resolution outcome back into the assistant message parts so
     // reloads show the real result and later turns feed it to the model.
     await persistApprovalResolution({
-      approvalId: id,
+      approvalId: targetApprovalId,
       conversationId: updatedRow.conversationId,
       organizationId: ctx.organizationId,
       toolName: updatedRow.toolName,
@@ -239,7 +271,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
         outcome: "failure",
         organizationId: ctx.organizationId,
         userId: ctx.userId,
-        metadata: { approvalId: id, error: String(err) },
+        metadata: { approvalId: targetApprovalId, error: String(err) },
       })
     })
 
@@ -250,7 +282,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
       organizationId: ctx.organizationId,
       userId: ctx.userId,
       metadata: {
-        approvalId: id,
+        approvalId: targetApprovalId,
         toolName: updatedRow.toolName,
         approved,
         feedback,
@@ -258,7 +290,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
     })
 
     return c.json({
-      id,
+      id: targetApprovalId,
       status: nextStatus,
       toolName: updatedRow.toolName,
       result: executionResult,
@@ -273,7 +305,7 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
       organizationId: ctx.organizationId,
       userId: ctx.userId,
       metadata: {
-        approvalId: id,
+        approvalId: targetApprovalId,
         error: errorMsg,
       },
     })

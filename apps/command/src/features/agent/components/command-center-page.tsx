@@ -121,14 +121,24 @@ export function extractThinkingAndContent(m: any): ExtractedMessage {
           name: String(part.name ?? part.toolName ?? "unknown tool"),
           args: parseToolArguments(part.arguments ?? part.args ?? part.input),
           result: part.output ?? part.result ?? part.resultData,
+          needsApproval: Boolean(
+            part.needsApproval || part.approval?.needsApproval
+          ),
+          approvalId: part.approvalId ?? part.approval?.id,
           status:
-            part.state === "output-available" ||
-            part.output !== undefined ||
-            part.result !== undefined
-              ? "completed"
-              : part.state === "output-error"
-                ? "error"
-                : "running",
+            part.approval?.approved === true
+              ? "approved"
+              : part.approval?.approved === false
+                ? "rejected"
+                : part.needsApproval || part.approval
+                  ? "pending_approval"
+                  : part.state === "output-available" ||
+                      part.output !== undefined ||
+                      part.result !== undefined
+                    ? "completed"
+                    : part.state === "output-error"
+                      ? "error"
+                      : "running",
         }))
     : []
 

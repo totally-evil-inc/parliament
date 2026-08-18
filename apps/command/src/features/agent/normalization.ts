@@ -38,9 +38,39 @@ const toolNames: Record<string, string> = {
   askClarifyingQuestions: "Requesting clarification",
 }
 
+function deepUnpackJsonProperties(obj: unknown): unknown {
+  if (typeof obj === "string") {
+    const trimmed = obj.trim()
+    if (
+      (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+      (trimmed.startsWith("[") && trimmed.endsWith("]"))
+    ) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        return deepUnpackJsonProperties(parsed)
+      } catch {
+        return obj
+      }
+    }
+    return obj
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((item) => deepUnpackJsonProperties(item))
+  }
+  if (obj && typeof obj === "object") {
+    const res: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      res[k] = deepUnpackJsonProperties(v)
+    }
+    return res
+  }
+  return obj
+}
+
 function objectValue(value: unknown): Record<string, unknown> {
-  if (value && typeof value === "object" && !Array.isArray(value))
-    return value as Record<string, unknown>
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return (deepUnpackJsonProperties(value) as Record<string, unknown>) ?? {}
+  }
   if (typeof value === "string") {
     const trimmed = value.trim()
     if (!trimmed) return {}
@@ -156,7 +186,7 @@ export function normalizeAssistantMessage(
           needsApproval: Boolean(
             tc.needsApproval || tc.approval?.needsApproval
           ),
-          approvalId: tc.approval?.id,
+          approvalId: tc.approvalId ?? tc.approval?.id,
           errorText:
             tc.errorText ??
             (tc.status === "error"
@@ -212,9 +242,12 @@ export function normalizeAssistantMessage(
                     : (existing?.status ?? "running"),
         result: part.output ?? part.result ?? existing?.result,
         needsApproval: Boolean(
-          part.approval?.needsApproval ?? existing?.needsApproval
+          part.needsApproval ??
+            part.approval?.needsApproval ??
+            existing?.needsApproval
         ),
-        approvalId: part.approval?.id ?? existing?.approvalId,
+        approvalId:
+          part.approvalId ?? part.approval?.id ?? existing?.approvalId,
         errorText:
           part.errorText ??
           (part.state === "output-error"
@@ -245,10 +278,19 @@ export function normalizeAssistantMessage(
             : String(part.toolName ?? part.name ?? current.name),
         result: part.content ?? part.output ?? part.result,
         status:
-          part.error || part.state === "output-error" ? "error" : "completed",
+          part.error || part.isError || part.state === "output-error"
+            ? "error"
+            : "completed",
         errorText:
-          part.error || part.state === "output-error"
-            ? String(part.content ?? part.output ?? "Tool execution failed")
+          part.error || part.isError || part.state === "output-error"
+            ? String(
+                part.errorText ??
+                  part.error ??
+                  part.content ??
+                  part.output ??
+                  part.result ??
+                  "Tool execution failed"
+              )
             : undefined,
       })
     }

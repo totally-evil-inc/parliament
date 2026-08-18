@@ -54,6 +54,35 @@ describe("normalizeAssistantMessage", () => {
     expect((normalized.tools[0].args as any).questions).toHaveLength(1)
   })
 
+  test("normalizes tool call with stringified questions array inside arguments object", () => {
+    const rawMessage = {
+      id: "msg-nested-stringified",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-call",
+          id: "tc-clarify-2",
+          name: "ask_clarifying_questions",
+          arguments: {
+            questions: JSON.stringify([
+              {
+                id: "scope",
+                type: "multi_select",
+                label: "What scope?",
+                options: [{ label: "Portal", value: "portal" }],
+              },
+            ]),
+          },
+        },
+      ],
+    }
+
+    const normalized = normalizeAssistantMessage(rawMessage)
+    expect(normalized.tools).toHaveLength(1)
+    expect(Array.isArray(normalized.tools[0].args?.questions)).toBe(true)
+    expect((normalized.tools[0].args?.questions as any)[0].id).toBe("scope")
+  })
+
   test("preserves approval metadata for the HITL action handlers", () => {
     const normalized = normalizeAssistantMessage({
       role: "assistant",
