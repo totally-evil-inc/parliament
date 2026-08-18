@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { zodToJsonSchema } from "zod-to-json-schema"
+import { UUID_REGEX, isUuid } from "../utils/uuid"
 
 export function withJsonSchema<T extends z.ZodTypeAny>(schema: T): T {
   if (schema && typeof schema === "object") {
@@ -348,9 +349,6 @@ export const listIntegrationsOutput = z.object({
   accounts: z.array(integrationAccount),
 })
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
 function normalizeIsoDateTime(val: unknown): string {
   if (typeof val !== "string") return new Date().toISOString()
   const trimmed = val.trim()
@@ -435,14 +433,8 @@ export const createDealInput = z.preprocess((val) => {
     return {
       ...inner,
       title,
-      companyId:
-        typeof companyId === "string" && UUID_REGEX.test(companyId)
-          ? companyId
-          : undefined,
-      contactId:
-        typeof contactId === "string" && UUID_REGEX.test(contactId)
-          ? contactId
-          : undefined,
+      companyId: isUuid(companyId) ? companyId.trim() : undefined,
+      contactId: isUuid(contactId) ? contactId.trim() : undefined,
       stage,
       valueMinorUnits,
       currency,

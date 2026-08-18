@@ -2,6 +2,7 @@ import { toolDefinition } from "@tanstack/ai"
 import {
   createDealInput,
   dealAnalyticsOutput,
+  isUuid,
   listDealsOutput,
   toolOutputSchemas,
   updateDealStageInput,
@@ -10,8 +11,6 @@ import { and, db, desc, eq, schema, sql } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const STAGES = [
   "lead",
@@ -243,9 +242,9 @@ export function updateDealStageTool(ctx: AgentContext) {
     needsApproval: true,
   }).server(async (args) => {
     let dealId = args.id
-    const isUuid = typeof args.id === "string" && UUID_REGEX.test(args.id)
+    const validUuid = isUuid(args.id)
 
-    if (!isUuid && args.id) {
+    if (!validUuid && args.id) {
       const [found] = await db
         .select({ id: schema.deal.id })
         .from(schema.deal)

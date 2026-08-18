@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto"
+import { isUuid } from "@workspace/agent"
 import { and, db, eq, schema, sql } from "@workspace/database"
 import {
   calculateInvoicePricing,
@@ -14,9 +15,6 @@ import {
   safeParseInvoiceDraft,
   safeParseProposalDraft,
 } from "@workspace/document/schema"
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export interface FinalizeSendResult {
   snapshotId: string
@@ -45,15 +43,15 @@ export async function finalizeProposalSend(
   overrideRecipientEmail?: string
 ): Promise<FinalizeSendResult> {
   let current: typeof schema.proposalDraft.$inferSelect | undefined
-  const isUuid = typeof draftId === "string" && UUID_REGEX.test(draftId)
+  const validUuid = isUuid(draftId)
 
-  if (isUuid) {
+  if (validUuid) {
     const [found] = await db
       .select()
       .from(schema.proposalDraft)
       .where(
         and(
-          eq(schema.proposalDraft.id, draftId),
+          eq(schema.proposalDraft.id, draftId.trim()),
           eq(schema.proposalDraft.organizationId, organizationId)
         )
       )
@@ -154,15 +152,15 @@ export async function finalizeInvoiceSend(
   overrideRecipientEmail?: string
 ): Promise<FinalizeSendResult> {
   let current: typeof schema.invoiceDraft.$inferSelect | undefined
-  const isUuid = typeof draftId === "string" && UUID_REGEX.test(draftId)
+  const validUuid = isUuid(draftId)
 
-  if (isUuid) {
+  if (validUuid) {
     const [found] = await db
       .select()
       .from(schema.invoiceDraft)
       .where(
         and(
-          eq(schema.invoiceDraft.id, draftId),
+          eq(schema.invoiceDraft.id, draftId.trim()),
           eq(schema.invoiceDraft.organizationId, organizationId)
         )
       )

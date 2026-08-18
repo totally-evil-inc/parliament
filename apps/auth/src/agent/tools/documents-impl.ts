@@ -1,3 +1,4 @@
+import { isUuid } from "@workspace/agent"
 import { and, count, db, desc, eq, schema, sql } from "@workspace/database"
 import {
   calculateInvoicePricing,
@@ -119,23 +120,20 @@ export async function listProposalsTool(
   return { rows: formattedRows }
 }
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
 export async function getProposalSummaryTool(
   args: { id: string },
   ctx: AgentContext
 ) {
   let row: typeof schema.proposalDraft.$inferSelect | undefined
-  const isUuid = typeof args.id === "string" && UUID_REGEX.test(args.id)
+  const validUuid = isUuid(args.id)
 
-  if (isUuid) {
+  if (validUuid) {
     const [found] = await db
       .select()
       .from(schema.proposalDraft)
       .where(
         and(
-          eq(schema.proposalDraft.id, args.id),
+          eq(schema.proposalDraft.id, args.id.trim()),
           eq(schema.proposalDraft.organizationId, ctx.organizationId)
         )
       )
@@ -308,15 +306,15 @@ export async function getInvoiceSummaryTool(
   ctx: AgentContext
 ) {
   let row: typeof schema.invoiceDraft.$inferSelect | undefined
-  const isUuid = typeof args.id === "string" && UUID_REGEX.test(args.id)
+  const validUuid = isUuid(args.id)
 
-  if (isUuid) {
+  if (validUuid) {
     const [found] = await db
       .select()
       .from(schema.invoiceDraft)
       .where(
         and(
-          eq(schema.invoiceDraft.id, args.id),
+          eq(schema.invoiceDraft.id, args.id.trim()),
           eq(schema.invoiceDraft.organizationId, ctx.organizationId)
         )
       )

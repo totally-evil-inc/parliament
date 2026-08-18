@@ -1,3 +1,4 @@
+import { isUuid } from "@workspace/agent"
 import { and, count, db, desc, eq, gte, schema, sql } from "@workspace/database"
 import type { AgentContext } from "../tool-ctx"
 
@@ -115,23 +116,20 @@ export async function customerAnalyticsTool(
   }
 }
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
 export async function customerDetailsTool(
   args: { id: string },
   ctx: AgentContext
 ) {
   let customerRow: typeof schema.company.$inferSelect | undefined
-  const isUuid = typeof args.id === "string" && UUID_REGEX.test(args.id)
+  const validUuid = isUuid(args.id)
 
-  if (isUuid) {
+  if (validUuid) {
     const [row] = await db
       .select()
       .from(schema.company)
       .where(
         and(
-          eq(schema.company.id, args.id),
+          eq(schema.company.id, args.id.trim()),
           eq(schema.company.organizationId, ctx.organizationId)
         )
       )

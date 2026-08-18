@@ -1,3 +1,4 @@
+import { isUuid } from "@workspace/agent"
 import { and, db, desc, eq, schema } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import { Hono } from "hono"
@@ -7,9 +8,6 @@ import { AgentContextError, httpStatusFor } from "../../agent/org-context"
 import { persistApprovalResolution } from "../../agent/persist"
 import { type AgentContext, buildToolContext } from "../../agent/tool-ctx"
 import { ToolDispatcher } from "../../agent/tool-dispatcher"
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export const agentActionsRouter = new Hono<{
   Variables: {
@@ -97,9 +95,9 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
   let targetApprovalId = id
 
   try {
-    const isUuid = typeof id === "string" && UUID_REGEX.test(id)
+    const validUuid = isUuid(id)
 
-    if (!isUuid) {
+    if (!validUuid) {
       // If client passed toolCallId (e.g. call-...) or non-UUID, locate the most recent pending approval
       const [pendingApproval] = await db
         .select({ id: schema.chatActionApproval.id })

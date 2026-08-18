@@ -4,6 +4,7 @@ import {
   customerAnalyticsOutput,
   customerDetailsInput,
   customerDetailsOutput,
+  isUuid,
   listCustomersOutput,
   toolOutputSchemas,
   updateCustomerInput,
@@ -12,8 +13,6 @@ import { and, db, eq, schema, sql } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 import {
   customerAnalyticsTool as implCustomerAnalytics,
   customerDetailsTool as implCustomerDetails,
@@ -124,9 +123,9 @@ export function updateCustomerTool(ctx: AgentContext) {
     needsApproval: true,
   }).server(async (args) => {
     let customerId = args.id
-    const isUuid = typeof args.id === "string" && UUID_REGEX.test(args.id)
+    const validUuid = isUuid(args.id)
 
-    if (!isUuid && args.id) {
+    if (!validUuid && args.id) {
       const [found] = await db
         .select({ id: schema.company.id })
         .from(schema.company)

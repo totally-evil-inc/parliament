@@ -2,6 +2,7 @@ import { toolDefinition } from "@tanstack/ai"
 import {
   cancelScheduledDispatchInput,
   cancelScheduledDispatchOutput,
+  isUuid,
   listScheduledDispatchesInput,
   listScheduledDispatchesOutput,
   scheduleDocumentSendInput,
@@ -11,8 +12,6 @@ import { and, db, desc, eq, schema, sql } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export function scheduleDocumentSendTool(ctx: AgentContext) {
   return toolDefinition({
@@ -45,12 +44,11 @@ export function scheduleDocumentSendTool(ctx: AgentContext) {
 
       let documentTitle = ""
       let finalDocumentId = args.documentId
-      const isUuid =
-        typeof args.documentId === "string" && UUID_REGEX.test(args.documentId)
+      const validUuid = isUuid(args.documentId)
 
       if (args.documentType === "proposal") {
         let doc: { id: string; title: string } | undefined
-        if (isUuid) {
+        if (validUuid) {
           const [found] = await db
             .select({
               id: schema.proposalDraft.id,
@@ -59,7 +57,7 @@ export function scheduleDocumentSendTool(ctx: AgentContext) {
             .from(schema.proposalDraft)
             .where(
               and(
-                eq(schema.proposalDraft.id, args.documentId),
+                eq(schema.proposalDraft.id, args.documentId.trim()),
                 eq(schema.proposalDraft.organizationId, ctx.organizationId)
               )
             )
@@ -94,7 +92,7 @@ export function scheduleDocumentSendTool(ctx: AgentContext) {
         finalDocumentId = doc.id
       } else if (args.documentType === "invoice") {
         let doc: { id: string; title: string } | undefined
-        if (isUuid) {
+        if (validUuid) {
           const [found] = await db
             .select({
               id: schema.invoiceDraft.id,
@@ -103,7 +101,7 @@ export function scheduleDocumentSendTool(ctx: AgentContext) {
             .from(schema.invoiceDraft)
             .where(
               and(
-                eq(schema.invoiceDraft.id, args.documentId),
+                eq(schema.invoiceDraft.id, args.documentId.trim()),
                 eq(schema.invoiceDraft.organizationId, ctx.organizationId)
               )
             )
