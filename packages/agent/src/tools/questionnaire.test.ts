@@ -69,7 +69,7 @@ describe("Questionnaire Tool Schemas & Catalog", () => {
     expect(parsed.questionsCount).toBe(3)
   })
 
-  test("askClarifyingQuestionsInput parses string array options flexibly", () => {
+  test("askClarifyingQuestionsInput parses string array options and normalizes to option objects", () => {
     const payloadWithStrings = {
       title: "Web Development Proposal Requirements",
       questions: [
@@ -84,9 +84,87 @@ describe("Questionnaire Tool Schemas & Catalog", () => {
 
     const parsed = askClarifyingQuestionsInput.parse(payloadWithStrings)
     expect(parsed.questions[0].options).toEqual([
-      "Next.js",
-      "Vite + React",
-      "SvelteKit",
+      { label: "Next.js", value: "Next.js" },
+      { label: "Vite + React", value: "Vite + React" },
+      { label: "SvelteKit", value: "SvelteKit" },
     ])
+  })
+
+  test("askClarifyingQuestionsInput tolerates LLM variations: multiple_choice type, missing title/id, prompt field, wrapped parameters", () => {
+    const llmDeviatedPayload = {
+      parameters: {
+        questions: [
+          {
+            prompt: "What is your budget?",
+            type: "multiple_choice",
+            choices: ["< $5,000", "$5,000 - $15,000", "> $15,000"],
+          },
+          {
+            title: "Project Scope",
+            type: "checkboxes",
+            items: [
+              { label: "Website", value: "web" },
+              { text: "Mobile App", value: "mobile" },
+            ],
+          },
+        ],
+      },
+    }
+
+    const parsed = askClarifyingQuestionsInput.parse(llmDeviatedPayload)
+    expect(parsed.title).toBe("Clarifying Questions")
+    expect(parsed.questions).toHaveLength(2)
+    expect(parsed.questions[0].type).toBe("single_choice")
+    expect(parsed.questions[0].question).toBe("What is your budget?")
+    expect(parsed.questions[0].id).toBeDefined()
+    expect(parsed.questions[0].options).toEqual([
+      { label: "< $5,000", value: "< $5,000" },
+      { label: "$5,000 - $15,000", value: "$5,000 - $15,000" },
+      { label: "> $15,000", value: "> $15,000" },
+    ])
+    expect(parsed.questions[1].type).toBe("multi_select")
+    expect(parsed.questions[1].question).toBe("Project Scope")
+  })
+
+  test("askClarifyingQuestionsInput parses stringified JSON questions payload from LLMs", () => {
+    const stringifiedQuestionsPayload = {
+      questions: JSON.stringify([
+        {
+          id: "scope",
+          type: "multi_select",
+          label: "What should the web development project include?",
+          options: [
+            {
+              label: "New marketing website",
+              value: "marketing_site",
+            },
+            { label: "Student/parent portal", value: "portal" },
+          ],
+        },
+        {
+          id: "budget",
+          type: "single_choice",
+          label: "What is the approximate budget range?",
+          options: [
+            { label: "Under $25,000", value: "under_25k" },
+            { label: "$25,000 - $50,000", value: "25k_50k" },
+          ],
+        },
+      ]),
+    }
+
+    const parsed = askClarifyingQuestionsInput.parse(
+      stringifiedQuestionsPayload
+    )
+    expect(parsed.title).toBe("Clarifying Questions")
+    expect(parsed.questions).toHaveLength(2)
+    expect(parsed.questions[0].id).toBe("scope")
+    expect(parsed.questions[0].question).toBe(
+      "What should the web development project include?"
+    )
+    expect(parsed.questions[0].type).toBe("multi_select")
+    expect(parsed.questions[0].options).toHaveLength(2)
+    expect(parsed.questions[1].id).toBe("budget")
+    expect(parsed.questions[1].type).toBe("single_choice")
   })
 })

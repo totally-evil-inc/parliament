@@ -262,7 +262,7 @@ export const TOOL_CATALOG = {
   // ——— External Dispatch & Integrations ———
   schedule_document_send: {
     description:
-      "Schedule a proposal or invoice to be sent automatically at a future timestamp via email with a public client gate link.",
+      "Schedule a proposal or invoice to be sent automatically at a future timestamp via email with a branded Parliament review card and client gate button.",
     input: toolInputSchemas.schedule_document_send,
     output: toolOutputSchemas.schedule_document_send,
     category: "mutate",
@@ -292,7 +292,7 @@ export const TOOL_CATALOG = {
   },
   send_proposal: {
     description:
-      "Finalize a proposal draft and email it to the recipient through Gmail with a public link.",
+      "Finalize a proposal draft and email a branded proposal review card to the client through Gmail with a secure 'View Proposal' button. The email template automatically includes document title, organization branding, and public review link. 'personalMessage' should be a brief professional client note (never dump internal URLs or markdown summaries).",
     input: toolInputSchemas.send_proposal,
     output: toolOutputSchemas.send_proposal,
     category: "mutate",
@@ -303,7 +303,7 @@ export const TOOL_CATALOG = {
   },
   send_invoice: {
     description:
-      "Finalize an invoice draft and email it to the recipient through Gmail with a public link.",
+      "Finalize an invoice draft and email a branded invoice card to the client through Gmail with a secure 'View Invoice' button. The email template automatically includes document title, organization branding, and payment link. 'personalMessage' should be a brief professional client note.",
     input: toolInputSchemas.send_invoice,
     output: toolOutputSchemas.send_invoice,
     category: "mutate",
@@ -314,7 +314,7 @@ export const TOOL_CATALOG = {
   },
   gmail_send_email: {
     description:
-      "Send a real email through the user's connected Gmail account. Approval required before dispatch.",
+      "Send a formatted email through the user's connected Gmail account. Converts markdown or HTML to clean email typography. Approval required before dispatch.",
     input: toolInputSchemas.gmail_send_email,
     output: toolOutputSchemas.gmail_send_email,
     category: "mutate",
