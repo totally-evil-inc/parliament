@@ -1,3 +1,5 @@
+import { escapeHtml, sanitizeEmailUrl } from "../escape-html"
+
 export interface InvitationEmailProps {
   url: string
   orgName: string
@@ -11,12 +13,17 @@ export function renderInvitationEmailHtml({
   inviterName,
   email,
 }: InvitationEmailProps): string {
+  const safeOrgName = escapeHtml(orgName)
+  const safeInviterName = escapeHtml(inviterName)
+  const safeEmail = escapeHtml(email)
+  const safeUrl = sanitizeEmailUrl(url)
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Join ${orgName} on Parliament</title>
+  <title>Join ${safeOrgName} on Parliament</title>
 </head>
 <body style="background-color: #030712; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px 10px; margin: 0; -webkit-font-smoothing: antialiased;">
   <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); max-width: 520px; margin: 0 auto; padding: 40px 32px;">
@@ -29,12 +36,12 @@ export function renderInvitationEmailHtml({
     <!-- Heading -->
     <h1 style="color: #f9fafb; font-size: 24px; font-weight: 700; line-height: 1.3; margin: 0 0 16px 0;">Join your team workspace</h1>
     <p style="color: #9ca3af; font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">
-      <strong style="color: #f3f4f6;">${inviterName}</strong> has invited you (<strong style="color: #f3f4f6;">${email}</strong>) to join the <strong style="color: #f3f4f6;">${orgName}</strong> workspace on Parliament.
+      <strong style="color: #f3f4f6;">${safeInviterName}</strong> has invited you (<strong style="color: #f3f4f6;">${safeEmail}</strong>) to join the <strong style="color: #f3f4f6;">${safeOrgName}</strong> workspace on Parliament.
     </p>
 
     <!-- Button -->
     <div style="text-align: center; margin: 32px 0;">
-      <a href="${url}" style="background-color: #6366f1; border-radius: 8px; color: #ffffff; display: inline-block; font-size: 14px; font-weight: 600; line-height: 48px; text-align: center; text-decoration: none; width: 100%; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);">Join Workspace</a>
+      <a href="${safeUrl}" style="background-color: #6366f1; border-radius: 8px; color: #ffffff; display: inline-block; font-size: 14px; font-weight: 600; line-height: 48px; text-align: center; text-decoration: none; width: 100%; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);">Join Workspace</a>
     </div>
 
     <p style="color: #9ca3af; font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">

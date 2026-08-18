@@ -1,3 +1,5 @@
+import { escapeHtml, sanitizeEmailUrl } from "../escape-html"
+
 export interface MagicLinkEmailProps {
   url: string
   email: string
@@ -7,6 +9,9 @@ export function renderMagicLinkEmailHtml({
   url,
   email,
 }: MagicLinkEmailProps): string {
+  const safeEmail = escapeHtml(email)
+  const safeUrl = sanitizeEmailUrl(url)
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,12 +30,12 @@ export function renderMagicLinkEmailHtml({
     <!-- Heading -->
     <h1 style="color: #f9fafb; font-size: 24px; font-weight: 700; line-height: 1.3; margin: 0 0 16px 0;">Sign in to your command center</h1>
     <p style="color: #9ca3af; font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">
-      We received a request to sign in to Parliament for <strong style="color: #f3f4f6;">${email}</strong>. Click the button below to securely authenticate.
+      We received a request to sign in to Parliament for <strong style="color: #f3f4f6;">${safeEmail}</strong>. Click the button below to securely authenticate.
     </p>
 
     <!-- Button -->
     <div style="text-align: center; margin: 32px 0;">
-      <a href="${url}" style="background-color: #6366f1; border-radius: 8px; color: #ffffff; display: inline-block; font-size: 14px; font-weight: 600; line-height: 48px; text-align: center; text-decoration: none; width: 100%; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);">Sign In Securely</a>
+      <a href="${safeUrl}" style="background-color: #6366f1; border-radius: 8px; color: #ffffff; display: inline-block; font-size: 14px; font-weight: 600; line-height: 48px; text-align: center; text-decoration: none; width: 100%; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);">Sign In Securely</a>
     </div>
 
     <p style="color: #9ca3af; font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">

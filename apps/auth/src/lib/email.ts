@@ -1,5 +1,6 @@
 import { logger } from "@workspace/logger"
 import nodemailer from "nodemailer"
+import { escapeHtml, sanitizeEmailUrl } from "./email/escape-html"
 import { formatMarkdownToEmailHtml } from "./email/format-markdown"
 import {
   type DocumentDispatchEmailProps,
@@ -39,7 +40,15 @@ export async function renderEmail(
     )
   }
 
-  return `<p>${props.message || props.url || ""}</p>`
+  const safeMessage = escapeHtml(props?.message || "")
+  const safeUrl = sanitizeEmailUrl(props?.url || "")
+  if (safeMessage && safeUrl && safeUrl !== "#") {
+    return `<p>${safeMessage}</p><p><a href="${safeUrl}">${safeUrl}</a></p>`
+  }
+  if (safeUrl && safeUrl !== "#") {
+    return `<p><a href="${safeUrl}">${safeUrl}</a></p>`
+  }
+  return `<p>${safeMessage}</p>`
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
