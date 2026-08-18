@@ -95,33 +95,19 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
   let targetApprovalId = id
 
   try {
-    const validUuid = isUuid(id)
-
-    if (!validUuid) {
-      // If client passed toolCallId (e.g. call-...) or non-UUID, locate the most recent pending approval
-      const [pendingApproval] = await db
-        .select({ id: schema.chatActionApproval.id })
-        .from(schema.chatActionApproval)
-        .where(
-          and(
-            eq(schema.chatActionApproval.organizationId, ctx.organizationId),
-            eq(schema.chatActionApproval.status, "pending")
-          )
-        )
-        .orderBy(desc(schema.chatActionApproval.createdAt))
-        .limit(1)
-
-      if (pendingApproval) {
-        targetApprovalId = pendingApproval.id
-      } else {
-        return c.json(
-          {
-            error: { code: "not_found", message: "Action approval not found" },
+    if (!isUuid(id)) {
+      return c.json(
+        {
+          error: {
+            code: "not_found",
+            message: `Action approval "${id}" was not found`,
           },
-          404
-        )
-      }
+        },
+        404
+      )
     }
+
+    targetApprovalId = id.trim()
 
     // 1. Atomically lock and transition status from pending to approved/rejected
     const nextStatus = approved ? "approved" : "rejected"

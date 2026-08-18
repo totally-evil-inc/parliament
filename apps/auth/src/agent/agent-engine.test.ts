@@ -178,6 +178,42 @@ describe("AgentEngine FSM & ContextGovernor", () => {
       )
     )
     expect(secondRes.status).toBe(409)
+
+    // 4. Non-UUID action ID should safely return 404 Not Found without crashing or org hijacking
+    const nonUuidRes = await app.fetch(
+      new Request(
+        "http://localhost:4000/api/agent/actions/call_12345/resolve",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "kernel@test.local",
+            "x-test-org-id": orgId,
+            "x-test-user-id": userId,
+          },
+          body: JSON.stringify({ approved: true }),
+        }
+      )
+    )
+    expect(nonUuidRes.status).toBe(404)
+
+    // 5. Non-existent random UUID should return 404 Not Found
+    const missingUuidRes = await app.fetch(
+      new Request(
+        `http://localhost:4000/api/agent/actions/${crypto.randomUUID()}/resolve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "kernel@test.local",
+            "x-test-org-id": orgId,
+            "x-test-user-id": userId,
+          },
+          body: JSON.stringify({ approved: true }),
+        }
+      )
+    )
+    expect(missingUuidRes.status).toBe(404)
   })
 
   test("approval-gated CRM tools require approval without the bypass flag", async () => {
