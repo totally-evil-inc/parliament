@@ -349,9 +349,10 @@ export const listIntegrationsOutput = z.object({
   accounts: z.array(integrationAccount),
 })
 
-function normalizeIsoDateTime(val: unknown): string {
-  if (typeof val !== "string") return new Date().toISOString()
+function normalizeIsoDateTime(val: unknown): string | undefined {
+  if (typeof val !== "string") return undefined
   const trimmed = val.trim()
+  if (!trimmed) return undefined
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(trimmed)) {
     return trimmed.replace(" ", "T")
   }
@@ -1965,8 +1966,7 @@ export const scheduleDocumentSendInput = z.preprocess((val) => {
       inner.scheduledAt ||
       inner.dateTime ||
       inner.date ||
-      inner.time ||
-      ""
+      inner.time
     const scheduledFor = normalizeIsoDateTime(rawScheduledFor)
     const subject = inner.subject || inner.title
     const personalMessage = inner.personalMessage || inner.message || inner.body
