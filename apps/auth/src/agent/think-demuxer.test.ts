@@ -4,7 +4,10 @@ import { ThinkTagDemuxer } from "./think-demuxer"
 describe("ThinkTagDemuxer", () => {
   it("processes standard text without think tags without modification", () => {
     const demuxer = new ThinkTagDemuxer()
-    const chunks = ["I am thinking about your request. ", "Here is the summary."]
+    const chunks = [
+      "I am thinking about your request. ",
+      "Here is the summary.",
+    ]
     const deltas = []
 
     for (const chunk of chunks) {
@@ -103,9 +106,7 @@ describe("ThinkTagDemuxer", () => {
       "<think>Step 1: Check invoices\nStep 2: Respond</think>You have 2 pending invoices."
     )
     expect(result.content).toBe("You have 2 pending invoices.")
-    expect(result.thinking).toBe(
-      "Step 1: Check invoices\nStep 2: Respond"
-    )
+    expect(result.thinking).toBe("Step 1: Check invoices\nStep 2: Respond")
   })
 
   it("handles unclosed trailing think tags safely on stream flush", () => {

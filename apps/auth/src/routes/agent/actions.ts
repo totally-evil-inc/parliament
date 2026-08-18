@@ -153,7 +153,10 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
         )
       }
 
-      if (existing.status === "pending" && new Date(existing.expiresAt) <= now) {
+      if (
+        existing.status === "pending" &&
+        new Date(existing.expiresAt) <= now
+      ) {
         // Transition to expired
         await db
           .update(schema.chatActionApproval)
@@ -174,7 +177,10 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
       return c.json(
         {
           error: {
-            code: existing.status === "expired" ? "action_expired" : "already_resolved",
+            code:
+              existing.status === "expired"
+                ? "action_expired"
+                : "already_resolved",
             message: `This action has already been ${existing.status}.`,
           },
         },
