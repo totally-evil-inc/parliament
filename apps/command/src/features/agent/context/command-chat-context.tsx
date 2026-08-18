@@ -345,12 +345,25 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                     }
 
                     case "tool:result": {
+                      const resObj = event.result as any
+                      const isRejected =
+                        resObj?.status === "rejected" ||
+                        resObj?.status === "denied"
+                      const isSkipped = resObj?.status === "skipped"
+                      const derivedStatus = event.isError
+                        ? "error"
+                        : isRejected
+                          ? "rejected"
+                          : isSkipped
+                            ? "skipped"
+                            : "completed"
+
                       const updatedTools = (msg.toolCalls ?? []).map((tc) => {
                         if (tc.id === event.callId) {
                           return {
                             ...tc,
                             result: event.result,
-                            status: event.isError ? "error" : "completed",
+                            status: derivedStatus,
                             errorText: event.isError
                               ? String(event.result)
                               : undefined,
@@ -563,12 +576,38 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                   const existing = toolCalls.find(
                     (tc) => tc.id === p.toolCallId
                   )
+                  const resObj = (p.result ?? p.output) as any
+                  const isRejected =
+                    resObj?.status === "rejected" ||
+                    resObj?.status === "denied" ||
+                    p.status === "rejected" ||
+                    p.status === "denied"
+                  const isSkipped =
+                    resObj?.status === "skipped" || p.status === "skipped"
+                  const derivedStatus = p.isError
+                    ? "error"
+                    : isRejected
+                      ? "rejected"
+                      : isSkipped
+                        ? "skipped"
+                        : "completed"
+
                   if (existing) {
                     existing.result = p.result ?? p.output
-                    existing.status = p.isError ? "error" : "completed"
+                    existing.status = derivedStatus
                     if (p.isError) {
                       existing.errorText = String(p.result ?? p.output ?? "")
                     }
+                  } else {
+                    toolCalls.push({
+                      id: String(p.toolCallId ?? "tool"),
+                      name: String(p.toolName ?? "tool"),
+                      result: p.result ?? p.output,
+                      status: derivedStatus,
+                      errorText: p.isError
+                        ? String(p.result ?? p.output ?? "")
+                        : undefined,
+                    })
                   }
                 } else if (p?.type === "approval-requested") {
                   const resolvedApprovalId = String(
