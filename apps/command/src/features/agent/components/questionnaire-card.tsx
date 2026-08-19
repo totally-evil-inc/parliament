@@ -39,7 +39,7 @@ export interface QuestionnaireCardProps {
   onSubmitted?: (formattedSummary: string) => void
 }
 
-function normalizeQuestionItem(
+export function normalizeQuestionItem(
   q: QuestionItem | Record<string, unknown>,
   idx: number
 ): QuestionItem {
@@ -51,28 +51,36 @@ function normalizeQuestionItem(
   )
   const question = String(
     q.question ||
+      (q as Record<string, unknown>).label ||
       (q as Record<string, unknown>).title ||
       (q as Record<string, unknown>).prompt ||
+      (q as Record<string, unknown>).text ||
+      (q as Record<string, unknown>).header ||
       `Question ${idx + 1}`
   )
-  const type =
-    q.type === "single_choice" ||
-    q.type === "multi_select" ||
-    q.type === "number" ||
-    q.type === "text"
-      ? q.type
-      : "single_choice"
 
-  const rawOptions = Array.isArray(q.options) ? q.options : []
+  const rawOptionsCandidate =
+    q.options ??
+    (q as Record<string, unknown>).choices ??
+    (q as Record<string, unknown>).items ??
+    (q as Record<string, unknown>).values
+  const rawOptions = Array.isArray(rawOptionsCandidate)
+    ? rawOptionsCandidate
+    : []
   const options: QuestionOptionItem[] = rawOptions.map((opt: any, oIdx) => {
     if (typeof opt === "string") {
       return { label: opt, value: opt }
     }
     if (opt && typeof opt === "object") {
       const label = String(
-        opt.label || opt.title || opt.name || `Option ${oIdx + 1}`
+        opt.label ||
+          opt.title ||
+          opt.name ||
+          opt.text ||
+          opt.value ||
+          `Option ${oIdx + 1}`
       )
-      const value = String(opt.value || opt.id || opt.key || label)
+      const value = String(opt.value ?? opt.id ?? opt.key ?? label)
       const description =
         typeof opt.description === "string" ? opt.description : undefined
       return { label, value, description }
@@ -80,12 +88,50 @@ function normalizeQuestionItem(
     return { label: `Option ${oIdx + 1}`, value: `option_${oIdx + 1}` }
   })
 
+  let type: QuestionItem["type"] = "single_choice"
+  const rawType = String(q.type || "").toLowerCase()
+  if (rawType.includes("multi") || rawType.includes("check")) {
+    type = "multi_select"
+  } else if (
+    rawType.includes("text") ||
+    rawType.includes("area") ||
+    rawType.includes("str") ||
+    rawType.includes("input")
+  ) {
+    type = "text"
+  } else if (
+    rawType.includes("num") ||
+    rawType.includes("int") ||
+    rawType.includes("amount") ||
+    rawType.includes("count") ||
+    rawType.includes("price")
+  ) {
+    type = "number"
+  } else if (
+    rawType.includes("single") ||
+    rawType.includes("choice") ||
+    rawType.includes("radio") ||
+    rawType.includes("select") ||
+    rawType.includes("option")
+  ) {
+    type = "single_choice"
+  } else if (options.length > 0) {
+    type = "single_choice"
+  } else {
+    type = "text"
+  }
+
   return {
     id,
     question,
     type,
     options: options.length > 0 ? options : undefined,
-    placeholder: typeof q.placeholder === "string" ? q.placeholder : undefined,
+    placeholder:
+      typeof q.placeholder === "string"
+        ? q.placeholder
+        : typeof (q as Record<string, unknown>).hint === "string"
+          ? ((q as Record<string, unknown>).hint as string)
+          : undefined,
     defaultValue: q.defaultValue as any,
     required: q.required !== false,
   }
@@ -98,7 +144,7 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
   const { sendPrompt, isLoading } = useCommandChatContext()
 
   const parsedArgs = useMemo(() => {
-    if (!args) {
+    if (!args || typeof args !== "object") {
       return {
         title: "Clarifying Questions",
         subtitle: undefined as string | undefined,
@@ -106,23 +152,50 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
         submitButtonText: "Submit Answers",
       }
     }
-    if (typeof args === "object") {
-      return {
-        title:
-          typeof args.title === "string" ? args.title : "Clarifying Questions",
-        subtitle: typeof args.subtitle === "string" ? args.subtitle : undefined,
-        questions: Array.isArray(args.questions) ? args.questions : [],
-        submitButtonText:
-          typeof args.submitButtonText === "string"
-            ? args.submitButtonText
-            : "Submit Answers",
+
+    const inner = ((args as Record<string, unknown>).parameters ||
+      (args as Record<string, unknown>).input ||
+      (args as Record<string, unknown>).args ||
+      (args as Record<string, unknown>).data ||
+      args) as Record<string, unknown>
+
+    const title =
+      typeof inner.title === "string"
+        ? inner.title
+        : typeof inner.heading === "string"
+          ? inner.heading
+          : typeof inner.topic === "string"
+            ? inner.topic
+            : "Clarifying Questions"
+
+    const subtitle =
+      typeof inner.subtitle === "string" ? inner.subtitle : undefined
+
+    let rawQuestionsCandidate =
+      inner.questions ?? inner.items ?? inner.inquiries ?? inner.fields
+
+    if (typeof rawQuestionsCandidate === "string") {
+      try {
+        rawQuestionsCandidate = JSON.parse(rawQuestionsCandidate)
+      } catch {
+        // keep as is
       }
     }
+
+    const questions = Array.isArray(rawQuestionsCandidate)
+      ? rawQuestionsCandidate
+      : []
+
+    const submitButtonText =
+      typeof inner.submitButtonText === "string"
+        ? inner.submitButtonText
+        : "Submit Answers"
+
     return {
-      title: "Clarifying Questions",
-      subtitle: undefined as string | undefined,
-      questions: [],
-      submitButtonText: "Submit Answers",
+      title,
+      subtitle,
+      questions,
+      submitButtonText,
     }
   }, [args])
 
@@ -253,7 +326,7 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
         <div className="mt-3 space-y-2">
           {submittedSummary.map((item, idx) => (
             <div
-              key={idx}
+              key={item.question || `summary_${idx}`}
               className="flex flex-col gap-0.5 rounded-lg border border-border/50 bg-background/60 p-2 text-xs"
             >
               <span className="font-medium text-[11px] text-muted-foreground">
