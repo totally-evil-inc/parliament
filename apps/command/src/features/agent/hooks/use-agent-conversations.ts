@@ -95,18 +95,20 @@ export function useConversations() {
 }
 
 /**
- * Fetch and defensively parse full details for a single thread.
+ * Query options factory for single thread conversation details.
+ * Shared across router loader prefetch and in-component hydration to prevent duplicate fetches.
  */
-export function useConversationDetail(threadId?: string) {
-  return useQuery<ConversationDetailResponse>({
-    queryKey: ["agent", "conversations", threadId],
-    queryFn: async () => {
-      if (!threadId || typeof threadId !== "string" || !threadId.trim()) {
+export function conversationDetailQueryOptions(threadId: string) {
+  const cleanId = typeof threadId === "string" ? threadId.trim() : ""
+  return {
+    queryKey: ["agent", "conversations", cleanId] as const,
+    queryFn: async (): Promise<ConversationDetailResponse> => {
+      if (!cleanId) {
         throw new Error("Invalid threadId provided")
       }
       try {
         const res = await fetch(
-          `${AUTH_SERVER_URL}/api/agent/conversations/${encodeURIComponent(threadId.trim())}`,
+          `${AUTH_SERVER_URL}/api/agent/conversations/${encodeURIComponent(cleanId)}`,
           {
             credentials: "include",
           }
@@ -114,7 +116,8 @@ export function useConversationDetail(threadId?: string) {
         if (!res.ok) {
           const errBody = await res.json().catch(() => null)
           throw new Error(
-            errBody?.error ||
+            errBody?.error?.message ||
+              errBody?.error ||
               `Failed to fetch conversation details (${res.status})`
           )
         }
@@ -136,9 +139,19 @@ export function useConversationDetail(threadId?: string) {
         throw new Error(message)
       }
     },
+    staleTime: 60_000,
+  }
+}
+
+/**
+ * Fetch and defensively parse full details for a single thread.
+ */
+export function useConversationDetail(threadId?: string) {
+  const options = conversationDetailQueryOptions(threadId || "")
+  return useQuery<ConversationDetailResponse>({
+    ...options,
     enabled: Boolean(threadId && threadId.trim().length > 0),
     retry: false,
-    staleTime: 10_000,
   })
 }
 

@@ -12,6 +12,7 @@ import {
   useState,
 } from "react"
 import { useAIModels } from "../hooks/use-ai-models"
+import { conversationDetailQueryOptions } from "../hooks/use-agent-conversations"
 import { extractToolErrorText } from "../normalization"
 import { invalidateAgentQueries as invalidateQueriesHelper } from "../query-invalidation"
 
@@ -612,26 +613,24 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
     setChatError(null)
   }, [])
 
-  const loadThread = useCallback(async (id: string) => {
-    if (threadIdRef.current === id && messagesRef.current.length > 0) return
+  const loadThread = useCallback(
+    async (id: string) => {
+      const cleanId = typeof id === "string" ? id.trim() : ""
+      if (!cleanId) return
+      if (threadIdRef.current === cleanId && messagesRef.current.length > 0)
+        return
 
-    setIsHydrating(true)
-    setThreadId(id)
-    threadIdRef.current = id
+      setIsHydrating(true)
+      setThreadId(cleanId)
+      threadIdRef.current = cleanId
 
-    try {
-      const res = await fetch(
-        `${AUTH_SERVER_URL}/api/agent/conversations/${id}`,
-        {
-          credentials: "include",
+      try {
+        const data = await queryClient.ensureQueryData(
+          conversationDetailQueryOptions(cleanId)
+        )
+        if (data.conversation?.title) {
+          setActiveTitle(data.conversation.title)
         }
-      )
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-      const data = await res.json()
-      if (data.conversation?.title) {
-        setActiveTitle(data.conversation.title)
-      }
 
       if (Array.isArray(data.messages)) {
         const loaded: ChatMessage[] = data.messages.map((m: any) => {
@@ -744,7 +743,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setIsHydrating(false)
     }
-  }, [])
+  }, [queryClient])
 
   const resetNewChat = useCallback(() => {
     if (isLoadingRef.current) return
