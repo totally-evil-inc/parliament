@@ -9,8 +9,7 @@ import { Button } from "@workspace/ui/components/button"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
-import type React from "react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react"
 import { HeaderPortal } from "@/layouts/header-portal"
 import { authClient } from "@/lib/auth-client"
 import { useCommandChatContext } from "../context/command-chat-context"
@@ -21,8 +20,13 @@ import {
 import { extractOpenUI } from "../openui/parser"
 import { ChatInput } from "./chat-input"
 import { MessageErrorCard, type ToolCallItem } from "./elements"
-import { HistoryPanel } from "./history-panel"
 import { MessageBubble } from "./message-bubble"
+
+// Lazy-load history slide-over panel to keep the primary route bundle lean (bundle-dynamic-imports)
+const LazyHistoryPanel = lazy(async () => {
+  const mod = await import("./history-panel")
+  return { default: mod.HistoryPanel }
+})
 
 export interface ExtractedMessage {
   content: string
@@ -464,10 +468,12 @@ export const CommandCenterPage: React.FC = () => {
 
       {/* History Slide-over */}
       {historyOpen ? (
-        <HistoryPanel
-          currentThreadId={threadId}
-          onClose={() => setHistoryOpen(false)}
-        />
+        <Suspense fallback={null}>
+          <LazyHistoryPanel
+            currentThreadId={threadId}
+            onClose={() => setHistoryOpen(false)}
+          />
+        </Suspense>
       ) : null}
     </div>
   )
