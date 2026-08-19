@@ -84,11 +84,12 @@ export type DocumentBlockDefinition =
 export type DocumentToolbarAction = {
   id: string
   label: string
-  icon: EditorCommand["icon"]
+  icon?: EditorCommand["icon"]
   blockId?: string
   command?: (editor: Editor) => void
   togglesSidebar?: boolean
   hostAction?: boolean
+  variant?: "default" | "ghost" | "outline" | "secondary"
 }
 
 export type DocumentDefinition = {
