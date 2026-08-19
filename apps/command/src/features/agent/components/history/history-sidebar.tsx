@@ -77,14 +77,14 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
         data-state={isOpen ? "open" : "closed"}
         aria-label="Conversation History"
         className={cn(
-          "dark relative z-20 flex h-svh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width,min-width,max-width,opacity] duration-200 ease-in-out",
+          "dark relative z-20 flex h-svh shrink-0 flex-col bg-transparent text-sidebar-foreground transition-[width,min-width,max-width,padding,opacity] duration-200 ease-in-out",
           isOpen
-            ? "w-72 min-w-[18rem] max-w-[18rem] opacity-100 border-sidebar-border/80 border-r"
+            ? "w-72 min-w-[18rem] max-w-[18rem] opacity-100 md:p-2 md:pl-0"
             : "w-0 min-w-0 max-w-0 border-none p-0 opacity-0 overflow-hidden pointer-events-none",
           className
         )}
       >
-        <div className="flex h-full w-72 flex-col overflow-hidden">
+        <div className="flex h-full w-full flex-col overflow-hidden rounded-lg bg-sidebar ring-1 ring-sidebar-border shadow-sm">
           {/* Top Header & Search */}
           <HistoryHeader
             search={search}
