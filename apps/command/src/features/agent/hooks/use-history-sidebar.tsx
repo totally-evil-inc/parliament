@@ -1,3 +1,4 @@
+import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
 import type React from "react"
 import {
   createContext,
@@ -13,6 +14,9 @@ const HISTORY_SIDEBAR_STORAGE_KEY = "parliament_history_sidebar_open"
 interface HistorySidebarContextValue {
   isOpen: boolean
   setIsOpen: (value: boolean | ((prev: boolean) => boolean)) => void
+  openMobile: boolean
+  setOpenMobile: (value: boolean | ((prev: boolean) => boolean)) => void
+  isMobile: boolean
   toggle: () => void
   openSidebar: () => void
   closeSidebar: () => void
@@ -25,11 +29,16 @@ const HistorySidebarContext = createContext<HistorySidebarContextValue | null>(
 export function HistorySidebarProvider({
   children,
   defaultOpen = true,
+  defaultOpenMobile = false,
 }: {
   children?: React.ReactNode
   defaultOpen?: boolean
+  defaultOpenMobile?: boolean
 }) {
-  const [isOpen, setIsOpenState] = useState<boolean>(() => {
+  const isMobile = useIsMobile()
+  const [openMobile, setOpenMobile] = useState<boolean>(defaultOpenMobile)
+
+  const [openDesktop, setOpenDesktopState] = useState<boolean>(() => {
     if (typeof window === "undefined") return defaultOpen
     try {
       const stored = localStorage.getItem(HISTORY_SIDEBAR_STORAGE_KEY)
@@ -42,9 +51,9 @@ export function HistorySidebarProvider({
     }
   })
 
-  const setIsOpen = useCallback(
+  const setOpenDesktop = useCallback(
     (value: boolean | ((prev: boolean) => boolean)) => {
-      setIsOpenState((prev) => {
+      setOpenDesktopState((prev) => {
         const next = typeof value === "function" ? value(prev) : value
         try {
           localStorage.setItem(HISTORY_SIDEBAR_STORAGE_KEY, String(next))
@@ -57,17 +66,43 @@ export function HistorySidebarProvider({
     []
   )
 
+  // Effective isOpen: on mobile it reflects openMobile (default false), on desktop it reflects openDesktop
+  const isOpen = isMobile ? openMobile : openDesktop
+
+  const setIsOpen = useCallback(
+    (value: boolean | ((prev: boolean) => boolean)) => {
+      if (isMobile) {
+        setOpenMobile(value)
+      } else {
+        setOpenDesktop(value)
+      }
+    },
+    [isMobile, setOpenDesktop]
+  )
+
   const toggle = useCallback(() => {
-    setIsOpen((prev) => !prev)
-  }, [setIsOpen])
+    if (isMobile) {
+      setOpenMobile((prev) => !prev)
+    } else {
+      setOpenDesktop((prev) => !prev)
+    }
+  }, [isMobile, setOpenDesktop])
 
   const openSidebar = useCallback(() => {
-    setIsOpen(true)
-  }, [setIsOpen])
+    if (isMobile) {
+      setOpenMobile(true)
+    } else {
+      setOpenDesktop(true)
+    }
+  }, [isMobile, setOpenDesktop])
 
   const closeSidebar = useCallback(() => {
-    setIsOpen(false)
-  }, [setIsOpen])
+    if (isMobile) {
+      setOpenMobile(false)
+    } else {
+      setOpenDesktop(false)
+    }
+  }, [isMobile, setOpenDesktop])
 
   // Global keyboard shortcut: Cmd+Shift+H (Mac) / Ctrl+Shift+H (Windows/Linux)
   useEffect(() => {
@@ -90,11 +125,14 @@ export function HistorySidebarProvider({
     () => ({
       isOpen,
       setIsOpen,
+      openMobile,
+      setOpenMobile,
+      isMobile,
       toggle,
       openSidebar,
       closeSidebar,
     }),
-    [isOpen, setIsOpen, toggle, openSidebar, closeSidebar]
+    [isOpen, setIsOpen, openMobile, isMobile, toggle, openSidebar, closeSidebar]
   )
 
   return (
