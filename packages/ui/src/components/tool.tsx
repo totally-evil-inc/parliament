@@ -244,7 +244,10 @@ export function ToolInput({ input, className, ...props }: ToolInputProps) {
       <h4 className="font-medium font-mono text-[10px] text-muted-foreground uppercase tracking-wide">
         Parameters
       </h4>
-      <ScrollArea className="max-h-56 max-w-full rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px]">
+      <ScrollArea
+        orientation="both"
+        className="max-h-56 max-w-full rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px]"
+      >
         <pre className="whitespace-pre-wrap break-words text-foreground/90 leading-relaxed">
           {jsonString}
         </pre>
@@ -308,27 +311,43 @@ export function ToolOutput({
       </div>
 
       {errorText ? (
-        <ScrollArea className="max-h-64 max-w-full break-words rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 font-mono text-[11px] text-destructive">
-          <pre className="whitespace-pre-wrap font-mono leading-relaxed">
+        <ScrollArea
+          orientation="both"
+          className="max-h-64 max-w-full rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 font-mono text-[11px] text-destructive"
+        >
+          <pre className="whitespace-pre-wrap break-words font-mono leading-relaxed">
             {errorText}
           </pre>
         </ScrollArea>
       ) : output !== undefined ? (
         typeof output === "string" ? (
-          <ScrollArea className="max-h-80 max-w-full whitespace-pre-wrap break-words rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px] text-foreground/90">
-            {output}
+          <ScrollArea
+            orientation="both"
+            className="max-h-80 max-w-full rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px] text-foreground/90"
+          >
+            <pre className="whitespace-pre-wrap break-words leading-relaxed">
+              {output}
+            </pre>
           </ScrollArea>
         ) : typeof output === "object" &&
           output !== null &&
           !isValidElement(output) ? (
-          <ScrollArea className="max-h-80 max-w-full rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px]">
+          <ScrollArea
+            orientation="both"
+            className="max-h-80 max-w-full rounded-lg border border-border/80 bg-background/80 p-2.5 font-mono text-[11px]"
+          >
             <pre className="whitespace-pre-wrap break-words text-foreground/90 leading-relaxed">
               {JSON.stringify(output, null, 2)}
             </pre>
           </ScrollArea>
         ) : (
-          <ScrollArea className="max-h-80 max-w-full break-words rounded-lg border border-border/80 bg-background/80 p-2.5 text-[11px] text-foreground/90">
-            {output as React.ReactNode}
+          <ScrollArea
+            orientation="both"
+            className="max-h-80 max-w-full rounded-lg border border-border/80 bg-background/80 p-2.5 text-[11px] text-foreground/90"
+          >
+            <div className="break-words">
+              {output as React.ReactNode}
+            </div>
           </ScrollArea>
         )
       ) : (
