@@ -13,6 +13,7 @@ import {
 } from "react"
 import { useAIModels } from "../hooks/use-ai-models"
 import { extractToolErrorText } from "../normalization"
+import { invalidateAgentQueries as invalidateQueriesHelper } from "../query-invalidation"
 
 const AUTH_SERVER_URL =
   import.meta.env.VITE_AUTH_SERVER_URL ||
@@ -265,43 +266,11 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
    */
   const invalidateAgentQueries = useCallback(
     (executedToolNames?: Set<string>) => {
-      queryClient.invalidateQueries({ queryKey: ["agent", "conversations"] })
-      if (threadIdRef.current) {
-        queryClient.invalidateQueries({
-          queryKey: ["agent", "conversations", threadIdRef.current],
-        })
-      }
-
-      if (!executedToolNames || executedToolNames.size === 0) {
-        queryClient.invalidateQueries({ queryKey: ["proposals"] })
-        queryClient.invalidateQueries({ queryKey: ["invoices"] })
-        queryClient.invalidateQueries({ queryKey: ["scheduled-dispatches"] })
-        queryClient.invalidateQueries({ queryKey: ["deals"] })
-        queryClient.invalidateQueries({ queryKey: ["customers"] })
-        queryClient.invalidateQueries({ queryKey: ["deal-analytics"] })
-        queryClient.invalidateQueries({ queryKey: ["customer-analytics"] })
-        return
-      }
-
-      for (const tool of executedToolNames) {
-        const lower = tool.toLowerCase()
-        if (lower.includes("proposal")) {
-          queryClient.invalidateQueries({ queryKey: ["proposals"] })
-          queryClient.invalidateQueries({ queryKey: ["deals"] })
-          queryClient.invalidateQueries({ queryKey: ["deal-analytics"] })
-        }
-        if (lower.includes("invoice") || lower.includes("billing")) {
-          queryClient.invalidateQueries({ queryKey: ["invoices"] })
-          queryClient.invalidateQueries({ queryKey: ["customer-analytics"] })
-        }
-        if (lower.includes("schedule") || lower.includes("dispatch")) {
-          queryClient.invalidateQueries({ queryKey: ["scheduled-dispatches"] })
-        }
-        if (lower.includes("customer") || lower.includes("contact")) {
-          queryClient.invalidateQueries({ queryKey: ["customers"] })
-          queryClient.invalidateQueries({ queryKey: ["customer-analytics"] })
-        }
-      }
+      invalidateQueriesHelper({
+        queryClient,
+        executedToolNames,
+        threadId: threadIdRef.current,
+      })
     },
     [queryClient]
   )
@@ -335,6 +304,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       return await res.json()
     },
     onSuccess: (data, variables) => {
+      let resolvedToolName: string | undefined = data?.toolName
       setMessages((prev) =>
         prev.map((msg) => {
           if (!msg.toolCalls) return msg
@@ -345,6 +315,9 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                 tc.approvalId === variables.approvalId ||
                 tc.id === variables.approvalId
               ) {
+                if (!resolvedToolName && tc.name) {
+                  resolvedToolName = tc.name
+                }
                 return {
                   ...tc,
                   status: variables.approved ? "approved" : "rejected",
@@ -357,13 +330,19 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         })
       )
-      invalidateAgentQueries()
+      queryClient.invalidateQueries({ queryKey: ["agent-approvals"] })
+      if (variables.approved && resolvedToolName) {
+        invalidateAgentQueries(new Set([resolvedToolName]))
+      } else {
+        invalidateAgentQueries()
+      }
     },
     onError: (err: Error) => {
       setChatError({
         code: (err as any).code || "approval_failed",
         message: err.message || "Failed to resolve action approval",
       })
+      queryClient.invalidateQueries({ queryKey: ["agent-approvals"] })
       invalidateAgentQueries()
     },
   })
