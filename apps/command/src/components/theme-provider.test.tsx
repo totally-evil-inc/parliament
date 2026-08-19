@@ -59,11 +59,7 @@ function TestConsumer() {
       >
         Set Palette Indigo
       </button>
-      <button
-        type="button"
-        data-testid="toggle-mode"
-        onClick={toggleLightDark}
-      >
+      <button type="button" data-testid="toggle-mode" onClick={toggleLightDark}>
         Toggle Mode
       </button>
     </div>

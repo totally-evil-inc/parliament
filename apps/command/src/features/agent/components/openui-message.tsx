@@ -1,8 +1,8 @@
 import React, {
   Component,
+  lazy,
   type ReactNode,
   Suspense,
-  lazy,
   useState,
 } from "react"
 import { library } from "../openui/library"

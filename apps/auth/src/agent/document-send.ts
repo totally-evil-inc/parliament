@@ -1,7 +1,6 @@
 import { randomBytes } from "node:crypto"
 import { isUuid } from "@workspace/agent"
 import { and, db, eq, schema, sql } from "@workspace/database"
-import { escapeLikePattern } from "./tools/sql-utils"
 import {
   calculateInvoicePricing,
   calculateProposalPricing,
@@ -16,6 +15,7 @@ import {
   safeParseInvoiceDraft,
   safeParseProposalDraft,
 } from "@workspace/document/schema"
+import { escapeLikePattern } from "./tools/sql-utils"
 
 export interface FinalizeSendResult {
   snapshotId: string

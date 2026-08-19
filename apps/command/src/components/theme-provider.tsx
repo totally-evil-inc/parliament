@@ -27,8 +27,8 @@ import type {
   ThemePreference,
 } from "@/lib/themes/types"
 
-export { APP_THEME_STORAGE_KEY, APP_PALETTE_STORAGE_KEY }
-export type { ThemePreference, ResolvedTheme, ThemePalette }
+export type { ResolvedTheme, ThemePalette, ThemePreference }
+export { APP_PALETTE_STORAGE_KEY, APP_THEME_STORAGE_KEY }
 
 export type ThemeContextValue = {
   /** User's configured mode preference: 'light', 'dark', or 'system' */

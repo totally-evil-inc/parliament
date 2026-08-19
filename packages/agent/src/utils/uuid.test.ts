@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { UUID_REGEX, assertUuid, isUuid } from "./uuid"
+import { assertUuid, isUuid, UUID_REGEX } from "./uuid"
 
 describe("UUID utilities", () => {
   it("validates UUIDv4 and UUIDv7 correctly", () => {

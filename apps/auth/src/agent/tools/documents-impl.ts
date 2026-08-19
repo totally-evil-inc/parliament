@@ -1,6 +1,5 @@
 import { isUuid } from "@workspace/agent"
 import { and, count, db, desc, eq, schema, sql } from "@workspace/database"
-import { escapeLikePattern } from "./sql-utils"
 import {
   calculateInvoicePricing,
   calculateProposalPricing,
@@ -10,6 +9,7 @@ import {
   safeParseProposalDraft,
 } from "@workspace/document/schema"
 import type { AgentContext } from "../tool-ctx"
+import { escapeLikePattern } from "./sql-utils"
 
 export async function listProposalsTool(
   _args: Record<string, never>,

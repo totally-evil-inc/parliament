@@ -12,13 +12,12 @@ import {
 import { and, db, eq, schema, sql } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
-import { escapeLikePattern } from "./sql-utils"
-
 import {
   customerAnalyticsTool as implCustomerAnalytics,
   customerDetailsTool as implCustomerDetails,
   listCustomersTool as implListCustomers,
 } from "./customers-impl"
+import { escapeLikePattern } from "./sql-utils"
 
 export function listCustomersTool(ctx: AgentContext) {
   return toolDefinition({

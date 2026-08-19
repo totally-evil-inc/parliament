@@ -1,7 +1,6 @@
 import { formatServerSentEvent } from "@workspace/agent"
 import type { ModelMessage } from "ai"
 import { AgentEngine } from "./agent-engine"
-import { ThinkTagDemuxer } from "./think-demuxer"
 import {
   appendUserMessage,
   type ConversationRow,
@@ -11,6 +10,7 @@ import {
   resolveOrCreateConversation,
 } from "./persist"
 import { getLanguageModel } from "./provider"
+import { ThinkTagDemuxer } from "./think-demuxer"
 import type { AgentContext } from "./tool-ctx"
 
 export interface ChatTurnInput {

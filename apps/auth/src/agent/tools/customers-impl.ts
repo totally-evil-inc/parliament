@@ -1,7 +1,7 @@
 import { isUuid } from "@workspace/agent"
 import { and, count, db, desc, eq, gte, schema, sql } from "@workspace/database"
-import { escapeLikePattern } from "./sql-utils"
 import type { AgentContext } from "../tool-ctx"
+import { escapeLikePattern } from "./sql-utils"
 
 export async function listCustomersTool(
   _args: Record<string, never>,
