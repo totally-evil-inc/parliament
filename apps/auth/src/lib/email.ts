@@ -1,7 +1,7 @@
 import { logger } from "@workspace/logger"
 import nodemailer from "nodemailer"
+import { formatMarkdownToEmailHtml } from "@workspace/agent"
 import { escapeHtml, sanitizeEmailUrl } from "./email/escape-html"
-import { formatMarkdownToEmailHtml } from "./email/format-markdown"
 import {
   type DocumentDispatchEmailProps,
   renderDocumentDispatchEmailHtml,

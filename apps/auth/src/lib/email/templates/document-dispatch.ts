@@ -1,5 +1,5 @@
+import { formatMarkdownToEmailHtml } from "@workspace/agent"
 import { escapeHtml, sanitizeEmailUrl } from "../escape-html"
-import { formatMarkdownToEmailHtml } from "../format-markdown"
 
 export interface DocumentDispatchEmailProps {
   documentType: "proposal" | "invoice"

@@ -1,7 +1,9 @@
 export * from "./chat/events"
 export * from "./chat/message-parts"
 export * from "./config"
+export * from "./email/format-markdown"
 export * from "./spec"
 export * from "./tools/catalog"
 export * from "./tools/schemas"
 export * from "./utils/uuid"
+

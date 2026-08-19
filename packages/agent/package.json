@@ -11,6 +11,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./email": "./src/email/format-markdown.ts",
     "./generated": "./src/generated/spec.json",
     "./message-parts": "./src/chat/message-parts.ts",
     "./tools": "./src/tools/catalog.ts"

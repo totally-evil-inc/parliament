@@ -9,7 +9,7 @@ import {
   Section,
   Text,
 } from "@react-email/components"
-import { formatMarkdownToEmailHtml } from "../format-markdown"
+import { formatMarkdownToEmailHtml } from "@workspace/agent"
 
 export interface DocumentDispatchEmailProps {
   documentType: "proposal" | "invoice"
