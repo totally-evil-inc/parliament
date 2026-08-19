@@ -27,8 +27,8 @@ import type {
   ThemePreference,
 } from "@/lib/themes/types"
 
-export type { ResolvedTheme, ThemePalette, ThemePreference }
-export { APP_PALETTE_STORAGE_KEY, APP_THEME_STORAGE_KEY }
+export { APP_THEME_STORAGE_KEY, APP_PALETTE_STORAGE_KEY }
+export type { ThemePreference, ResolvedTheme, ThemePalette }
 
 export type ThemeContextValue = {
   /** User's configured mode preference: 'light', 'dark', or 'system' */
@@ -143,14 +143,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Legacy fallback for older browser environments
-      // @ts-expect-error - support deprecated listener API safely
-      if (typeof mql.addListener === "function") {
-        // @ts-expect-error
-        mql.addListener(handleMediaChange)
+      // Legacy fallback for older browser environments with clean typing
+      const mqlLegacy = mql as unknown as {
+        addListener?: (listener: () => void) => void
+        removeListener?: (listener: () => void) => void
+      }
+      if (typeof mqlLegacy.addListener === "function") {
+        mqlLegacy.addListener(handleMediaChange)
         return () => {
-          // @ts-expect-error
-          mql.removeListener(handleMediaChange)
+          mqlLegacy.removeListener?.(handleMediaChange)
         }
       }
     } catch {

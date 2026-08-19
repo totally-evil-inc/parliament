@@ -59,7 +59,11 @@ function TestConsumer() {
       >
         Set Palette Indigo
       </button>
-      <button type="button" data-testid="toggle-mode" onClick={toggleLightDark}>
+      <button
+        type="button"
+        data-testid="toggle-mode"
+        onClick={toggleLightDark}
+      >
         Toggle Mode
       </button>
     </div>
@@ -118,8 +122,8 @@ describe("ThemeProvider Client State & DOM Operations", () => {
       setAttribute: (k: string, v: string) => attributes.set(k, v),
     }
 
-    // @ts-expect-error
-    globalThis.document = {
+    // Assign mock document safely
+    ;(globalThis as unknown as { document: Document }).document = {
       documentElement: mockDocumentElement,
     } as unknown as Document
 
@@ -132,8 +136,8 @@ describe("ThemeProvider Client State & DOM Operations", () => {
       key: () => null,
     }
 
-    // @ts-expect-error
-    globalThis.window = {
+    // Assign mock window safely
+    ;(globalThis as unknown as { window: Window }).window = {
       localStorage: mockLocalStorage,
       matchMedia: (query: string) => ({
         matches: query.includes("dark"),
@@ -159,14 +163,12 @@ describe("ThemeProvider Client State & DOM Operations", () => {
           list.filter((l) => l !== listener)
         )
       },
-    } as unknown as Window & typeof globalThis
+    } as unknown as Window
   })
 
   afterEach(() => {
-    // @ts-expect-error
-    delete globalThis.document
-    // @ts-expect-error
-    delete globalThis.window
+    delete (globalThis as unknown as { document?: Document }).document
+    delete (globalThis as unknown as { window?: Window }).window
   })
 
   it("initializes state from mocked client storage and applies DOM attributes", () => {
@@ -197,22 +199,26 @@ describe("ThemeProvider Client State & DOM Operations", () => {
       </ThemeProvider>
     )
 
-    expect(captured).not.toBeNull()
+    if (!captured) {
+      throw new Error("Consumer was not rendered")
+    }
+
+    const themeApi: ThemeContextValue = captured
 
     // Test explicit setPreference to 'dark'
-    captured!.setPreference("dark")
+    themeApi.setPreference("dark")
     expect(storageMap.get(APP_THEME_STORAGE_KEY)).toBe("dark")
     expect(classListSet.has(THEME_CLASS_DARK)).toBe(true)
     expect(styleObj.colorScheme).toBe("dark")
 
     // Test toggleLightDark from dark -> light
-    captured!.toggleLightDark()
+    themeApi.toggleLightDark()
     expect(storageMap.get(APP_THEME_STORAGE_KEY)).toBe("light")
     expect(classListSet.has(THEME_CLASS_DARK)).toBe(false)
     expect(styleObj.colorScheme).toBe("light")
 
     // Test setPalette
-    captured!.setPalette("crimson")
+    themeApi.setPalette("crimson")
     expect(storageMap.get(APP_PALETTE_STORAGE_KEY)).toBe("crimson")
     expect(attributes.get(THEME_ATTR_PALETTE)).toBe("crimson")
   })
