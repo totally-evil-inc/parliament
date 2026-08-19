@@ -13,6 +13,7 @@
 @source "../**/*.{ts,tsx}";
 
 :root {
+  color-scheme: light;
   --nc-gradient-1-color-1: var(--foreground);
   --nc-gradient-1-color-2: color-mix(in oklch, var(--foreground) 60%, black);
   --nc-light: transparent;
@@ -85,6 +86,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --nc-gradient-1-color-1: var(--foreground);
   --nc-gradient-1-color-2: color-mix(in oklch, var(--foreground) 70%, white);
   --nc-light: transparent;
