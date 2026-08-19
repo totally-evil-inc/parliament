@@ -1,4 +1,4 @@
-import { parseMessageParts } from "@workspace/agent"
+import { isUuid, parseMessageParts } from "@workspace/agent"
 import { and, count, db, desc, eq } from "@workspace/database"
 import { chatConversation, chatMessage } from "@workspace/database/schema"
 import { logWideEvent } from "@workspace/logger"
@@ -16,9 +16,14 @@ import {
   serializeConversation,
 } from "../../agent/persist"
 
-const patchConversationSchema = z.object({
-  title: z.string().trim().min(1).max(120),
-})
+const patchConversationSchema = z
+  .object({
+    title: z.string().trim().min(1).max(120).optional(),
+    pinned: z.boolean().optional(),
+  })
+  .refine((data) => data.title !== undefined || data.pinned !== undefined, {
+    message: "At least one of 'title' or 'pinned' must be provided",
+  })
 
 const createConversationSchema = z.object({
   model: z.string().trim().min(1).max(100).optional(),
@@ -32,6 +37,7 @@ export const agentHistoryRouter = new Hono<{
 }>()
 
 agentHistoryRouter.get("/conversations", async (c) => {
+  const startTime = Date.now()
   try {
     const ctx = await resolveOrgContext(c)
     const rows = await db
@@ -39,6 +45,7 @@ agentHistoryRouter.get("/conversations", async (c) => {
         id: chatConversation.id,
         title: chatConversation.title,
         model: chatConversation.model,
+        metadata: chatConversation.metadata,
         updatedAt: chatConversation.updatedAt,
         messageCount: count(chatMessage.id),
       })
@@ -55,9 +62,12 @@ agentHistoryRouter.get("/conversations", async (c) => {
     logWideEvent({
       event: "agent.history.list",
       outcome: "success",
+      durationMs: Date.now() - startTime,
       organizationId: ctx.organizationId,
       userId: ctx.userId,
-      metadata: { count: rows.length },
+      metadata: {
+        count: rows.length,
+      },
     })
 
     return c.json({
@@ -65,6 +75,9 @@ agentHistoryRouter.get("/conversations", async (c) => {
         id: row.id,
         title: row.title,
         model: row.model,
+        pinned: Boolean(
+          (row.metadata as Record<string, unknown> | null)?.pinned
+        ),
         updatedAt: row.updatedAt.toISOString(),
         messageCount: Number(row.messageCount),
       })),
@@ -76,6 +89,7 @@ agentHistoryRouter.get("/conversations", async (c) => {
     logWideEvent({
       event: "agent.history.list",
       outcome: "error",
+      durationMs: Date.now() - startTime,
       error: {
         code: "history_error",
         message: err instanceof Error ? err.message : "Unknown error",
@@ -86,9 +100,14 @@ agentHistoryRouter.get("/conversations", async (c) => {
 })
 
 agentHistoryRouter.get("/conversations/:id", async (c) => {
+  const startTime = Date.now()
   try {
     const ctx = await resolveOrgContext(c)
     const threadId = c.req.param("id")
+    if (!isUuid(threadId)) {
+      return c.json({ error: "Conversation not found" }, 404)
+    }
+
     const conversation = await findConversation(threadId, ctx.organizationId)
     if (!conversation) {
       return c.json({ error: "Conversation not found" }, 404)
@@ -118,7 +137,12 @@ agentHistoryRouter.get("/conversations/:id", async (c) => {
           await db
             .update(chatConversation)
             .set({ title: derived, updatedAt: new Date() })
-            .where(eq(chatConversation.id, threadId))
+            .where(
+              and(
+                eq(chatConversation.id, threadId),
+                eq(chatConversation.organizationId, ctx.organizationId)
+              )
+            )
         }
       }
     }
@@ -126,16 +150,20 @@ agentHistoryRouter.get("/conversations/:id", async (c) => {
     logWideEvent({
       event: "agent.history.get",
       outcome: "success",
+      durationMs: Date.now() - startTime,
       organizationId: ctx.organizationId,
       userId: ctx.userId,
       entityId: threadId,
-      metadata: { messageCount: messages.length },
+      metadata: {
+        messageCount: messages.length,
+      },
     })
 
     return c.json({
       conversation: {
         ...serializeConversation(conversation, messages.length),
         title: currentTitle,
+        pinned: Boolean(conversation.metadata?.pinned),
       },
       messages: messages.map((m) => {
         let parts: unknown = m.parts
@@ -165,6 +193,7 @@ agentHistoryRouter.get("/conversations/:id", async (c) => {
     logWideEvent({
       event: "agent.history.get",
       outcome: "error",
+      durationMs: Date.now() - startTime,
       error: {
         code: "history_error",
         message: err instanceof Error ? err.message : "Unknown error",
@@ -175,6 +204,7 @@ agentHistoryRouter.get("/conversations/:id", async (c) => {
 })
 
 agentHistoryRouter.post("/conversations", async (c) => {
+  const startTime = Date.now()
   try {
     const ctx = await resolveOrgContext(c)
     const body = createConversationSchema.safeParse(
@@ -197,6 +227,7 @@ agentHistoryRouter.post("/conversations", async (c) => {
     logWideEvent({
       event: "agent.history.create",
       outcome: "success",
+      durationMs: Date.now() - startTime,
       organizationId: ctx.organizationId,
       userId: ctx.userId,
       entityId: row.id,
@@ -210,6 +241,7 @@ agentHistoryRouter.post("/conversations", async (c) => {
     logWideEvent({
       event: "agent.history.create",
       outcome: "error",
+      durationMs: Date.now() - startTime,
       error: {
         code: "history_error",
         message: err instanceof Error ? err.message : "Unknown error",
@@ -220,19 +252,60 @@ agentHistoryRouter.post("/conversations", async (c) => {
 })
 
 agentHistoryRouter.patch("/conversations/:id", async (c) => {
+  const startTime = Date.now()
   try {
     const ctx = await resolveOrgContext(c)
     const threadId = c.req.param("id")
+    if (!isUuid(threadId)) {
+      return c.json({ error: "Conversation not found" }, 404)
+    }
+
     const body = patchConversationSchema.safeParse(
       await c.req.json().catch(() => ({}))
     )
     if (!body.success) {
-      return c.json({ error: "Invalid conversation payload" }, 400)
+      return c.json(
+        {
+          error: "Invalid conversation payload",
+          details: body.error.flatten(),
+        },
+        400
+      )
+    }
+
+    const existing = await findConversation(threadId, ctx.organizationId)
+    if (!existing) {
+      return c.json({ error: "Conversation not found" }, 404)
+    }
+
+    const updates: {
+      title?: string
+      metadata?: Record<string, unknown>
+      updatedAt: Date
+    } = {
+      updatedAt: new Date(),
+    }
+
+    if (body.data.title !== undefined) {
+      updates.title = body.data.title
+    }
+
+    if (body.data.pinned !== undefined) {
+      const existingMeta =
+        existing.metadata &&
+        typeof existing.metadata === "object" &&
+        existing.metadata !== null
+          ? existing.metadata
+          : {}
+      updates.metadata = {
+        ...existingMeta,
+        pinned: body.data.pinned,
+      }
     }
 
     const [row] = await db
       .update(chatConversation)
-      .set({ title: body.data.title, updatedAt: new Date() })
+      .set(updates)
       .where(
         and(
           eq(chatConversation.id, threadId),
@@ -246,34 +319,50 @@ agentHistoryRouter.patch("/conversations/:id", async (c) => {
     }
 
     logWideEvent({
-      event: "agent.history.rename",
+      event: "agent.history.patch",
       outcome: "success",
+      durationMs: Date.now() - startTime,
       organizationId: ctx.organizationId,
       userId: ctx.userId,
       entityId: threadId,
+      metadata: {
+        renamed: body.data.title !== undefined,
+        pinned: body.data.pinned !== undefined ? body.data.pinned : undefined,
+      },
     })
 
-    return c.json({ id: row.id, title: row.title })
+    return c.json({
+      id: row.id,
+      title: row.title,
+      pinned: Boolean(
+        (row.metadata as Record<string, unknown> | null)?.pinned
+      ),
+    })
   } catch (err) {
     if (err instanceof AgentContextError) {
       return c.json({ error: err.message }, httpStatusFor(err.code))
     }
     logWideEvent({
-      event: "agent.history.rename",
+      event: "agent.history.patch",
       outcome: "error",
+      durationMs: Date.now() - startTime,
       error: {
         code: "history_error",
         message: err instanceof Error ? err.message : "Unknown error",
       },
     })
-    return c.json({ error: "Failed to rename conversation" }, 500)
+    return c.json({ error: "Failed to update conversation" }, 500)
   }
 })
 
 agentHistoryRouter.delete("/conversations/:id", async (c) => {
+  const startTime = Date.now()
   try {
     const ctx = await resolveOrgContext(c)
     const threadId = c.req.param("id")
+    if (!isUuid(threadId)) {
+      return c.json({ error: "Conversation not found" }, 404)
+    }
 
     const result = await db
       .delete(chatConversation)
@@ -292,6 +381,7 @@ agentHistoryRouter.delete("/conversations/:id", async (c) => {
     logWideEvent({
       event: "agent.history.delete",
       outcome: "success",
+      durationMs: Date.now() - startTime,
       organizationId: ctx.organizationId,
       userId: ctx.userId,
       entityId: threadId,
@@ -305,6 +395,7 @@ agentHistoryRouter.delete("/conversations/:id", async (c) => {
     logWideEvent({
       event: "agent.history.delete",
       outcome: "error",
+      durationMs: Date.now() - startTime,
       error: {
         code: "history_error",
         message: err instanceof Error ? err.message : "Unknown error",

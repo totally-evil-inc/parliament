@@ -19,6 +19,7 @@ export interface ConversationRow {
   organizationId: string
   title: string
   model: string | null
+  metadata?: Record<string, unknown> | null
   createdAt: Date
   updatedAt: Date
 }
