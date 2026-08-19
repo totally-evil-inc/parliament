@@ -220,6 +220,47 @@ export function applyEventsToMessages(
   })
 }
 
+function buildPayloadMessages(messages: ChatMessage[]): Array<{
+  role: string
+  content?: string | null
+  parts?: unknown[]
+}> {
+  return messages.map((m) => {
+    const parts: unknown[] = []
+    if (m.thinking) parts.push({ type: "thinking", text: m.thinking })
+    if (m.content) parts.push({ type: "text", text: m.content })
+    if (Array.isArray(m.toolCalls)) {
+      for (const tc of m.toolCalls) {
+        if (tc.result !== undefined) {
+          const isErr =
+            tc.status === "error" ||
+            Boolean((tc as any).isError) ||
+            (tc.result as any)?.status === "rejected" ||
+            (tc.result as any)?.status === "denied"
+          parts.push({
+            type: "tool-call",
+            toolCallId: tc.id,
+            toolName: tc.name,
+            args: tc.args,
+          })
+          parts.push({
+            type: "tool-result",
+            toolCallId: tc.id,
+            toolName: tc.name,
+            result: tc.result ?? {},
+            isError: isErr,
+          })
+        }
+      }
+    }
+    return {
+      role: m.role,
+      content: m.content,
+      parts,
+    }
+  })
+}
+
 export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -286,6 +327,146 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
     [queryClient]
   )
 
+  /**
+   * Reusable streaming pipeline for prompt execution and action approval resumption.
+   */
+  const executeStreamTurn = useCallback(
+    async ({
+      payloadMessages,
+      targetThreadId,
+      assistantMsgId,
+      isResume = false,
+    }: {
+      payloadMessages: Array<{
+        role: string
+        content?: string | null
+        parts?: unknown[]
+      }>
+      targetThreadId: string
+      assistantMsgId: string
+      isResume?: boolean
+    }) => {
+      isSubmittingRef.current = true
+      setIsLoading(true)
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+      const executedTools = new Set<string>()
+
+      try {
+        const res = await fetch(`${AUTH_SERVER_URL}/api/agent/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+          },
+          credentials: "include",
+          signal: abortController.signal,
+          body: JSON.stringify({
+            messages: payloadMessages,
+            threadId: targetThreadId,
+            forwardedProps: {
+              model: selectedModelRef.current || null,
+              resume: isResume,
+            },
+          }),
+        })
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => null)
+          const code = body?.error?.code || `http_${res.status}`
+          const message =
+            body?.error?.message ||
+            `Request failed with HTTP status ${res.status}`
+          setChatError({ code, message })
+          if (!isResume) {
+            setMessages((prev) => prev.filter((m) => m.id !== assistantMsgId))
+          }
+          return
+        }
+
+        if (!res.body) {
+          throw new Error("No SSE response body returned from agent server")
+        }
+
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ""
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split("\n\n")
+          buffer = lines.pop() ?? ""
+
+          const chunkEvents: AgentEvent[] = []
+
+          for (const block of lines) {
+            if (!block.trim() || block.startsWith(":")) continue // Skip heartbeats/comments
+            const dataLine = block
+              .split("\n")
+              .find((l) => l.startsWith("data: "))
+            if (!dataLine) continue
+
+            const rawJson = dataLine.slice(6).trim()
+            try {
+              const eventParsed = JSON.parse(rawJson)
+              const eventValidation = agentEventSchema.safeParse(eventParsed)
+              if (eventValidation.success) {
+                chunkEvents.push(eventValidation.data)
+              }
+            } catch {
+              // Ignore partial JSON chunks
+            }
+          }
+
+          if (chunkEvents.length > 0) {
+            setMessages((prev) =>
+              applyEventsToMessages(
+                prev,
+                assistantMsgId,
+                chunkEvents,
+                executedTools
+              )
+            )
+          }
+        }
+
+        invalidateAgentQueries(executedTools)
+      } catch (err: unknown) {
+        const isAbort =
+          (err as Error)?.name === "AbortError" ||
+          (err as any)?.code === "aborted" ||
+          abortController.signal.aborted
+        if (!isAbort) {
+          const message =
+            err instanceof Error ? err.message : "Agent stream failed"
+          setChatError({ code: "stream_failed", message })
+          setMessages((prev) =>
+            prev.map((msg) => {
+              if (
+                msg.id === assistantMsgId &&
+                !msg.content &&
+                (!msg.toolCalls || msg.toolCalls.length === 0)
+              ) {
+                return {
+                  ...msg,
+                  error: { code: "stream_failed", message },
+                }
+              }
+              return msg
+            })
+          )
+        }
+      } finally {
+        isSubmittingRef.current = false
+        setIsLoading(false)
+      }
+    },
+    [invalidateAgentQueries]
+  )
+
   // TanStack Query Mutation for Action Approval Resolution
   const resolveActionMutation = useMutation({
     mutationFn: async ({
@@ -327,9 +508,20 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
           "Action execution failed"
         : undefined
 
-      setMessages((prev) =>
-        prev.map((msg) => {
+      let updatedMessages: ChatMessage[] = []
+      let targetAssistantMsgId: string | undefined
+
+      setMessages((prev) => {
+        const next = prev.map((msg) => {
           if (!msg.toolCalls) return msg
+          const hasMatchingCall = msg.toolCalls.some(
+            (tc) =>
+              tc.approvalId === variables.approvalId ||
+              tc.id === variables.approvalId
+          )
+          if (!hasMatchingCall) return msg
+          targetAssistantMsgId = msg.id
+
           return {
             ...msg,
             toolCalls: msg.toolCalls.map((tc) => {
@@ -347,7 +539,8 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                     : variables.approved
                       ? "approved"
                       : "rejected",
-                  result: data?.result ?? (isError ? { error: errorText } : undefined),
+                  result:
+                    data?.result ?? (isError ? { error: errorText } : undefined),
                   errorText,
                   needsApproval: false,
                 }
@@ -356,12 +549,26 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
             }),
           }
         })
-      )
+        updatedMessages = next
+        return next
+      })
+
       queryClient.invalidateQueries({ queryKey: ["agent-approvals"] })
       if (!isError && variables.approved && resolvedToolName) {
         invalidateAgentQueries(new Set([resolvedToolName]))
       } else {
         invalidateAgentQueries()
+      }
+
+      // Resume agent turn stream with tool result appended
+      if (!isError && targetAssistantMsgId && threadIdRef.current) {
+        const payload = buildPayloadMessages(updatedMessages)
+        void executeStreamTurn({
+          payloadMessages: payload,
+          targetThreadId: threadIdRef.current,
+          assistantMsgId: targetAssistantMsgId,
+          isResume: true,
+        })
       }
     },
     onError: (err: Error, variables) => {
@@ -434,163 +641,19 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
         toolCalls: [],
       }
 
-      setMessages((prev) => [...prev, userMsg, initialAssistantMsg])
-      setIsLoading(true)
+      const nextMessages = [...messagesRef.current, userMsg]
+      setMessages([...nextMessages, initialAssistantMsg])
 
-      const abortController = new AbortController()
-      abortControllerRef.current = abortController
+      const payloadMessages = buildPayloadMessages(nextMessages)
 
-      const executedTools = new Set<string>()
-
-      try {
-        const payloadMessages = [...messagesRef.current, userMsg].map((m) => {
-          const parts: unknown[] = []
-          if (m.thinking) parts.push({ type: "thinking", text: m.thinking })
-          if (m.content) parts.push({ type: "text", text: m.content })
-          if (Array.isArray(m.toolCalls)) {
-            for (const tc of m.toolCalls) {
-              if (tc.result !== undefined) {
-                const isErr =
-                  tc.status === "error" ||
-                  Boolean((tc as any).isError) ||
-                  (tc.result as any)?.status === "rejected" ||
-                  (tc.result as any)?.status === "denied"
-                parts.push({
-                  type: "tool-call",
-                  toolCallId: tc.id,
-                  toolName: tc.name,
-                  args: tc.args,
-                })
-                parts.push({
-                  type: "tool-result",
-                  toolCallId: tc.id,
-                  toolName: tc.name,
-                  result: tc.result ?? {},
-                  isError: isErr,
-                })
-              }
-            }
-          }
-          return {
-            role: m.role,
-            content: m.content,
-            parts,
-          }
-        })
-
-        const res = await fetch(`${AUTH_SERVER_URL}/api/agent/chat`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "text/event-stream",
-          },
-          credentials: "include",
-          signal: abortController.signal,
-          body: JSON.stringify({
-            messages: payloadMessages,
-            threadId: targetThreadId,
-            forwardedProps: {
-              model: selectedModelRef.current || null,
-            },
-          }),
-        })
-
-        if (!res.ok) {
-          const body = await res.json().catch(() => null)
-          const code = body?.error?.code || `http_${res.status}`
-          const message =
-            body?.error?.message ||
-            `Request failed with HTTP status ${res.status}`
-          setChatError({ code, message })
-          setMessages((prev) => prev.filter((m) => m.id !== assistantMsgId))
-          isSubmittingRef.current = false
-          setIsLoading(false)
-          return
-        }
-
-        if (!res.body) {
-          throw new Error("No SSE response body returned from agent server")
-        }
-
-        const reader = res.body.getReader()
-        const decoder = new TextDecoder()
-        let buffer = ""
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-
-          buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split("\n\n")
-          buffer = lines.pop() ?? ""
-
-          // Batch all parseable events arriving in this read chunk
-          const chunkEvents: AgentEvent[] = []
-
-          for (const block of lines) {
-            if (!block.trim() || block.startsWith(":")) continue // Skip heartbeats/comments
-            const dataLine = block
-              .split("\n")
-              .find((l) => l.startsWith("data: "))
-            if (!dataLine) continue
-
-            const rawJson = dataLine.slice(6).trim()
-            try {
-              const eventParsed = JSON.parse(rawJson)
-              const eventValidation = agentEventSchema.safeParse(eventParsed)
-              if (eventValidation.success) {
-                chunkEvents.push(eventValidation.data)
-              }
-            } catch {
-              // Ignore partial JSON chunks
-            }
-          }
-
-          // Dispatch a single batched state update per read chunk
-          if (chunkEvents.length > 0) {
-            setMessages((prev) =>
-              applyEventsToMessages(
-                prev,
-                assistantMsgId,
-                chunkEvents,
-                executedTools
-              )
-            )
-          }
-        }
-
-        invalidateAgentQueries(executedTools)
-      } catch (err: unknown) {
-        const isAbort =
-          (err as Error)?.name === "AbortError" ||
-          (err as any)?.code === "aborted" ||
-          abortController.signal.aborted
-        if (!isAbort) {
-          const message =
-            err instanceof Error ? err.message : "Agent stream failed"
-          setChatError({ code: "stream_failed", message })
-          setMessages((prev) =>
-            prev.map((msg) => {
-              if (
-                msg.id === assistantMsgId &&
-                !msg.content &&
-                (!msg.toolCalls || msg.toolCalls.length === 0)
-              ) {
-                return {
-                  ...msg,
-                  error: { code: "stream_failed", message },
-                }
-              }
-              return msg
-            })
-          )
-        }
-      } finally {
-        isSubmittingRef.current = false
-        setIsLoading(false)
-      }
+      await executeStreamTurn({
+        payloadMessages,
+        targetThreadId,
+        assistantMsgId,
+        isResume: false,
+      })
     },
-    [navigate, invalidateAgentQueries]
+    [navigate, executeStreamTurn]
   )
 
   const stop = useCallback(() => {

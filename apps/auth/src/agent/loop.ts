@@ -18,6 +18,7 @@ export interface ChatTurnInput {
   threadId?: string | null
   model?: string | null
   regenerate?: boolean
+  resume?: boolean
   abortSignal?: AbortSignal
 }
 
@@ -162,10 +163,16 @@ export async function runAgentTurn(
     model: modelName,
   })
 
+  const lastMsgRole = input.messages[input.messages.length - 1]?.role
+  const isResume = Boolean(input.resume || lastMsgRole === "assistant")
+
   if (input.regenerate) {
     if (input.threadId && !isNew) {
       await deleteLastAssistantMessage(conversation.id)
     }
+  } else if (isResume) {
+    // Resuming a turn after action approval: user prompt already persisted,
+    // now streaming continuation with tool execution result.
   } else {
     await appendUserMessage({
       conversationId: conversation.id,

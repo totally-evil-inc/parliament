@@ -21,6 +21,7 @@ const chatBodySchema = z.object({
     .object({
       model: z.string().trim().min(1).max(120).nullish(),
       regenerate: z.boolean().optional(),
+      resume: z.boolean().optional(),
     })
     .optional(),
 })
@@ -135,6 +136,7 @@ agentChatRouter.post("/chat", async (c) => {
         threadId: threadId ?? null,
         model: forwardedProps?.model ?? null,
         regenerate: forwardedProps?.regenerate ?? false,
+        resume: forwardedProps?.resume ?? false,
         abortSignal: c.req.raw.signal,
       })
 
