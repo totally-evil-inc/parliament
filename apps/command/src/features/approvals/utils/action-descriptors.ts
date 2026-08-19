@@ -333,7 +333,10 @@ export function describeToolAction(
     )
     const start = formatDateTime(args.startTime || args.start || args.date)
     const attendees = Array.isArray(args.attendees)
-      ? args.attendees.map(safeString).filter(Boolean).join(", ")
+      ? args.attendees
+          .map((a) => safeString(a))
+          .filter(Boolean)
+          .join(", ")
       : safeString(args.attendees)
 
     const params: ActionParameter[] = []
