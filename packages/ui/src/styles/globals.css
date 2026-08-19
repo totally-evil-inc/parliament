@@ -41,14 +41,14 @@
   --chart-3: oklch(0.72 0 0);
   --chart-4: oklch(0.92 0 0);
   --chart-5: oklch(0.56 0 0);
-  --sidebar: oklch(0.98 0.03 260);
-  --sidebar-foreground: oklch(0.06 0.01 270);
-  --sidebar-primary: oklch(0.06 0.01 270);
-  --sidebar-primary-foreground: oklch(0.98 0.03 260);
-  --sidebar-accent: oklch(0.94 0 0);
-  --sidebar-accent-foreground: oklch(0.06 0.01 270);
-  --sidebar-border: oklch(0.94 0 0);
-  --sidebar-ring: oklch(0.06 0.01 270);
+  --sidebar: oklch(0.18 0.005 270);
+  --sidebar-foreground: oklch(0.88 0.04 260);
+  --sidebar-primary: oklch(0.88 0.04 260);
+  --sidebar-primary-foreground: oklch(0.04 0.005 270);
+  --sidebar-accent: oklch(0.32 0 0);
+  --sidebar-accent-foreground: oklch(0.88 0.04 260);
+  --sidebar-border: oklch(0.32 0 0);
+  --sidebar-ring: oklch(0.72 0 0);
   --radius: 0.5rem;
   --shadow-x: 0px;
   --shadow-y: 1px;
@@ -476,13 +476,28 @@
   /* Sidebar uses the same reusable surface treatment as the toolbar. */
   .liquid-glass-sidebar [data-slot="sidebar-inner"],
   .liquid-glass-sidebar[data-slot="sidebar-inner"] {
-    background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
+    background-color: var(--sidebar);
     backdrop-filter: blur(8px) url(#liquid-glass-refract)
       saturate(var(--glass-saturation, 150%));
     -webkit-backdrop-filter: blur(8px) saturate(var(--glass-saturation, 150%));
     box-shadow:
       inset -1px 0 color-mix(in srgb, var(--c-light) 12%, transparent),
       4px 0 18px color-mix(in srgb, var(--c-dark) 8%, transparent);
+  }
+
+  [data-slot="sidebar"],
+  [data-sidebar="sidebar"],
+  [data-slot="sidebar-wrapper"] {
+    --nc-gradient-1-color-1: var(--sidebar-foreground);
+    --nc-gradient-1-color-2: color-mix(
+      in oklch,
+      var(--sidebar-foreground) 70%,
+      white
+    );
+    --nc-light: transparent;
+    --glass-reflex-dark: 2;
+    --glass-reflex-light: 0.3;
+    color-scheme: dark;
   }
 
   /* Floating Liquid Glass Hover/Active Pill */
