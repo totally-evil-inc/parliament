@@ -51,9 +51,21 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
 }) => {
   const isUser = message.role === "user"
 
-  const extracted = extractThinkingAndContent(message)
-  let extractedContent = extracted.content
-  const extractedThinking = extracted.thinking
+  // Fast path: read pre-normalized text & thinking directly, fallback only if completely unparsed
+  let extractedContent =
+    typeof message.content === "string" ? message.content : ""
+  let thinkingText = message.thinking || ""
+
+  if (
+    message.content === undefined &&
+    message.thinking === undefined &&
+    !message.toolCalls &&
+    !message.tasks
+  ) {
+    const extracted = extractThinkingAndContent(message)
+    extractedContent = extracted.content
+    thinkingText = extracted.thinking || ""
+  }
 
   if (isUser && !extractedContent) {
     const rawMsg = message as Record<string, unknown>
@@ -74,8 +86,6 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
         .trim()
     }
   }
-
-  const thinkingText = message.thinking || extractedThinking || ""
 
   if (isUser) {
     return (
@@ -167,5 +177,44 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
   )
 }
 
-export const MessageBubble = memo(MessageBubbleComponent)
+export const MessageBubble = memo(
+  MessageBubbleComponent,
+  (prevProps, nextProps) => {
+    if (prevProps.isStreaming !== nextProps.isStreaming) return false
+    if (prevProps.onRetry !== nextProps.onRetry) return false
+    if (
+      prevProps.onApproveTool !== nextProps.onApproveTool ||
+      prevProps.onRejectTool !== nextProps.onRejectTool
+    ) {
+      return false
+    }
+
+    const p = prevProps.message
+    const n = nextProps.message
+    if (p === n) return true
+    if (!p || !n) return false
+
+    // Fast-check error state
+    const prevErrMsg =
+      typeof p.error === "string"
+        ? p.error
+        : p.error?.message || p.error?.code || ""
+    const nextErrMsg =
+      typeof n.error === "string"
+        ? n.error
+        : n.error?.message || n.error?.code || ""
+    if (prevErrMsg !== nextErrMsg) return false
+
+    return (
+      p.id === n.id &&
+      p.role === n.role &&
+      p.content === n.content &&
+      p.thinking === n.thinking &&
+      p.openuiCode === n.openuiCode &&
+      p.toolCalls === n.toolCalls &&
+      p.chainOfThought === n.chainOfThought &&
+      p.tasks === n.tasks
+    )
+  }
+)
 MessageBubble.displayName = "MessageBubble"

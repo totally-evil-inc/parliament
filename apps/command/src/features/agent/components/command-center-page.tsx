@@ -9,7 +9,7 @@ import { Button } from "@workspace/ui/components/button"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
-import { memo, useCallback, useEffect, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { authClient } from "@/lib/auth-client"
 import { useCommandChatContext } from "../context/command-chat-context"
 import { useHistorySidebar } from "../hooks/use-history-sidebar"
@@ -180,6 +180,36 @@ export function extractMessageText(m: any): string {
   return extractThinkingAndContent(m).content
 }
 
+export function extractUserText(m: any): string {
+  if (typeof m?.content === "string" && m.content) return m.content
+  if (typeof m?.text === "string" && m.text) return m.text
+  if (Array.isArray(m?.parts)) {
+    return m.parts
+      .map((p: any) => {
+        if (typeof p === "string") return p
+        if (p && typeof p === "object") {
+          return p.text || p.content || ""
+        }
+        return ""
+      })
+      .join("")
+      .trim()
+  }
+  if (Array.isArray(m?.content)) {
+    return m.content
+      .map((p: any) => {
+        if (typeof p === "string") return p
+        if (p && typeof p === "object") {
+          return p.text || p.content || ""
+        }
+        return ""
+      })
+      .join("")
+      .trim()
+  }
+  return ""
+}
+
 const CommandCenterHeader = memo(function CommandCenterHeader({
   activeTitle,
   threadId,
@@ -263,8 +293,31 @@ export const CommandCenterPage: React.FC = () => {
   const userName = session.data?.user?.name
   const displayName = userName?.trim().split(/\s+/)[0] || userName?.trim() || ""
 
-  const displayedMessages = messages
   const isEmpty = messages.length === 0
+
+  // Pre-normalize messages once into stable items to preserve React.memo and avoid redundant extraction
+  const normalizedMessages = useMemo(() => {
+    return messages.map((m, idx) => {
+      const isLastMessage = idx === messages.length - 1
+      const isAssistant = m.role === "assistant"
+      const normalized = isAssistant ? normalizeAssistantMessage(m) : null
+
+      return {
+        id: m.id || String(idx),
+        role: (m.role as "user" | "assistant" | "system") || "assistant",
+        content: normalized ? normalized.text : extractUserText(m),
+        thinking: normalized
+          ? normalized.thinking || undefined
+          : m.thinking || undefined,
+        toolCalls: normalized ? normalized.tools : m.toolCalls,
+        chainOfThought: normalized?.chainOfThought,
+        tasks: normalized?.tasks,
+        openuiCode: normalized?.openui?.source ?? (m as any).openuiCode,
+        error: isLastMessage && chatError ? chatError : m.error,
+        isStreaming: isLoading && isLastMessage && isAssistant,
+      }
+    })
+  }, [messages, chatError, isLoading])
 
   // Live reasoning text from the latest assistant turn — only meaningful
   // while a run is streaming; the reasoning strip collapses on completion.
@@ -413,35 +466,16 @@ export const CommandCenterPage: React.FC = () => {
               onScroll={handleScroll}
             >
               <main className="mx-auto w-full max-w-4xl space-y-4 px-4 pt-4 pb-48 sm:px-6">
-                {displayedMessages.map((m: any, idx: number) => {
-                  const normalized = normalizeAssistantMessage(m)
-                  const isLastMessage = idx === displayedMessages.length - 1
-                  return (
-                    <MessageBubble
-                      key={m.id || idx}
-                      message={{
-                        id: m.id,
-                        role:
-                          (m.role as "user" | "assistant" | "system") ||
-                          "assistant",
-                        content: normalized.text,
-                        thinking: normalized.thinking || undefined,
-                        toolCalls: normalized.tools,
-                        chainOfThought: normalized.chainOfThought,
-                        tasks: normalized.tasks,
-                        openuiCode: normalized.openui?.source,
-                        error:
-                          isLastMessage && chatError ? chatError : undefined,
-                      }}
-                      onApproveTool={approveTool}
-                      onRejectTool={rejectTool}
-                      isStreaming={
-                        isLoading && isLastMessage && m.role === "assistant"
-                      }
-                      onRetry={retryLastPrompt}
-                    />
-                  )
-                })}
+                {normalizedMessages.map((msgItem) => (
+                  <MessageBubble
+                    key={msgItem.id}
+                    message={msgItem}
+                    onApproveTool={approveTool}
+                    onRejectTool={rejectTool}
+                    isStreaming={msgItem.isStreaming}
+                    onRetry={retryLastPrompt}
+                  />
+                ))}
 
                 {/* Immediate active streaming placeholder while waiting for assistant token/turn */}
                 {isLoading &&
