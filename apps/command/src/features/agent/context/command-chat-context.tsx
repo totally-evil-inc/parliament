@@ -12,6 +12,7 @@ import {
   useState,
 } from "react"
 import { useAIModels } from "../hooks/use-ai-models"
+import { extractToolErrorText } from "../normalization"
 
 const AUTH_SERVER_URL =
   import.meta.env.VITE_AUTH_SERVER_URL ||
@@ -128,11 +129,19 @@ function applyEventsToMessages(
           toolCalls = toolCalls.map((tc) => {
             if (tc.id === event.callId) {
               if (tc.name) executedToolsOut?.add(tc.name)
+              const hasObjError =
+                event.result !== undefined &&
+                typeof event.result === "object" &&
+                event.result !== null &&
+                Boolean((event.result as Record<string, unknown>).error)
+              const isError = Boolean(event.isError || hasObjError)
               return {
                 ...tc,
                 result: event.result,
-                status: derivedStatus,
-                errorText: event.isError ? String(event.result) : undefined,
+                status: isError ? "error" : derivedStatus,
+                errorText: isError
+                  ? extractToolErrorText(event.result)
+                  : undefined,
               }
             }
             return tc
@@ -663,7 +672,12 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                   p.status === "denied"
                 const isSkipped =
                   resObj?.status === "skipped" || p.status === "skipped"
-                const derivedStatus = p.isError
+                const hasObjError =
+                  resObj &&
+                  typeof resObj === "object" &&
+                  Boolean(resObj.error)
+                const isError = Boolean(p.isError || hasObjError)
+                const derivedStatus = isError
                   ? "error"
                   : isRejected
                     ? "rejected"
@@ -671,11 +685,15 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                       ? "skipped"
                       : "completed"
 
+                const errorText = isError
+                  ? extractToolErrorText(p.result ?? p.output)
+                  : undefined
+
                 if (existing) {
                   existing.result = p.result ?? p.output
                   existing.status = derivedStatus
-                  if (p.isError) {
-                    existing.errorText = String(p.result ?? p.output ?? "")
+                  if (isError) {
+                    existing.errorText = errorText
                   }
                 } else {
                   toolCalls.push({
@@ -683,9 +701,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                     name: String(p.toolName ?? "tool"),
                     result: p.result ?? p.output,
                     status: derivedStatus,
-                    errorText: p.isError
-                      ? String(p.result ?? p.output ?? "")
-                      : undefined,
+                    errorText,
                   })
                 }
               } else if (p?.type === "approval-requested") {

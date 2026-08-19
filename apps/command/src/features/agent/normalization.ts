@@ -147,6 +147,61 @@ function deepUnpackJsonProperties(
   return obj
 }
 
+export function extractToolErrorText(
+  value: unknown,
+  fallback = "Tool execution failed"
+): string {
+  if (value === undefined || value === null) return fallback
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    if (!trimmed || trimmed === "[object Object]") return fallback
+    return trimmed
+  }
+  if (value instanceof Error) {
+    return value.message || fallback
+  }
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>
+    // 1. Check nested obj.error
+    if (obj.error && typeof obj.error === "object") {
+      const nestedErr = obj.error as Record<string, unknown>
+      if (typeof nestedErr.message === "string" && nestedErr.message.trim()) {
+        return nestedErr.message.trim()
+      }
+      if (typeof nestedErr.error === "string" && nestedErr.error.trim()) {
+        return nestedErr.error.trim()
+      }
+    }
+    // 2. Check direct fields
+    if (typeof obj.message === "string" && obj.message.trim()) {
+      return obj.message.trim()
+    }
+    if (typeof obj.error === "string" && obj.error.trim()) {
+      return obj.error.trim()
+    }
+    if (typeof obj.errorText === "string" && obj.errorText.trim()) {
+      return obj.errorText.trim()
+    }
+    if (typeof obj.detail === "string" && obj.detail.trim()) {
+      return obj.detail.trim()
+    }
+    if (typeof obj.details === "string" && obj.details.trim()) {
+      return obj.details.trim()
+    }
+
+    try {
+      const stringified = JSON.stringify(value, null, 2)
+      if (stringified && stringified !== "{}") {
+        return stringified
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return fallback
+}
+
 export function objectValue(value: unknown): Record<string, unknown> {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const unpacked = deepUnpackJsonProperties(value)
@@ -314,10 +369,12 @@ export function normalizeAssistantMessage(
                 ? approvalObj.id
                 : undefined,
           errorText:
-            typeof r.errorText === "string"
+            typeof r.errorText === "string" &&
+            r.errorText.trim() !== "" &&
+            r.errorText.trim() !== "[object Object]"
               ? r.errorText
-              : r.status === "error"
-                ? String(r.result ?? "Tool execution failed")
+              : r.status === "error" || (r.result && typeof r.result === "object" && Boolean((r.result as Record<string, unknown>).error))
+                ? extractToolErrorText(r.errorText ?? r.result)
                 : undefined,
         })
       }
@@ -376,10 +433,12 @@ export function normalizeAssistantMessage(
               ? approvalObj.id
               : existing?.approvalId,
         errorText:
-          typeof p.errorText === "string"
+          typeof p.errorText === "string" &&
+          p.errorText.trim() !== "" &&
+          p.errorText.trim() !== "[object Object]"
             ? p.errorText
             : p.state === "output-error"
-              ? String(p.output ?? "Tool execution failed")
+              ? extractToolErrorText(p.errorText ?? p.output ?? p.result)
               : undefined,
       })
     }
@@ -399,8 +458,13 @@ export function normalizeAssistantMessage(
         }
       }
       const targetId = current.id || id
+      const resVal = p.content ?? p.output ?? p.result
+      const hasObjError =
+        resVal &&
+        typeof resVal === "object" &&
+        Boolean((resVal as Record<string, unknown>).error)
       const isError = Boolean(
-        p.error || p.isError || p.state === "output-error"
+        p.error || p.isError || p.state === "output-error" || hasObjError
       )
       calls.set(targetId, {
         ...current,
@@ -408,16 +472,15 @@ export function normalizeAssistantMessage(
           current.name !== "unknown_tool"
             ? current.name
             : String(p.toolName ?? p.name ?? current.name),
-        result: p.content ?? p.output ?? p.result,
+        result: resVal,
         status: isError ? "error" : "completed",
         errorText: isError
-          ? String(
+          ? extractToolErrorText(
               p.errorText ??
                 p.error ??
                 p.content ??
                 p.output ??
-                p.result ??
-                "Tool execution failed"
+                p.result
             )
           : undefined,
       })

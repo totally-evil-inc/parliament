@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import {
+  extractToolErrorText,
   latestAssistantThinking,
   normalizeAssistantMessage,
   stripLeakedFunctionCalls,
@@ -359,5 +360,103 @@ describe("latestAssistantThinking", () => {
       role: "assistant",
       text: "string only",
     })
+  })
+
+  test("normalizes structured tool error objects without [object Object]", () => {
+    const rawMessage = {
+      id: "msg-err-1",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-call",
+          id: "tc-gcal-1",
+          name: "gcal_create_event",
+          arguments: JSON.stringify({
+            title: "Client discovery",
+            start: "2026-08-20T09:00:00",
+          }),
+        },
+        {
+          type: "tool-result",
+          toolCallId: "tc-gcal-1",
+          error: {
+            code: "integration_not_connected",
+            message:
+              "Google Calendar is not connected. Please connect Google Calendar in /integrations.",
+            provider: "google-calendar",
+          },
+        },
+      ],
+    }
+
+    const normalized = normalizeAssistantMessage(rawMessage)
+    expect(normalized.tools).toHaveLength(1)
+    expect(normalized.tools[0].status).toBe("error")
+    expect(normalized.tools[0].errorText).toBe(
+      "Google Calendar is not connected. Please connect Google Calendar in /integrations."
+    )
+  })
+
+  test("normalizes tool-result with nested error object payload", () => {
+    const rawMessage = {
+      id: "msg-err-2",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-call",
+          id: "tc-gcal-2",
+          name: "gcal_create_event",
+          arguments: {},
+        },
+        {
+          type: "tool-result",
+          toolCallId: "tc-gcal-2",
+          result: {
+            error: {
+              code: "integration_not_connected",
+              message: "Google Calendar is not connected.",
+            },
+          },
+        },
+      ],
+    }
+
+    const normalized = normalizeAssistantMessage(rawMessage)
+    expect(normalized.tools).toHaveLength(1)
+    expect(normalized.tools[0].status).toBe("error")
+    expect(normalized.tools[0].errorText).toBe(
+      "Google Calendar is not connected."
+    )
+  })
+})
+
+describe("extractToolErrorText", () => {
+  test("extracts human-readable messages from various error formats", () => {
+    expect(
+      extractToolErrorText({
+        error: {
+          code: "integration_not_connected",
+          message: "Connect calendar first",
+        },
+      })
+    ).toBe("Connect calendar first")
+
+    expect(
+      extractToolErrorText({
+        message: "Google Calendar create API error (403): Forbidden",
+      })
+    ).toBe("Google Calendar create API error (403): Forbidden")
+
+    expect(extractToolErrorText(new Error("Custom error message"))).toBe(
+      "Custom error message"
+    )
+
+    expect(extractToolErrorText("Direct error text")).toBe("Direct error text")
+
+    expect(extractToolErrorText("[object Object]")).toBe("Tool execution failed")
+
+    expect(extractToolErrorText({ customKey: "abc" })).toBe(
+      JSON.stringify({ customKey: "abc" }, null, 2)
+    )
   })
 })

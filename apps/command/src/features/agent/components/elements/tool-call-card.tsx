@@ -14,6 +14,7 @@ import {
 import type React from "react"
 import { ApprovalCard } from "../approval-card"
 import { QuestionnaireCard } from "../questionnaire-card"
+import { extractToolErrorText } from "../../normalization"
 
 export interface ToolCallItem {
   id: string
@@ -112,11 +113,17 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
       {/* Tool execution cards */}
       <div className="flex flex-col gap-2">
         {toolCalls.map((tc) => {
+          const hasObjError =
+            tc.result !== undefined &&
+            typeof tc.result === "object" &&
+            tc.result !== null &&
+            Boolean((tc.result as Record<string, unknown>).error)
           const toolState = mapToToolState(tc)
           const isError =
             toolState === "output-error" ||
             tc.status === "error" ||
-            Boolean(tc.errorText)
+            Boolean(tc.errorText) ||
+            hasObjError
           const isRunning =
             toolState === "input-available" ||
             tc.status === "running" ||
@@ -126,13 +133,9 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
             tc.name === "askClarifyingQuestions" ||
             tc.name.toLowerCase().includes("clarifying_question")
           const hasArgs = tc.args && Object.keys(tc.args).length > 0
-          const errorText =
-            tc.errorText ||
-            (isError && tc.result !== undefined
-              ? typeof tc.result === "string"
-                ? tc.result
-                : JSON.stringify(tc.result, null, 2)
-              : undefined)
+          const errorText = isError
+            ? extractToolErrorText(tc.errorText ?? tc.result)
+            : undefined
           const hasOutput = tc.result !== undefined || Boolean(errorText)
 
           const shouldDefaultOpen = Boolean(
