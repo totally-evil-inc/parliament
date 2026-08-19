@@ -153,7 +153,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           data-state={isOpen ? "open" : "closed"}
           aria-label="Conversation History"
           className={cn(
-            "dark relative z-20 hidden h-full shrink-0 flex-col bg-transparent text-sidebar-foreground transition-[width,min-width,max-width,padding,opacity] duration-200 ease-in-out md:flex",
+            "dark relative z-20 hidden h-svh shrink-0 flex-col bg-transparent text-sidebar-foreground transition-[width,min-width,max-width,padding,opacity] duration-200 ease-in-out md:flex",
             isOpen
               ? "w-72 min-w-[18rem] max-w-[18rem] opacity-100 md:p-2 md:pl-0"
               : "pointer-events-none w-0 min-w-0 max-w-0 overflow-hidden border-none p-0 opacity-0",

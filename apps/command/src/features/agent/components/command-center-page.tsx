@@ -10,7 +10,6 @@ import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 import { memo, useCallback, useEffect, useRef, useState } from "react"
-import { HeaderPortal } from "@/layouts/header-portal"
 import { authClient } from "@/lib/auth-client"
 import { useCommandChatContext } from "../context/command-chat-context"
 import { useHistorySidebar } from "../hooks/use-history-sidebar"
@@ -195,52 +194,50 @@ const CommandCenterHeader = memo(function CommandCenterHeader({
   onNewChat: () => void
 }) {
   return (
-    <HeaderPortal>
-      <header className="flex h-12 shrink-0 items-center justify-between border-border/60 border-b bg-card/50 px-4 backdrop-blur-md">
-        <div className="flex min-w-0 items-center gap-2.5 truncate pr-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-1 h-4" />
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/10 font-bold text-primary text-xs">
-            <BuildingLibraryIcon className="size-3.5 text-primary" />
-          </div>
-          <div className="min-w-0 truncate">
-            <h1 className="truncate font-semibold text-foreground text-sm">
-              {activeTitle || "Parliament Command Agent"}
-            </h1>
-          </div>
-          {threadId ? (
-            <span className="hidden rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground sm:inline-flex">
-              Active
-            </span>
-          ) : null}
+    <header className="flex h-12 shrink-0 items-center justify-between border-border/60 border-b bg-card/50 px-4 backdrop-blur-md">
+      <div className="flex min-w-0 items-center gap-2.5 truncate pr-4">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-1 h-4" />
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/10 font-bold text-primary text-xs">
+          <BuildingLibraryIcon className="size-3.5 text-primary" />
         </div>
+        <div className="min-w-0 truncate">
+          <h1 className="truncate font-semibold text-foreground text-sm">
+            {activeTitle || "Parliament Command Agent"}
+          </h1>
+        </div>
+        {threadId ? (
+          <span className="hidden rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground sm:inline-flex">
+            Active
+          </span>
+        ) : null}
+      </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          {threadId ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onNewChat}
-              className="flex h-8 items-center gap-1.5 px-2.5 text-xs"
-              title="Start a new conversation"
-            >
-              <SparklesIcon className="size-3.5" />
-              <span className="hidden sm:inline">New Chat</span>
-            </Button>
-          ) : null}
+      <div className="flex shrink-0 items-center gap-2">
+        {threadId ? (
           <Button
-            variant={isHistoryOpen ? "secondary" : "outline"}
+            variant="ghost"
             size="sm"
-            onClick={toggleHistory}
-            className="flex h-8 items-center gap-1.5 px-3 text-xs"
-            title="Toggle conversation history (Cmd+Shift+H)"
+            onClick={onNewChat}
+            className="flex h-8 items-center gap-1.5 px-2.5 text-xs"
+            title="Start a new conversation"
           >
-            <BookmarkIcon className="size-3.5" />
-            <span>History</span>
+            <SparklesIcon className="size-3.5" />
+            <span className="hidden sm:inline">New Chat</span>
           </Button>
-        </div>
-      </header>
-    </HeaderPortal>
+        ) : null}
+        <Button
+          variant={isHistoryOpen ? "secondary" : "outline"}
+          size="sm"
+          onClick={toggleHistory}
+          className="flex h-8 items-center gap-1.5 px-3 text-xs"
+          title="Toggle conversation history (Cmd+Shift+H)"
+        >
+          <BookmarkIcon className="size-3.5" />
+          <span>History</span>
+        </Button>
+      </div>
+    </header>
   )
 })
 
