@@ -163,7 +163,9 @@ describe("convertToModelMessages for AI SDK 7 ModelMessage format", () => {
           toolName: "list_deals",
           output: {
             type: "text",
-            value: JSON.stringify([{ id: "deal-1", title: "Enterprise Pilot" }]),
+            value: JSON.stringify([
+              { id: "deal-1", title: "Enterprise Pilot" },
+            ]),
           },
         },
       ],

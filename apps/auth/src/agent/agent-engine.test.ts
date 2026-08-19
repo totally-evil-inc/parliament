@@ -272,7 +272,10 @@ describe("AgentEngine FSM & ContextGovernor", () => {
             "x-test-org-id": orgId,
             "x-test-user-id": userId,
           },
-          body: JSON.stringify({ approved: false, feedback: "Whitespace test" }),
+          body: JSON.stringify({
+            approved: false,
+            feedback: "Whitespace test",
+          }),
         }
       )
     )
