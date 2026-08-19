@@ -9,10 +9,11 @@ import { Button } from "@workspace/ui/components/button"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { HeaderPortal } from "@/layouts/header-portal"
 import { authClient } from "@/lib/auth-client"
 import { useCommandChatContext } from "../context/command-chat-context"
+import { useHistorySidebar } from "../hooks/use-history-sidebar"
 import {
   latestAssistantThinking,
   normalizeAssistantMessage,
@@ -21,12 +22,6 @@ import { extractOpenUI } from "../openui/parser"
 import { ChatInput } from "./chat-input"
 import { MessageErrorCard, type ToolCallItem } from "./elements"
 import { MessageBubble } from "./message-bubble"
-
-// Lazy-load history slide-over panel to keep the primary route bundle lean (bundle-dynamic-imports)
-const LazyHistoryPanel = lazy(async () => {
-  const mod = await import("./history-panel")
-  return { default: mod.HistoryPanel }
-})
 
 export interface ExtractedMessage {
   content: string
@@ -212,7 +207,7 @@ export const CommandCenterPage: React.FC = () => {
   // while a run is streaming; the reasoning strip collapses on completion.
   const activeThinking = isLoading ? latestAssistantThinking(messages) : ""
 
-  const [historyOpen, setHistoryOpen] = useState(false)
+  const { isOpen: isHistoryOpen, toggle: toggleHistory } = useHistorySidebar()
   const bottomRef = useRef<HTMLDivElement>(null)
   const isAtBottomRef = useRef(true)
   const [showScrollBottom, setShowScrollBottom] = useState(false)
@@ -308,10 +303,11 @@ export const CommandCenterPage: React.FC = () => {
               </Button>
             ) : null}
             <Button
-              variant="outline"
+              variant={isHistoryOpen ? "secondary" : "outline"}
               size="sm"
-              onClick={() => setHistoryOpen(true)}
+              onClick={toggleHistory}
               className="flex h-8 items-center gap-1.5 px-3 text-xs"
+              title="Toggle conversation history (Cmd+Shift+H)"
             >
               <BookmarkIcon className="size-3.5" />
               <span>History</span>
@@ -477,16 +473,6 @@ export const CommandCenterPage: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* History Slide-over */}
-      {historyOpen ? (
-        <Suspense fallback={null}>
-          <LazyHistoryPanel
-            currentThreadId={threadId}
-            onClose={() => setHistoryOpen(false)}
-          />
-        </Suspense>
-      ) : null}
     </div>
   )
 }

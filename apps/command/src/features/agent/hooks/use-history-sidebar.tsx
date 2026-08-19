@@ -26,7 +26,7 @@ export function HistorySidebarProvider({
   children,
   defaultOpen = true,
 }: {
-  children: React.ReactNode
+  children?: React.ReactNode
   defaultOpen?: boolean
 }) {
   const [isOpen, setIsOpenState] = useState<boolean>(() => {
