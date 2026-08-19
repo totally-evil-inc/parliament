@@ -17,8 +17,11 @@ describe("date-grouping helpers", () => {
   it("formatConversationDate returns relative or short date safely", () => {
     const now = new Date()
     const future = new Date(now.getTime() + 10 * 60 * 1000)
+    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000)
+
     expect(formatConversationDate(future.toISOString())).toBe("Just now")
     expect(formatConversationDate(now.toISOString())).toBe("Just now")
+    expect(formatConversationDate(fiveMinutesAgo.toISOString())).toBe("5m ago")
     expect(formatConversationDate("invalid")).toBe("Recently")
     expect(formatConversationDate(null)).toBe("Recently")
   })

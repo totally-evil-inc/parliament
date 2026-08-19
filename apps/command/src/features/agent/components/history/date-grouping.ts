@@ -24,7 +24,7 @@ export function formatConversationDate(input?: string | null): string {
 
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
-  if (diffMs <= 0) return "Just now"
+  if (diffMs < 60 * 1000) return "Just now"
 
   const diffHours = diffMs / (1000 * 60 * 60)
 
