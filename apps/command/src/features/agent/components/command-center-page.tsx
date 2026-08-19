@@ -335,20 +335,20 @@ export const CommandCenterPage: React.FC = () => {
 
   return (
     <div className="relative flex h-full min-h-0 flex-1 overflow-hidden bg-background text-foreground">
-      {/* Contextual App Header via Memoized Portal */}
-      <CommandCenterHeader
-        activeTitle={activeTitle}
-        threadId={threadId}
-        isHistoryOpen={isHistoryOpen}
-        toggleHistory={toggleHistory}
-        onNewChat={handleNewChat}
-      />
-
       {/* Floating Nested History Sidebar */}
       <HistorySidebar />
 
       {/* Main Chat Canvas Area */}
       <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+        {/* Contextual App Header on top of Chat Canvas */}
+        <CommandCenterHeader
+          activeTitle={activeTitle}
+          threadId={threadId}
+          isHistoryOpen={isHistoryOpen}
+          toggleHistory={toggleHistory}
+          onNewChat={handleNewChat}
+        />
+
         {isEmpty ? (
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-8">
             {isHydrating ? (
