@@ -315,7 +315,9 @@ export function useDeleteConversation() {
         queryClient.setQueryData<{ conversations: ConversationSummary[] }>(
           ["agent", "conversations"],
           {
-            conversations: previousData.conversations.filter((c) => c.id !== id),
+            conversations: previousData.conversations.filter(
+              (c) => c.id !== id
+            ),
           }
         )
       }

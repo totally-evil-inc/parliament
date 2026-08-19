@@ -16,9 +16,17 @@ describe("date-grouping helpers", () => {
 
   it("formatConversationDate returns relative or short date safely", () => {
     const now = new Date()
-    expect(formatConversationDate(now.toISOString())).toBe("1m ago")
+    const future = new Date(now.getTime() + 10 * 60 * 1000)
+    expect(formatConversationDate(future.toISOString())).toBe("Just now")
+    expect(formatConversationDate(now.toISOString())).toBe("Just now")
     expect(formatConversationDate("invalid")).toBe("Recently")
     expect(formatConversationDate(null)).toBe("Recently")
+  })
+
+  it("groupConversations handles empty arrays and non-array inputs defensively", () => {
+    expect(groupConversations([])).toEqual([])
+    expect(groupConversations(null as any)).toEqual([])
+    expect(groupConversations(undefined as any)).toEqual([])
   })
 
   it("groupConversations groups pinned items separately and categorizes by date", () => {

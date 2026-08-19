@@ -85,7 +85,9 @@ export const HistoryRenameDialog: React.FC<HistoryRenameDialogProps> = ({
               disabled={renameMutation.isPending}
             />
             {error ? (
-              <p className="text-[11px] font-medium text-destructive">{error}</p>
+              <p className="text-[11px] font-medium text-destructive">
+                {error}
+              </p>
             ) : (
               <div className="flex justify-end">
                 <span className="text-[10px] text-muted-foreground">

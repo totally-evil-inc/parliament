@@ -89,6 +89,7 @@ export const HistoryItemActions: React.FC<HistoryItemActionsProps> = ({
             variant="ghost"
             size="icon-sm"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
             aria-label="Conversation actions"
             className="h-6 w-6 rounded-md p-0 text-sidebar-foreground/60 opacity-0 transition-opacity hover:bg-sidebar-accent hover:text-sidebar-foreground group-hover/history-item:opacity-100 group-focus-within/history-item:opacity-100 data-[state=open]:opacity-100"
           >
@@ -102,6 +103,7 @@ export const HistoryItemActions: React.FC<HistoryItemActionsProps> = ({
         sideOffset={4}
         className="w-44"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={handleTogglePin}>

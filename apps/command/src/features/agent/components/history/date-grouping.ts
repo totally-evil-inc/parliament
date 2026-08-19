@@ -24,6 +24,8 @@ export function formatConversationDate(input?: string | null): string {
 
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
+  if (diffMs <= 0) return "Just now"
+
   const diffHours = diffMs / (1000 * 60 * 60)
 
   if (diffHours < 1) {
@@ -79,10 +81,26 @@ export function groupConversations(
   const older: ConversationSummary[] = []
 
   const now = new Date()
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
-  const startOfYesterday = startOfToday - 24 * 60 * 60 * 1000
-  const startOf7Days = startOfToday - 7 * 24 * 60 * 60 * 1000
-  const startOf30Days = startOfToday - 30 * 24 * 60 * 60 * 1000
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  ).getTime()
+  const startOfYesterday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - 1
+  ).getTime()
+  const startOf7Days = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - 7
+  ).getTime()
+  const startOf30Days = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - 30
+  ).getTime()
 
   for (const c of conversations) {
     if (c.pinned) {
