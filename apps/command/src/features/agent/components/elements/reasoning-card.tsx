@@ -23,14 +23,14 @@ export const ReasoningCard: React.FC<ReasoningCardProps> = ({
   defaultOpen,
   className,
 }) => {
-  const contentRef = useRef<HTMLDivElement>(null)
+  const viewportRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll to bottom of live stream thinking text
+  // Auto-scroll to bottom of live stream thinking text on streaming updates
   useEffect(() => {
-    if (isStreaming && contentRef.current) {
-      contentRef.current.scrollTop = contentRef.current.scrollHeight
+    if (isStreaming && viewportRef.current) {
+      viewportRef.current.scrollTop = viewportRef.current.scrollHeight
     }
-  }, [isStreaming])
+  }, [isStreaming, thinking])
 
   if (!thinking && !isStreaming) return null
 
@@ -50,7 +50,7 @@ export const ReasoningCard: React.FC<ReasoningCardProps> = ({
       {thinking ? (
         <ReasoningContent className="p-0">
           <ScrollArea
-            ref={contentRef}
+            viewportRef={viewportRef}
             className="max-h-72 w-full break-words p-3.5 font-mono text-muted-foreground text-xs leading-relaxed"
           >
             <div className="select-text whitespace-pre-wrap">{thinking}</div>
