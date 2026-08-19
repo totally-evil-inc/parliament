@@ -7,6 +7,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react"
@@ -43,15 +44,18 @@ export interface ChatMessage {
   error?: AgentChatError
 }
 
-export interface CommandChatContextValue {
+export interface CommandChatState {
   messages: ChatMessage[]
   isLoading: boolean
   isHydrating: boolean
   threadId?: string
   activeTitle?: string
   selectedModel: string
-  setSelectedModel: (model: string) => void
   chatError: AgentChatError | null
+}
+
+export interface CommandChatActions {
+  setSelectedModel: (model: string) => void
   sendPrompt: (text: string) => Promise<void>
   stop: () => void
   retryLastPrompt: () => Promise<void>
@@ -63,7 +67,137 @@ export interface CommandChatContextValue {
   isCurrentThread: (id: string) => boolean
 }
 
-const CommandChatContext = createContext<CommandChatContextValue | null>(null)
+export type CommandChatContextValue = CommandChatState & CommandChatActions
+
+const CommandChatStateContext = createContext<CommandChatState | null>(null)
+const CommandChatActionsContext = createContext<CommandChatActions | null>(null)
+
+/**
+ * Applies a series of AgentEvent items to a target assistant message within the messages list
+ * in a single atomic batch pass, preventing excessive React render schedules.
+ */
+function applyEventsToMessages(
+  messages: ChatMessage[],
+  assistantMsgId: string,
+  events: AgentEvent[],
+  executedToolsOut?: Set<string>
+): ChatMessage[] {
+  if (events.length === 0) return messages
+
+  return messages.map((msg) => {
+    if (msg.id !== assistantMsgId) return msg
+
+    let content = msg.content || ""
+    let thinking = msg.thinking || ""
+    let toolCalls = msg.toolCalls ? [...msg.toolCalls] : []
+    let error = msg.error
+
+    for (const event of events) {
+      switch (event.type) {
+        case "content:delta":
+          content += event.text
+          break
+
+        case "thinking:delta":
+          thinking += event.text
+          break
+
+        case "tool:called":
+          executedToolsOut?.add(event.name)
+          toolCalls.push({
+            id: event.callId,
+            name: event.name,
+            args: event.args,
+            status: "running",
+          })
+          break
+
+        case "tool:result": {
+          const resObj = event.result as Record<string, unknown> | null
+          const isRejected =
+            resObj?.status === "rejected" || resObj?.status === "denied"
+          const isSkipped = resObj?.status === "skipped"
+          const derivedStatus = event.isError
+            ? "error"
+            : isRejected
+              ? "rejected"
+              : isSkipped
+                ? "skipped"
+                : "completed"
+
+          toolCalls = toolCalls.map((tc) => {
+            if (tc.id === event.callId) {
+              if (tc.name) executedToolsOut?.add(tc.name)
+              return {
+                ...tc,
+                result: event.result,
+                status: derivedStatus,
+                errorText: event.isError ? String(event.result) : undefined,
+              }
+            }
+            return tc
+          })
+          break
+        }
+
+        case "action:approval_required":
+          toolCalls = toolCalls.map((tc) => {
+            if (event.callId !== undefined && tc.id === event.callId) {
+              return {
+                ...tc,
+                needsApproval: true,
+                approvalId: event.approvalId,
+                status: "pending_approval",
+              }
+            }
+            return tc
+          })
+          break
+
+        case "tool:executing":
+          toolCalls = toolCalls.map((tc) => {
+            if (tc.id === event.callId || tc.name === event.name) {
+              return { ...tc, status: "running" }
+            }
+            return tc
+          })
+          break
+
+        case "turn:suspended":
+          if (event.reason === "budget_cap") {
+            toolCalls = toolCalls.map((tc) => {
+              if (tc.status === "running") {
+                return { ...tc, status: "suspended" }
+              }
+              return tc
+            })
+          }
+          break
+
+        case "turn:error":
+          toolCalls = toolCalls.map((tc) => {
+            if (tc.status === "running") {
+              return { ...tc, status: "error" as const }
+            }
+            return tc
+          })
+          error = { code: event.code, message: event.message }
+          break
+
+        default:
+          break
+      }
+    }
+
+    return {
+      ...msg,
+      content,
+      thinking,
+      toolCalls,
+      error,
+    }
+  })
+}
 
 export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -80,10 +214,31 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [chatError, setChatError] = useState<AgentChatError | null>(null)
   const [lastPrompt, setLastPrompt] = useState<string>("")
 
+  // Refs for stable action callbacks (advanced-use-latest, rerender-dependencies)
+  const messagesRef = useRef<ChatMessage[]>(messages)
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
   const threadIdRef = useRef<string | undefined>(threadId)
   useEffect(() => {
     threadIdRef.current = threadId
   }, [threadId])
+
+  const selectedModelRef = useRef<string>(selectedModel)
+  useEffect(() => {
+    selectedModelRef.current = selectedModel
+  }, [selectedModel])
+
+  const isLoadingRef = useRef<boolean>(isLoading)
+  useEffect(() => {
+    isLoadingRef.current = isLoading
+  }, [isLoading])
+
+  const lastPromptRef = useRef<string>(lastPrompt)
+  useEffect(() => {
+    lastPromptRef.current = lastPrompt
+  }, [lastPrompt])
 
   const abortControllerRef = useRef<AbortController | null>(null)
   const isSubmittingRef = useRef<boolean>(false)
@@ -96,21 +251,51 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [modelsData?.defaultModel, selectedModel])
 
-  const invalidateAgentQueries = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ["agent", "conversations"] })
-    queryClient.invalidateQueries({ queryKey: ["proposals"] })
-    queryClient.invalidateQueries({ queryKey: ["invoices"] })
-    queryClient.invalidateQueries({ queryKey: ["scheduled-dispatches"] })
-    queryClient.invalidateQueries({ queryKey: ["deals"] })
-    queryClient.invalidateQueries({ queryKey: ["customers"] })
-    queryClient.invalidateQueries({ queryKey: ["deal-analytics"] })
-    queryClient.invalidateQueries({ queryKey: ["customer-analytics"] })
-    if (threadIdRef.current) {
-      queryClient.invalidateQueries({
-        queryKey: ["agent", "conversations", threadIdRef.current],
-      })
-    }
-  }, [queryClient])
+  /**
+   * Target query invalidation to avoid unnecessary broad network waterfall refetches (client-swr-dedup)
+   */
+  const invalidateAgentQueries = useCallback(
+    (executedToolNames?: Set<string>) => {
+      queryClient.invalidateQueries({ queryKey: ["agent", "conversations"] })
+      if (threadIdRef.current) {
+        queryClient.invalidateQueries({
+          queryKey: ["agent", "conversations", threadIdRef.current],
+        })
+      }
+
+      if (!executedToolNames || executedToolNames.size === 0) {
+        queryClient.invalidateQueries({ queryKey: ["proposals"] })
+        queryClient.invalidateQueries({ queryKey: ["invoices"] })
+        queryClient.invalidateQueries({ queryKey: ["scheduled-dispatches"] })
+        queryClient.invalidateQueries({ queryKey: ["deals"] })
+        queryClient.invalidateQueries({ queryKey: ["customers"] })
+        queryClient.invalidateQueries({ queryKey: ["deal-analytics"] })
+        queryClient.invalidateQueries({ queryKey: ["customer-analytics"] })
+        return
+      }
+
+      for (const tool of executedToolNames) {
+        const lower = tool.toLowerCase()
+        if (lower.includes("proposal")) {
+          queryClient.invalidateQueries({ queryKey: ["proposals"] })
+          queryClient.invalidateQueries({ queryKey: ["deals"] })
+          queryClient.invalidateQueries({ queryKey: ["deal-analytics"] })
+        }
+        if (lower.includes("invoice") || lower.includes("billing")) {
+          queryClient.invalidateQueries({ queryKey: ["invoices"] })
+          queryClient.invalidateQueries({ queryKey: ["customer-analytics"] })
+        }
+        if (lower.includes("schedule") || lower.includes("dispatch")) {
+          queryClient.invalidateQueries({ queryKey: ["scheduled-dispatches"] })
+        }
+        if (lower.includes("customer") || lower.includes("contact")) {
+          queryClient.invalidateQueries({ queryKey: ["customers"] })
+          queryClient.invalidateQueries({ queryKey: ["customer-analytics"] })
+        }
+      }
+    },
+    [queryClient]
+  )
 
   // TanStack Query Mutation for Action Approval Resolution
   const resolveActionMutation = useMutation({
@@ -141,7 +326,6 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       return await res.json()
     },
     onSuccess: (data, variables) => {
-      // Update local tool state
       setMessages((prev) =>
         prev.map((msg) => {
           if (!msg.toolCalls) return msg
@@ -171,24 +355,24 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
         code: (err as any).code || "approval_failed",
         message: err.message || "Failed to resolve action approval",
       })
-      // Sync queries on conflict or error
       invalidateAgentQueries()
     },
   })
 
   const sendPrompt = useCallback(
     async (text: string) => {
-      if (!text.trim() || isSubmittingRef.current || isLoading) return
+      const trimmed = text.trim()
+      if (!trimmed || isSubmittingRef.current || isLoadingRef.current) return
       isSubmittingRef.current = true
       setChatError(null)
-      setLastPrompt(text)
+      setLastPrompt(trimmed)
 
       let targetThreadId = threadIdRef.current
       if (!targetThreadId) {
         targetThreadId = crypto.randomUUID()
         setThreadId(targetThreadId)
         threadIdRef.current = targetThreadId
-        setActiveTitle(text.trim().slice(0, 60))
+        setActiveTitle(trimmed.slice(0, 60))
         navigate({
           to: "/$id",
           params: { id: targetThreadId },
@@ -199,7 +383,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       const userMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: "user",
-        content: text,
+        content: trimmed,
       }
 
       const assistantMsgId = crypto.randomUUID()
@@ -216,16 +400,15 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       const abortController = new AbortController()
       abortControllerRef.current = abortController
 
+      const executedTools = new Set<string>()
+
       try {
-        const payloadMessages = [...messages, userMsg].map((m) => {
-          const parts: any[] = []
+        const payloadMessages = [...messagesRef.current, userMsg].map((m) => {
+          const parts: unknown[] = []
           if (m.thinking) parts.push({ type: "thinking", text: m.thinking })
           if (m.content) parts.push({ type: "text", text: m.content })
           if (Array.isArray(m.toolCalls)) {
             for (const tc of m.toolCalls) {
-              // Invariant: Only send tool-call if it has a paired result,
-              // preventing provider schema rejections (HTTP 400) and never
-              // fabricating `{}` outcomes for unexecuted (e.g. pending approval) calls.
               if (tc.result !== undefined) {
                 const isErr =
                   tc.status === "error" ||
@@ -267,7 +450,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
             messages: payloadMessages,
             threadId: targetThreadId,
             forwardedProps: {
-              model: selectedModel || null,
+              model: selectedModelRef.current || null,
             },
           }),
         })
@@ -279,7 +462,6 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
             body?.error?.message ||
             `Request failed with HTTP status ${res.status}`
           setChatError({ code, message })
-          // Remove the optimistic assistant placeholder on error response
           setMessages((prev) => prev.filter((m) => m.id !== assistantMsgId))
           isSubmittingRef.current = false
           setIsLoading(false)
@@ -302,6 +484,9 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
           const lines = buffer.split("\n\n")
           buffer = lines.pop() ?? ""
 
+          // Batch all parseable events arriving in this read chunk
+          const chunkEvents: AgentEvent[] = []
+
           for (const block of lines) {
             if (!block.trim() || block.startsWith(":")) continue // Skip heartbeats/comments
             const dataLine = block
@@ -313,146 +498,33 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
             try {
               const eventParsed = JSON.parse(rawJson)
               const eventValidation = agentEventSchema.safeParse(eventParsed)
-              if (!eventValidation.success) continue
-
-              const event: AgentEvent = eventValidation.data
-
-              setMessages((prev) =>
-                prev.map((msg) => {
-                  if (msg.id !== assistantMsgId) return msg
-
-                  switch (event.type) {
-                    case "content:delta":
-                      return {
-                        ...msg,
-                        content: (msg.content || "") + event.text,
-                      }
-
-                    case "thinking:delta":
-                      return {
-                        ...msg,
-                        thinking: (msg.thinking || "") + event.text,
-                      }
-
-                    case "tool:called": {
-                      const existing = msg.toolCalls ?? []
-                      return {
-                        ...msg,
-                        toolCalls: [
-                          ...existing,
-                          {
-                            id: event.callId,
-                            name: event.name,
-                            args: event.args,
-                            status: "running",
-                          },
-                        ],
-                      }
-                    }
-
-                    case "tool:result": {
-                      const resObj = event.result as any
-                      const isRejected =
-                        resObj?.status === "rejected" ||
-                        resObj?.status === "denied"
-                      const isSkipped = resObj?.status === "skipped"
-                      const derivedStatus = event.isError
-                        ? "error"
-                        : isRejected
-                          ? "rejected"
-                          : isSkipped
-                            ? "skipped"
-                            : "completed"
-
-                      const updatedTools = (msg.toolCalls ?? []).map((tc) => {
-                        if (tc.id === event.callId) {
-                          return {
-                            ...tc,
-                            result: event.result,
-                            status: derivedStatus,
-                            errorText: event.isError
-                              ? String(event.result)
-                              : undefined,
-                          }
-                        }
-                        return tc
-                      })
-                      return { ...msg, toolCalls: updatedTools }
-                    }
-
-                    case "action:approval_required": {
-                      const updatedTools = (msg.toolCalls ?? []).map((tc) => {
-                        if (
-                          event.callId !== undefined &&
-                          tc.id === event.callId
-                        ) {
-                          return {
-                            ...tc,
-                            needsApproval: true,
-                            approvalId: event.approvalId,
-                            status: "pending_approval",
-                          }
-                        }
-                        return tc
-                      })
-                      return { ...msg, toolCalls: updatedTools }
-                    }
-
-                    case "tool:executing": {
-                      const updatedTools = (msg.toolCalls ?? []).map((tc) => {
-                        if (tc.id === event.callId || tc.name === event.name) {
-                          return { ...tc, status: "running" }
-                        }
-                        return tc
-                      })
-                      return { ...msg, toolCalls: updatedTools }
-                    }
-
-                    case "turn:suspended": {
-                      if (event.reason === "budget_cap") {
-                        const updatedTools = (msg.toolCalls ?? []).map((tc) => {
-                          if (tc.status === "running") {
-                            return { ...tc, status: "suspended" }
-                          }
-                          return tc
-                        })
-                        return { ...msg, toolCalls: updatedTools }
-                      }
-                      return msg
-                    }
-
-                    case "turn:error": {
-                      const updatedTools = (msg.toolCalls ?? []).map((tc) => {
-                        if (tc.status === "running") {
-                          return { ...tc, status: "error" as const }
-                        }
-                        return tc
-                      })
-                      return {
-                        ...msg,
-                        toolCalls: updatedTools,
-                        error: { code: event.code, message: event.message },
-                      }
-                    }
-
-                    default:
-                      return msg
-                  }
-                })
-              )
+              if (eventValidation.success) {
+                chunkEvents.push(eventValidation.data)
+              }
             } catch {
-              // Ignore partial JSON parse errors
+              // Ignore partial JSON chunks
             }
+          }
+
+          // Dispatch a single batched state update per read chunk
+          if (chunkEvents.length > 0) {
+            setMessages((prev) =>
+              applyEventsToMessages(
+                prev,
+                assistantMsgId,
+                chunkEvents,
+                executedTools
+              )
+            )
           }
         }
 
-        invalidateAgentQueries()
+        invalidateAgentQueries(executedTools)
       } catch (err: unknown) {
         if ((err as Error)?.name !== "AbortError") {
           const message =
             err instanceof Error ? err.message : "Agent stream failed"
           setChatError({ code: "stream_failed", message })
-          // If stream failed before any content was emitted, update the assistant message
           setMessages((prev) =>
             prev.map((msg) => {
               if (
@@ -474,7 +546,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
         setIsLoading(false)
       }
     },
-    [isLoading, messages, navigate, selectedModel, invalidateAgentQueries]
+    [navigate, invalidateAgentQueries]
   )
 
   const stop = useCallback(() => {
@@ -483,7 +555,6 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       abortControllerRef.current = null
       isSubmittingRef.current = false
       setIsLoading(false)
-      // Transition running tools to suspended state
       setMessages((prev) =>
         prev.map((msg) => {
           if (!msg.toolCalls) return msg
@@ -503,217 +574,254 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [])
 
   const retryLastPrompt = useCallback(async () => {
-    if (lastPrompt) {
-      await sendPrompt(lastPrompt)
+    if (lastPromptRef.current) {
+      await sendPrompt(lastPromptRef.current)
     }
-  }, [lastPrompt, sendPrompt])
+  }, [sendPrompt])
 
-  const approveTool = useCallback(
-    async (approvalId: string) => {
-      try {
-        await resolveActionMutation.mutateAsync({ approvalId, approved: true })
-      } catch {
-        // Handled in onError callback of resolveActionMutation
-      }
-    },
-    [resolveActionMutation]
-  )
+  const resolveMutationRef = useRef(resolveActionMutation)
+  useEffect(() => {
+    resolveMutationRef.current = resolveActionMutation
+  }, [resolveActionMutation])
 
-  const rejectTool = useCallback(
-    async (approvalId: string) => {
-      try {
-        await resolveActionMutation.mutateAsync({ approvalId, approved: false })
-      } catch {
-        // Handled in onError callback of resolveActionMutation
-      }
-    },
-    [resolveActionMutation]
-  )
+  const approveTool = useCallback(async (approvalId: string) => {
+    try {
+      await resolveMutationRef.current.mutateAsync({
+        approvalId,
+        approved: true,
+      })
+    } catch {
+      // Handled in onError callback of resolveActionMutation
+    }
+  }, [])
+
+  const rejectTool = useCallback(async (approvalId: string) => {
+    try {
+      await resolveMutationRef.current.mutateAsync({
+        approvalId,
+        approved: false,
+      })
+    } catch {
+      // Handled in onError callback of resolveActionMutation
+    }
+  }, [])
 
   const clearError = useCallback(() => {
     setChatError(null)
   }, [])
 
-  const loadThread = useCallback(
-    async (id: string) => {
-      if (threadIdRef.current === id && messages.length > 0) return
+  const loadThread = useCallback(async (id: string) => {
+    if (threadIdRef.current === id && messagesRef.current.length > 0) return
 
-      setIsHydrating(true)
-      setThreadId(id)
-      threadIdRef.current = id
+    setIsHydrating(true)
+    setThreadId(id)
+    threadIdRef.current = id
 
-      try {
-        const res = await fetch(
-          `${AUTH_SERVER_URL}/api/agent/conversations/${id}`,
-          {
-            credentials: "include",
-          }
-        )
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-        const data = await res.json()
-        if (data.conversation?.title) {
-          setActiveTitle(data.conversation.title)
+    try {
+      const res = await fetch(
+        `${AUTH_SERVER_URL}/api/agent/conversations/${id}`,
+        {
+          credentials: "include",
         }
+      )
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
-        if (Array.isArray(data.messages)) {
-          const loaded: ChatMessage[] = data.messages.map((m: any) => {
-            let text = ""
-            let thinking = ""
-            const toolCalls: ToolCallItem[] = []
+      const data = await res.json()
+      if (data.conversation?.title) {
+        setActiveTitle(data.conversation.title)
+      }
 
-            if (Array.isArray(m.parts)) {
-              for (const p of m.parts) {
-                if (p?.type === "text") {
-                  text += p.text ?? p.content ?? ""
-                } else if (p?.type === "thinking") {
-                  thinking += p.text ?? p.thinking ?? p.content ?? ""
-                } else if (
-                  p?.type === "tool-call" ||
-                  p?.type === "tool-invocation"
-                ) {
+      if (Array.isArray(data.messages)) {
+        const loaded: ChatMessage[] = data.messages.map((m: any) => {
+          let text = ""
+          let thinking = ""
+          const toolCalls: ToolCallItem[] = []
+
+          if (Array.isArray(m.parts)) {
+            for (const p of m.parts) {
+              if (p?.type === "text") {
+                text += p.text ?? p.content ?? ""
+              } else if (p?.type === "thinking") {
+                thinking += p.text ?? p.thinking ?? p.content ?? ""
+              } else if (
+                p?.type === "tool-call" ||
+                p?.type === "tool-invocation"
+              ) {
+                toolCalls.push({
+                  id: String(p.id ?? p.toolCallId ?? "tool"),
+                  name: String(p.name ?? p.toolName ?? "tool"),
+                  args: p.args ?? p.input ?? {},
+                  status: "pending",
+                })
+              } else if (p?.type === "tool-result") {
+                const existing = toolCalls.find((tc) => tc.id === p.toolCallId)
+                const resObj = (p.result ?? p.output) as any
+                const isRejected =
+                  resObj?.status === "rejected" ||
+                  resObj?.status === "denied" ||
+                  p.status === "rejected" ||
+                  p.status === "denied"
+                const isSkipped =
+                  resObj?.status === "skipped" || p.status === "skipped"
+                const derivedStatus = p.isError
+                  ? "error"
+                  : isRejected
+                    ? "rejected"
+                    : isSkipped
+                      ? "skipped"
+                      : "completed"
+
+                if (existing) {
+                  existing.result = p.result ?? p.output
+                  existing.status = derivedStatus
+                  if (p.isError) {
+                    existing.errorText = String(p.result ?? p.output ?? "")
+                  }
+                } else {
                   toolCalls.push({
-                    id: String(p.id ?? p.toolCallId ?? "tool"),
-                    name: String(p.name ?? p.toolName ?? "tool"),
-                    args: p.args ?? p.input ?? {},
-                    status: "pending",
+                    id: String(p.toolCallId ?? "tool"),
+                    name: String(p.toolName ?? "tool"),
+                    result: p.result ?? p.output,
+                    status: derivedStatus,
+                    errorText: p.isError
+                      ? String(p.result ?? p.output ?? "")
+                      : undefined,
                   })
-                } else if (p?.type === "tool-result") {
-                  const existing = toolCalls.find(
-                    (tc) => tc.id === p.toolCallId
-                  )
-                  const resObj = (p.result ?? p.output) as any
-                  const isRejected =
-                    resObj?.status === "rejected" ||
-                    resObj?.status === "denied" ||
-                    p.status === "rejected" ||
-                    p.status === "denied"
-                  const isSkipped =
-                    resObj?.status === "skipped" || p.status === "skipped"
-                  const derivedStatus = p.isError
-                    ? "error"
-                    : isRejected
-                      ? "rejected"
-                      : isSkipped
-                        ? "skipped"
-                        : "completed"
-
-                  if (existing) {
-                    existing.result = p.result ?? p.output
-                    existing.status = derivedStatus
-                    if (p.isError) {
-                      existing.errorText = String(p.result ?? p.output ?? "")
-                    }
-                  } else {
-                    toolCalls.push({
-                      id: String(p.toolCallId ?? "tool"),
-                      name: String(p.toolName ?? "tool"),
-                      result: p.result ?? p.output,
-                      status: derivedStatus,
-                      errorText: p.isError
-                        ? String(p.result ?? p.output ?? "")
-                        : undefined,
-                    })
-                  }
-                } else if (p?.type === "approval-requested") {
-                  const resolvedApprovalId = String(
-                    p.approvalId ?? p.resumeId ?? p.id ?? "approval"
-                  )
-                  const existing = toolCalls.find(
-                    (tc) =>
-                      (p.callId !== undefined && tc.id === String(p.callId)) ||
-                      (tc.name === String(p.toolName ?? "action") &&
-                        tc.status === "pending")
-                  )
-                  if (existing) {
-                    existing.status = "pending_approval"
-                    existing.needsApproval = true
-                    existing.approvalId = resolvedApprovalId
-                  } else {
-                    toolCalls.push({
-                      id: resolvedApprovalId,
-                      name: String(p.toolName ?? "action"),
-                      args: p.toolArgs ?? p.args ?? {},
-                      status: "pending_approval",
-                      needsApproval: true,
-                      approvalId: resolvedApprovalId,
-                    })
-                  }
+                }
+              } else if (p?.type === "approval-requested") {
+                const resolvedApprovalId = String(
+                  p.approvalId ?? p.resumeId ?? p.id ?? "approval"
+                )
+                const existing = toolCalls.find(
+                  (tc) =>
+                    (p.callId !== undefined && tc.id === String(p.callId)) ||
+                    (tc.name === String(p.toolName ?? "action") &&
+                      tc.status === "pending")
+                )
+                if (existing) {
+                  existing.status = "pending_approval"
+                  existing.needsApproval = true
+                  existing.approvalId = resolvedApprovalId
+                } else {
+                  toolCalls.push({
+                    id: resolvedApprovalId,
+                    name: String(p.toolName ?? "action"),
+                    args: p.toolArgs ?? p.args ?? {},
+                    status: "pending_approval",
+                    needsApproval: true,
+                    approvalId: resolvedApprovalId,
+                  })
                 }
               }
             }
+          }
 
-            return {
-              id: m.id,
-              role: m.role,
-              content: text,
-              thinking: thinking || undefined,
-              toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
-            }
-          })
-
-          setMessages(loaded)
-        }
-      } catch (err: unknown) {
-        setChatError({
-          code: "load_failed",
-          message: err instanceof Error ? err.message : "Failed to load thread",
+          return {
+            id: m.id,
+            role: m.role,
+            content: text,
+            thinking: thinking || undefined,
+            toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+          }
         })
-      } finally {
-        setIsHydrating(false)
+
+        setMessages(loaded)
       }
-    },
-    [messages.length]
-  )
+    } catch (err: unknown) {
+      setChatError({
+        code: "load_failed",
+        message: err instanceof Error ? err.message : "Failed to load thread",
+      })
+    } finally {
+      setIsHydrating(false)
+    }
+  }, [])
 
   const resetNewChat = useCallback(() => {
-    if (isLoading) return
+    if (isLoadingRef.current) return
     setThreadId(undefined)
     threadIdRef.current = undefined
     setActiveTitle(undefined)
     setMessages([])
     setChatError(null)
-  }, [isLoading])
+  }, [])
 
   const isCurrentThread = useCallback((id: string) => {
     return threadIdRef.current === id
   }, [])
 
+  const stateValue = useMemo<CommandChatState>(
+    () => ({
+      messages,
+      isLoading,
+      isHydrating,
+      threadId,
+      activeTitle:
+        activeTitle ||
+        (messages.length > 0 ? "Conversation" : "New Conversation"),
+      selectedModel,
+      chatError,
+    }),
+    [messages, isLoading, isHydrating, threadId, activeTitle, selectedModel, chatError]
+  )
+
+  const actionsValue = useMemo<CommandChatActions>(
+    () => ({
+      setSelectedModel,
+      sendPrompt,
+      stop,
+      retryLastPrompt,
+      approveTool,
+      rejectTool,
+      clearError,
+      loadThread,
+      resetNewChat,
+      isCurrentThread,
+    }),
+    [
+      sendPrompt,
+      stop,
+      retryLastPrompt,
+      approveTool,
+      rejectTool,
+      clearError,
+      loadThread,
+      resetNewChat,
+      isCurrentThread,
+    ]
+  )
+
   return (
-    <CommandChatContext.Provider
-      value={{
-        messages,
-        isLoading,
-        isHydrating,
-        threadId,
-        activeTitle:
-          activeTitle ||
-          (messages.length > 0 ? "Conversation" : "New Conversation"),
-        selectedModel,
-        setSelectedModel,
-        chatError,
-        sendPrompt,
-        stop,
-        retryLastPrompt,
-        approveTool,
-        rejectTool,
-        clearError,
-        loadThread,
-        resetNewChat,
-        isCurrentThread,
-      }}
-    >
-      {children}
-    </CommandChatContext.Provider>
+    <CommandChatStateContext.Provider value={stateValue}>
+      <CommandChatActionsContext.Provider value={actionsValue}>
+        {children}
+      </CommandChatActionsContext.Provider>
+    </CommandChatStateContext.Provider>
   )
 }
 
-export function useCommandChatContext() {
-  const ctx = useContext(CommandChatContext)
+export function useCommandChatState(): CommandChatState {
+  const ctx = useContext(CommandChatStateContext)
   if (!ctx) {
     throw new Error(
-      "useCommandChatContext must be used within a CommandChatProvider"
+      "useCommandChatState must be used within a CommandChatProvider"
     )
   }
   return ctx
+}
+
+export function useCommandChatActions(): CommandChatActions {
+  const ctx = useContext(CommandChatActionsContext)
+  if (!ctx) {
+    throw new Error(
+      "useCommandChatActions must be used within a CommandChatProvider"
+    )
+  }
+  return ctx
+}
+
+export function useCommandChatContext(): CommandChatContextValue {
+  const state = useCommandChatState()
+  const actions = useCommandChatActions()
+  return useMemo(() => ({ ...state, ...actions }), [state, actions])
 }
