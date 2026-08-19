@@ -78,7 +78,7 @@ const CommandChatActionsContext = createContext<CommandChatActions | null>(null)
  * Applies a series of AgentEvent items to a target assistant message within the messages list
  * in a single atomic batch pass, preventing excessive React render schedules.
  */
-function applyEventsToMessages(
+export function applyEventsToMessages(
   messages: ChatMessage[],
   assistantMsgId: string,
   events: AgentEvent[],
@@ -185,6 +185,16 @@ function applyEventsToMessages(
           break
 
         case "turn:error":
+          if (event.code === "aborted") {
+            // Client-initiated stop: cleanly transition running tools to suspended without error state
+            toolCalls = toolCalls.map((tc) => {
+              if (tc.status === "running") {
+                return { ...tc, status: "suspended" as const }
+              }
+              return tc
+            })
+            break
+          }
           toolCalls = toolCalls.map((tc) => {
             if (tc.status === "running") {
               return { ...tc, status: "error" as const }
@@ -509,7 +519,11 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
         invalidateAgentQueries(executedTools)
       } catch (err: unknown) {
-        if ((err as Error)?.name !== "AbortError") {
+        const isAbort =
+          (err as Error)?.name === "AbortError" ||
+          (err as any)?.code === "aborted" ||
+          abortController.signal.aborted
+        if (!isAbort) {
           const message =
             err instanceof Error ? err.message : "Agent stream failed"
           setChatError({ code: "stream_failed", message })
