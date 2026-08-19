@@ -9,7 +9,7 @@ import { Button } from "@workspace/ui/components/button"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react"
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { HeaderPortal } from "@/layouts/header-portal"
 import { authClient } from "@/lib/auth-client"
 import { useCommandChatContext } from "../context/command-chat-context"
@@ -101,13 +101,15 @@ export function extractThinkingAndContent(m: any): ExtractedMessage {
 
   // Parse <think>...</think> tags inside rawContent (common in DeepSeek R1 & reasoning models)
   if (rawContent.includes("<think>")) {
-    const thinkMatch = rawContent.match(/<think>([\s\S]*?)<\/think>/)
-    if (thinkMatch) {
-      thinkingParts.push(thinkMatch[1].trim())
+    const closedMatches = [...rawContent.matchAll(/<think>([\s\S]*?)<\/think>/g)]
+    if (closedMatches.length > 0) {
+      for (const m of closedMatches) {
+        if (m[1]?.trim()) thinkingParts.push(m[1].trim())
+      }
       rawContent = rawContent.replace(/<think>[\s\S]*?<\/think>/g, "").trim()
     } else {
       const openThinkMatch = rawContent.match(/<think>([\s\S]*)$/)
-      if (openThinkMatch) {
+      if (openThinkMatch?.[1]) {
         thinkingParts.push(openThinkMatch[1].trim())
         rawContent = rawContent.replace(/<think>[\s\S]*$/, "").trim()
       }
@@ -228,13 +230,19 @@ export const CommandCenterPage: React.FC = () => {
   const scrollRafIdRef = useRef<number | null>(null)
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget
+    const target = (e.target as HTMLElement) || e.currentTarget
     if (scrollRafIdRef.current !== null) return
 
     scrollRafIdRef.current = requestAnimationFrame(() => {
       scrollRafIdRef.current = null
+      const scrollEl =
+        target.scrollHeight > target.clientHeight
+          ? target
+          : (target.querySelector?.(
+              '[data-slot="scroll-area-viewport"]'
+            ) as HTMLElement) || target
       const distanceToBottom =
-        target.scrollHeight - target.scrollTop - target.clientHeight
+        scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight
       const atBottom = distanceToBottom < 120
       isAtBottomRef.current = atBottom
       setShowScrollBottom((prev) => (prev !== !atBottom ? !atBottom : prev))
@@ -370,10 +378,10 @@ export const CommandCenterPage: React.FC = () => {
           )}
         </div>
       ) : (
-        <>
+        <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden">
           {/* Message Feed with ScrollArea */}
           <ScrollArea className="min-h-0 w-full flex-1" onScroll={handleScroll}>
-            <main className="mx-auto w-full max-w-4xl space-y-4 px-6 py-4">
+            <main className="mx-auto w-full max-w-4xl space-y-4 px-4 pt-4 pb-48 sm:px-6">
               {displayedMessages.map((m: any, idx: number) => {
                 const normalized = normalizeAssistantMessage(m)
                 const isLastMessage = idx === displayedMessages.length - 1
@@ -429,13 +437,13 @@ export const CommandCenterPage: React.FC = () => {
                   />
                 </div>
               ) : null}
-              <div ref={bottomRef} />
+              <div ref={bottomRef} className="h-4 shrink-0" />
             </main>
           </ScrollArea>
 
           {/* Floating Scroll to Bottom Button */}
           {showScrollBottom ? (
-            <div className="absolute right-8 bottom-24 z-20">
+            <div className="absolute right-6 bottom-36 z-20 sm:right-8">
               <Button
                 size="sm"
                 variant="secondary"
@@ -451,19 +459,23 @@ export const CommandCenterPage: React.FC = () => {
             </div>
           ) : null}
 
-          {/* Docked Bottom Input */}
-          <footer className="shrink-0 border-border border-t bg-background p-4">
-            <ChatInput
-              onSend={sendPrompt}
-              onStop={stop}
-              isLoading={isLoading}
-              selectedModel={selectedModel}
-              onSelectModel={setSelectedModel}
-              showPrompts={false}
-              autoFocus={true}
-            />
-          </footer>
-        </>
+          {/* Floating Canvas Chat Input with Gradient Under-Scroll Mask */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col justify-end bg-gradient-to-t from-background via-background/85 to-transparent pt-12 pb-4 sm:pb-6">
+            <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
+              <div className="pointer-events-auto rounded-2xl shadow-2xl">
+                <ChatInput
+                  onSend={sendPrompt}
+                  onStop={stop}
+                  isLoading={isLoading}
+                  selectedModel={selectedModel}
+                  onSelectModel={setSelectedModel}
+                  showPrompts={false}
+                  autoFocus={true}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* History Slide-over */}

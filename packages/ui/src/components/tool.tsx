@@ -269,14 +269,19 @@ export function ToolOutput({
   ...props
 }: ToolOutputProps) {
   const [copied, setCopied] = useState(false)
-  if (!output && !errorText && !children) return null
+  if (output === undefined && !errorText && !children) return null
 
   const handleCopyError = () => {
-    if (!errorText) return
-    navigator.clipboard.writeText(errorText).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
+    if (!errorText || typeof navigator === "undefined" || !navigator.clipboard?.writeText) return
+    navigator.clipboard
+      .writeText(errorText)
+      .then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+      .catch(() => {
+        // Clipboard permission denied or non-secure context
+      })
   }
 
   return (

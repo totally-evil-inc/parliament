@@ -69,7 +69,21 @@ const normalizationCache = new WeakMap<object, CachedTurnEntry>()
  * to guarantee that streaming tokens and in-place state transitions always trigger fresh normalization.
  */
 function computeMessageSignature(msgObj: Record<string, unknown>): string {
-  const content = String(msgObj.content ?? msgObj.text ?? "")
+  let content = ""
+  if (typeof msgObj.content === "string") {
+    content = msgObj.content
+  } else if (typeof msgObj.text === "string") {
+    content = msgObj.text
+  } else if (Array.isArray(msgObj.content)) {
+    content = (msgObj.content as unknown[])
+      .map((c) => {
+        if (typeof c === "string") return c
+        const rec = c as Record<string, unknown> | null
+        return String(rec?.text ?? rec?.content ?? rec?.value ?? "")
+      })
+      .join("")
+  }
+
   const parts = Array.isArray(msgObj.parts) ? msgObj.parts : []
   if (parts.length === 0 && !msgObj.toolCalls) {
     return `c:${content}`
