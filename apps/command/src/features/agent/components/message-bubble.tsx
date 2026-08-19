@@ -1,5 +1,6 @@
 import type { TaskStatus } from "@workspace/ui/components/task"
 import type React from "react"
+import { memo } from "react"
 import { ChatMarkdown } from "./chat-markdown"
 import { extractThinkingAndContent } from "./command-center-page"
 import {
@@ -41,9 +42,9 @@ export interface MessageBubbleProps {
   onRetry?: () => void
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({
+const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
   message,
-  isStreaming,
+  isStreaming = false,
   onApproveTool,
   onRejectTool,
   onRetry,
@@ -55,15 +56,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const extractedThinking = extracted.thinking
 
   if (isUser && !extractedContent) {
-    if (
-      typeof (message as any).text === "string" &&
-      (message as any).text.trim()
-    ) {
-      extractedContent = (message as any).text.trim()
-    } else if (Array.isArray((message as any).parts)) {
-      extractedContent = (message as any).parts
-        .filter((p: any) => p?.type === "text")
-        .map((p: any) => p.text ?? p.content ?? "")
+    const rawMsg = message as Record<string, unknown>
+    if (typeof rawMsg.text === "string" && rawMsg.text.trim()) {
+      extractedContent = rawMsg.text.trim()
+    } else if (Array.isArray(rawMsg.parts)) {
+      extractedContent = (rawMsg.parts as Array<Record<string, unknown>>)
+        .filter((p) => p?.type === "text")
+        .map((p) => String(p.text ?? p.content ?? ""))
         .join("")
         .trim()
     }
@@ -94,31 +93,33 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         <span className="font-semibold text-foreground text-xs">
           Parliament Agent
         </span>
-        {isStreaming && (
+        {isStreaming ? (
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* 1. Reasoning / Thinking Element */}
       <ReasoningCard thinking={thinkingText} isStreaming={isStreaming} />
 
       {/* 2. Chain of Thought Steps Element */}
-      {message.chainOfThought && message.chainOfThought.length > 0 && (
+      {message.chainOfThought && message.chainOfThought.length > 0 ? (
         <ChainOfThoughtCard steps={message.chainOfThought} />
-      )}
+      ) : null}
 
       {/* 3. Task Workflow Progress Element */}
-      {message.tasks?.map((task) => (
-        <TaskCard
-          key={task.title}
-          title={task.title}
-          status={task.status}
-          items={task.items}
-        />
-      ))}
+      {message.tasks && message.tasks.length > 0
+        ? message.tasks.map((task) => (
+            <TaskCard
+              key={task.title}
+              title={task.title}
+              status={task.status}
+              items={task.items}
+            />
+          ))
+        : null}
 
       {/* 4. Tool Calls & Approval Element */}
       <ToolCallCard
@@ -131,14 +132,17 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       {extractedContent ? <ChatMarkdown content={extractedContent} /> : null}
 
       {/* 6. OpenUI Generative Spec Element */}
-      {message.openuiCode && (
+      {message.openuiCode ? (
         <OpenUIMessage content={message.openuiCode} isStreaming={isStreaming} />
-      )}
+      ) : null}
 
       {/* 7. Inline Error Banner & Retry Element */}
-      {message.error && (
+      {message.error ? (
         <MessageErrorCard error={message.error} onRetry={onRetry} />
-      )}
+      ) : null}
     </div>
   )
 }
+
+export const MessageBubble = memo(MessageBubbleComponent)
+MessageBubble.displayName = "MessageBubble"

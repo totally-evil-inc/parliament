@@ -7,7 +7,7 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import type React from "react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useCommandChatContext } from "../context/command-chat-context"
 
 export interface QuestionOptionItem {
@@ -53,129 +53,67 @@ function normalizeQuestionItem(
     q.question ||
       (q as Record<string, unknown>).title ||
       (q as Record<string, unknown>).prompt ||
-      (q as Record<string, unknown>).label ||
-      (q as Record<string, unknown>).text ||
       `Question ${idx + 1}`
   )
-  const rawType = String(q.type || "single_choice").toLowerCase()
-  let type: QuestionItem["type"] = "single_choice"
-  if (rawType.includes("multi") || rawType.includes("check")) {
-    type = "multi_select"
-  } else if (
-    rawType.includes("text") ||
-    rawType.includes("string") ||
-    rawType.includes("input")
-  ) {
-    type = "text"
-  } else if (
-    rawType.includes("num") ||
-    rawType.includes("int") ||
-    rawType.includes("count") ||
-    rawType.includes("amount")
-  ) {
-    type = "number"
-  } else {
-    type = "single_choice"
-  }
+  const type =
+    q.type === "single_choice" ||
+    q.type === "multi_select" ||
+    q.type === "number" ||
+    q.type === "text"
+      ? q.type
+      : "single_choice"
 
-  const rawOptions = Array.isArray(q.options)
-    ? q.options
-    : Array.isArray((q as Record<string, unknown>).choices)
-      ? ((q as Record<string, unknown>).choices as unknown[])
-      : Array.isArray((q as Record<string, unknown>).items)
-        ? ((q as Record<string, unknown>).items as unknown[])
-        : Array.isArray((q as Record<string, unknown>).values)
-          ? ((q as Record<string, unknown>).values as unknown[])
-          : []
-
+  const rawOptions = Array.isArray(q.options) ? q.options : []
   const options: QuestionOptionItem[] = rawOptions.map(
-    (opt: unknown, optIdx: number) => {
+    (opt: any, oIdx) => {
       if (typeof opt === "string") {
         return { label: opt, value: opt }
       }
-      if (typeof opt === "number") {
-        return { label: String(opt), value: String(opt) }
-      }
       if (opt && typeof opt === "object") {
-        const o = opt as Record<string, unknown>
-        const label = String(
-          o.label ??
-            o.title ??
-            o.text ??
-            o.name ??
-            o.value ??
-            `Option ${optIdx + 1}`
-        )
-        const value = String(
-          o.value ?? o.key ?? o.id ?? o.label ?? `opt_${optIdx + 1}`
-        )
-        const description = o.description ? String(o.description) : undefined
+        const label = String(opt.label || opt.title || opt.name || `Option ${oIdx + 1}`)
+        const value = String(opt.value || opt.id || opt.key || label)
+        const description = typeof opt.description === "string" ? opt.description : undefined
         return { label, value, description }
       }
-      return { label: `Option ${optIdx + 1}`, value: `opt_${optIdx + 1}` }
+      return { label: `Option ${oIdx + 1}`, value: `option_${oIdx + 1}` }
     }
   )
-
-  const defaultValue =
-    typeof q.defaultValue === "string" ||
-    typeof q.defaultValue === "number" ||
-    Array.isArray(q.defaultValue)
-      ? q.defaultValue
-      : undefined
 
   return {
     id,
     question,
     type,
     options: options.length > 0 ? options : undefined,
-    placeholder: q.placeholder ? String(q.placeholder) : undefined,
-    defaultValue,
+    placeholder: typeof q.placeholder === "string" ? q.placeholder : undefined,
+    defaultValue: q.defaultValue as any,
     required: q.required !== false,
   }
 }
 
 export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
-  toolCallId: _toolCallId,
   args,
   onSubmitted,
 }) => {
   const { sendPrompt, isLoading } = useCommandChatContext()
 
   const parsedArgs = useMemo(() => {
-    let target = args as unknown
-    if (typeof target === "string") {
-      try {
-        target = JSON.parse(target)
-      } catch {
-        // retain string
+    if (!args) {
+      return {
+        title: "Clarifying Questions",
+        subtitle: undefined as string | undefined,
+        questions: [],
+        submitButtonText: "Submit Answers",
       }
     }
-    if (target && typeof target === "object") {
-      const obj = target as Record<string, unknown>
-      const inner = (obj.parameters ||
-        obj.input ||
-        obj.args ||
-        obj.data ||
-        obj) as Record<string, unknown>
-      let qCandidate =
-        inner.questions ?? inner.items ?? inner.inquiries ?? inner.fields
-      if (typeof qCandidate === "string") {
-        try {
-          qCandidate = JSON.parse(qCandidate)
-        } catch {
-          // retain
-        }
-      }
+    if (typeof args === "object") {
       return {
-        ...inner,
-        title: (inner.title ||
-          inner.heading ||
-          inner.topic ||
-          "Clarifying Questions") as string,
-        subtitle: inner.subtitle as string | undefined,
-        questions: Array.isArray(qCandidate) ? qCandidate : [],
-        submitButtonText: (inner.submitButtonText ||
-          "Submit Answers") as string,
+        title: typeof args.title === "string" ? args.title : "Clarifying Questions",
+        subtitle: typeof args.subtitle === "string" ? args.subtitle : undefined,
+        questions: Array.isArray(args.questions) ? args.questions : [],
+        submitButtonText:
+          typeof args.submitButtonText === "string"
+            ? args.submitButtonText
+            : "Submit Answers",
       }
     }
     return {
@@ -186,19 +124,10 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
     }
   }, [args])
 
-  const title = parsedArgs.title || "Clarifying Questions"
-  const subtitle =
-    parsedArgs.subtitle ||
-    "Please provide the details below so I can assist accurately."
-
-  const rawQuestions = Array.isArray(parsedArgs.questions)
-    ? parsedArgs.questions
-    : []
+  const { title, subtitle, questions: rawQuestions, submitButtonText } = parsedArgs
   const questions = useMemo(() => {
     return rawQuestions.map((q, idx) => normalizeQuestionItem(q, idx))
   }, [rawQuestions])
-
-  const submitButtonText = parsedArgs.submitButtonText || "Submit Answers"
 
   const [answers, setAnswers] = useState<
     Record<string, string | string[] | number>
@@ -215,28 +144,6 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
     }
     return initial
   })
-
-  useEffect(() => {
-    if (questions.length > 0) {
-      setAnswers((prev) => {
-        let changed = false
-        const next = { ...prev }
-        for (const q of questions) {
-          if (next[q.id] === undefined) {
-            changed = true
-            if (q.defaultValue !== undefined) {
-              next[q.id] = q.defaultValue
-            } else if (q.type === "multi_select") {
-              next[q.id] = []
-            } else {
-              next[q.id] = ""
-            }
-          }
-        }
-        return changed ? next : prev
-      })
-    }
-  }, [questions])
 
   const [customInputs, setCustomInputs] = useState<Record<string, string>>({})
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -280,10 +187,6 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
     return true
   }, [questions, answers])
 
-  if (questions.length === 0) {
-    return null
-  }
-
   const handleSubmit = async () => {
     if (!isFormValid || isSubmitted || isLoading) return
 
@@ -320,10 +223,6 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
     } else {
       await sendPrompt(formattedMessage)
     }
-  }
-
-  if (questions.length === 0) {
-    return null
   }
 
   if (isSubmitted) {
@@ -365,7 +264,6 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
 
   return (
     <div className="my-3 space-y-4 rounded-xl border border-primary/20 bg-card/60 p-4 shadow-xs backdrop-blur-xs">
-      {/* Questionnaire Header */}
       <div className="flex items-center justify-between border-border/60 border-b pb-3">
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1 rounded bg-primary/15 px-2 py-0.5 font-bold text-[10px] text-primary uppercase">
@@ -379,13 +277,12 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
         </span>
       </div>
 
-      {subtitle && (
+      {subtitle ? (
         <p className="text-muted-foreground text-xs leading-relaxed">
           {subtitle}
         </p>
-      )}
+      ) : null}
 
-      {/* Questions Form */}
       <div className="space-y-4">
         {questions.map((q, idx) => {
           const currentAnswer = answers[q.id]
@@ -404,19 +301,18 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
                     {idx + 1}.
                   </span>
                   {q.question}
-                  {q.required !== false && (
+                  {q.required !== false ? (
                     <span className="ml-0.5 text-primary">*</span>
-                  )}
+                  ) : null}
                 </label>
-                {isMulti && (
+                {isMulti ? (
                   <span className="text-[10px] text-muted-foreground">
                     (Select all that apply)
                   </span>
-                )}
+                ) : null}
               </div>
 
-              {/* Single Choice Options */}
-              {isSingle && q.options && q.options.length > 0 && (
+              {isSingle && q.options && q.options.length > 0 ? (
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                   {q.options.map((opt) => {
                     const isSelected = currentAnswer === opt.value
@@ -433,23 +329,22 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
                       >
                         <div className="flex w-full items-center justify-between gap-1.5">
                           <span>{opt.label}</span>
-                          {isSelected && (
+                          {isSelected ? (
                             <CheckIcon className="size-3.5 shrink-0 text-primary" />
-                          )}
+                          ) : null}
                         </div>
-                        {opt.description && (
+                        {opt.description ? (
                           <span className="mt-0.5 text-[10px] text-muted-foreground leading-tight">
                             {opt.description}
                           </span>
-                        )}
+                        ) : null}
                       </button>
                     )
                   })}
                 </div>
-              )}
+              ) : null}
 
-              {/* Multi-Select Options */}
-              {isMulti && q.options && q.options.length > 0 && (
+              {isMulti && q.options && q.options.length > 0 ? (
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                   {q.options.map((opt) => {
                     const selectedArray = Array.isArray(currentAnswer)
@@ -476,22 +371,21 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
                                 : "border-muted-foreground/40 bg-background"
                             }`}
                           >
-                            {isSelected && <CheckIcon className="size-2.5" />}
+                            {isSelected ? <CheckIcon className="size-2.5" /> : null}
                           </span>
                         </div>
-                        {opt.description && (
+                        {opt.description ? (
                           <span className="mt-0.5 text-[10px] text-muted-foreground leading-tight">
                             {opt.description}
                           </span>
-                        )}
+                        ) : null}
                       </button>
                     )
                   })}
                 </div>
-              )}
+              ) : null}
 
-              {/* Text / Number Input */}
-              {isText && (
+              {isText ? (
                 <div>
                   <Input
                     type={q.type === "number" ? "number" : "text"}
@@ -506,10 +400,9 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
                     className="h-9 text-xs"
                   />
                 </div>
-              )}
+              ) : null}
 
-              {/* Optional Custom Input for Options */}
-              {(isSingle || isMulti) && (
+              {isSingle || isMulti ? (
                 <div className="pt-1">
                   <Input
                     type="text"
@@ -521,13 +414,12 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
                     className="h-7 text-[11px] text-muted-foreground"
                   />
                 </div>
-              )}
+              ) : null}
             </div>
           )
         })}
       </div>
 
-      {/* Footer Submit Button */}
       <div className="flex items-center justify-between border-border/60 border-t pt-3">
         <span className="text-[11px] text-muted-foreground">
           {isFormValid

@@ -1,7 +1,12 @@
-import { Renderer } from "@openuidev/react-lang"
-import React, { Component, type ReactNode, useState } from "react"
+import React, { Component, type ReactNode, Suspense, lazy, useState } from "react"
 import { library } from "../openui/library"
 import { extractOpenUI } from "../openui/parser"
+
+// Lazy-load the heavy OpenUI Lang compiler and React component renderer (bundle-dynamic-imports)
+const LazyOpenUIRenderer = lazy(async () => {
+  const mod = await import("@openuidev/react-lang")
+  return { default: mod.Renderer }
+})
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -76,30 +81,36 @@ export const OpenUIMessage: React.FC<OpenUIMessageProps> = ({
   if (isFenced && !parsed.hasOpenUI && !isStreaming) return null
   if (!parsed.program) return null
 
-  const RendererComp = Renderer as any
-
   return (
     <div className="my-2 w-full overflow-hidden rounded-xl border border-border bg-card p-3 shadow-xs">
       <OpenUIErrorBoundary>
-        <RendererComp
-          library={library}
-          response={parsed.program}
-          isStreaming={isStreaming || !parsed.isComplete}
-          onParseResult={(result: any) => {
-            const hasFatalErrors =
-              !isStreaming &&
-              Array.isArray(result?.meta?.errors) &&
-              result.meta.errors.length > 0 &&
-              !result.root
-            setParseError(hasFatalErrors)
-          }}
-        />
+        <Suspense
+          fallback={
+            <div className="flex h-20 w-full animate-pulse items-center justify-center rounded-lg bg-muted/20 text-muted-foreground text-xs">
+              Loading visual components...
+            </div>
+          }
+        >
+          <LazyOpenUIRenderer
+            library={library}
+            response={parsed.program}
+            isStreaming={isStreaming || !parsed.isComplete}
+            onParseResult={(result: any) => {
+              const hasFatalErrors =
+                !isStreaming &&
+                Array.isArray(result?.meta?.errors) &&
+                result.meta.errors.length > 0 &&
+                !result.root
+              setParseError(hasFatalErrors)
+            }}
+          />
+        </Suspense>
       </OpenUIErrorBoundary>
-      {parseError && (
+      {parseError ? (
         <p className="mt-2 text-destructive text-xs">
           This result could not be displayed. Try again.
         </p>
-      )}
+      ) : null}
     </div>
   )
 }

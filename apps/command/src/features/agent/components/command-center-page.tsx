@@ -221,14 +221,29 @@ export const CommandCenterPage: React.FC = () => {
     }
   }, [])
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  const scrollRafIdRef = useRef<number | null>(null)
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget
-    const distanceToBottom =
-      target.scrollHeight - target.scrollTop - target.clientHeight
-    const atBottom = distanceToBottom < 120
-    isAtBottomRef.current = atBottom
-    setShowScrollBottom(!atBottom)
-  }
+    if (scrollRafIdRef.current !== null) return
+
+    scrollRafIdRef.current = requestAnimationFrame(() => {
+      scrollRafIdRef.current = null
+      const distanceToBottom =
+        target.scrollHeight - target.scrollTop - target.clientHeight
+      const atBottom = distanceToBottom < 120
+      isAtBottomRef.current = atBottom
+      setShowScrollBottom((prev) => (prev !== !atBottom ? !atBottom : prev))
+    })
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (scrollRafIdRef.current !== null) {
+        cancelAnimationFrame(scrollRafIdRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const isNewUserMessage =
@@ -268,7 +283,7 @@ export const CommandCenterPage: React.FC = () => {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            {threadId && (
+            {threadId ? (
               <Button
                 variant="ghost"
                 size="sm"
@@ -279,7 +294,7 @@ export const CommandCenterPage: React.FC = () => {
                 <SparklesIcon className="size-3.5" />
                 <span className="hidden sm:inline">New Chat</span>
               </Button>
-            )}
+            ) : null}
             <Button
               variant="outline"
               size="sm"
@@ -325,14 +340,14 @@ export const CommandCenterPage: React.FC = () => {
               </div>
 
               {/* Empty Feed Error Banner if error occurred */}
-              {chatError && (
+              {chatError ? (
                 <div className="w-full max-w-2xl">
                   <MessageErrorCard
                     error={chatError}
                     onRetry={retryLastPrompt}
                   />
                 </div>
-              )}
+              ) : null}
 
               {/* Centered Chat Input directly below welcome header */}
               <div className="w-full">
@@ -386,36 +401,36 @@ export const CommandCenterPage: React.FC = () => {
 
               {/* Immediate active streaming placeholder while waiting for assistant token/turn */}
               {isLoading &&
-                messages.length > 0 &&
-                messages[messages.length - 1]?.role === "user" && (
-                  <MessageBubble
-                    key="streaming-pending-assistant-turn"
-                    message={{
-                      role: "assistant",
-                      content: "",
-                      thinking: activeThinking || undefined,
-                    }}
-                    isStreaming={true}
-                  />
-                )}
+              messages.length > 0 &&
+              messages[messages.length - 1]?.role === "user" ? (
+                <MessageBubble
+                  key="streaming-pending-assistant-turn"
+                  message={{
+                    role: "assistant",
+                    content: "",
+                    thinking: activeThinking || undefined,
+                  }}
+                  isStreaming={true}
+                />
+              ) : null}
 
               {/* Feed-level Error Banner when no assistant message was generated */}
               {chatError &&
-                messages.length > 0 &&
-                messages[messages.length - 1]?.role === "user" && (
-                  <div className="my-3">
-                    <MessageErrorCard
-                      error={chatError}
-                      onRetry={retryLastPrompt}
-                    />
-                  </div>
-                )}
+              messages.length > 0 &&
+              messages[messages.length - 1]?.role === "user" ? (
+                <div className="my-3">
+                  <MessageErrorCard
+                    error={chatError}
+                    onRetry={retryLastPrompt}
+                  />
+                </div>
+              ) : null}
               <div ref={bottomRef} />
             </main>
           </ScrollArea>
 
           {/* Floating Scroll to Bottom Button */}
-          {showScrollBottom && (
+          {showScrollBottom ? (
             <div className="absolute right-8 bottom-24 z-20">
               <Button
                 size="sm"
@@ -430,7 +445,7 @@ export const CommandCenterPage: React.FC = () => {
                 <span>Jump to latest</span>
               </Button>
             </div>
-          )}
+          ) : null}
 
           {/* Docked Bottom Input */}
           <footer className="shrink-0 border-border border-t bg-background p-4">
@@ -448,12 +463,12 @@ export const CommandCenterPage: React.FC = () => {
       )}
 
       {/* History Slide-over */}
-      {historyOpen && (
+      {historyOpen ? (
         <HistoryPanel
           currentThreadId={threadId}
           onClose={() => setHistoryOpen(false)}
         />
-      )}
+      ) : null}
     </div>
   )
 }
