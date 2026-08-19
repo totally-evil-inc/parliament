@@ -158,4 +158,3 @@ export function extractOpenUI(source: string): OpenUIExtraction {
     isComplete: complete,
   }
 }
-

@@ -64,20 +64,21 @@ function normalizeQuestionItem(
       : "single_choice"
 
   const rawOptions = Array.isArray(q.options) ? q.options : []
-  const options: QuestionOptionItem[] = rawOptions.map(
-    (opt: any, oIdx) => {
-      if (typeof opt === "string") {
-        return { label: opt, value: opt }
-      }
-      if (opt && typeof opt === "object") {
-        const label = String(opt.label || opt.title || opt.name || `Option ${oIdx + 1}`)
-        const value = String(opt.value || opt.id || opt.key || label)
-        const description = typeof opt.description === "string" ? opt.description : undefined
-        return { label, value, description }
-      }
-      return { label: `Option ${oIdx + 1}`, value: `option_${oIdx + 1}` }
+  const options: QuestionOptionItem[] = rawOptions.map((opt: any, oIdx) => {
+    if (typeof opt === "string") {
+      return { label: opt, value: opt }
     }
-  )
+    if (opt && typeof opt === "object") {
+      const label = String(
+        opt.label || opt.title || opt.name || `Option ${oIdx + 1}`
+      )
+      const value = String(opt.value || opt.id || opt.key || label)
+      const description =
+        typeof opt.description === "string" ? opt.description : undefined
+      return { label, value, description }
+    }
+    return { label: `Option ${oIdx + 1}`, value: `option_${oIdx + 1}` }
+  })
 
   return {
     id,
@@ -107,7 +108,8 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
     }
     if (typeof args === "object") {
       return {
-        title: typeof args.title === "string" ? args.title : "Clarifying Questions",
+        title:
+          typeof args.title === "string" ? args.title : "Clarifying Questions",
         subtitle: typeof args.subtitle === "string" ? args.subtitle : undefined,
         questions: Array.isArray(args.questions) ? args.questions : [],
         submitButtonText:
@@ -124,7 +126,12 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
     }
   }, [args])
 
-  const { title, subtitle, questions: rawQuestions, submitButtonText } = parsedArgs
+  const {
+    title,
+    subtitle,
+    questions: rawQuestions,
+    submitButtonText,
+  } = parsedArgs
   const questions = useMemo(() => {
     return rawQuestions.map((q, idx) => normalizeQuestionItem(q, idx))
   }, [rawQuestions])
@@ -371,7 +378,9 @@ export const QuestionnaireCard: React.FC<QuestionnaireCardProps> = ({
                                 : "border-muted-foreground/40 bg-background"
                             }`}
                           >
-                            {isSelected ? <CheckIcon className="size-2.5" /> : null}
+                            {isSelected ? (
+                              <CheckIcon className="size-2.5" />
+                            ) : null}
                           </span>
                         </div>
                         {opt.description ? (

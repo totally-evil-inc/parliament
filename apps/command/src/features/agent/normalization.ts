@@ -261,7 +261,9 @@ export function normalizeAssistantMessage(
     })
     .map((p: unknown) => {
       const rec = p as Record<string, unknown>
-      return String(rec.content ?? rec.thinking ?? rec.reasoning ?? rec.text ?? "")
+      return String(
+        rec.content ?? rec.thinking ?? rec.reasoning ?? rec.text ?? ""
+      )
     })
     .join("")
 
@@ -273,7 +275,9 @@ export function normalizeAssistantMessage(
         .map((m) => m[1]?.trim())
         .filter(Boolean)
         .join("\n\n")
-      thinking = thinking ? `${thinking}\n\n${extractedBlocks}` : extractedBlocks
+      thinking = thinking
+        ? `${thinking}\n\n${extractedBlocks}`
+        : extractedBlocks
       text = text.replace(THINK_CLOSED_GLOBAL_REGEX, "").trim()
     } else {
       const openThinkMatch = text.match(THINK_OPEN_REGEX)
@@ -337,11 +341,7 @@ export function normalizeAssistantMessage(
       )
       const existing = calls.get(id)
       const name = String(
-        p.name ??
-          p.toolName ??
-          p.tool ??
-          existing?.name ??
-          "unknown_tool"
+        p.name ?? p.toolName ?? p.tool ?? existing?.name ?? "unknown_tool"
       )
       const rawArgs = p.arguments ?? p.input ?? p.args ?? p.parameters ?? p.data
       const args = objectValue(rawArgs)
@@ -399,7 +399,9 @@ export function normalizeAssistantMessage(
         }
       }
       const targetId = current.id || id
-      const isError = Boolean(p.error || p.isError || p.state === "output-error")
+      const isError = Boolean(
+        p.error || p.isError || p.state === "output-error"
+      )
       calls.set(targetId, {
         ...current,
         name:
@@ -531,4 +533,3 @@ export function toolLabel(name: string): string {
       .replace(UPPERCASE_FIRST_REGEX, (c) => c.toUpperCase())
   )
 }
-

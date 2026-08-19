@@ -1,4 +1,10 @@
-import React, { Component, type ReactNode, Suspense, lazy, useState } from "react"
+import React, {
+  Component,
+  type ReactNode,
+  Suspense,
+  lazy,
+  useState,
+} from "react"
 import { library } from "../openui/library"
 import { extractOpenUI } from "../openui/parser"
 

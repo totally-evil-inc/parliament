@@ -762,7 +762,15 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       selectedModel,
       chatError,
     }),
-    [messages, isLoading, isHydrating, threadId, activeTitle, selectedModel, chatError]
+    [
+      messages,
+      isLoading,
+      isHydrating,
+      threadId,
+      activeTitle,
+      selectedModel,
+      chatError,
+    ]
   )
 
   const actionsValue = useMemo<CommandChatActions>(

@@ -52,7 +52,9 @@ export function useSwitchAIProvider(options?: {
         body: JSON.stringify({ isActive: true }),
       })
       if (!response.ok) {
-        throw new Error(`Failed to switch AI provider (HTTP ${response.status})`)
+        throw new Error(
+          `Failed to switch AI provider (HTTP ${response.status})`
+        )
       }
       return id
     },
