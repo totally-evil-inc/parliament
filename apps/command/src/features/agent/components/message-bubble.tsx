@@ -60,9 +60,16 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
     if (typeof rawMsg.text === "string" && rawMsg.text.trim()) {
       extractedContent = rawMsg.text.trim()
     } else if (Array.isArray(rawMsg.parts)) {
-      extractedContent = (rawMsg.parts as Array<Record<string, unknown>>)
-        .filter((p) => p?.type === "text")
-        .map((p) => String(p.text ?? p.content ?? ""))
+      extractedContent = (rawMsg.parts as Array<unknown>)
+        .map((p) => {
+          if (typeof p === "string") return p
+          if (p && typeof p === "object") {
+            const pObj = p as Record<string, unknown>
+            if (typeof pObj.text === "string") return pObj.text
+            if (typeof pObj.content === "string") return pObj.content
+          }
+          return ""
+        })
         .join("")
         .trim()
     }
@@ -73,7 +80,7 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
   if (isUser) {
     return (
       <div className="my-3 flex justify-end">
-        <div className="max-w-[80%] rounded-2xl bg-primary px-4 py-2.5 font-medium text-primary-foreground text-sm shadow-xs">
+        <div className="max-w-[80%] rounded-2xl bg-primary px-4 py-2 font-medium text-primary-foreground text-sm shadow-xs">
           <ChatMarkdown
             content={extractedContent || "Message"}
             className="text-primary-foreground [&_*]:text-primary-foreground"
@@ -111,9 +118,9 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
 
       {/* 3. Task Workflow Progress Element */}
       {message.tasks && message.tasks.length > 0
-        ? message.tasks.map((task) => (
+        ? message.tasks.map((task, idx) => (
             <TaskCard
-              key={task.title}
+              key={`${task.title}-${idx}`}
               title={task.title}
               status={task.status}
               items={task.items}

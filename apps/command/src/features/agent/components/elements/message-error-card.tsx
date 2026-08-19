@@ -35,10 +35,10 @@ export const MessageErrorCard: React.FC<MessageErrorCardProps> = ({
         <div className="flex items-start gap-2.5">
           <ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
           <div className="space-y-0.5">
-            <h4 className="font-semibold text-destructive-foreground text-xs tracking-tight">
+            <h4 className="font-semibold text-destructive text-xs tracking-tight">
               Agent Request Failed ({code})
             </h4>
-            <p className="text-[11px] text-destructive-foreground/90 leading-relaxed">
+            <p className="text-[11px] text-destructive/90 leading-relaxed">
               {message}
             </p>
           </div>
@@ -49,7 +49,7 @@ export const MessageErrorCard: React.FC<MessageErrorCardProps> = ({
             variant="outline"
             size="sm"
             onClick={onRetry}
-            className="flex h-7 shrink-0 items-center gap-1.5 border-destructive/40 px-2.5 font-medium text-[11px] text-destructive-foreground hover:bg-destructive/20"
+            className="flex h-7 shrink-0 items-center gap-1.5 border-destructive/40 px-2.5 font-medium text-[11px] text-destructive hover:bg-destructive/20"
           >
             <ArrowPathIcon className="size-3 shrink-0" />
             <span>Retry</span>
