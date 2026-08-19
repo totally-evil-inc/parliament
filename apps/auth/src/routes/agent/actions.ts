@@ -233,16 +233,17 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
           },
         })
 
-        return c.json(
-          {
-            error: {
-              code: "execution_failed",
-              message: String(exec.result),
-            },
-            result: exec.result,
+        return c.json({
+          id: targetApprovalId,
+          status: "error",
+          toolName: updatedRow.toolName,
+          result: { error: String(exec.result) },
+          isError: true,
+          error: {
+            code: "execution_failed",
+            message: String(exec.result),
           },
-          502
-        )
+        })
       }
     } else {
       executionResult = {

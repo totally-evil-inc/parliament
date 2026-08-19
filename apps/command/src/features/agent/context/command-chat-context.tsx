@@ -316,6 +316,17 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     onSuccess: (data, variables) => {
       let resolvedToolName: string | undefined = data?.toolName
+      const isError = Boolean(
+        data?.isError || data?.status === "error" || data?.error
+      )
+      const errorText = isError
+        ? data?.error?.message ||
+          (typeof data?.result === "string"
+            ? data.result
+            : extractToolErrorText(data?.result)) ||
+          "Action execution failed"
+        : undefined
+
       setMessages((prev) =>
         prev.map((msg) => {
           if (!msg.toolCalls) return msg
@@ -331,8 +342,13 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                 }
                 return {
                   ...tc,
-                  status: variables.approved ? "approved" : "rejected",
-                  result: data.result,
+                  status: isError
+                    ? "error"
+                    : variables.approved
+                      ? "approved"
+                      : "rejected",
+                  result: data?.result ?? (isError ? { error: errorText } : undefined),
+                  errorText,
                   needsApproval: false,
                 }
               }
@@ -342,17 +358,42 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
         })
       )
       queryClient.invalidateQueries({ queryKey: ["agent-approvals"] })
-      if (variables.approved && resolvedToolName) {
+      if (!isError && variables.approved && resolvedToolName) {
         invalidateAgentQueries(new Set([resolvedToolName]))
       } else {
         invalidateAgentQueries()
       }
     },
-    onError: (err: Error) => {
+    onError: (err: Error, variables) => {
+      const errorMessage = err.message || "Failed to resolve action approval"
+      const errorCode = (err as any).code || "approval_failed"
       setChatError({
-        code: (err as any).code || "approval_failed",
-        message: err.message || "Failed to resolve action approval",
+        code: errorCode,
+        message: errorMessage,
       })
+      // Defensively transition the card away from pending_approval to error state
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (!msg.toolCalls) return msg
+          return {
+            ...msg,
+            toolCalls: msg.toolCalls.map((tc) => {
+              if (
+                tc.approvalId === variables.approvalId ||
+                tc.id === variables.approvalId
+              ) {
+                return {
+                  ...tc,
+                  status: "error",
+                  errorText: errorMessage,
+                  needsApproval: false,
+                }
+              }
+              return tc
+            }),
+          }
+        })
+      )
       queryClient.invalidateQueries({ queryKey: ["agent-approvals"] })
       invalidateAgentQueries()
     },
