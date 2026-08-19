@@ -50,9 +50,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       />
       {items && items.length > 0 && (
         <TaskContent>
-          {items.map((item) => (
+          {items.map((item, idx) => (
             <TaskItem
-              key={item.id ?? item.text}
+              key={item.id ?? `${item.text}-${idx}`}
               status={item.status || "completed"}
             >
               <span className="inline-flex items-center gap-1.5">
