@@ -1,5 +1,42 @@
 import { describe, expect, it } from "bun:test"
-import { isIntegrationConnected } from "./provider-mapping"
+import { getConnectedAccount, isIntegrationConnected } from "./provider-mapping"
+
+describe("provider-mapping: getConnectedAccount", () => {
+  it("returns undefined for null, undefined, or empty accounts", () => {
+    expect(getConnectedAccount(null, "gmail")).toBeUndefined()
+    expect(getConnectedAccount(undefined, "gmail")).toBeUndefined()
+    expect(getConnectedAccount([], "gmail")).toBeUndefined()
+    expect(getConnectedAccount([{ id: "acc-1", providerId: "gmail" }], "")).toBeUndefined()
+  })
+
+  it("finds and returns the exact account record including internal id", () => {
+    const accounts = [
+      { id: "ba-rec-gmail-1", providerId: "gmail" },
+      { id: "ba-rec-cal-1", providerId: "cal" },
+    ]
+    const match = getConnectedAccount(accounts, "gmail")
+    expect(match).toBeDefined()
+    expect(match?.id).toBe("ba-rec-gmail-1")
+    expect(match?.providerId).toBe("gmail")
+  })
+
+  it("handles malformed array entries safely", () => {
+    const accounts = [
+      null as any,
+      undefined as any,
+      {} as any,
+      { id: "rec-valid", providerId: "gmail" },
+    ]
+    expect(getConnectedAccount(accounts, "gmail")?.id).toBe("rec-valid")
+  })
+
+  it("handles whitespace and case-insensitivity defensively", () => {
+    const accounts = [{ id: "rec-1", providerId: "  GMail  " }]
+    const match = getConnectedAccount(accounts, "gmail")
+    expect(match).toBeDefined()
+    expect(match?.id).toBe("rec-1")
+  })
+})
 
 describe("provider-mapping: isIntegrationConnected", () => {
   it("returns false for null, undefined, or empty accounts", () => {
@@ -34,3 +71,4 @@ describe("provider-mapping: isIntegrationConnected", () => {
     expect(isIntegrationConnected(accounts, " GMail ")).toBe(true)
   })
 })
+

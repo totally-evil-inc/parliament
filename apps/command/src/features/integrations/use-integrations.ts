@@ -4,9 +4,12 @@ import { authClient } from "@/lib/auth-client"
 import type { Integration } from "./data"
 import { DEFAULT_INTEGRATIONS } from "./data"
 import {
+  getConnectedAccount,
   isIntegrationConnected,
   SUPPORTED_INTEGRATIONS,
 } from "./provider-mapping"
+
+export { isIntegrationConnected }
 
 export const connectedAccountSchema = z.object({
   id: z.string(),
@@ -74,11 +77,13 @@ export function useIntegrations() {
       }
     }
 
-    const isConnected = isIntegrationConnected(accounts, item.providerId)
+    const connectedAccount = getConnectedAccount(accounts, item.providerId)
+    const isConnected = !!connectedAccount
 
     return {
       ...item,
       status: isConnected ? "connected" : "available",
+      providerAccountId: connectedAccount?.accountId,
     }
   })
 
@@ -116,16 +121,31 @@ export function useConnectIntegration() {
   })
 }
 
+export type DisconnectIntegrationInput = {
+  providerId: string
+  accountId?: string
+}
+
 export function useDisconnectIntegration() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (providerId: string) => {
+    mutationFn: async (input: DisconnectIntegrationInput | string) => {
+      const providerId =
+        typeof input === "string" ? input.trim() : input.providerId?.trim()
+      const accountId =
+        typeof input === "object" && input.accountId
+          ? input.accountId.trim()
+          : undefined
+
+      if (!providerId) {
+        throw new Error("Invalid provider identifier for unlinking")
+      }
+
       // Use Better Auth's standard account unlinking API
       const res = await authClient.unlinkAccount({
-        providerId: providerId as Parameters<
-          typeof authClient.unlinkAccount
-        >[0]["providerId"],
+        providerId,
+        ...(accountId ? { accountId } : {}),
       })
       if (res?.error) {
         throw new Error(res.error.message || "Failed to disconnect integration")

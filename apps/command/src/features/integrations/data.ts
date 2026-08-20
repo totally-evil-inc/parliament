@@ -26,6 +26,7 @@ export type IntegrationPreview = {
 export type Integration = {
   id: string
   providerId: string
+  providerAccountId?: string
   title: string
   author: string
   description: string

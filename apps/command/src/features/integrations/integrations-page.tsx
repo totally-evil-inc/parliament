@@ -185,7 +185,9 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
     connectMutation.variables?.id === integration.id
   const isDisconnecting =
     disconnectMutation.isPending &&
-    disconnectMutation.variables === integration.providerId
+    (typeof disconnectMutation.variables === "string"
+      ? disconnectMutation.variables === integration.providerId
+      : disconnectMutation.variables?.providerId === integration.providerId)
   const isPending = isConnecting || isDisconnecting
 
   const handleAction = async () => {
@@ -199,7 +201,10 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
         variant: "destructive",
       })
       if (ok) {
-        disconnectMutation.mutate(integration.providerId)
+        disconnectMutation.mutate({
+          providerId: integration.providerId,
+          accountId: integration.providerAccountId,
+        })
       }
     } else {
       const ok = await confirm({
