@@ -272,7 +272,12 @@ export function ToolOutput({
   if (output === undefined && !errorText && !children) return null
 
   const handleCopyError = () => {
-    if (!errorText || typeof navigator === "undefined" || !navigator.clipboard?.writeText) return
+    if (
+      !errorText ||
+      typeof navigator === "undefined" ||
+      !navigator.clipboard?.writeText
+    )
+      return
     navigator.clipboard
       .writeText(errorText)
       .then(() => {
@@ -350,9 +355,7 @@ export function ToolOutput({
             orientation="both"
             className="max-h-80 max-w-full rounded-lg border border-border/80 bg-background/80 p-2.5 text-[11px] text-foreground/90"
           >
-            <div className="break-words">
-              {output as React.ReactNode}
-            </div>
+            <div className="break-words">{output as React.ReactNode}</div>
           </ScrollArea>
         )
       ) : (

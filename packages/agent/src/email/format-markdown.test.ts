@@ -28,8 +28,12 @@ describe("format-markdown email utilities", () => {
     test("converts paragraphs and bullet lists correctly", () => {
       const input = `Hello,\n\nHere are the details:\n- Item 1\n- Item 2\n\nBest regards,\nParliament Team`
       const result = formatMarkdownToEmailHtml(input)
-      expect(result).toContain("<p style=\"margin: 0 0 10px 0; line-height: 1.6; color: #334155;\">Hello,</p>")
-      expect(result).toContain("<ul style=\"margin: 8px 0; padding-left: 20px;\"><li style=\"margin-bottom: 4px; line-height: 1.5; color: #334155;\">Item 1</li><li style=\"margin-bottom: 4px; line-height: 1.5; color: #334155;\">Item 2</li></ul>")
+      expect(result).toContain(
+        '<p style="margin: 0 0 10px 0; line-height: 1.6; color: #334155;">Hello,</p>'
+      )
+      expect(result).toContain(
+        '<ul style="margin: 8px 0; padding-left: 20px;"><li style="margin-bottom: 4px; line-height: 1.5; color: #334155;">Item 1</li><li style="margin-bottom: 4px; line-height: 1.5; color: #334155;">Item 2</li></ul>'
+      )
       expect(result).toContain("Best regards,<br />Parliament Team")
     })
   })
@@ -45,7 +49,8 @@ describe("format-markdown email utilities", () => {
     })
 
     test("safely renders bold and italics", () => {
-      const input = "This is **bold** and *italic* and __also bold__ and _also italic_."
+      const input =
+        "This is **bold** and *italic* and __also bold__ and _also italic_."
       const result = formatInlineMarkdown(input)
       expect(result).toContain("<strong>bold</strong>")
       expect(result).toContain("<em>italic</em>")
@@ -56,14 +61,17 @@ describe("format-markdown email utilities", () => {
     test("allows safe HTTP and HTTPS markdown links", () => {
       const input = "Check out [our website](https://example.com/pricing)."
       const result = formatInlineMarkdown(input)
-      expect(result).toContain('<a href="https://example.com/pricing" style="color: #0f172a; text-decoration: underline;">our website</a>')
+      expect(result).toContain(
+        '<a href="https://example.com/pricing" style="color: #0f172a; text-decoration: underline;">our website</a>'
+      )
     })
 
     test("neutralizes dangerous javascript: or data: URIs", () => {
-      const input = "Click [here](javascript:alert(1)) or [download](data:text/html,<script>alert(1)</script>)."
+      const input =
+        "Click [here](javascript:alert(1)) or [download](data:text/html,<script>alert(1)</script>)."
       const result = formatInlineMarkdown(input)
-      expect(result).not.toContain("<a href=\"javascript:")
-      expect(result).not.toContain("<a href=\"data:")
+      expect(result).not.toContain('<a href="javascript:')
+      expect(result).not.toContain('<a href="data:')
     })
   })
 })

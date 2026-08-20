@@ -65,7 +65,9 @@ export function DocumentToolbar({
     }
 
     if (action.blockId) {
-      const block = definition.blocks?.find((item) => item.id === action.blockId)
+      const block = definition.blocks?.find(
+        (item) => item.id === action.blockId
+      )
       if (!block) return
 
       runBlock(block)
