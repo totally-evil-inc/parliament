@@ -3,6 +3,11 @@ import { authClient } from "@/lib/auth-client"
 import type { Integration } from "./data"
 import { DEFAULT_INTEGRATIONS } from "./data"
 
+import {
+  isIntegrationConnected,
+  SUPPORTED_INTEGRATIONS,
+} from "./provider-mapping"
+
 export type ConnectedAccount = {
   id: string
   providerId: string
@@ -46,24 +51,18 @@ export function useIntegrations() {
   })
 
   const mergedIntegrations: Integration[] = DEFAULT_INTEGRATIONS.map((item) => {
-    const isSupportedIntegration = [
-      "gmail",
-      "google-calendar",
-      "google-drive",
-      "google",
-      "cal",
-    ].includes(item.providerId)
+    const isSupported = (
+      SUPPORTED_INTEGRATIONS as readonly string[]
+    ).includes(item.providerId)
 
-    if (!isSupportedIntegration) {
+    if (!isSupported) {
       return {
         ...item,
         status: "coming_soon",
       }
     }
 
-    const isConnected = accounts?.some(
-      (acc) => acc.providerId === item.providerId || acc.providerId === "google"
-    )
+    const isConnected = isIntegrationConnected(accounts, item.providerId)
 
     return {
       ...item,
