@@ -61,9 +61,14 @@ export class GoogleTokenService {
    */
   async getValidAccessToken(
     userId: string,
-    targetProvider: SupportedGoogleProvider = "google"
+    targetProvider: SupportedGoogleProvider = "google",
+    requestId?: string
   ): Promise<string> {
-    const details = await this.getValidTokenDetails(userId, targetProvider)
+    const details = await this.getValidTokenDetails(
+      userId,
+      targetProvider,
+      requestId
+    )
     return details.accessToken
   }
 
@@ -72,19 +77,30 @@ export class GoogleTokenService {
    */
   async getValidTokenDetails(
     userId: string,
-    targetProvider: SupportedGoogleProvider = "google"
+    targetProvider: SupportedGoogleProvider = "google",
+    requestId?: string
   ): Promise<TokenDetails> {
     const startTime = Date.now()
+    const normalizedUserId =
+      typeof userId === "string" ? userId.trim() : ""
+    const currentRequestId =
+      requestId?.trim() || crypto.randomUUID()
+
     const wideEvent: Record<string, unknown> = {
-      action: "google_oauth_token_resolve",
-      requestedProvider: targetProvider,
-      userId,
-      tokenRefreshed: false,
+      operation: "google_oauth_token_resolve",
+      request_id: currentRequestId,
+      provider_id: targetProvider,
+      user_id: normalizedUserId || null,
+      account_id: null,
+      token_refreshed: false,
+      outcome: "success",
       timestamp: new Date().toISOString(),
     }
 
     try {
-      if (!userId || typeof userId !== "string") {
+      if (!normalizedUserId) {
+        wideEvent.outcome = "failure"
+        wideEvent.error_code = "INTEGRATION_NOT_CONNECTED"
         throw new IntegrationNotConnectedError(targetProvider)
       }
 
@@ -96,7 +112,7 @@ export class GoogleTokenService {
         .from(account)
         .where(
           and(
-            eq(account.userId, userId),
+            eq(account.userId, normalizedUserId),
             eq(account.providerId, targetProvider)
           )
         )
@@ -104,12 +120,13 @@ export class GoogleTokenService {
         .limit(1)
 
       if (!records || records.length === 0) {
+        wideEvent.outcome = "failure"
+        wideEvent.error_code = "INTEGRATION_NOT_CONNECTED"
         throw new IntegrationNotConnectedError(targetProvider)
       }
 
       const targetAccount = records[0]
-      wideEvent.resolvedProvider = targetAccount.providerId
-      wideEvent.accountId = targetAccount.id
+      wideEvent.account_id = targetAccount.id
 
       const now = Date.now()
       const expiresAtMs = targetAccount.accessTokenExpiresAt?.getTime() ?? 0
@@ -130,7 +147,7 @@ export class GoogleTokenService {
 
       // If expired or missing accessToken but refreshToken is present, refresh token
       if (targetAccount.refreshToken) {
-        wideEvent.tokenRefreshed = true
+        wideEvent.token_refreshed = true
         const refreshed = await this.deduplicatedRefresh(
           targetAccount,
           targetProvider
@@ -147,6 +164,8 @@ export class GoogleTokenService {
 
       // Missing both valid token and refresh token
       if (!targetAccount.accessToken) {
+        wideEvent.outcome = "failure"
+        wideEvent.error_code = "INTEGRATION_NOT_CONNECTED"
         throw new IntegrationNotConnectedError(targetProvider)
       }
 
@@ -159,33 +178,42 @@ export class GoogleTokenService {
         userId: targetAccount.userId,
       }
     } catch (error: unknown) {
-      wideEvent.outcome = "error"
       if (error instanceof Error) {
+        const isOperational =
+          error instanceof IntegrationNotConnectedError ||
+          error instanceof TokenRefreshError ||
+          error instanceof OAuthConfigMissingError
+
+        wideEvent.outcome =
+          error instanceof TokenRefreshError ||
+          error instanceof OAuthConfigMissingError
+            ? "error"
+            : isOperational
+              ? "failure"
+              : "error"
+
         const errorDetails: Record<string, unknown> = {
           name: error.name,
           message: error.message,
-          code:
-            error instanceof IntegrationNotConnectedError ||
-            error instanceof TokenRefreshError ||
-            error instanceof OAuthConfigMissingError
-              ? error.code
-              : "unknown_error",
+          code: isOperational ? (error as any).code : "unknown_error",
         }
 
         if (error instanceof TokenRefreshError) {
           if (error.httpStatus !== undefined) {
-            errorDetails.httpStatus = error.httpStatus
+            wideEvent.provider_http_status = error.httpStatus
           }
           if (error.providerErrorCode) {
-            errorDetails.providerErrorCode = error.providerErrorCode
+            wideEvent.provider_error_code = error.providerErrorCode
           }
           if (error.providerDescription) {
-            errorDetails.providerDescription = error.providerDescription
+            wideEvent.provider_description_truncated =
+              truncateProviderDescription(error.providerDescription)
           }
         }
 
         wideEvent.error = errorDetails
       } else {
+        wideEvent.outcome = "error"
         wideEvent.error = { message: "Non-error exception thrown" }
       }
       throw error
@@ -334,4 +362,20 @@ function sanitizeExpiresIn(expiresIn: unknown): number {
   return DEFAULT_TTL_SECONDS
 }
 
+/**
+ * Defensively sanitizes and truncates external provider error descriptions.
+ */
+function truncateProviderDescription(
+  desc: unknown,
+  maxLength = 200
+): string | undefined {
+  if (typeof desc !== "string") return undefined
+  const cleaned = desc.replace(/[\r\n\t]+/g, " ").trim()
+  if (cleaned.length === 0) return undefined
+  return cleaned.length > maxLength
+    ? `${cleaned.slice(0, maxLength)}...`
+    : cleaned
+}
+
 export const googleTokenService = new GoogleTokenService()
+

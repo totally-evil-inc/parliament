@@ -308,6 +308,45 @@ describe("GoogleTokenService", () => {
     expect(fetchCallCount).toBe(1)
   })
 
+  it("normalizes and trims userId and rejects empty strings defensively", async () => {
+    const validExpiry = new Date(Date.now() + 3600 * 1000)
+    const mockAccount = {
+      id: "acc-trim",
+      userId: "user-trimmed",
+      providerId: "gmail",
+      accessToken: "ya29.trimmed-token",
+      refreshToken: "rt.trim",
+      accessTokenExpiresAt: validExpiry,
+    }
+
+    const mockDb = {
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            orderBy: () => ({
+              limit: () => Promise.resolve([mockAccount]),
+            }),
+          }),
+        }),
+      }),
+    } as unknown as typeof db
+
+    const service = new GoogleTokenService(mockDb)
+
+    // With leading/trailing whitespace
+    const details = await service.getValidTokenDetails(
+      "   user-trimmed   ",
+      "gmail",
+      "req-test-123"
+    )
+    expect(details.accessToken).toBe("ya29.trimmed-token")
+
+    // Empty or whitespace-only userId throws IntegrationNotConnectedError
+    await expect(
+      service.getValidTokenDetails("   ", "gmail")
+    ).rejects.toThrow(IntegrationNotConnectedError)
+  })
+
   it("throws OAuthConfigMissingError when client ID or secret is unset", async () => {
     delete process.env.GOOGLE_CLIENT_ID
     const expiredDate = new Date(Date.now() - 60 * 1000)
@@ -339,3 +378,4 @@ describe("GoogleTokenService", () => {
     ).rejects.toThrow(OAuthConfigMissingError)
   })
 })
+
