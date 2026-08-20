@@ -2,6 +2,7 @@ import { and, db, desc, eq } from "@workspace/database"
 import { account } from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 import { Hono } from "hono"
+import { auth } from "../lib/auth"
 import {
   IntegrationNotConnectedError,
   OAuthConfigMissingError,
@@ -52,9 +53,7 @@ integrationsRouter.get("/list", async (c) => {
 })
 
 /**
- * Disconnect/Unlink integration account for the authenticated user.
- * Disconnects only the specified provider or account ID and enforces
- * Better Auth safety check preventing removal of user's last account.
+ * Disconnect/Unlink integration account for the authenticated user via Better Auth API.
  */
 integrationsRouter.post("/disconnect", async (c) => {
   const user = c.get("user")
@@ -77,47 +76,42 @@ integrationsRouter.post("/disconnect", async (c) => {
       )
     }
 
-    // Safety guard: ensure the user has more than one account before unlinking
-    // to prevent complete account lockout if they only have one login method
-    const userAccounts = await db
-      .select({ id: account.id, providerId: account.providerId })
-      .from(account)
-      .where(eq(account.userId, user.id))
+    try {
+      const result = await auth.api.unlinkAccount({
+        headers: c.req.raw.headers,
+        body: {
+          providerId,
+          accountId,
+        },
+      })
 
-    if (userAccounts.length <= 1) {
+      logger.info(
+        {
+          userId: user.id,
+          providerId: providerId ?? null,
+          accountId: accountId ?? null,
+        },
+        "User disconnected integration account via Better Auth API"
+      )
+
+      return c.json({ success: true, result })
+    } catch (unlinkErr: any) {
+      logger.warn(
+        { err: unlinkErr, userId: user.id, providerId, accountId },
+        "Better Auth unlink account failed"
+      )
       return c.json(
         {
-          error: "Cannot disconnect the only linked account for this user",
-          code: "CANNOT_DISCONNECT_LAST_ACCOUNT",
+          error: unlinkErr?.message || "Failed to disconnect integration account",
+          code: unlinkErr?.code || "UNLINK_FAILED",
         },
-        400
+        unlinkErr?.status || 400
       )
     }
-
-    const whereClause = accountId
-      ? and(eq(account.userId, user.id), eq(account.id, accountId))
-      : and(eq(account.userId, user.id), eq(account.providerId, providerId))
-
-    const deleted = await db
-      .delete(account)
-      .where(whereClause)
-      .returning({ id: account.id })
-
-    logger.info(
-      {
-        userId: user.id,
-        providerId: providerId ?? null,
-        accountId: accountId ?? null,
-        deletedCount: deleted.length,
-      },
-      "User disconnected integration account"
-    )
-
-    return c.json({ success: true, count: deleted.length })
   } catch (err: any) {
     logger.error(
       { err, userId: user.id },
-      "Failed to disconnect integration account"
+      "Failed to process disconnect request"
     )
     return c.json({ error: "Failed to disconnect integration account" }, 500)
   }

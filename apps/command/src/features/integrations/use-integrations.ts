@@ -103,7 +103,10 @@ export function useConnectIntegration() {
         >[0]["provider"],
         callbackURL,
       })
-      return res
+      if (res?.error) {
+        throw new Error(res.error.message || "Failed to connect integration")
+      }
+      return res.data
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
@@ -118,18 +121,16 @@ export function useDisconnectIntegration() {
 
   return useMutation({
     mutationFn: async (providerId: string) => {
-      const authUrl = getAuthUrl()
-      const res = await fetch(`${authUrl}/api/auth/integrations/disconnect`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ providerId }),
-        credentials: "include",
+      // Use Better Auth's standard account unlinking API
+      const res = await authClient.unlinkAccount({
+        providerId: providerId as Parameters<
+          typeof authClient.unlinkAccount
+        >[0]["providerId"],
       })
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null)
-        throw new Error(errorData?.error || "Failed to disconnect integration")
+      if (res?.error) {
+        throw new Error(res.error.message || "Failed to disconnect integration")
       }
-      return res.json()
+      return res.data
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
