@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test"
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test"
 import { Hono } from "hono"
-import { integrationsRouter } from "./integrations"
+import { createIntegrationsRouter, integrationsRouter } from "./integrations"
 
 describe("integrationsRouter /internal/token, /list and /disconnect", () => {
   const origBetterAuthSecret = process.env.BETTER_AUTH_SECRET
@@ -168,6 +168,107 @@ describe("integrationsRouter /internal/token, /list and /disconnect", () => {
     })
     expect(resWhitespace.status).toBe(400)
   })
+
+  it("returns 404 on /disconnect when accountId does not belong to authenticated user", async () => {
+    const mockDb = {
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: () => Promise.resolve([]),
+          }),
+        }),
+      }),
+    } as any
+
+    const router = createIntegrationsRouter(mockDb)
+
+    const app = new Hono<{
+      Variables: {
+        user: { id: string; email: string } | null
+        session: { id: string } | null
+      }
+    }>()
+    app.use("*", async (c, next) => {
+      c.set("user", { id: "u-1", email: "u@example.com" })
+      c.set("session", { id: "s-1" })
+      await next()
+    })
+    app.route("/api/auth/integrations", router)
+
+    const res = await app.request("/api/auth/integrations/disconnect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accountId: "non-existent-or-other-user-acc" }),
+    })
+
+    expect(res.status).toBe(404)
+    const json = await res.json()
+    expect(json.code).toBe("ACCOUNT_NOT_FOUND")
+    expect(json.error).toContain("not found or already disconnected")
+  })
+
+  it("delegates to auth.api.unlinkAccount passing targetAccount.providerId and targetAccount.accountId", async () => {
+    const { auth } = await import("../lib/auth")
+
+    const mockDbAccount = {
+      id: "internal-record-id-789",
+      providerId: "google-calendar",
+      accountId: "external-oauth-sub-456",
+      userId: "u-1",
+    }
+
+    const mockDb = {
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: () => Promise.resolve([mockDbAccount]),
+          }),
+        }),
+      }),
+    } as any
+
+    let capturedUnlinkBody: any = null
+    const unlinkSpy = spyOn(auth.api as any, "unlinkAccount").mockImplementation(
+      async (params: any) => {
+        capturedUnlinkBody = params?.body
+        return { status: true } as any
+      }
+    )
+
+    const router = createIntegrationsRouter(mockDb)
+
+    const app = new Hono<{
+      Variables: {
+        user: { id: string; email: string } | null
+        session: { id: string } | null
+      }
+    }>()
+    app.use("*", async (c, next) => {
+      c.set("user", { id: "u-1", email: "u@example.com" })
+      c.set("session", { id: "s-1" })
+      await next()
+    })
+    app.route("/api/auth/integrations", router)
+
+    const res = await app.request("/api/auth/integrations/disconnect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accountId: "internal-record-id-789" }),
+    })
+
+    expect(res.status).toBe(200)
+    const json = await res.json()
+    expect(json.success).toBe(true)
+
+    // Verify auth.api.unlinkAccount received providerId and external provider accountId as required by Better Auth
+    expect(capturedUnlinkBody).not.toBeNull()
+    expect(capturedUnlinkBody.providerId).toBe("google-calendar")
+    expect(capturedUnlinkBody.accountId).toBe("external-oauth-sub-456")
+
+    unlinkSpy.mockRestore()
+  })
 })
+
+
 
 
