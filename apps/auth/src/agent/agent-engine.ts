@@ -42,6 +42,10 @@ export class AgentEngine {
     const dispatcher = new ToolDispatcher(ctx)
     const activeMessages: ModelMessage[] = [...messages]
     let step = 0
+    const lastToolCallsByName = new Map<
+      string,
+      { callId: string; isError: boolean; attempt: number }
+    >()
 
     while (step < maxSteps) {
       if (abortSignal?.aborted) {
@@ -86,6 +90,8 @@ export class AgentEngine {
         id: string
         name: string
         args: Record<string, unknown>
+        retryOf?: string
+        attempt?: number
       }> = []
 
       try {
@@ -142,16 +148,25 @@ export class AgentEngine {
               unknown
             >
 
+            const prevCall = lastToolCallsByName.get(toolName)
+            const isRetry = Boolean(prevCall && prevCall.isError)
+            const attempt = isRetry ? (prevCall!.attempt || 1) + 1 : 1
+            const retryOf = isRetry ? prevCall!.callId : undefined
+
             toolCallsToProcess.push({
               id: callId,
               name: toolName,
               args,
+              retryOf,
+              attempt,
             })
             yield {
               type: "tool:called",
               callId,
               name: toolName,
               args,
+              ...(retryOf ? { retryOf } : {}),
+              ...(attempt > 1 ? { attempt } : {}),
             }
             continue
           }
@@ -263,6 +278,10 @@ export class AgentEngine {
           type: "tool:executing",
           callId: call.id,
           name: call.name,
+          ...(call.retryOf ? { retryOf: call.retryOf } : {}),
+          ...(call.attempt && call.attempt > 1
+            ? { attempt: call.attempt }
+            : {}),
         }
 
         const {
@@ -367,7 +386,17 @@ export class AgentEngine {
           name: call.name,
           result: rawResult,
           isError,
+          ...(call.retryOf ? { retryOf: call.retryOf } : {}),
+          ...(call.attempt && call.attempt > 1
+            ? { attempt: call.attempt }
+            : {}),
         }
+
+        lastToolCallsByName.set(call.name, {
+          callId: call.id,
+          isError,
+          attempt: call.attempt ?? 1,
+        })
 
         toolResults.push({
           callId: call.id,

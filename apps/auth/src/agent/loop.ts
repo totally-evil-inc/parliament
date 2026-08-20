@@ -215,6 +215,8 @@ export async function runAgentTurn(
               toolCallId: event.callId,
               toolName: event.name,
               args: event.args,
+              ...(event.retryOf ? { retryOf: event.retryOf } : {}),
+              ...(event.attempt ? { attempt: event.attempt } : {}),
             })
           } else if (event.type === "tool:result") {
             collectedParts.push({
@@ -223,6 +225,8 @@ export async function runAgentTurn(
               toolName: event.name,
               result: event.result,
               isError: event.isError,
+              ...(event.retryOf ? { retryOf: event.retryOf } : {}),
+              ...(event.attempt ? { attempt: event.attempt } : {}),
             })
           } else if (event.type === "action:approval_required") {
             collectedParts.push({

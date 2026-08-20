@@ -39,11 +39,15 @@ export const agentEventSchema = z.discriminatedUnion("type", [
     callId: z.string(),
     name: z.string(),
     args: z.record(z.string(), z.unknown()),
+    retryOf: z.string().optional(),
+    attempt: z.number().int().positive().optional(),
   }),
   z.object({
     type: z.literal("tool:executing"),
     callId: z.string(),
     name: z.string(),
+    retryOf: z.string().optional(),
+    attempt: z.number().int().positive().optional(),
   }),
   z.object({
     type: z.literal("tool:result"),
@@ -51,6 +55,8 @@ export const agentEventSchema = z.discriminatedUnion("type", [
     name: z.string(),
     result: z.unknown(),
     isError: z.boolean(),
+    retryOf: z.string().optional(),
+    attempt: z.number().int().positive().optional(),
   }),
   z.object({
     type: z.literal("action:approval_required"),

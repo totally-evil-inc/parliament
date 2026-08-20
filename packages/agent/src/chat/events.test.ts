@@ -44,6 +44,38 @@ describe("AgentEvent Stream Protocol", () => {
     expect(approval.success).toBe(true)
   })
 
+  test("validates tool events with retryOf and attempt metadata", () => {
+    const called = agentEventSchema.safeParse({
+      type: "tool:called",
+      callId: "call-retry-2",
+      name: "create_invoice",
+      args: { amount: 500 },
+      retryOf: "call-retry-1",
+      attempt: 2,
+    })
+    expect(called.success).toBe(true)
+
+    const executing = agentEventSchema.safeParse({
+      type: "tool:executing",
+      callId: "call-retry-2",
+      name: "create_invoice",
+      retryOf: "call-retry-1",
+      attempt: 2,
+    })
+    expect(executing.success).toBe(true)
+
+    const result = agentEventSchema.safeParse({
+      type: "tool:result",
+      callId: "call-retry-2",
+      name: "create_invoice",
+      result: { invoiceId: "inv-99" },
+      isError: false,
+      retryOf: "call-retry-1",
+      attempt: 2,
+    })
+    expect(result.success).toBe(true)
+  })
+
   test("validates turn:completed with token usage", () => {
     const completed = agentEventSchema.safeParse({
       type: "turn:completed",

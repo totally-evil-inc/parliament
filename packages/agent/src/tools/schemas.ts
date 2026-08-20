@@ -2186,14 +2186,15 @@ export const getInvoiceSummaryInput = z.preprocess((val) => {
 }, invoiceSummaryBaseSchema) as unknown as typeof invoiceSummaryBaseSchema
 
 export const permissiveEmptyObjectSchema = z.preprocess((val) => {
-  if (typeof val === "string") {
+  let parsedVal = val
+  if (typeof parsedVal === "string") {
     try {
-      val = JSON.parse(val)
+      parsedVal = JSON.parse(parsedVal)
     } catch {
       // retain
     }
   }
-  return typeof val === "object" && val !== null ? val : {}
+  return typeof parsedVal === "object" && parsedVal !== null ? parsedVal : {}
 }, z.record(z.string(), z.unknown()).optional().default({}))
 
 export const getCurrentUserNameInput = permissiveEmptyObjectSchema
