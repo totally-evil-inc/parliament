@@ -1,9 +1,6 @@
 import { describe, expect, mock, test } from "bun:test"
 import type { QueryClient } from "@tanstack/react-query"
-import {
-  invalidateAgentQueries,
-  isMutatingTool,
-} from "./query-invalidation"
+import { invalidateAgentQueries, isMutatingTool } from "./query-invalidation"
 
 describe("query-invalidation helper", () => {
   describe("isMutatingTool", () => {
@@ -83,7 +80,11 @@ describe("query-invalidation helper", () => {
       })
 
       expect(invalidatedKeys).toContainEqual(["agent", "conversations"])
-      expect(invalidatedKeys).toContainEqual(["agent", "conversations", "thread-123"])
+      expect(invalidatedKeys).toContainEqual([
+        "agent",
+        "conversations",
+        "thread-123",
+      ])
       expect(invalidatedKeys).toContainEqual(["proposals"])
       expect(invalidatedKeys).toContainEqual(["deals"])
       expect(invalidatedKeys).toContainEqual(["deal-analytics"])

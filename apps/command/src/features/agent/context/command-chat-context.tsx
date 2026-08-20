@@ -35,6 +35,8 @@ export interface ToolCallItem {
   needsApproval?: boolean
   approvalId?: string
   errorText?: string
+  retryOf?: string
+  attempt?: number
 }
 
 export interface ChatMessage {
@@ -76,6 +78,154 @@ const CommandChatStateContext = createContext<CommandChatState | null>(null)
 const CommandChatActionsContext = createContext<CommandChatActions | null>(null)
 
 /**
+ * Parses an incoming SSE stream buffer chunk into validated AgentEvents and remaining incomplete buffer.
+ */
+export function parseSseChunk(
+  chunk: string
+): { events: AgentEvent[]; remainder: string } {
+  const normalized = chunk.replace(/\r\n/g, "\n")
+  const blocks = normalized.split("\n\n")
+  const remainder = blocks.pop() ?? ""
+  const events: AgentEvent[] = []
+
+  for (const block of blocks) {
+    const trimmed = block.trim()
+    if (!trimmed || trimmed.startsWith(":")) continue // Skip heartbeats/comments
+
+    const lines = block.split("\n")
+    for (const line of lines) {
+      if (line.startsWith("data: ")) {
+        const rawJson = line.slice(6).trim()
+        try {
+          const eventParsed = JSON.parse(rawJson)
+          const eventValidation = agentEventSchema.safeParse(eventParsed)
+          if (eventValidation.success) {
+            events.push(eventValidation.data)
+          }
+        } catch {
+          // Ignore partial or non-JSON data lines
+        }
+      }
+    }
+  }
+
+  return { events, remainder }
+}
+
+/**
+ * Flushes any remaining data lines in the trailing SSE buffer at EOF.
+ */
+export function parseSseTrailingBuffer(buffer: string): AgentEvent[] {
+  if (!buffer.trim()) return []
+  const normalized = buffer.replace(/\r\n/g, "\n")
+  const lines = normalized.split("\n")
+  const events: AgentEvent[] = []
+
+  for (const line of lines) {
+    if (line.startsWith("data: ")) {
+      const rawJson = line.slice(6).trim()
+      try {
+        const eventParsed = JSON.parse(rawJson)
+        const eventValidation = agentEventSchema.safeParse(eventParsed)
+        if (eventValidation.success) {
+          events.push(eventValidation.data)
+        }
+      } catch {
+        // Ignore
+      }
+    }
+  }
+  return events
+}
+
+/**
+ * Terminal reconciliation pass for assistant turn completion, suspension, or error.
+ * Ensures no tool calls remain indefinitely running or pending while preserving actionable approvals.
+ */
+export function reconcileTerminalTurn(
+  messages: ChatMessage[],
+  assistantMsgId: string,
+  terminalState: "completed" | "suspended" | "error",
+  errorPayload?: AgentChatError
+): ChatMessage[] {
+  return messages.map((msg) => {
+    if (msg.id !== assistantMsgId) return msg
+
+    const toolCalls = msg.toolCalls
+      ? msg.toolCalls.map((tc) => {
+          // Action approval requests remain actionable in pending_approval
+          if (
+            tc.needsApproval ||
+            tc.status === "pending_approval" ||
+            tc.status === "approved" ||
+            tc.status === "rejected" ||
+            tc.status === "expired"
+          ) {
+            return tc
+          }
+
+          // If the tool has a concrete result, derive terminal state from result
+          if (tc.result !== undefined) {
+            const resObj = tc.result as Record<string, unknown> | null
+            const hasObjError =
+              resObj &&
+              typeof resObj === "object" &&
+              Boolean(resObj.error)
+            const isError = Boolean(
+              tc.errorText || hasObjError || tc.status === "error"
+            )
+            const isRejected =
+              resObj?.status === "rejected" || resObj?.status === "denied"
+            const isSkipped = resObj?.status === "skipped"
+            return {
+              ...tc,
+              status: isError
+                ? "error"
+                : isRejected
+                  ? "rejected"
+                  : isSkipped
+                    ? "skipped"
+                    : "completed",
+            }
+          }
+
+          // Unresolved running/pending calls transition based on terminal outcome
+          if (
+            tc.status === "running" ||
+            tc.status === "pending" ||
+            tc.status === undefined
+          ) {
+            if (terminalState === "completed") {
+              return { ...tc, status: "completed" }
+            }
+            if (terminalState === "suspended") {
+              return { ...tc, status: "suspended" as const }
+            }
+            return {
+              ...tc,
+              status: "error" as const,
+              errorText:
+                tc.errorText ||
+                errorPayload?.message ||
+                "Tool execution did not finish",
+            }
+          }
+
+          return tc
+        })
+      : msg.toolCalls
+
+    const nextError = errorPayload ? errorPayload : msg.error
+
+    return {
+      ...msg,
+      toolCalls,
+      ...(nextError ? { error: nextError } : {}),
+    }
+  })
+}
+
+/**
  * Applies a series of AgentEvent items to a target assistant message within the messages list
  * in a single atomic batch pass, preventing excessive React render schedules.
  */
@@ -112,6 +262,8 @@ export function applyEventsToMessages(
             name: event.name,
             args: event.args,
             status: "running",
+            retryOf: event.retryOf,
+            attempt: event.attempt,
           })
           break
 
@@ -120,7 +272,13 @@ export function applyEventsToMessages(
           const isRejected =
             resObj?.status === "rejected" || resObj?.status === "denied"
           const isSkipped = resObj?.status === "skipped"
-          const derivedStatus = event.isError
+          const hasObjError =
+            event.result !== undefined &&
+            typeof event.result === "object" &&
+            event.result !== null &&
+            Boolean((event.result as Record<string, unknown>).error)
+          const isError = Boolean(event.isError || hasObjError)
+          const derivedStatus = isError
             ? "error"
             : isRejected
               ? "rejected"
@@ -128,26 +286,41 @@ export function applyEventsToMessages(
                 ? "skipped"
                 : "completed"
 
+          const errorText = isError
+            ? extractToolErrorText(event.result)
+            : undefined
+
+          let targetRetryOf = event.retryOf
+
           toolCalls = toolCalls.map((tc) => {
             if (tc.id === event.callId) {
               if (tc.name) executedToolsOut?.add(tc.name)
-              const hasObjError =
-                event.result !== undefined &&
-                typeof event.result === "object" &&
-                event.result !== null &&
-                Boolean((event.result as Record<string, unknown>).error)
-              const isError = Boolean(event.isError || hasObjError)
+              if (!targetRetryOf && tc.retryOf) {
+                targetRetryOf = tc.retryOf
+              }
               return {
                 ...tc,
                 result: event.result,
                 status: isError ? "error" : derivedStatus,
-                errorText: isError
-                  ? extractToolErrorText(event.result)
-                  : undefined,
+                errorText,
+                retryOf: targetRetryOf,
+                attempt: event.attempt ?? tc.attempt,
               }
             }
             return tc
           })
+
+          // When a retry attempt succeeds, collapse / remove prior failed attempts in the retry chain
+          if (!isError && targetRetryOf) {
+            const supersededIds = new Set<string>()
+            let currentParentId: string | undefined = targetRetryOf
+            while (currentParentId) {
+              supersededIds.add(currentParentId)
+              const parentCall = toolCalls.find((t) => t.id === currentParentId)
+              currentParentId = parentCall?.retryOf
+            }
+            toolCalls = toolCalls.filter((tc) => !supersededIds.has(tc.id))
+          }
           break
         }
 
@@ -168,28 +341,43 @@ export function applyEventsToMessages(
         case "tool:executing":
           toolCalls = toolCalls.map((tc) => {
             if (tc.id === event.callId || tc.name === event.name) {
-              return { ...tc, status: "running" }
+              return {
+                ...tc,
+                status: "running",
+                retryOf: event.retryOf ?? tc.retryOf,
+                attempt: event.attempt ?? tc.attempt,
+              }
             }
             return tc
           })
           break
 
         case "turn:suspended":
-          if (event.reason === "budget_cap") {
-            toolCalls = toolCalls.map((tc) => {
-              if (tc.status === "running") {
-                return { ...tc, status: "suspended" }
-              }
-              return tc
-            })
-          }
+          toolCalls = toolCalls.map((tc) => {
+            if (tc.needsApproval || tc.status === "pending_approval") return tc
+            if (tc.status === "running") {
+              return { ...tc, status: "suspended" as const }
+            }
+            return tc
+          })
+          break
+
+        case "turn:completed":
+          toolCalls = toolCalls.map((tc) => {
+            if (tc.needsApproval || tc.status === "pending_approval") return tc
+            if (tc.status === "running" || tc.status === "pending") {
+              return { ...tc, status: "completed" }
+            }
+            return tc
+          })
           break
 
         case "turn:error":
           if (event.code === "aborted") {
             // Client-initiated stop: cleanly transition running tools to suspended without error state
             toolCalls = toolCalls.map((tc) => {
-              if (tc.status === "running") {
+              if (tc.needsApproval || tc.status === "pending_approval") return tc
+              if (tc.status === "running" || tc.status === "pending") {
                 return { ...tc, status: "suspended" as const }
               }
               return tc
@@ -197,8 +385,13 @@ export function applyEventsToMessages(
             break
           }
           toolCalls = toolCalls.map((tc) => {
-            if (tc.status === "running") {
-              return { ...tc, status: "error" as const }
+            if (tc.needsApproval || tc.status === "pending_approval") return tc
+            if (tc.status === "running" || tc.status === "pending") {
+              return {
+                ...tc,
+                status: "error" as const,
+                errorText: tc.errorText || event.message,
+              }
             }
             return tc
           })
@@ -391,37 +584,26 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
         let buffer = ""
+        let receivedTerminalEvent = false
 
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
 
           buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split("\n\n")
-          buffer = lines.pop() ?? ""
-
-          const chunkEvents: AgentEvent[] = []
-
-          for (const block of lines) {
-            if (!block.trim() || block.startsWith(":")) continue // Skip heartbeats/comments
-            const dataLine = block
-              .split("\n")
-              .find((l) => l.startsWith("data: "))
-            if (!dataLine) continue
-
-            const rawJson = dataLine.slice(6).trim()
-            try {
-              const eventParsed = JSON.parse(rawJson)
-              const eventValidation = agentEventSchema.safeParse(eventParsed)
-              if (eventValidation.success) {
-                chunkEvents.push(eventValidation.data)
-              }
-            } catch {
-              // Ignore partial JSON chunks
-            }
-          }
+          const { events: chunkEvents, remainder } = parseSseChunk(buffer)
+          buffer = remainder
 
           if (chunkEvents.length > 0) {
+            for (const ev of chunkEvents) {
+              if (
+                ev.type === "turn:completed" ||
+                ev.type === "turn:suspended" ||
+                ev.type === "turn:error"
+              ) {
+                receivedTerminalEvent = true
+              }
+            }
             setMessages((prev) =>
               applyEventsToMessages(
                 prev,
@@ -433,30 +615,53 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         }
 
+        // Process any trailing bytes at EOF
+        const trailingEvents = parseSseTrailingBuffer(buffer)
+        if (trailingEvents.length > 0) {
+          for (const ev of trailingEvents) {
+            if (
+              ev.type === "turn:completed" ||
+              ev.type === "turn:suspended" ||
+              ev.type === "turn:error"
+            ) {
+              receivedTerminalEvent = true
+            }
+          }
+          setMessages((prev) =>
+            applyEventsToMessages(
+              prev,
+              assistantMsgId,
+              trailingEvents,
+              executedTools
+            )
+          )
+        }
+
+        // If the stream completed without an explicit terminal event (e.g. abrupt EOF),
+        // perform terminal reconciliation defensively so no tool is left stuck in running/pending.
+        if (!receivedTerminalEvent) {
+          setMessages((prev) =>
+            reconcileTerminalTurn(prev, assistantMsgId, "completed")
+          )
+        }
+
         invalidateAgentQueries(executedTools)
       } catch (err: unknown) {
         const isAbort =
           (err as Error)?.name === "AbortError" ||
           (err as any)?.code === "aborted" ||
           abortController.signal.aborted
-        if (!isAbort) {
+        if (isAbort) {
+          setMessages((prev) =>
+            reconcileTerminalTurn(prev, assistantMsgId, "suspended")
+          )
+        } else {
           const message =
             err instanceof Error ? err.message : "Agent stream failed"
-          setChatError({ code: "stream_failed", message })
+          const errPayload: AgentChatError = { code: "stream_failed", message }
+          setChatError(errPayload)
           setMessages((prev) =>
-            prev.map((msg) => {
-              if (
-                msg.id === assistantMsgId &&
-                !msg.content &&
-                (!msg.toolCalls || msg.toolCalls.length === 0)
-              ) {
-                return {
-                  ...msg,
-                  error: { code: "stream_failed", message },
-                }
-              }
-              return msg
-            })
+            reconcileTerminalTurn(prev, assistantMsgId, "error", errPayload)
           )
         }
       } finally {
@@ -540,7 +745,8 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                       ? "approved"
                       : "rejected",
                   result:
-                    data?.result ?? (isError ? { error: errorText } : undefined),
+                    data?.result ??
+                    (isError ? { error: errorText } : undefined),
                   errorText,
                   needsApproval: false,
                 }
@@ -665,15 +871,21 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       setMessages((prev) =>
         prev.map((msg) => {
           if (!msg.toolCalls) return msg
-          const hasRunning = msg.toolCalls.some((tc) => tc.status === "running")
+          const hasRunning = msg.toolCalls.some(
+            (tc) =>
+              (tc.status === "running" || tc.status === "pending") &&
+              !tc.needsApproval
+          )
           if (!hasRunning) return msg
           return {
             ...msg,
-            toolCalls: msg.toolCalls.map((tc) =>
-              tc.status === "running"
-                ? { ...tc, status: "suspended" as const }
-                : tc
-            ),
+            toolCalls: msg.toolCalls.map((tc) => {
+              if (tc.needsApproval || tc.status === "pending_approval") return tc
+              if (tc.status === "running" || tc.status === "pending") {
+                return { ...tc, status: "suspended" as const }
+              }
+              return tc
+            }),
           }
         })
       )
@@ -736,118 +948,178 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
           setActiveTitle(data.conversation.title)
         }
 
-      if (Array.isArray(data.messages)) {
-        const loaded: ChatMessage[] = data.messages.map((m: any) => {
-          let text = ""
-          let thinking = ""
-          const toolCalls: ToolCallItem[] = []
+        if (Array.isArray(data.messages)) {
+          const loaded: ChatMessage[] = data.messages.map((m: any) => {
+            let text = ""
+            let thinking = ""
+            const toolCalls: ToolCallItem[] = []
 
-          if (Array.isArray(m.parts)) {
-            for (const p of m.parts) {
-              if (p?.type === "text") {
-                text += p.text ?? p.content ?? ""
-              } else if (p?.type === "thinking") {
-                thinking += p.text ?? p.thinking ?? p.content ?? ""
-              } else if (
-                p?.type === "tool-call" ||
-                p?.type === "tool-invocation"
-              ) {
-                toolCalls.push({
-                  id: String(p.id ?? p.toolCallId ?? "tool"),
-                  name: String(p.name ?? p.toolName ?? "tool"),
-                  args: p.args ?? p.input ?? {},
-                  status: "pending",
-                })
-              } else if (p?.type === "tool-result") {
-                const existing = toolCalls.find((tc) => tc.id === p.toolCallId)
-                const resObj = (p.result ?? p.output) as any
-                const isRejected =
-                  resObj?.status === "rejected" ||
-                  resObj?.status === "denied" ||
-                  p.status === "rejected" ||
-                  p.status === "denied"
-                const isSkipped =
-                  resObj?.status === "skipped" || p.status === "skipped"
+            if (Array.isArray(m.parts)) {
+              for (const p of m.parts) {
+                if (p?.type === "text") {
+                  text += p.text ?? p.content ?? ""
+                } else if (p?.type === "thinking") {
+                  thinking += p.text ?? p.thinking ?? p.content ?? ""
+                } else if (
+                  p?.type === "tool-call" ||
+                  p?.type === "tool-invocation"
+                ) {
+                  toolCalls.push({
+                    id: String(p.id ?? p.toolCallId ?? "tool"),
+                    name: String(p.name ?? p.toolName ?? "tool"),
+                    args: p.args ?? p.input ?? {},
+                    status: "pending",
+                    retryOf: typeof p.retryOf === "string" ? p.retryOf : undefined,
+                    attempt: typeof p.attempt === "number" ? p.attempt : undefined,
+                  })
+                } else if (p?.type === "tool-result") {
+                  const existing = toolCalls.find(
+                    (tc) => tc.id === p.toolCallId
+                  )
+                  const resObj = (p.result ?? p.output) as any
+                  const isRejected =
+                    resObj?.status === "rejected" ||
+                    resObj?.status === "denied" ||
+                    p.status === "rejected" ||
+                    p.status === "denied"
+                  const isSkipped =
+                    resObj?.status === "skipped" || p.status === "skipped"
+                  const hasObjError =
+                    resObj &&
+                    typeof resObj === "object" &&
+                    Boolean(resObj.error)
+                  const isError = Boolean(p.isError || hasObjError)
+                  const derivedStatus = isError
+                    ? "error"
+                    : isRejected
+                      ? "rejected"
+                      : isSkipped
+                        ? "skipped"
+                        : "completed"
+
+                  const errorText = isError
+                    ? extractToolErrorText(p.result ?? p.output)
+                    : undefined
+
+                  if (existing) {
+                    existing.result = p.result ?? p.output
+                    existing.status = derivedStatus
+                    if (isError) {
+                      existing.errorText = errorText
+                    }
+                    if (p.retryOf) existing.retryOf = p.retryOf
+                    if (p.attempt) existing.attempt = p.attempt
+                  } else {
+                    toolCalls.push({
+                      id: String(p.toolCallId ?? "tool"),
+                      name: String(p.toolName ?? "tool"),
+                      result: p.result ?? p.output,
+                      status: derivedStatus,
+                      errorText,
+                      retryOf: typeof p.retryOf === "string" ? p.retryOf : undefined,
+                      attempt: typeof p.attempt === "number" ? p.attempt : undefined,
+                    })
+                  }
+                } else if (p?.type === "approval-requested") {
+                  const resolvedApprovalId = String(
+                    p.approvalId ?? p.resumeId ?? p.id ?? "approval"
+                  )
+                  const existing = toolCalls.find(
+                    (tc) =>
+                      (p.callId !== undefined && tc.id === String(p.callId)) ||
+                      (tc.name === String(p.toolName ?? "action") &&
+                        tc.status === "pending")
+                  )
+                  if (existing) {
+                    existing.status = "pending_approval"
+                    existing.needsApproval = true
+                    existing.approvalId = resolvedApprovalId
+                  } else {
+                    toolCalls.push({
+                      id: resolvedApprovalId,
+                      name: String(p.toolName ?? "action"),
+                      args: p.toolArgs ?? p.args ?? {},
+                      status: "pending_approval",
+                      needsApproval: true,
+                      approvalId: resolvedApprovalId,
+                    })
+                  }
+                }
+              }
+            }
+
+            // Normalize legacy tool calls and collapse superseded retries
+            let normalizedTools = toolCalls.map((tc) => {
+              if (tc.needsApproval || tc.status === "pending_approval") return tc
+              if (tc.result !== undefined) {
+                const resObj = tc.result as Record<string, unknown> | null
                 const hasObjError =
                   resObj &&
                   typeof resObj === "object" &&
                   Boolean(resObj.error)
-                const isError = Boolean(p.isError || hasObjError)
-                const derivedStatus = isError
-                  ? "error"
-                  : isRejected
-                    ? "rejected"
-                    : isSkipped
-                      ? "skipped"
-                      : "completed"
-
-                const errorText = isError
-                  ? extractToolErrorText(p.result ?? p.output)
-                  : undefined
-
-                if (existing) {
-                  existing.result = p.result ?? p.output
-                  existing.status = derivedStatus
-                  if (isError) {
-                    existing.errorText = errorText
-                  }
-                } else {
-                  toolCalls.push({
-                    id: String(p.toolCallId ?? "tool"),
-                    name: String(p.toolName ?? "tool"),
-                    result: p.result ?? p.output,
-                    status: derivedStatus,
-                    errorText,
-                  })
-                }
-              } else if (p?.type === "approval-requested") {
-                const resolvedApprovalId = String(
-                  p.approvalId ?? p.resumeId ?? p.id ?? "approval"
-                )
-                const existing = toolCalls.find(
-                  (tc) =>
-                    (p.callId !== undefined && tc.id === String(p.callId)) ||
-                    (tc.name === String(p.toolName ?? "action") &&
-                      tc.status === "pending")
-                )
-                if (existing) {
-                  existing.status = "pending_approval"
-                  existing.needsApproval = true
-                  existing.approvalId = resolvedApprovalId
-                } else {
-                  toolCalls.push({
-                    id: resolvedApprovalId,
-                    name: String(p.toolName ?? "action"),
-                    args: p.toolArgs ?? p.args ?? {},
-                    status: "pending_approval",
-                    needsApproval: true,
-                    approvalId: resolvedApprovalId,
-                  })
+                const isError = Boolean(tc.errorText || hasObjError || tc.status === "error")
+                const isRejected =
+                  resObj?.status === "rejected" || resObj?.status === "denied"
+                const isSkipped = resObj?.status === "skipped"
+                return {
+                  ...tc,
+                  status: isError
+                    ? "error"
+                    : isRejected
+                      ? "rejected"
+                      : isSkipped
+                        ? "skipped"
+                        : "completed",
                 }
               }
+              if (tc.status === "pending" || tc.status === "running") {
+                return {
+                  ...tc,
+                  status: m.status === "interrupted" ? "suspended" : "completed",
+                }
+              }
+              return tc
+            })
+
+            // Collapse superseded retry attempts for successful tools
+            const successfulRetries = normalizedTools.filter(
+              (tc) => tc.status === "completed" && Boolean(tc.retryOf)
+            )
+            if (successfulRetries.length > 0) {
+              const supersededIds = new Set<string>()
+              for (const sr of successfulRetries) {
+                let curr: string | undefined = sr.retryOf
+                while (curr) {
+                  supersededIds.add(curr)
+                  const parent = normalizedTools.find((t) => t.id === curr)
+                  curr = parent?.retryOf
+                }
+              }
+              normalizedTools = normalizedTools.filter((tc) => !supersededIds.has(tc.id))
             }
-          }
 
-          return {
-            id: m.id,
-            role: m.role,
-            content: text,
-            thinking: thinking || undefined,
-            toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
-          }
+            return {
+              id: m.id,
+              role: m.role,
+              content: text,
+              thinking: thinking || undefined,
+              toolCalls: normalizedTools.length > 0 ? normalizedTools : undefined,
+            }
+          })
+
+          setMessages(loaded)
+        }
+      } catch (err: unknown) {
+        setChatError({
+          code: "load_failed",
+          message: err instanceof Error ? err.message : "Failed to load thread",
         })
-
-        setMessages(loaded)
+      } finally {
+        setIsHydrating(false)
       }
-    } catch (err: unknown) {
-      setChatError({
-        code: "load_failed",
-        message: err instanceof Error ? err.message : "Failed to load thread",
-      })
-    } finally {
-      setIsHydrating(false)
-    }
-  }, [queryClient])
+    },
+    [queryClient]
+  )
 
   const resetNewChat = useCallback(() => {
     if (isLoadingRef.current) return

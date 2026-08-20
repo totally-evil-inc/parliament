@@ -9,10 +9,11 @@ import { Button } from "@workspace/ui/components/button"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useRef } from "react"
 import { authClient } from "@/lib/auth-client"
 import { useCommandChatContext } from "../context/command-chat-context"
 import { useHistorySidebar } from "../hooks/use-history-sidebar"
+import { useSmartScrollAnchor } from "../hooks/use-smart-scroll-anchor"
 import {
   latestAssistantThinking,
   normalizeAssistantMessage,
@@ -324,54 +325,19 @@ export const CommandCenterPage: React.FC = () => {
   const activeThinking = isLoading ? latestAssistantThinking(messages) : ""
 
   const { isOpen: isHistoryOpen, toggle: toggleHistory } = useHistorySidebar()
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const isAtBottomRef = useRef(true)
-  const [showScrollBottom, setShowScrollBottom] = useState(false)
+
+  const {
+    viewportRef,
+    bottomRef,
+    showScrollBottom,
+    scrollToBottom,
+    handleScroll,
+  } = useSmartScrollAnchor({
+    bottomThreshold: 120,
+    triggerDeps: [messages, isLoading],
+  })
+
   const lastMessageCountRef = useRef(messages.length)
-
-  const scrollToBottom = useCallback((smooth = true) => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({
-        behavior: smooth ? "smooth" : "auto",
-        block: "end",
-      })
-    }
-  }, [])
-
-  const scrollRafIdRef = useRef<number | null>(null)
-
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const target = (e.target as HTMLElement) || e.currentTarget
-    if (scrollRafIdRef.current !== null) return
-
-    scrollRafIdRef.current = requestAnimationFrame(() => {
-      scrollRafIdRef.current = null
-      const scrollEl =
-        target.scrollHeight > target.clientHeight
-          ? target
-          : (target.querySelector?.(
-              '[data-slot="scroll-area-viewport"]'
-            ) as HTMLElement) || target
-      const distanceToBottom =
-        scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight
-      const atBottom = distanceToBottom < 120
-      isAtBottomRef.current = atBottom
-      setShowScrollBottom((prev) => (prev !== !atBottom ? !atBottom : prev))
-    })
-  }, [])
-
-  const handleNewChat = useCallback(() => {
-    navigate({ to: "/" })
-  }, [navigate])
-
-  useEffect(() => {
-    return () => {
-      if (scrollRafIdRef.current !== null) {
-        cancelAnimationFrame(scrollRafIdRef.current)
-      }
-    }
-  }, [])
-
   useEffect(() => {
     const isNewUserMessage =
       messages.length > lastMessageCountRef.current &&
@@ -379,12 +345,13 @@ export const CommandCenterPage: React.FC = () => {
     lastMessageCountRef.current = messages.length
 
     if (isNewUserMessage) {
-      isAtBottomRef.current = true
       scrollToBottom(true)
-    } else if (isAtBottomRef.current) {
-      scrollToBottom(false)
     }
   }, [messages, scrollToBottom])
+
+  const handleNewChat = useCallback(() => {
+    navigate({ to: "/" })
+  }, [navigate])
 
   return (
     <div className="relative flex h-full min-h-0 flex-1 overflow-hidden bg-background text-foreground">
@@ -463,6 +430,7 @@ export const CommandCenterPage: React.FC = () => {
             {/* Message Feed with ScrollArea */}
             <ScrollArea
               className="min-h-0 w-full flex-1"
+              viewportRef={viewportRef}
               onScroll={handleScroll}
             >
               <main className="mx-auto w-full max-w-4xl space-y-4 px-4 pt-4 pb-48 sm:px-6">
@@ -513,10 +481,7 @@ export const CommandCenterPage: React.FC = () => {
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() => {
-                    isAtBottomRef.current = true
-                    scrollToBottom(true)
-                  }}
+                  onClick={() => scrollToBottom(true)}
                   className="flex items-center gap-1.5 rounded-full border border-border bg-card/90 px-3 py-1 text-foreground text-xs shadow-lg backdrop-blur-xs hover:bg-card"
                 >
                   <ArrowDownIcon className="size-3.5" />
@@ -533,6 +498,7 @@ export const CommandCenterPage: React.FC = () => {
                     onSend={sendPrompt}
                     onStop={stop}
                     isLoading={isLoading}
+                    thinking={activeThinking}
                     selectedModel={selectedModel}
                     onSelectModel={setSelectedModel}
                     showPrompts={false}

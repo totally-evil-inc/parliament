@@ -387,9 +387,14 @@ export function normalizeAssistantMessage(
             r.errorText.trim() !== "" &&
             r.errorText.trim() !== "[object Object]"
               ? r.errorText
-              : r.status === "error" || (r.result && typeof r.result === "object" && Boolean((r.result as Record<string, unknown>).error))
+              : r.status === "error" ||
+                  (r.result &&
+                    typeof r.result === "object" &&
+                    Boolean((r.result as Record<string, unknown>).error))
                 ? extractToolErrorText(r.errorText ?? r.result)
                 : undefined,
+          retryOf: typeof r.retryOf === "string" ? r.retryOf : undefined,
+          attempt: typeof r.attempt === "number" ? r.attempt : undefined,
         })
       }
     }
@@ -454,6 +459,10 @@ export function normalizeAssistantMessage(
             : p.state === "output-error"
               ? extractToolErrorText(p.errorText ?? p.output ?? p.result)
               : undefined,
+        retryOf:
+          typeof p.retryOf === "string" ? p.retryOf : existing?.retryOf,
+        attempt:
+          typeof p.attempt === "number" ? p.attempt : existing?.attempt,
       })
     }
 
@@ -490,13 +499,13 @@ export function normalizeAssistantMessage(
         status: isError ? "error" : "completed",
         errorText: isError
           ? extractToolErrorText(
-              p.errorText ??
-                p.error ??
-                p.content ??
-                p.output ??
-                p.result
+              p.errorText ?? p.error ?? p.content ?? p.output ?? p.result
             )
           : undefined,
+        retryOf:
+          typeof p.retryOf === "string" ? p.retryOf : current.retryOf,
+        attempt:
+          typeof p.attempt === "number" ? p.attempt : current.attempt,
       })
     }
   }

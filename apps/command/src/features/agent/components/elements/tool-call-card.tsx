@@ -35,6 +35,8 @@ export interface ToolCallItem {
   errorText?: string
   expiresAt?: string | Date
   confidenceScore?: number
+  retryOf?: string
+  attempt?: number
 }
 
 export interface ToolCallCardProps {
@@ -56,6 +58,7 @@ function mapToToolState(item: ToolCallItem): ToolState {
   if (item.status === "rejected" || item.status === "denied")
     return "output-denied"
   if (item.status === "running") return "input-available"
+  if (item.status === "suspended") return "output-available"
   if (item.status === "error" || item.errorText) return "output-error"
   if (item.status === "completed" || item.result !== undefined)
     return "output-available"
@@ -128,9 +131,16 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
             Boolean(tc.errorText) ||
             hasObjError
           const isRunning =
-            toolState === "input-available" ||
-            tc.status === "running" ||
-            (tc.result === undefined && !tc.errorText && !tc.needsApproval)
+            (toolState === "input-available" || tc.status === "running") &&
+            tc.status !== "completed" &&
+            tc.status !== "suspended" &&
+            tc.status !== "error" &&
+            tc.status !== "rejected" &&
+            tc.status !== "denied" &&
+            tc.status !== "skipped" &&
+            !tc.needsApproval &&
+            !tc.errorText &&
+            tc.result === undefined
           const isQuestionnaire =
             tc.name === "ask_clarifying_questions" ||
             tc.name === "askClarifyingQuestions" ||

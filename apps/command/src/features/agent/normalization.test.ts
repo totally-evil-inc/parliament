@@ -453,7 +453,9 @@ describe("extractToolErrorText", () => {
 
     expect(extractToolErrorText("Direct error text")).toBe("Direct error text")
 
-    expect(extractToolErrorText("[object Object]")).toBe("Tool execution failed")
+    expect(extractToolErrorText("[object Object]")).toBe(
+      "Tool execution failed"
+    )
 
     expect(extractToolErrorText({ customKey: "abc" })).toBe(
       JSON.stringify({ customKey: "abc" }, null, 2)

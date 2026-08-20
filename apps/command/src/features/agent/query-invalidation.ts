@@ -1,7 +1,8 @@
 import type { QueryClient } from "@tanstack/react-query"
 import { TOOL_CATALOG } from "@workspace/agent"
 
-const READ_ONLY_PREFIX_REGEX = /^(get|list|search|check|verify|read|ask|find)[-_]/i
+const READ_ONLY_PREFIX_REGEX =
+  /^(get|list|search|check|verify|read|ask|find)[-_]/i
 
 /**
  * Determines defensively whether a tool execution modifies server-side state.
@@ -13,7 +14,9 @@ export function isMutatingTool(toolName: unknown): boolean {
   }
 
   const normalized = toolName.trim().toLowerCase()
-  const entry = (TOOL_CATALOG as Record<string, { capability?: string; category?: string }>)[normalized]
+  const entry = (
+    TOOL_CATALOG as Record<string, { capability?: string; category?: string }>
+  )[normalized]
 
   if (entry) {
     return entry.capability !== "READ_ONLY" && entry.category !== "read"

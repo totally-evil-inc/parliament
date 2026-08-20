@@ -99,4 +99,69 @@ describe("MessageBubble Component", () => {
 
     expect(html).toContain("Context window exceeded budget limit.")
   })
+
+  test("renders active processing indicator only for running tools, not completed or suspended", () => {
+    // 1. Running tool: should have "Running" badge
+    const runningHtml = renderToString(
+      <MessageBubble
+        message={{
+          id: "msg-running",
+          role: "assistant",
+          content: "",
+          toolCalls: [
+            {
+              id: "tc-run",
+              name: "list_deals",
+              status: "running",
+            },
+          ],
+        }}
+        isStreaming={true}
+      />
+    )
+    expect(runningHtml).toContain("Running")
+    expect(runningHtml).toContain("Reviewing pipeline deals")
+
+    // 2. Completed tool: should NOT show "Running"
+    const completedHtml = renderToString(
+      <MessageBubble
+        message={{
+          id: "msg-completed",
+          role: "assistant",
+          content: "Here are the deals.",
+          toolCalls: [
+            {
+              id: "tc-comp",
+              name: "list_deals",
+              status: "completed",
+              result: [{ id: "deal-1" }],
+            },
+          ],
+        }}
+        isStreaming={false}
+      />
+    )
+    expect(completedHtml).not.toContain("Running")
+
+    // 3. Suspended tool (aborted): should NOT show "Running"
+    const suspendedHtml = renderToString(
+      <MessageBubble
+        message={{
+          id: "msg-suspended",
+          role: "assistant",
+          content: "Stopped.",
+          toolCalls: [
+            {
+              id: "tc-susp",
+              name: "list_deals",
+              status: "suspended",
+            },
+          ],
+        }}
+        isStreaming={false}
+      />
+    )
+    expect(suspendedHtml).not.toContain("Running")
+  })
 })
+
