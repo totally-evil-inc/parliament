@@ -142,7 +142,7 @@ export function createIntegrationsRouter(
         headers: c.req.raw.headers,
         body: {
           providerId: targetAccount.providerId,
-          accountId: targetAccount.accountId,
+          accountId: targetAccount.id,
         },
       })
 

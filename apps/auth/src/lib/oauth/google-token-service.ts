@@ -74,6 +74,9 @@ export class GoogleTokenService {
 
   /**
    * Resolves a valid Google access token with full account and expiry details.
+   * Emits an internal domain operation wide event (`google_oauth_token_resolve`)
+   * capturing token refresh diagnostics, TTL, and sanitized provider responses.
+   * (When called from an HTTP route, the root middleware separately captures the canonical HTTP request event).
    */
   async getValidTokenDetails(
     userId: string,

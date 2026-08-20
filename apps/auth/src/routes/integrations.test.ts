@@ -207,7 +207,7 @@ describe("integrationsRouter /internal/token, /list and /disconnect", () => {
     expect(json.error).toContain("not found or already disconnected")
   })
 
-  it("delegates to auth.api.unlinkAccount passing targetAccount.providerId and targetAccount.accountId", async () => {
+  it("delegates to auth.api.unlinkAccount passing targetAccount.providerId and internal targetAccount.id", async () => {
     const { auth } = await import("../lib/auth")
 
     const mockDbAccount = {
@@ -260,10 +260,10 @@ describe("integrationsRouter /internal/token, /list and /disconnect", () => {
     const json = await res.json()
     expect(json.success).toBe(true)
 
-    // Verify auth.api.unlinkAccount received providerId and external provider accountId as required by Better Auth
+    // Verify auth.api.unlinkAccount received providerId and internal record ID (targetAccount.id)
     expect(capturedUnlinkBody).not.toBeNull()
     expect(capturedUnlinkBody.providerId).toBe("google-calendar")
-    expect(capturedUnlinkBody.accountId).toBe("external-oauth-sub-456")
+    expect(capturedUnlinkBody.accountId).toBe("internal-record-id-789")
 
     unlinkSpy.mockRestore()
   })
