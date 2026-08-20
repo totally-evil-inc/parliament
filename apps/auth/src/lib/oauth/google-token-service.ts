@@ -1,4 +1,4 @@
-import { and, db, desc, eq, inArray } from "@workspace/database"
+import { and, db, desc, eq, inArray, sql } from "@workspace/database"
 import { account } from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 import {
@@ -23,11 +23,6 @@ interface GoogleTokenRefreshResponse {
   error_description?: string
 }
 
-/**
- * Shared service for resolving and refreshing Google OAuth tokens defensively.
- * Handles fallback accounts, in-flight concurrency deduplication, wide event logging,
- * and sanitized domain errors.
- */
 export type TokenDetails = {
   accessToken: string
   expiresAt: Date | null
@@ -36,9 +31,24 @@ export type TokenDetails = {
   userId: string
 }
 
+type RefreshedTokenResult = {
+  accessToken: string
+  expiresAt: Date
+}
+
+/**
+ * Shared service for resolving and refreshing Google OAuth tokens defensively.
+ * Handles fallback accounts, in-flight concurrency deduplication, wide event logging,
+ * and sanitized domain errors.
+ */
 export class GoogleTokenService {
-  // In-flight refresh promise deduplication map keyed by account.id
-  private inFlightRefreshes = new Map<string, Promise<string>>()
+  /**
+   * In-flight refresh promise deduplication map keyed by account.id.
+   * NOTE: This provides process-local deduplication to protect against bursty concurrent
+   * requests on a single worker instance. For horizontally scaled multi-instance deployments,
+   * database-level row locking or optimistic updates can be layered on top if needed.
+   */
+  private inFlightRefreshes = new Map<string, Promise<RefreshedTokenResult>>()
   private dbClient: typeof db
 
   constructor(customDb: typeof db = db) {
@@ -78,7 +88,9 @@ export class GoogleTokenService {
         throw new IntegrationNotConnectedError(targetProvider)
       }
 
-      // 1. Single database query with ordered provider preference to prevent waterfalls
+      // 1. Single database query with deterministic SQL CASE provider preference:
+      // Exact provider match (0) is prioritized before fallback 'google' account (1),
+      // with latest updatedAt breaking ties deterministically.
       const targetProviders =
         targetProvider === "google"
           ? ["google"]
@@ -93,16 +105,17 @@ export class GoogleTokenService {
             inArray(account.providerId, targetProviders)
           )
         )
-        .orderBy(desc(account.updatedAt))
+        .orderBy(
+          sql`CASE WHEN ${account.providerId} = ${targetProvider} THEN 0 ELSE 1 END`,
+          desc(account.updatedAt)
+        )
+        .limit(1)
 
       if (!records || records.length === 0) {
         throw new IntegrationNotConnectedError(targetProvider)
       }
 
-      // Exact provider match takes priority over fallback 'google' account
-      const targetAccount =
-        records.find((rec) => rec.providerId === targetProvider) ?? records[0]
-
+      const targetAccount = records[0]
       wideEvent.resolvedProvider = targetAccount.providerId
       wideEvent.accountId = targetAccount.id
 
@@ -126,14 +139,14 @@ export class GoogleTokenService {
       // If expired or missing accessToken but refreshToken is present, refresh token
       if (targetAccount.refreshToken) {
         wideEvent.tokenRefreshed = true
-        const accessToken = await this.deduplicatedRefresh(
+        const refreshed = await this.deduplicatedRefresh(
           targetAccount,
           targetProvider
         )
         wideEvent.outcome = "success"
         return {
-          accessToken,
-          expiresAt: targetAccount.accessTokenExpiresAt,
+          accessToken: refreshed.accessToken,
+          expiresAt: refreshed.expiresAt,
           providerId: targetAccount.providerId,
           accountId: targetAccount.id,
           userId: targetAccount.userId,
@@ -172,17 +185,21 @@ export class GoogleTokenService {
       throw error
     } finally {
       wideEvent.duration_ms = Date.now() - startTime
-      logger.info(wideEvent, "Google OAuth token resolution completed")
+      if (wideEvent.outcome === "error") {
+        logger.error(wideEvent, "Google OAuth token resolution failed")
+      } else {
+        logger.info(wideEvent, "Google OAuth token resolution completed")
+      }
     }
   }
 
   /**
-   * Concurrently deduplicates token refresh requests for the same account ID.
+   * Concurrently deduplicates token refresh requests for the same account ID in-process.
    */
   private async deduplicatedRefresh(
     targetAccount: typeof account.$inferSelect,
     targetProvider: string
-  ): Promise<string> {
+  ): Promise<RefreshedTokenResult> {
     const existing = this.inFlightRefreshes.get(targetAccount.id)
     if (existing) {
       return existing
@@ -206,7 +223,7 @@ export class GoogleTokenService {
   private async executeTokenRefresh(
     targetAccount: typeof account.$inferSelect,
     targetProvider: string
-  ): Promise<string> {
+  ): Promise<RefreshedTokenResult> {
     const clientId = process.env.GOOGLE_CLIENT_ID
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET
 
@@ -237,7 +254,8 @@ export class GoogleTokenService {
           : "Network request failed"
       throw new TokenRefreshError({
         provider: targetProvider,
-        message: `Google OAuth network error: ${message}`,
+        message: "Failed to refresh Google access token: network connection error",
+        providerDescription: message,
       })
     }
 
@@ -247,13 +265,14 @@ export class GoogleTokenService {
         | null
       const providerErrorCode = errorBody?.error || "http_error"
       const providerDescription = errorBody?.error_description
-      const detail = providerDescription ? `: ${providerDescription}` : ""
 
+      // Stable public message, details stored in structured properties for logging
       throw new TokenRefreshError({
         provider: targetProvider,
-        message: `Failed to refresh Google token (HTTP ${refreshRes.status}: ${providerErrorCode}${detail})`,
+        message: "Failed to refresh Google access token",
         httpStatus: refreshRes.status,
         providerErrorCode,
+        providerDescription,
       })
     }
 
@@ -264,7 +283,7 @@ export class GoogleTokenService {
     if (!tokenData?.access_token) {
       throw new TokenRefreshError({
         provider: targetProvider,
-        message: "Invalid token refresh payload from Google OAuth endpoint",
+        message: "Failed to refresh Google access token: invalid response format",
       })
     }
 
@@ -284,7 +303,10 @@ export class GoogleTokenService {
       })
       .where(eq(account.id, targetAccount.id))
 
-    return tokenData.access_token
+    return {
+      accessToken: tokenData.access_token,
+      expiresAt: newExpiresAt,
+    }
   }
 }
 

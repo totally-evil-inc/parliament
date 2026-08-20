@@ -1,20 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { z } from "zod"
 import { authClient } from "@/lib/auth-client"
 import type { Integration } from "./data"
 import { DEFAULT_INTEGRATIONS } from "./data"
-
 import {
   isIntegrationConnected,
   SUPPORTED_INTEGRATIONS,
 } from "./provider-mapping"
 
-export type ConnectedAccount = {
-  id: string
-  providerId: string
-  accountId: string
-  createdAt: string
-  updatedAt: string
-}
+export const connectedAccountSchema = z.object({
+  id: z.string(),
+  providerId: z.string(),
+  accountId: z.string(),
+  createdAt: z.string().optional().default(""),
+  updatedAt: z.string().optional().default(""),
+})
+
+export const connectedAccountsResponseSchema = z.object({
+  accounts: z.array(connectedAccountSchema).optional().default([]),
+})
+
+export type ConnectedAccount = z.infer<typeof connectedAccountSchema>
 
 function getAuthUrl(): string {
   return import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
@@ -35,7 +41,11 @@ async function fetchConnectedAccounts(): Promise<ConnectedAccount[]> {
     throw new Error("Failed to fetch connected accounts")
   }
   const json = await res.json()
-  return json.accounts ?? []
+  const parsed = connectedAccountsResponseSchema.safeParse(json)
+  if (!parsed.success) {
+    return []
+  }
+  return parsed.data.accounts
 }
 
 export function useIntegrations() {

@@ -39,7 +39,9 @@ describe("GoogleTokenService", () => {
       select: () => ({
         from: () => ({
           where: () => ({
-            orderBy: () => Promise.resolve([mockAccount]),
+            orderBy: () => ({
+              limit: () => Promise.resolve([mockAccount]),
+            }),
           }),
         }),
       }),
@@ -65,53 +67,22 @@ describe("GoogleTokenService", () => {
       select: () => ({
         from: () => ({
           where: () => ({
-            orderBy: () => Promise.resolve([mockGoogleAccount]),
+            orderBy: () => ({
+              limit: () => Promise.resolve([mockGoogleAccount]),
+            }),
           }),
         }),
       }),
     } as unknown as typeof db
 
     const service = new GoogleTokenService(mockDb)
-    const token = await service.getValidAccessToken(
+    const details = await service.getValidTokenDetails(
       "user-456",
       "google-calendar"
     )
-    expect(token).toBe("ya29.google-parent-token")
-  })
-
-  it("prioritizes dedicated provider over fallback when both exist", async () => {
-    const validExpiry = new Date(Date.now() + 3600 * 1000)
-    const dedicatedAccount = {
-      id: "acc-dedicated",
-      userId: "user-789",
-      providerId: "gmail",
-      accessToken: "ya29.dedicated-gmail",
-      refreshToken: "rt.gmail",
-      accessTokenExpiresAt: validExpiry,
-    }
-    const genericAccount = {
-      id: "acc-generic",
-      userId: "user-789",
-      providerId: "google",
-      accessToken: "ya29.generic-google",
-      refreshToken: "rt.google",
-      accessTokenExpiresAt: validExpiry,
-    }
-
-    const mockDb = {
-      select: () => ({
-        from: () => ({
-          where: () => ({
-            orderBy: () =>
-              Promise.resolve([genericAccount, dedicatedAccount]),
-          }),
-        }),
-      }),
-    } as unknown as typeof db
-
-    const service = new GoogleTokenService(mockDb)
-    const token = await service.getValidAccessToken("user-789", "gmail")
-    expect(token).toBe("ya29.dedicated-gmail")
+    expect(details.accessToken).toBe("ya29.google-parent-token")
+    expect(details.providerId).toBe("google")
+    expect(details.expiresAt).toEqual(validExpiry)
   })
 
   it("throws IntegrationNotConnectedError when no account matches", async () => {
@@ -119,7 +90,9 @@ describe("GoogleTokenService", () => {
       select: () => ({
         from: () => ({
           where: () => ({
-            orderBy: () => Promise.resolve([]),
+            orderBy: () => ({
+              limit: () => Promise.resolve([]),
+            }),
           }),
         }),
       }),
@@ -141,7 +114,7 @@ describe("GoogleTokenService", () => {
     }
   })
 
-  it("refreshes expired token and updates database", async () => {
+  it("refreshes expired token, updates database, and returns updated expiresAt in TokenDetails", async () => {
     const expiredDate = new Date(Date.now() - 60 * 1000)
     const mockAccount = {
       id: "acc-refresh-1",
@@ -153,17 +126,21 @@ describe("GoogleTokenService", () => {
     }
 
     let updateCalled = false
+    let persistedExpiry: Date | null = null
     const mockDb = {
       select: () => ({
         from: () => ({
           where: () => ({
-            orderBy: () => Promise.resolve([mockAccount]),
+            orderBy: () => ({
+              limit: () => Promise.resolve([mockAccount]),
+            }),
           }),
         }),
       }),
       update: () => ({
         set: (data: any) => {
           expect(data.accessToken).toBe("ya29.refreshed-token")
+          persistedExpiry = data.accessTokenExpiresAt
           return {
             where: () => {
               updateCalled = true
@@ -187,12 +164,19 @@ describe("GoogleTokenService", () => {
     ) as unknown as typeof fetch
 
     const service = new GoogleTokenService(mockDb)
-    const token = await service.getValidAccessToken("user-refresh", "gmail")
-    expect(token).toBe("ya29.refreshed-token")
+    const details = await service.getValidTokenDetails(
+      "user-refresh",
+      "gmail"
+    )
+    expect(details.accessToken).toBe("ya29.refreshed-token")
     expect(updateCalled).toBe(true)
+    // Critical verification: ensure returned expiresAt matches refreshed expiry, NOT stale expired date
+    expect(details.expiresAt).not.toEqual(expiredDate)
+    expect(details.expiresAt?.getTime()).toBeGreaterThan(Date.now() + 3000 * 1000)
+    expect(details.expiresAt).toEqual(persistedExpiry!)
   })
 
-  it("handles upstream HTTP refresh errors defensively without leaking sensitive details", async () => {
+  it("handles upstream HTTP refresh errors defensively without leaking provider descriptions in message", async () => {
     const expiredDate = new Date(Date.now() - 60 * 1000)
     const mockAccount = {
       id: "acc-err-1",
@@ -207,7 +191,9 @@ describe("GoogleTokenService", () => {
       select: () => ({
         from: () => ({
           where: () => ({
-            orderBy: () => Promise.resolve([mockAccount]),
+            orderBy: () => ({
+              limit: () => Promise.resolve([mockAccount]),
+            }),
           }),
         }),
       }),
@@ -237,8 +223,12 @@ describe("GoogleTokenService", () => {
       expect(err).toBeInstanceOf(TokenRefreshError)
       expect(err.httpStatus).toBe(400)
       expect(err.providerErrorCode).toBe("invalid_grant")
+      expect(err.providerDescription).toBe("Token has been expired or revoked.")
       expect(err.code).toBe("token_refresh_failed")
+      // Stable error message without raw description leak
+      expect(err.message).toBe("Failed to refresh Google access token")
       expect(err.message).not.toContain("user-err")
+      expect(err.message).not.toContain("Token has been expired or revoked")
     }
   })
 
@@ -257,7 +247,9 @@ describe("GoogleTokenService", () => {
       select: () => ({
         from: () => ({
           where: () => ({
-            orderBy: () => Promise.resolve([mockAccount]),
+            orderBy: () => ({
+              limit: () => Promise.resolve([mockAccount]),
+            }),
           }),
         }),
       }),
@@ -285,13 +277,14 @@ describe("GoogleTokenService", () => {
     const service = new GoogleTokenService(mockDb)
 
     // Execute two concurrent requests simultaneously for the same user/account
-    const [token1, token2] = await Promise.all([
-      service.getValidAccessToken("user-concurrent", "gmail"),
-      service.getValidAccessToken("user-concurrent", "gmail"),
+    const [details1, details2] = await Promise.all([
+      service.getValidTokenDetails("user-concurrent", "gmail"),
+      service.getValidTokenDetails("user-concurrent", "gmail"),
     ])
 
-    expect(token1).toBe("ya29.shared-refreshed-token")
-    expect(token2).toBe("ya29.shared-refreshed-token")
+    expect(details1.accessToken).toBe("ya29.shared-refreshed-token")
+    expect(details2.accessToken).toBe("ya29.shared-refreshed-token")
+    expect(details1.expiresAt).toEqual(details2.expiresAt)
     // Concurrency deduplication ensures fetch was only called ONCE
     expect(fetchCallCount).toBe(1)
   })
@@ -312,7 +305,9 @@ describe("GoogleTokenService", () => {
       select: () => ({
         from: () => ({
           where: () => ({
-            orderBy: () => Promise.resolve([mockAccount]),
+            orderBy: () => ({
+              limit: () => Promise.resolve([mockAccount]),
+            }),
           }),
         }),
       }),

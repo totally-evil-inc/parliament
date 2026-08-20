@@ -1,6 +1,7 @@
 /**
  * Domain errors for OAuth integrations and token lifecycle management.
- * Designed defensively to ensure stable error codes and prevent leaking internal identifiers (such as user IDs).
+ * Designed defensively to ensure stable error codes and prevent leaking internal identifiers (such as user IDs)
+ * or raw third-party provider messages to callers.
  */
 
 export class OAuthDomainError extends Error {
@@ -23,7 +24,6 @@ export class OAuthDomainError extends Error {
  */
 export class IntegrationNotConnectedError extends OAuthDomainError {
   constructor(provider: string) {
-    // Stable error message matching existing test expectations and avoiding internal ID leaks
     super("integration_not_connected", "integration_not_connected", provider)
   }
 }
@@ -43,24 +43,30 @@ export class OAuthConfigMissingError extends OAuthDomainError {
 
 /**
  * Thrown when an upstream OAuth token refresh request fails or returns an invalid payload.
+ * Stores raw provider status and codes for internal structured logging while keeping
+ * the public .message string stable and safe.
  */
 export class TokenRefreshError extends OAuthDomainError {
   readonly httpStatus?: number
   readonly providerErrorCode?: string
+  readonly providerDescription?: string
 
   constructor({
     provider,
-    message,
+    message = "Failed to refresh Google access token",
     httpStatus,
     providerErrorCode,
+    providerDescription,
   }: {
     provider: string
-    message: string
+    message?: string
     httpStatus?: number
     providerErrorCode?: string
+    providerDescription?: string
   }) {
     super(message, "token_refresh_failed", provider)
     this.httpStatus = httpStatus
     this.providerErrorCode = providerErrorCode
+    this.providerDescription = providerDescription
   }
 }
