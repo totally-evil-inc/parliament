@@ -126,7 +126,8 @@ export function useDisconnectIntegration() {
         credentials: "include",
       })
       if (!res.ok) {
-        throw new Error("Failed to disconnect integration")
+        const errorData = await res.json().catch(() => null)
+        throw new Error(errorData?.error || "Failed to disconnect integration")
       }
       return res.json()
     },

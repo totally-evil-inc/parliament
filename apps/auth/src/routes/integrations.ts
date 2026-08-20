@@ -1,4 +1,4 @@
-import { and, db, desc, eq, inArray } from "@workspace/database"
+import { and, db, desc, eq } from "@workspace/database"
 import { account } from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 import { Hono } from "hono"
@@ -52,7 +52,9 @@ integrationsRouter.get("/list", async (c) => {
 })
 
 /**
- * Disconnect/Unlink integration account for the authenticated user
+ * Disconnect/Unlink integration account for the authenticated user.
+ * Disconnects only the specified provider or account ID and enforces
+ * Better Auth safety check preventing removal of user's last account.
  */
 integrationsRouter.post("/disconnect", async (c) => {
   const user = c.get("user")
@@ -61,32 +63,53 @@ integrationsRouter.post("/disconnect", async (c) => {
   }
 
   try {
-    const { providerId } = await c.req.json()
-    if (!providerId || typeof providerId !== "string") {
-      return c.json({ error: "Bad Request: providerId is required" }, 400)
+    const body = await c.req.json().catch(() => ({}))
+    const providerId = body.providerId
+    const accountId = body.accountId
+
+    if (
+      (!providerId || typeof providerId !== "string") &&
+      (!accountId || typeof accountId !== "string")
+    ) {
+      return c.json(
+        { error: "Bad Request: providerId or accountId is required" },
+        400
+      )
     }
 
-    const targetProviders = [providerId]
-    if (
-      ["gmail", "google-calendar", "google-drive", "google"].includes(
-        providerId
+    // Safety guard: ensure the user has more than one account before unlinking
+    // to prevent complete account lockout if they only have one login method
+    const userAccounts = await db
+      .select({ id: account.id, providerId: account.providerId })
+      .from(account)
+      .where(eq(account.userId, user.id))
+
+    if (userAccounts.length <= 1) {
+      return c.json(
+        {
+          error: "Cannot disconnect the only linked account for this user",
+          code: "CANNOT_DISCONNECT_LAST_ACCOUNT",
+        },
+        400
       )
-    ) {
-      targetProviders.push("gmail", "google-calendar", "google-drive", "google")
     }
+
+    const whereClause = accountId
+      ? and(eq(account.userId, user.id), eq(account.id, accountId))
+      : and(eq(account.userId, user.id), eq(account.providerId, providerId))
 
     const deleted = await db
       .delete(account)
-      .where(
-        and(
-          eq(account.userId, user.id),
-          inArray(account.providerId, targetProviders)
-        )
-      )
+      .where(whereClause)
       .returning({ id: account.id })
 
     logger.info(
-      { userId: user.id, providerId, deletedCount: deleted.length },
+      {
+        userId: user.id,
+        providerId: providerId ?? null,
+        accountId: accountId ?? null,
+        deletedCount: deleted.length,
+      },
       "User disconnected integration account"
     )
 
@@ -194,13 +217,8 @@ integrationsRouter.get("/internal/token", async (c) => {
       }
     }
 
-    // Generic / non-Google provider fallback lookup
-    const targetProviders =
-      isGoogleProvider && provider !== "google"
-        ? [provider, "google"]
-        : [provider]
-
-    const whereConditions = [inArray(account.providerId, targetProviders)]
+    // Generic / non-Google provider lookup (provider-specific without fallback)
+    const whereConditions = [eq(account.providerId, provider)]
     if (userId) {
       whereConditions.push(eq(account.userId, userId))
     }

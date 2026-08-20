@@ -1,5 +1,5 @@
 /**
- * Centralized provider capability and fallback mapping
+ * Centralized provider definitions and connection resolution
  * for OAuth integrations across the command application.
  */
 
@@ -19,7 +19,8 @@ export const SUPPORTED_INTEGRATIONS = [
 
 /**
  * Checks if a specific integration provider is connected given the user's connected OAuth accounts.
- * Maps parent 'google' OAuth account to child capabilities ('gmail', 'google-calendar', 'google-drive').
+ * Service capabilities (gmail, google-calendar, google-drive) require their dedicated linked
+ * provider with service-specific granted scopes.
  * Safely tolerates undefined/null items, trimming, and casing.
  */
 export function isIntegrationConnected(
@@ -42,20 +43,6 @@ export function isIntegrationConnected(
     }
 
     const accountProvider = acc.providerId.trim().toLowerCase()
-    if (accountProvider === normalizedTarget) {
-      return true
-    }
-
-    // Google ecosystem fallback: primary 'google' account fulfills gmail, calendar, and drive
-    if (
-      accountProvider === "google" &&
-      (normalizedTarget === "gmail" ||
-        normalizedTarget === "google-calendar" ||
-        normalizedTarget === "google-drive")
-    ) {
-      return true
-    }
-
-    return false
+    return accountProvider === normalizedTarget
   })
 }

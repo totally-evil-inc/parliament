@@ -24,7 +24,7 @@ describe("GoogleTokenService", () => {
     globalThis.fetch = originalFetch
   })
 
-  it("returns unexpired access token directly without refresh", async () => {
+  it("returns unexpired access token directly without refresh for exact provider", async () => {
     const validExpiry = new Date(Date.now() + 3600 * 1000)
     const mockAccount = {
       id: "acc-1",
@@ -52,15 +52,37 @@ describe("GoogleTokenService", () => {
     expect(token).toBe("ya29.valid-token")
   })
 
-  it("resolves parent google account as fallback for google-calendar", async () => {
+  it("does NOT fall back to profile-only google account for google-calendar or gmail", async () => {
+    // A base 'google' account only has userinfo.email and userinfo.profile scopes.
+    // Querying for google-calendar when only a 'google' account exists must throw IntegrationNotConnectedError.
+    const mockDb = {
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            orderBy: () => ({
+              limit: () => Promise.resolve([]),
+            }),
+          }),
+        }),
+      }),
+    } as unknown as typeof db
+
+    const service = new GoogleTokenService(mockDb)
+    await expect(
+      service.getValidTokenDetails("user-456", "google-calendar")
+    ).rejects.toThrow(IntegrationNotConnectedError)
+  })
+
+  it("resolves exact dedicated provider account when present", async () => {
     const validExpiry = new Date(Date.now() + 3600 * 1000)
-    const mockGoogleAccount = {
-      id: "acc-google",
-      userId: "user-456",
-      providerId: "google",
-      accessToken: "ya29.google-parent-token",
-      refreshToken: "rt.google",
+    const dedicatedCalendarAccount = {
+      id: "acc-cal",
+      userId: "user-cal",
+      providerId: "google-calendar",
+      accessToken: "ya29.calendar-token",
+      refreshToken: "rt.calendar",
       accessTokenExpiresAt: validExpiry,
+      updatedAt: new Date("2026-01-01"),
     }
 
     const mockDb = {
@@ -68,7 +90,7 @@ describe("GoogleTokenService", () => {
         from: () => ({
           where: () => ({
             orderBy: () => ({
-              limit: () => Promise.resolve([mockGoogleAccount]),
+              limit: () => Promise.resolve([dedicatedCalendarAccount]),
             }),
           }),
         }),
@@ -76,64 +98,10 @@ describe("GoogleTokenService", () => {
     } as unknown as typeof db
 
     const service = new GoogleTokenService(mockDb)
-    const details = await service.getValidTokenDetails(
-      "user-456",
-      "google-calendar"
-    )
-    expect(details.accessToken).toBe("ya29.google-parent-token")
-    expect(details.providerId).toBe("google")
+    const details = await service.getValidTokenDetails("user-cal", "google-calendar")
+    expect(details.providerId).toBe("google-calendar")
+    expect(details.accessToken).toBe("ya29.calendar-token")
     expect(details.expiresAt).toEqual(validExpiry)
-  })
-
-  it("prioritizes dedicated provider over fallback even when dedicated provider is older in updatedAt", async () => {
-    const validExpiry = new Date(Date.now() + 3600 * 1000)
-    const olderDedicatedAccount = {
-      id: "acc-dedicated-old",
-      userId: "user-both",
-      providerId: "gmail",
-      accessToken: "ya29.dedicated-older",
-      refreshToken: "rt.dedicated",
-      accessTokenExpiresAt: validExpiry,
-      updatedAt: new Date("2025-01-01"),
-    }
-    const newerGenericAccount = {
-      id: "acc-google-new",
-      userId: "user-both",
-      providerId: "google",
-      accessToken: "ya29.generic-newer",
-      refreshToken: "rt.google",
-      accessTokenExpiresAt: validExpiry,
-      updatedAt: new Date("2026-01-01"),
-    }
-
-    // Mock DB engine simulating SQL CASE WHEN providerId = 'gmail' THEN 0 ELSE 1 END, desc(updatedAt)
-    const mockDb = {
-      select: () => ({
-        from: () => ({
-          where: () => ({
-            orderBy: (_orderClause1: any, _orderClause2: any) => ({
-              limit: (limitCount: number) => {
-                const accounts = [newerGenericAccount, olderDedicatedAccount]
-                // Sort by CASE providerId = 'gmail' THEN 0 ELSE 1, then desc(updatedAt)
-                const sorted = accounts.sort((a, b) => {
-                  const scoreA = a.providerId === "gmail" ? 0 : 1
-                  const scoreB = b.providerId === "gmail" ? 0 : 1
-                  if (scoreA !== scoreB) return scoreA - scoreB
-                  return b.updatedAt.getTime() - a.updatedAt.getTime()
-                })
-                return Promise.resolve(sorted.slice(0, limitCount))
-              },
-            }),
-          }),
-        }),
-      }),
-    } as unknown as typeof db
-
-    const service = new GoogleTokenService(mockDb)
-    const details = await service.getValidTokenDetails("user-both", "gmail")
-    // Dedicated provider wins despite older updatedAt
-    expect(details.providerId).toBe("gmail")
-    expect(details.accessToken).toBe("ya29.dedicated-older")
   })
 
   it("throws IntegrationNotConnectedError when no account matches", async () => {

@@ -1,4 +1,4 @@
-import { and, db, desc, eq, inArray, sql } from "@workspace/database"
+import { and, db, desc, eq } from "@workspace/database"
 import { account } from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 import {
@@ -88,27 +88,19 @@ export class GoogleTokenService {
         throw new IntegrationNotConnectedError(targetProvider)
       }
 
-      // 1. Single database query with deterministic SQL CASE provider preference:
-      // Exact provider match (0) is prioritized before fallback 'google' account (1),
-      // with latest updatedAt breaking ties deterministically.
-      const targetProviders =
-        targetProvider === "google"
-          ? ["google"]
-          : [targetProvider, "google"]
-
+      // 1. Single database query for the specific provider account.
+      // Each service (gmail, google-calendar, google-drive) requires its own dedicated
+      // provider connection with service-specific granted scopes.
       const records = await this.dbClient
         .select()
         .from(account)
         .where(
           and(
             eq(account.userId, userId),
-            inArray(account.providerId, targetProviders)
+            eq(account.providerId, targetProvider)
           )
         )
-        .orderBy(
-          sql`CASE WHEN ${account.providerId} = ${targetProvider} THEN 0 ELSE 1 END`,
-          desc(account.updatedAt)
-        )
+        .orderBy(desc(account.updatedAt))
         .limit(1)
 
       if (!records || records.length === 0) {

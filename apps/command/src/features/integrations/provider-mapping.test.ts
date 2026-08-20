@@ -17,14 +17,20 @@ describe("provider-mapping: isIntegrationConnected", () => {
     expect(isIntegrationConnected(accounts, "github")).toBe(false)
   })
 
-  it("resolves Google fallback correctly for gmail, calendar, and drive", () => {
-    const accounts = [{ providerId: "google" }]
-    expect(isIntegrationConnected(accounts, "google")).toBe(true)
+  it("does NOT treat a base google social login account as connected for specific service capabilities", () => {
+    // A base 'google' login account only grants userinfo.email and userinfo.profile scopes.
+    // Dedicated capabilities like gmail, google-calendar, and google-drive require their own linked Generic OAuth account.
+    const googleLoginAccounts = [{ providerId: "google" }]
+    expect(isIntegrationConnected(googleLoginAccounts, "google")).toBe(true)
+    expect(isIntegrationConnected(googleLoginAccounts, "gmail")).toBe(false)
+    expect(isIntegrationConnected(googleLoginAccounts, "google-calendar")).toBe(false)
+    expect(isIntegrationConnected(googleLoginAccounts, "google-drive")).toBe(false)
+    expect(isIntegrationConnected(googleLoginAccounts, "cal")).toBe(false)
+  })
+
+  it("handles whitespace and case-insensitivity defensively", () => {
+    const accounts = [{ providerId: "  GMAIL " }]
     expect(isIntegrationConnected(accounts, "gmail")).toBe(true)
-    expect(isIntegrationConnected(accounts, "google-calendar")).toBe(true)
-    expect(isIntegrationConnected(accounts, "google-drive")).toBe(true)
-    // Non-Google provider should not match
-    expect(isIntegrationConnected(accounts, "cal")).toBe(false)
-    expect(isIntegrationConnected(accounts, "github")).toBe(false)
+    expect(isIntegrationConnected(accounts, " GMail ")).toBe(true)
   })
 })
