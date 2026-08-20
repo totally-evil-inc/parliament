@@ -118,7 +118,7 @@ integrationsRouter.post("/disconnect", async (c) => {
 })
 
 /**
- * Internal endpoint for Go Harness to retrieve a valid OAuth access token for an integration provider.
+ * Internal endpoint for the Parliament Agent runtime to retrieve a valid OAuth access token for an integration provider.
  * Secured via X-Harness-Secret header or BETTER_AUTH_SECRET matching.
  */
 integrationsRouter.get("/internal/token", async (c) => {

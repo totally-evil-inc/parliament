@@ -65,7 +65,7 @@ function isAuthorized(c: AgentContext): boolean {
 }
 
 /**
- * Stage an action proposed by an agent (called by Go Harness daemon)
+ * Stage an action proposed by an agent (called by Parliament Agent runtime)
  */
 agentAuthRouter.post("/stage", async (c) => {
   if (!isAuthorized(c)) {
@@ -221,7 +221,7 @@ agentAuthRouter.get("/pending", async (c) => {
 })
 
 /**
- * Check status of a specific action by ID (polled by Go Harness)
+ * Check status of a specific action by ID (polled by Parliament Agent runtime)
  */
 agentAuthRouter.get("/actions/:id/status", async (c) => {
   if (!isAuthorized(c)) {
