@@ -56,12 +56,9 @@ describe("integrationsRouter /internal/token, /list and /disconnect", () => {
     expect(resAgent.status).toBe(400)
 
     // Using BETTER_AUTH_SECRET in Bearer auth header
-    const resWeb = await app.request(
-      "/api/auth/integrations/internal/token",
-      {
-        headers: { authorization: "Bearer web-better-auth-secret" },
-      }
-    )
+    const resWeb = await app.request("/api/auth/integrations/internal/token", {
+      headers: { authorization: "Bearer web-better-auth-secret" },
+    })
     expect(resWeb.status).toBe(400)
   })
 
@@ -161,11 +158,14 @@ describe("integrationsRouter /internal/token, /list and /disconnect", () => {
     expect(jsonEmpty.error).toContain("accountId is required")
 
     // Empty string accountId
-    const resWhitespace = await app.request("/api/auth/integrations/disconnect", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accountId: "   " }),
-    })
+    const resWhitespace = await app.request(
+      "/api/auth/integrations/disconnect",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountId: "   " }),
+      }
+    )
     expect(resWhitespace.status).toBe(400)
   })
 
@@ -228,12 +228,13 @@ describe("integrationsRouter /internal/token, /list and /disconnect", () => {
     } as any
 
     let capturedUnlinkBody: any = null
-    const unlinkSpy = spyOn(auth.api as any, "unlinkAccount").mockImplementation(
-      async (params: any) => {
-        capturedUnlinkBody = params?.body
-        return { status: true } as any
-      }
-    )
+    const unlinkSpy = spyOn(
+      auth.api as any,
+      "unlinkAccount"
+    ).mockImplementation(async (params: any) => {
+      capturedUnlinkBody = params?.body
+      return { status: true } as any
+    })
 
     const router = createIntegrationsRouter(mockDb)
 
@@ -268,7 +269,3 @@ describe("integrationsRouter /internal/token, /list and /disconnect", () => {
     unlinkSpy.mockRestore()
   })
 })
-
-
-
-

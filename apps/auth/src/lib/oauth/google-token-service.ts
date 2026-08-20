@@ -84,10 +84,8 @@ export class GoogleTokenService {
     requestId?: string
   ): Promise<TokenDetails> {
     const startTime = Date.now()
-    const normalizedUserId =
-      typeof userId === "string" ? userId.trim() : ""
-    const currentRequestId =
-      requestId?.trim() || crypto.randomUUID()
+    const normalizedUserId = typeof userId === "string" ? userId.trim() : ""
+    const currentRequestId = requestId?.trim() || crypto.randomUUID()
 
     const wideEvent: Record<string, unknown> = {
       operation: "google_oauth_token_resolve",
@@ -291,15 +289,16 @@ export class GoogleTokenService {
           : "Network request failed"
       throw new TokenRefreshError({
         provider: targetProvider,
-        message: "Failed to refresh Google access token: network connection error",
+        message:
+          "Failed to refresh Google access token: network connection error",
         providerDescription: message,
       })
     }
 
     if (!refreshRes.ok) {
-      const errorBody = (await refreshRes.json().catch(() => null)) as
-        | GoogleTokenRefreshResponse
-        | null
+      const errorBody = (await refreshRes
+        .json()
+        .catch(() => null)) as GoogleTokenRefreshResponse | null
       const providerErrorCode = errorBody?.error || "http_error"
       const providerDescription = errorBody?.error_description
 
@@ -313,14 +312,15 @@ export class GoogleTokenService {
       })
     }
 
-    const tokenData = (await refreshRes.json().catch(() => null)) as
-      | GoogleTokenRefreshResponse
-      | null
+    const tokenData = (await refreshRes
+      .json()
+      .catch(() => null)) as GoogleTokenRefreshResponse | null
 
     if (!tokenData?.access_token) {
       throw new TokenRefreshError({
         provider: targetProvider,
-        message: "Failed to refresh Google access token: invalid response format",
+        message:
+          "Failed to refresh Google access token: invalid response format",
       })
     }
 
@@ -381,4 +381,3 @@ function truncateProviderDescription(
 }
 
 export const googleTokenService = new GoogleTokenService()
-

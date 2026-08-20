@@ -22,7 +22,9 @@ export const SUPPORTED_INTEGRATIONS = [
  * Safely tolerates undefined/null items, trimming, and casing.
  * Returns the matched account record (including its internal primary key id) or undefined.
  */
-export function getConnectedAccount<T extends { id?: string; providerId?: string }>(
+export function getConnectedAccount<
+  T extends { id?: string; providerId?: string },
+>(
   accounts: ReadonlyArray<T> | null | undefined,
   targetProviderId: string
 ): T | undefined {
@@ -58,4 +60,3 @@ export function isIntegrationConnected(
 ): boolean {
   return getConnectedAccount(accounts, targetProviderId) !== undefined
 }
-

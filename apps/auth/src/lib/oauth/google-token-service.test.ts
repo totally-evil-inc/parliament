@@ -98,7 +98,10 @@ describe("GoogleTokenService", () => {
     } as unknown as typeof db
 
     const service = new GoogleTokenService(mockDb)
-    const details = await service.getValidTokenDetails("user-cal", "google-calendar")
+    const details = await service.getValidTokenDetails(
+      "user-cal",
+      "google-calendar"
+    )
     expect(details.providerId).toBe("google-calendar")
     expect(details.accessToken).toBe("ya29.calendar-token")
     expect(details.expiresAt).toEqual(validExpiry)
@@ -183,15 +186,14 @@ describe("GoogleTokenService", () => {
     ) as unknown as typeof fetch
 
     const service = new GoogleTokenService(mockDb)
-    const details = await service.getValidTokenDetails(
-      "user-refresh",
-      "gmail"
-    )
+    const details = await service.getValidTokenDetails("user-refresh", "gmail")
     expect(details.accessToken).toBe("ya29.refreshed-token")
     expect(updateCalled).toBe(true)
     // Critical verification: ensure returned expiresAt matches refreshed expiry, NOT stale expired date
     expect(details.expiresAt).not.toEqual(expiredDate)
-    expect(details.expiresAt?.getTime()).toBeGreaterThan(Date.now() + 3000 * 1000)
+    expect(details.expiresAt?.getTime()).toBeGreaterThan(
+      Date.now() + 3000 * 1000
+    )
     expect(details.expiresAt).toEqual(persistedExpiry!)
   })
 
@@ -342,9 +344,9 @@ describe("GoogleTokenService", () => {
     expect(details.accessToken).toBe("ya29.trimmed-token")
 
     // Empty or whitespace-only userId throws IntegrationNotConnectedError
-    await expect(
-      service.getValidTokenDetails("   ", "gmail")
-    ).rejects.toThrow(IntegrationNotConnectedError)
+    await expect(service.getValidTokenDetails("   ", "gmail")).rejects.toThrow(
+      IntegrationNotConnectedError
+    )
   })
 
   it("throws OAuthConfigMissingError when client ID or secret is unset", async () => {
@@ -378,4 +380,3 @@ describe("GoogleTokenService", () => {
     ).rejects.toThrow(OAuthConfigMissingError)
   })
 })
-

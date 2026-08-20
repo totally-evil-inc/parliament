@@ -66,9 +66,9 @@ export function useIntegrations() {
   })
 
   const mergedIntegrations: Integration[] = DEFAULT_INTEGRATIONS.map((item) => {
-    const isSupported = (
-      SUPPORTED_INTEGRATIONS as readonly string[]
-    ).includes(item.providerId)
+    const isSupported = (SUPPORTED_INTEGRATIONS as readonly string[]).includes(
+      item.providerId
+    )
 
     if (!isSupported) {
       return {

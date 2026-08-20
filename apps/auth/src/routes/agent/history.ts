@@ -334,9 +334,7 @@ agentHistoryRouter.patch("/conversations/:id", async (c) => {
     return c.json({
       id: row.id,
       title: row.title,
-      pinned: Boolean(
-        (row.metadata as Record<string, unknown> | null)?.pinned
-      ),
+      pinned: Boolean((row.metadata as Record<string, unknown> | null)?.pinned),
     })
   } catch (err) {
     if (err instanceof AgentContextError) {

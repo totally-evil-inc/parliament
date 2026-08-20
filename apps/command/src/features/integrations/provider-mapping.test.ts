@@ -6,7 +6,9 @@ describe("provider-mapping: getConnectedAccount", () => {
     expect(getConnectedAccount(null, "gmail")).toBeUndefined()
     expect(getConnectedAccount(undefined, "gmail")).toBeUndefined()
     expect(getConnectedAccount([], "gmail")).toBeUndefined()
-    expect(getConnectedAccount([{ id: "acc-1", providerId: "gmail" }], "")).toBeUndefined()
+    expect(
+      getConnectedAccount([{ id: "acc-1", providerId: "gmail" }], "")
+    ).toBeUndefined()
   })
 
   it("finds and returns the exact account record including internal id", () => {
@@ -60,8 +62,12 @@ describe("provider-mapping: isIntegrationConnected", () => {
     const googleLoginAccounts = [{ providerId: "google" }]
     expect(isIntegrationConnected(googleLoginAccounts, "google")).toBe(true)
     expect(isIntegrationConnected(googleLoginAccounts, "gmail")).toBe(false)
-    expect(isIntegrationConnected(googleLoginAccounts, "google-calendar")).toBe(false)
-    expect(isIntegrationConnected(googleLoginAccounts, "google-drive")).toBe(false)
+    expect(isIntegrationConnected(googleLoginAccounts, "google-calendar")).toBe(
+      false
+    )
+    expect(isIntegrationConnected(googleLoginAccounts, "google-drive")).toBe(
+      false
+    )
     expect(isIntegrationConnected(googleLoginAccounts, "cal")).toBe(false)
   })
 
@@ -71,4 +77,3 @@ describe("provider-mapping: isIntegrationConnected", () => {
     expect(isIntegrationConnected(accounts, " GMail ")).toBe(true)
   })
 })
-
