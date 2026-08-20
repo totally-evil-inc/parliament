@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 /**
- * Event-Driven Stream Events for the Parliament Agent Harness.
+ * Event-Driven Stream Events for the Parliament Agent Runtime.
  * Strongly typed discriminated union emitted over Server-Sent Events (SSE)
  * to client interfaces, diagnostic tools, and persistence collectors.
  */

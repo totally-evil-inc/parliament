@@ -4,16 +4,16 @@ import { integrationsRouter } from "./integrations"
 
 describe("integrationsRouter /internal/token and /disconnect", () => {
   const origBetterAuthSecret = process.env.BETTER_AUTH_SECRET
-  const origHarnessSecret = process.env.HARNESS_AUTH_SECRET
+  const origAgentSecret = process.env.AGENT_AUTH_SECRET
 
   beforeEach(() => {
     process.env.BETTER_AUTH_SECRET = "test-secret-12345"
-    delete process.env.HARNESS_AUTH_SECRET
+    delete process.env.AGENT_AUTH_SECRET
   })
 
   afterEach(() => {
     process.env.BETTER_AUTH_SECRET = origBetterAuthSecret
-    process.env.HARNESS_AUTH_SECRET = origHarnessSecret
+    process.env.AGENT_AUTH_SECRET = origAgentSecret
   })
 
   it("returns 403 when authorization secret header is missing or incorrect", async () => {
@@ -32,7 +32,7 @@ describe("integrationsRouter /internal/token and /disconnect", () => {
     const resInvalidHeader = await app.request(
       "/api/auth/integrations/internal/token?provider=gmail&userId=user-1",
       {
-        headers: { "x-harness-secret": "wrong-secret" },
+        headers: { "x-agent-secret": "wrong-secret" },
       }
     )
     expect(resInvalidHeader.status).toBe(403)
@@ -45,7 +45,7 @@ describe("integrationsRouter /internal/token and /disconnect", () => {
     const res = await app.request(
       "/api/auth/integrations/internal/token?userId=user-1",
       {
-        headers: { "x-harness-secret": "test-secret-12345" },
+        headers: { "x-agent-secret": "test-secret-12345" },
       }
     )
     expect(res.status).toBe(400)

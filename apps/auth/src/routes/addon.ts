@@ -50,7 +50,7 @@ addonRouter.post("/context", async (c) => {
     const authHeader = c.req.header("Authorization")
     const expectedSecret =
       process.env.ADDON_AUTH_SECRET ||
-      process.env.HARNESS_AUTH_SECRET ||
+      process.env.AGENT_AUTH_SECRET ||
       process.env.BETTER_AUTH_SECRET
 
     if (

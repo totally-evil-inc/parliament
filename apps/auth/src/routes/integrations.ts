@@ -119,27 +119,27 @@ integrationsRouter.post("/disconnect", async (c) => {
 
 /**
  * Internal endpoint for the Parliament Agent runtime to retrieve a valid OAuth access token for an integration provider.
- * Secured via X-Harness-Secret header or BETTER_AUTH_SECRET matching.
+ * Secured via X-Agent-Secret header, Authorization header, or BETTER_AUTH_SECRET / AGENT_AUTH_SECRET matching.
  */
 integrationsRouter.get("/internal/token", async (c) => {
   const rawAuthHeader = c.req.header("authorization") || ""
   const secretHeader =
-    c.req.header("x-harness-secret") ||
+    c.req.header("x-agent-secret") ||
     (rawAuthHeader.toLowerCase().startsWith("bearer ")
       ? rawAuthHeader.slice(7)
       : rawAuthHeader)
 
   const expectedSecret =
-    process.env.BETTER_AUTH_SECRET || process.env.HARNESS_AUTH_SECRET
+    process.env.BETTER_AUTH_SECRET || process.env.AGENT_AUTH_SECRET
 
   if (expectedSecret) {
     if (!bearerSecretMatch(secretHeader, expectedSecret)) {
       logger.error(
         { secretHeaderProvided: !!secretHeader, path: c.req.path },
-        "Forbidden: Invalid or missing harness authorization secret"
+        "Forbidden: Invalid or missing internal agent authorization secret"
       )
       return c.json(
-        { error: "Forbidden: Invalid harness authorization secret" },
+        { error: "Forbidden: Invalid agent authorization secret" },
         403
       )
     }
@@ -147,11 +147,11 @@ integrationsRouter.get("/internal/token", async (c) => {
     if (process.env.NODE_ENV === "production") {
       logger.error(
         { path: c.req.path },
-        "Harness secret not configured in production"
+        "Agent auth secret not configured in production"
       )
     }
     return c.json(
-      { error: "Service Unavailable: Harness auth secret is not configured" },
+      { error: "Service Unavailable: Agent auth secret is not configured" },
       503
     )
   }
