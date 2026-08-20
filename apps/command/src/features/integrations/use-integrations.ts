@@ -83,7 +83,7 @@ export function useIntegrations() {
     return {
       ...item,
       status: isConnected ? "connected" : "available",
-      providerAccountId: connectedAccount?.accountId,
+      betterAuthAccountId: connectedAccount?.id,
     }
   })
 
@@ -122,35 +122,48 @@ export function useConnectIntegration() {
 }
 
 export type DisconnectIntegrationInput = {
+  accountId: string
   providerId: string
-  accountId?: string
 }
 
 export function useDisconnectIntegration() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (input: DisconnectIntegrationInput | string) => {
-      const providerId =
-        typeof input === "string" ? input.trim() : input.providerId?.trim()
-      const accountId =
-        typeof input === "object" && input.accountId
-          ? input.accountId.trim()
-          : undefined
+    mutationFn: async (input: DisconnectIntegrationInput) => {
+      const accountId = input?.accountId?.trim()
+      const providerId = input?.providerId?.trim()
 
+      if (!accountId) {
+        throw new Error("Invalid or missing account identifier for unlinking")
+      }
       if (!providerId) {
-        throw new Error("Invalid provider identifier for unlinking")
+        throw new Error("Invalid or missing provider identifier for unlinking")
       }
 
-      // Use Better Auth's standard account unlinking API
-      const res = await authClient.unlinkAccount({
-        providerId,
-        ...(accountId ? { accountId } : {}),
+      const authUrl = getAuthUrl()
+      const res = await fetch(`${authUrl}/api/auth/integrations/disconnect`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          accountId,
+          providerId,
+        }),
       })
-      if (res?.error) {
-        throw new Error(res.error.message || "Failed to disconnect integration")
+
+      if (!res.ok) {
+        const errJson = (await res.json().catch(() => null)) as {
+          error?: string
+        } | null
+        throw new Error(
+          errJson?.error || "Failed to disconnect integration account"
+        )
       }
-      return res.data
+
+      return res.json()
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({

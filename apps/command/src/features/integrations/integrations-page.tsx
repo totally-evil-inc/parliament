@@ -185,14 +185,16 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
     connectMutation.variables?.id === integration.id
   const isDisconnecting =
     disconnectMutation.isPending &&
-    (typeof disconnectMutation.variables === "string"
-      ? disconnectMutation.variables === integration.providerId
-      : disconnectMutation.variables?.providerId === integration.providerId)
+    Boolean(integration.betterAuthAccountId) &&
+    disconnectMutation.variables?.accountId === integration.betterAuthAccountId
   const isPending = isConnecting || isDisconnecting
 
   const handleAction = async () => {
     if (comingSoon) return
     if (connected) {
+      if (!integration.betterAuthAccountId) {
+        return
+      }
       const ok = await confirm({
         title: `Disconnect ${integration.title}?`,
         description: `Are you sure you want to disconnect ${integration.title}? The AI Agent will no longer be able to perform automated operations on your behalf for this service.`,
@@ -202,8 +204,8 @@ function IntegrationSheet({ integration }: { integration: Integration }) {
       })
       if (ok) {
         disconnectMutation.mutate({
+          accountId: integration.betterAuthAccountId,
           providerId: integration.providerId,
-          accountId: integration.providerAccountId,
         })
       }
     } else {

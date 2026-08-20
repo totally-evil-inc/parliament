@@ -130,12 +130,12 @@ describe("integrationsRouter /internal/token, /list and /disconnect", () => {
     const res = await app.request("/api/auth/integrations/disconnect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ providerId: "gmail" }),
+      body: JSON.stringify({ accountId: "acc-123" }),
     })
     expect(res.status).toBe(401)
   })
 
-  it("returns 400 on /disconnect when providerId is missing or empty for authenticated user", async () => {
+  it("returns 400 on /disconnect when accountId is missing or empty for authenticated user", async () => {
     const app = new Hono<{
       Variables: {
         user: { id: string; email: string } | null
@@ -158,12 +158,13 @@ describe("integrationsRouter /internal/token, /list and /disconnect", () => {
     expect(resEmpty.status).toBe(400)
     const jsonEmpty = await resEmpty.json()
     expect(jsonEmpty.code).toBe("INVALID_REQUEST")
+    expect(jsonEmpty.error).toContain("accountId is required")
 
-    // Empty string providerId
+    // Empty string accountId
     const resWhitespace = await app.request("/api/auth/integrations/disconnect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ providerId: "   " }),
+      body: JSON.stringify({ accountId: "   " }),
     })
     expect(resWhitespace.status).toBe(400)
   })
