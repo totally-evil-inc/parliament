@@ -169,7 +169,7 @@ export class GoogleTokenService {
     } catch (error: unknown) {
       wideEvent.outcome = "error"
       if (error instanceof Error) {
-        wideEvent.error = {
+        const errorDetails: Record<string, unknown> = {
           name: error.name,
           message: error.message,
           code:
@@ -179,6 +179,20 @@ export class GoogleTokenService {
               ? error.code
               : "unknown_error",
         }
+
+        if (error instanceof TokenRefreshError) {
+          if (error.httpStatus !== undefined) {
+            errorDetails.httpStatus = error.httpStatus
+          }
+          if (error.providerErrorCode) {
+            errorDetails.providerErrorCode = error.providerErrorCode
+          }
+          if (error.providerDescription) {
+            errorDetails.providerDescription = error.providerDescription
+          }
+        }
+
+        wideEvent.error = errorDetails
       } else {
         wideEvent.error = { message: "Non-error exception thrown" }
       }
@@ -287,9 +301,8 @@ export class GoogleTokenService {
       })
     }
 
-    const newExpiresAt = new Date(
-      Date.now() + (tokenData.expires_in || 3600) * 1000
-    )
+    const validatedTtlSeconds = sanitizeExpiresIn(tokenData.expires_in)
+    const newExpiresAt = new Date(Date.now() + validatedTtlSeconds * 1000)
     const persistedRefreshToken =
       tokenData.refresh_token ?? targetAccount.refreshToken
 
@@ -308,6 +321,25 @@ export class GoogleTokenService {
       expiresAt: newExpiresAt,
     }
   }
+}
+
+/**
+ * Defensively validates and sanitizes the OAuth expires_in response parameter.
+ * Enforces a positive finite integer bounded between 1 second and 30 days.
+ */
+function sanitizeExpiresIn(expiresIn: unknown): number {
+  const DEFAULT_TTL_SECONDS = 3600 // 1 hour default
+  const MIN_TTL_SECONDS = 1
+  const MAX_TTL_SECONDS = 30 * 86400 // 30 days max
+
+  if (
+    typeof expiresIn === "number" &&
+    Number.isFinite(expiresIn) &&
+    expiresIn >= MIN_TTL_SECONDS
+  ) {
+    return Math.min(Math.floor(expiresIn), MAX_TTL_SECONDS)
+  }
+  return DEFAULT_TTL_SECONDS
 }
 
 export const googleTokenService = new GoogleTokenService()

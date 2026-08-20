@@ -43,7 +43,9 @@ async function fetchConnectedAccounts(): Promise<ConnectedAccount[]> {
   const json = await res.json()
   const parsed = connectedAccountsResponseSchema.safeParse(json)
   if (!parsed.success) {
-    return []
+    throw new Error(
+      "Received malformed connected accounts response from auth service"
+    )
   }
   return parsed.data.accounts
 }

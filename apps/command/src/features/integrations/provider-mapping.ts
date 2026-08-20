@@ -20,26 +20,38 @@ export const SUPPORTED_INTEGRATIONS = [
 /**
  * Checks if a specific integration provider is connected given the user's connected OAuth accounts.
  * Maps parent 'google' OAuth account to child capabilities ('gmail', 'google-calendar', 'google-drive').
+ * Safely tolerates undefined/null items, trimming, and casing.
  */
 export function isIntegrationConnected(
   accounts: ReadonlyArray<{ providerId: string }> | null | undefined,
   targetProviderId: string
 ): boolean {
-  if (!accounts || !targetProviderId) {
+  if (
+    !Array.isArray(accounts) ||
+    !targetProviderId ||
+    typeof targetProviderId !== "string"
+  ) {
     return false
   }
 
+  const normalizedTarget = targetProviderId.trim().toLowerCase()
+
   return accounts.some((acc) => {
-    if (acc.providerId === targetProviderId) {
+    if (!acc || typeof acc.providerId !== "string") {
+      return false
+    }
+
+    const accountProvider = acc.providerId.trim().toLowerCase()
+    if (accountProvider === normalizedTarget) {
       return true
     }
 
     // Google ecosystem fallback: primary 'google' account fulfills gmail, calendar, and drive
     if (
-      acc.providerId === "google" &&
-      (targetProviderId === "gmail" ||
-        targetProviderId === "google-calendar" ||
-        targetProviderId === "google-drive")
+      accountProvider === "google" &&
+      (normalizedTarget === "gmail" ||
+        normalizedTarget === "google-calendar" ||
+        normalizedTarget === "google-drive")
     ) {
       return true
     }

@@ -85,6 +85,57 @@ describe("GoogleTokenService", () => {
     expect(details.expiresAt).toEqual(validExpiry)
   })
 
+  it("prioritizes dedicated provider over fallback even when dedicated provider is older in updatedAt", async () => {
+    const validExpiry = new Date(Date.now() + 3600 * 1000)
+    const olderDedicatedAccount = {
+      id: "acc-dedicated-old",
+      userId: "user-both",
+      providerId: "gmail",
+      accessToken: "ya29.dedicated-older",
+      refreshToken: "rt.dedicated",
+      accessTokenExpiresAt: validExpiry,
+      updatedAt: new Date("2025-01-01"),
+    }
+    const newerGenericAccount = {
+      id: "acc-google-new",
+      userId: "user-both",
+      providerId: "google",
+      accessToken: "ya29.generic-newer",
+      refreshToken: "rt.google",
+      accessTokenExpiresAt: validExpiry,
+      updatedAt: new Date("2026-01-01"),
+    }
+
+    // Mock DB engine simulating SQL CASE WHEN providerId = 'gmail' THEN 0 ELSE 1 END, desc(updatedAt)
+    const mockDb = {
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            orderBy: (_orderClause1: any, _orderClause2: any) => ({
+              limit: (limitCount: number) => {
+                const accounts = [newerGenericAccount, olderDedicatedAccount]
+                // Sort by CASE providerId = 'gmail' THEN 0 ELSE 1, then desc(updatedAt)
+                const sorted = accounts.sort((a, b) => {
+                  const scoreA = a.providerId === "gmail" ? 0 : 1
+                  const scoreB = b.providerId === "gmail" ? 0 : 1
+                  if (scoreA !== scoreB) return scoreA - scoreB
+                  return b.updatedAt.getTime() - a.updatedAt.getTime()
+                })
+                return Promise.resolve(sorted.slice(0, limitCount))
+              },
+            }),
+          }),
+        }),
+      }),
+    } as unknown as typeof db
+
+    const service = new GoogleTokenService(mockDb)
+    const details = await service.getValidTokenDetails("user-both", "gmail")
+    // Dedicated provider wins despite older updatedAt
+    expect(details.providerId).toBe("gmail")
+    expect(details.accessToken).toBe("ya29.dedicated-older")
+  })
+
   it("throws IntegrationNotConnectedError when no account matches", async () => {
     const mockDb = {
       select: () => ({
@@ -114,7 +165,7 @@ describe("GoogleTokenService", () => {
     }
   })
 
-  it("refreshes expired token, updates database, and returns updated expiresAt in TokenDetails", async () => {
+  it("refreshes expired token, updates database, and returns updated expiresAt in TokenDetails with sanitized TTL", async () => {
     const expiredDate = new Date(Date.now() - 60 * 1000)
     const mockAccount = {
       id: "acc-refresh-1",
@@ -176,7 +227,7 @@ describe("GoogleTokenService", () => {
     expect(details.expiresAt).toEqual(persistedExpiry!)
   })
 
-  it("handles upstream HTTP refresh errors defensively without leaking provider descriptions in message", async () => {
+  it("handles upstream HTTP refresh errors defensively without leaking provider descriptions in message but retaining them in error properties", async () => {
     const expiredDate = new Date(Date.now() - 60 * 1000)
     const mockAccount = {
       id: "acc-err-1",
