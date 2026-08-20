@@ -53,6 +53,13 @@ describe("HistorySidebarContext", () => {
     expect(html).toContain('data-open="false"')
   })
 
+  it("defaults to collapsed (defaultOpen=false) when defaultOpen is omitted", () => {
+    const child = React.createElement(TestConsumer)
+    const element = React.createElement(HistorySidebarProvider, null, child)
+    const html = renderToString(element)
+    expect(html).toContain('data-open="false"')
+  })
+
   it("initializes defaultOpenMobile correctly", () => {
     const child = React.createElement(TestConsumer)
     const element = React.createElement(

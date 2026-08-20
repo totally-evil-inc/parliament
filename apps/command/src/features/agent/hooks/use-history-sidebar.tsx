@@ -28,7 +28,7 @@ const HistorySidebarContext = createContext<HistorySidebarContextValue | null>(
 
 export function HistorySidebarProvider({
   children,
-  defaultOpen = true,
+  defaultOpen = false,
   defaultOpenMobile = false,
 }: {
   children?: React.ReactNode

@@ -35,7 +35,7 @@ export function AppShell({ children }: AppShellProps) {
     <SidebarProvider defaultOpen={false}>
       <WorkspaceProvider>
         <HeaderProvider>
-          <HistorySidebarProvider defaultOpen={true}>
+          <HistorySidebarProvider defaultOpen={false}>
             <AppSidebar
               variant="floating"
               primaryNav={workspaceConfig.primaryNav}
