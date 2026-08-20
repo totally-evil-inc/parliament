@@ -12,6 +12,7 @@ import {
   createCalendarEvent,
   listCalendarEvents,
 } from "../../lib/calendar/events"
+import { IntegrationNotConnectedError } from "../../lib/oauth/errors"
 import type { AgentContext } from "../tool-ctx"
 
 export function gcalListEventsTool(ctx: AgentContext) {
@@ -28,9 +29,12 @@ export function gcalListEventsTool(ctx: AgentContext) {
       return { events }
     } catch (err: unknown) {
       if (
-        err instanceof Error &&
-        (err.message.includes("integration_not_connected") ||
-          err.message.includes("No connected"))
+        err instanceof IntegrationNotConnectedError ||
+        (err instanceof Error &&
+          (err.message === "integration_not_connected" ||
+            err.message.includes("integration_not_connected") ||
+            (err as { code?: string }).code === "integration_not_connected" ||
+            err.message.includes("No connected")))
       ) {
         return {
           error: {
@@ -67,9 +71,12 @@ export function gcalCreateEventTool(ctx: AgentContext) {
       return event
     } catch (err: unknown) {
       if (
-        err instanceof Error &&
-        (err.message.includes("integration_not_connected") ||
-          err.message.includes("No connected"))
+        err instanceof IntegrationNotConnectedError ||
+        (err instanceof Error &&
+          (err.message === "integration_not_connected" ||
+            err.message.includes("integration_not_connected") ||
+            (err as { code?: string }).code === "integration_not_connected" ||
+            err.message.includes("No connected")))
       ) {
         return {
           error: {
@@ -99,9 +106,12 @@ export function gcalCancelEventTool(ctx: AgentContext) {
       return result
     } catch (err: unknown) {
       if (
-        err instanceof Error &&
-        (err.message.includes("integration_not_connected") ||
-          err.message.includes("No connected"))
+        err instanceof IntegrationNotConnectedError ||
+        (err instanceof Error &&
+          (err.message === "integration_not_connected" ||
+            err.message.includes("integration_not_connected") ||
+            (err as { code?: string }).code === "integration_not_connected" ||
+            err.message.includes("No connected")))
       ) {
         return {
           error: {

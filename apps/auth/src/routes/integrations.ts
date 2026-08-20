@@ -2,6 +2,15 @@ import { and, db, desc, eq, inArray } from "@workspace/database"
 import { account } from "@workspace/database/schema"
 import { logger } from "@workspace/logger"
 import { Hono } from "hono"
+import {
+  IntegrationNotConnectedError,
+  OAuthConfigMissingError,
+  TokenRefreshError,
+} from "../lib/oauth/errors"
+import {
+  type SupportedGoogleProvider,
+  googleTokenService,
+} from "../lib/oauth/google-token-service"
 import { bearerSecretMatch } from "../lib/utils"
 
 export const integrationsRouter = new Hono<{
@@ -141,114 +150,76 @@ integrationsRouter.get("/internal/token", async (c) => {
   }
 
   try {
-    const whereConditions = [eq(account.providerId, provider)]
+    const isGoogleProvider = [
+      "google",
+      "gmail",
+      "google-calendar",
+      "google-drive",
+    ].includes(provider)
+
+    if (isGoogleProvider && userId) {
+      try {
+        const details = await googleTokenService.getValidTokenDetails(
+          userId,
+          provider as SupportedGoogleProvider
+        )
+
+        return c.json({
+          success: true,
+          provider: details.providerId,
+          accessToken: details.accessToken,
+          expiresAt: details.expiresAt,
+          userId,
+        })
+      } catch (err: unknown) {
+        if (err instanceof IntegrationNotConnectedError) {
+          return c.json(
+            { error: `No account connected for provider: ${provider}` },
+            404
+          )
+        }
+        if (err instanceof TokenRefreshError) {
+          return c.json(
+            {
+              error: err.message,
+              providerErrorCode: err.providerErrorCode,
+            },
+            502
+          )
+        }
+        if (err instanceof OAuthConfigMissingError) {
+          return c.json({ error: err.message }, 500)
+        }
+        throw err
+      }
+    }
+
+    // Generic / non-Google provider fallback lookup
+    const targetProviders =
+      isGoogleProvider && provider !== "google"
+        ? [provider, "google"]
+        : [provider]
+
+    const whereConditions = [inArray(account.providerId, targetProviders)]
     if (userId) {
       whereConditions.push(eq(account.userId, userId))
     }
 
-    let records = await db
+    const records = await db
       .select()
       .from(account)
       .where(and(...whereConditions))
       .orderBy(desc(account.updatedAt))
-      .limit(1)
 
-    // Fallback check for legacy 'google' provider account if specific app account isn't found
-    if (
-      records.length === 0 &&
-      (provider === "gmail" ||
-        provider === "google-calendar" ||
-        provider === "google-drive")
-    ) {
-      const fallbackConditions = [eq(account.providerId, "google")]
-      if (userId) {
-        fallbackConditions.push(eq(account.userId, userId))
-      }
-      records = await db
-        .select()
-        .from(account)
-        .where(and(...fallbackConditions))
-        .orderBy(desc(account.updatedAt))
-        .limit(1)
-    }
-
-    if (records.length === 0) {
+    if (!records || records.length === 0) {
       return c.json(
         { error: `No account connected for provider: ${provider}` },
         404
       )
     }
 
-    const targetAccount = records[0]
-
-    // Check token expiration and perform refresh if necessary
-    const now = new Date()
-    const isExpired =
-      !targetAccount.accessTokenExpiresAt ||
-      targetAccount.accessTokenExpiresAt.getTime() <= now.getTime() + 60000
-
-    const isGoogleProvider = [
-      "google",
-      "gmail",
-      "google-calendar",
-      "google-drive",
-    ].includes(targetAccount.providerId)
-
-    if (isExpired && targetAccount.refreshToken && isGoogleProvider) {
-      logger.info(
-        { provider, accountId: targetAccount.id },
-        "Google access token expired/nearing expiry. Refreshing..."
-      )
-      try {
-        const refreshRes = await fetch("https://oauth2.googleapis.com/token", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            client_id: process.env.GOOGLE_CLIENT_ID || "",
-            client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
-            grant_type: "refresh_token",
-            refresh_token: targetAccount.refreshToken,
-          }),
-        })
-
-        if (refreshRes.ok) {
-          const tokenData: any = await refreshRes.json()
-          if (tokenData.access_token) {
-            const newExpiresAt = new Date(
-              Date.now() + (tokenData.expires_in || 3600) * 1000
-            )
-            await db
-              .update(account)
-              .set({
-                accessToken: tokenData.access_token,
-                accessTokenExpiresAt: newExpiresAt,
-                refreshToken:
-                  tokenData.refresh_token ?? targetAccount.refreshToken,
-                updatedAt: new Date(),
-              })
-              .where(eq(account.id, targetAccount.id))
-
-            targetAccount.accessToken = tokenData.access_token
-            targetAccount.accessTokenExpiresAt = newExpiresAt
-            logger.info(
-              { provider, accountId: targetAccount.id },
-              "Successfully refreshed Google access token"
-            )
-          }
-        } else {
-          const errText = await refreshRes.text()
-          logger.error(
-            { status: refreshRes.status, errText },
-            "Google token refresh failed"
-          )
-        }
-      } catch (refreshErr) {
-        logger.error(
-          { refreshErr, accountId: targetAccount.id },
-          "Exception during Google token refresh"
-        )
-      }
-    }
+    const targetAccount =
+      records.find((rec) => rec.providerId === provider) ?? records[0]
 
     return c.json({
       success: true,
@@ -257,8 +228,14 @@ integrationsRouter.get("/internal/token", async (c) => {
       expiresAt: targetAccount.accessTokenExpiresAt,
       userId: targetAccount.userId,
     })
-  } catch (err: any) {
-    logger.error({ err, provider }, "Error fetching internal integration token")
+  } catch (err: unknown) {
+    logger.error(
+      {
+        err: err instanceof Error ? err.message : String(err),
+        provider,
+      },
+      "Error fetching internal integration token"
+    )
     return c.json({ error: "Internal Server Error" }, 500)
   }
 })

@@ -10,6 +10,7 @@ import {
   createGmailDraft,
   sendGmailMessage,
 } from "../../lib/gmail/send-service"
+import { IntegrationNotConnectedError } from "../../lib/oauth/errors"
 import type { AgentContext } from "../tool-ctx"
 
 function ensureCleanEmailHtml(htmlOrMarkdown?: string): string {
@@ -49,9 +50,11 @@ export function gmailSendEmailTool(ctx: AgentContext) {
       }
     } catch (err: unknown) {
       if (
-        err instanceof Error &&
-        (err.message.includes("No connected Google account") ||
-          err.message.includes("integration_not_connected"))
+        err instanceof IntegrationNotConnectedError ||
+        (err instanceof Error &&
+          (err.message === "integration_not_connected" ||
+            err.message.includes("No connected Google account") ||
+            (err as { code?: string }).code === "integration_not_connected"))
       ) {
         return {
           error: {
@@ -90,9 +93,11 @@ export function gmailCreateDraftTool(ctx: AgentContext) {
       }
     } catch (err: unknown) {
       if (
-        err instanceof Error &&
-        (err.message.includes("No connected Google account") ||
-          err.message.includes("integration_not_connected"))
+        err instanceof IntegrationNotConnectedError ||
+        (err instanceof Error &&
+          (err.message === "integration_not_connected" ||
+            err.message.includes("No connected Google account") ||
+            (err as { code?: string }).code === "integration_not_connected"))
       ) {
         return {
           error: {
