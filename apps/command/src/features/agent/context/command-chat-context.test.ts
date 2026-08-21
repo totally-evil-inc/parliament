@@ -584,5 +584,28 @@ describe("command-chat-context event batch application", () => {
     expect(events).toHaveLength(1)
     expect(events[0]).toEqual({ type: "turn:completed", totalSteps: 2 })
   })
+
+  test("TextDecoder stream decode flushes split multi-byte UTF-8 character at EOF without corruption", () => {
+    // 4-byte UTF-8 emoji 🚀 is [0xf0, 0x9f, 0x9a, 0x80]
+    const fullJson = 'event: content:delta\ndata: {"type":"content:delta","text":"Launch 🚀"}'
+    const encoder = new TextEncoder()
+    const bytes = encoder.encode(fullJson)
+
+    // Split across the 4-byte sequence
+    const splitIndex = bytes.length - 2
+    const chunk1 = bytes.slice(0, splitIndex)
+    const chunk2 = bytes.slice(splitIndex)
+
+    const decoder = new TextDecoder()
+    let buffer = ""
+    buffer += decoder.decode(chunk1, { stream: true })
+    buffer += decoder.decode(chunk2, { stream: true })
+    buffer += decoder.decode() // EOF flush
+
+    const events = parseSseTrailingBuffer(buffer)
+    expect(events).toHaveLength(1)
+    expect(events[0]).toEqual({ type: "content:delta", text: "Launch 🚀" })
+  })
 })
+
 

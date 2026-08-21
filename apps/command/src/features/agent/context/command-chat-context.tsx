@@ -520,6 +520,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const abortControllerRef = useRef<AbortController | null>(null)
   const isSubmittingRef = useRef<boolean>(false)
+  const streamGenerationRef = useRef<number>(0)
 
   // Sync default model from server settings on first load
   const { data: modelsData } = useAIModels()
@@ -533,10 +534,12 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
    * Target query invalidation to avoid unnecessary broad network waterfall refetches (client-swr-dedup)
    */
   const invalidateAgentQueries = useCallback(
-    (executedToolNames?: Set<string>) => {
+    (executedTools: Set<string>) => {
+      if (executedTools.size === 0) return
+
       invalidateQueriesHelper({
+        executedToolNames: executedTools,
         queryClient,
-        executedToolNames,
         threadId: threadIdRef.current,
       })
     },
@@ -562,6 +565,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       assistantMsgId: string
       isResume?: boolean
     }) => {
+      const generation = ++streamGenerationRef.current
       isSubmittingRef.current = true
       setIsLoading(true)
       const abortController = new AbortController()
@@ -587,6 +591,8 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
           }),
         })
 
+        if (streamGenerationRef.current !== generation) return
+
         if (!res.ok) {
           const body = await res.json().catch(() => null)
           const code = body?.error?.code || `http_${res.status}`
@@ -611,11 +617,13 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
         while (true) {
           const { done, value } = await reader.read()
-          if (done) break
+          if (done || streamGenerationRef.current !== generation) break
 
           buffer += decoder.decode(value, { stream: true })
           const { events: chunkEvents, remainder } = parseSseChunk(buffer)
           buffer = remainder
+
+          if (streamGenerationRef.current !== generation) break
 
           if (chunkEvents.length > 0) {
             for (const ev of chunkEvents) {
@@ -637,6 +645,11 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
             )
           }
         }
+
+        if (streamGenerationRef.current !== generation) return
+
+        // Flush any remaining bytes from decoder buffer at EOF before parsing trailing buffer
+        buffer += decoder.decode()
 
         // Process any trailing bytes at EOF
         const trailingEvents = parseSseTrailingBuffer(buffer)
@@ -675,6 +688,8 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
         invalidateAgentQueries(executedTools)
       } catch (err: unknown) {
+        if (streamGenerationRef.current !== generation) return
+
         const isAbort =
           (err as Error)?.name === "AbortError" ||
           (err as any)?.code === "aborted" ||
@@ -693,8 +708,10 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
           )
         }
       } finally {
-        isSubmittingRef.current = false
-        setIsLoading(false)
+        if (streamGenerationRef.current === generation) {
+          isSubmittingRef.current = false
+          setIsLoading(false)
+        }
       }
     },
     [invalidateAgentQueries]
@@ -891,6 +908,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
   )
 
   const stop = useCallback(() => {
+    streamGenerationRef.current++
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
       abortControllerRef.current = null
