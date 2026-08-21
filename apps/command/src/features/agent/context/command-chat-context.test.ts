@@ -3,6 +3,7 @@ import type { AgentEvent } from "@workspace/agent"
 import {
   applyEventsToMessages,
   type ChatMessage,
+  normalizePersistedMessages,
   parseSseChunk,
   parseSseTrailingBuffer,
   reconcileTerminalTurn,
@@ -648,9 +649,7 @@ describe("command-chat-context event batch application", () => {
     expect(events).toHaveLength(2)
     expect(events[0]).toEqual({ type: "content:delta", text: "Hello " })
     expect(events[1]).toEqual({ type: "content:delta", text: "World" })
-    expect(remainder).toBe(
-      'event: thinking:delta\ndata: {"type":"thin'
-    )
+    expect(remainder).toBe('event: thinking:delta\ndata: {"type":"thin')
   })
 
   test("reconcileTerminalTurn reconciles unexpected EOF without terminal event as error", () => {
@@ -827,7 +826,8 @@ describe("command-chat-context event batch application", () => {
 
   test("TextDecoder stream decode flushes split multi-byte UTF-8 character at EOF without corruption", () => {
     // 4-byte UTF-8 emoji 🚀 is [0xf0, 0x9f, 0x9a, 0x80]
-    const fullJson = 'event: content:delta\ndata: {"type":"content:delta","text":"Launch 🚀"}'
+    const fullJson =
+      'event: content:delta\ndata: {"type":"content:delta","text":"Launch 🚀"}'
     const encoder = new TextEncoder()
     const bytes = encoder.encode(fullJson)
 
@@ -861,80 +861,308 @@ describe("command-chat-context event batch application", () => {
             text: "I started creating a deal but failed.",
           },
           {
-            type: "tool",
-            callId: "call-unresolved",
+            type: "tool-call",
+            toolCallId: "call-unresolved",
             toolName: "create_deal",
-            status: "running",
             args: { title: "Deal A" },
           },
           {
-            type: "tool",
-            callId: "call-resolved-ok",
+            type: "tool-call",
+            toolCallId: "call-resolved-ok",
             toolName: "get_status",
-            status: "completed",
+            args: {},
+          },
+          {
+            type: "tool-result",
+            toolCallId: "call-resolved-ok",
+            toolName: "get_status",
             result: { ok: true },
+            isError: false,
           },
         ],
       },
     ]
 
-    // Simulate selectThread normalization logic
-    const normalized = rawMessages.map((m) => {
-      const tools: any[] = []
-      for (const p of m.parts) {
-        if (p.type === "tool") {
-          tools.push({
-            id: p.callId,
-            name: p.toolName,
-            args: p.args,
-            status: p.status,
-            result: p.result,
-          })
-        }
-      }
-
-      const normalizedTools = tools.map((tc) => {
-        if (tc.result !== undefined && tc.result !== null) {
-          return { ...tc, status: "completed" as const }
-        }
-        if (tc.status === "pending" || tc.status === "running") {
-          const isInterrupted = m.status === "interrupted"
-          const isErrorStatus = m.status === "error"
-          const isCompleted =
-            m.status === "completed" || m.status === "complete"
-          return {
-            ...tc,
-            status: isInterrupted
-              ? ("suspended" as const)
-              : isErrorStatus
-                ? ("error" as const)
-                : isCompleted
-                  ? ("completed" as const)
-                  : ("error" as const),
-            ...(isErrorStatus && !tc.errorText
-              ? { errorText: "Turn failed before tool resolution." }
-              : {}),
-          }
-        }
-        return tc
-      })
-
-      return {
-        id: m.id,
-        role: m.role,
-        content: m.content,
-        toolCalls: normalizedTools,
-      }
-    })
+    const normalized = normalizePersistedMessages(rawMessages)
 
     const asst = normalized[0]
     expect(asst.toolCalls).toHaveLength(2)
     // Unresolved tool must become error with errorText, NOT completed
-    expect(asst.toolCalls[0].status).toBe("error")
-    expect(asst.toolCalls[0].errorText).toBe("Turn failed before tool resolution.")
+    expect(asst.toolCalls![0].status).toBe("error")
+    expect(asst.toolCalls![0].errorText).toBe(
+      "Turn failed before tool resolution."
+    )
     // Resolved tool remains completed
-    expect(asst.toolCalls[1].status).toBe("completed")
+    expect(asst.toolCalls![1].status).toBe("completed")
+  })
+
+  test("loads production wire format tool-call and tool-result parts emitted by loop.ts", () => {
+    const rawMessages = [
+      {
+        id: "msg-prod-1",
+        role: "assistant",
+        status: "complete",
+        parts: [
+          {
+            type: "thinking",
+            thinking: "I should look up the contact.",
+          },
+          {
+            type: "text",
+            text: "Found the contact details.",
+          },
+          {
+            type: "tool-call",
+            toolCallId: "call-prod-123",
+            toolName: "search_contacts",
+            args: { query: "Alice" },
+          },
+          {
+            type: "tool-result",
+            toolCallId: "call-prod-123",
+            toolName: "search_contacts",
+            result: { id: "contact-1", name: "Alice" },
+            isError: false,
+          },
+        ],
+      },
+    ]
+
+    const normalized = normalizePersistedMessages(rawMessages)
+    expect(normalized).toHaveLength(1)
+    const asst = normalized[0]
+    expect(asst.thinking).toBe("I should look up the contact.")
+    expect(asst.content).toBe("Found the contact details.")
+    expect(asst.toolCalls).toHaveLength(1)
+    expect(asst.toolCalls![0]).toMatchObject({
+      id: "call-prod-123",
+      name: "search_contacts",
+      args: { query: "Alice" },
+      result: { id: "contact-1", name: "Alice" },
+      status: "completed",
+    })
+  })
+
+  test("pairs persisted approval-requested part with matching tool-call part", () => {
+    const rawMessages = [
+      {
+        id: "msg-approval-1",
+        role: "assistant",
+        status: "interrupted",
+        parts: [
+          {
+            type: "tool-call",
+            toolCallId: "call-send-doc",
+            toolName: "send_document",
+            args: { docId: "doc-99", recipient: "bob@example.com" },
+          },
+          {
+            type: "approval-requested",
+            callId: "call-send-doc",
+            toolName: "send_document",
+            toolArgs: { docId: "doc-99", recipient: "bob@example.com" },
+            approvalId: "appr-uuid-456",
+            summary: "Send document to bob@example.com",
+          },
+        ],
+      },
+    ]
+
+    const normalized = normalizePersistedMessages(rawMessages)
+    expect(normalized).toHaveLength(1)
+    const asst = normalized[0]
+    expect(asst.toolCalls).toHaveLength(1)
+    expect(asst.toolCalls![0]).toMatchObject({
+      id: "call-send-doc",
+      name: "send_document",
+      args: { docId: "doc-99", recipient: "bob@example.com" },
+      status: "pending_approval",
+      needsApproval: true,
+      approvalId: "appr-uuid-456",
+    })
+  })
+
+  test("concatenates multiple persisted text parts without dropping subsequent parts", () => {
+    const rawMessages = [
+      {
+        id: "msg-multi-text",
+        role: "assistant",
+        status: "complete",
+        parts: [
+          { type: "text", text: "Part 1 of the answer. " },
+          {
+            type: "tool-call",
+            toolCallId: "call-middle",
+            toolName: "calculate",
+            args: { expr: "2+2" },
+          },
+          {
+            type: "tool-result",
+            toolCallId: "call-middle",
+            toolName: "calculate",
+            result: 4,
+            isError: false,
+          },
+          { type: "text", text: "Part 2 continues here." },
+        ],
+      },
+    ]
+
+    const normalized = normalizePersistedMessages(rawMessages)
+    expect(normalized).toHaveLength(1)
+    const asst = normalized[0]
+    expect(asst.content).toBe("Part 1 of the answer. Part 2 continues here.")
+    expect(asst.toolCalls).toHaveLength(1)
+    expect(asst.toolCalls![0].id).toBe("call-middle")
+  })
+
+  test("normalizes unknown or obsolete persisted tool status safely to error or completed fallback", () => {
+    const rawMessages = [
+      {
+        id: "msg-legacy-status",
+        role: "assistant",
+        status: "complete",
+        parts: [
+          {
+            type: "tool",
+            callId: "call-legacy-unknown",
+            toolName: "legacy_tool",
+            status: "arbitrary_unknown_status_xyz",
+            args: { x: 1 },
+          },
+          {
+            type: "tool",
+            callId: "call-legacy-with-result",
+            toolName: "legacy_tool_2",
+            status: "some_weird_status",
+            result: { data: "ok" },
+          },
+        ],
+      },
+    ]
+
+    const normalized = normalizePersistedMessages(rawMessages)
+    expect(normalized).toHaveLength(1)
+    const asst = normalized[0]
+    expect(asst.toolCalls).toHaveLength(2)
+    // Unknown status without result normalized safely to error
+    expect(asst.toolCalls![0].status).toBe("error")
+    // Unknown status with valid result normalized to completed
+    expect(asst.toolCalls![1].status).toBe("completed")
+  })
+
+  test("concurrent loadThread calls resolving out of order preserve the newer thread selection", async () => {
+    // Simulates the loadGenerationRef + threadIdRef guard logic in loadThread
+    let loadGeneration = 0
+    let activeThreadId: string | undefined
+    let activeTitle: string | undefined
+    let activeMessages: ChatMessage[] = []
+    let isHydrating = false
+
+    const simulateLoadThread = async (
+      targetId: string,
+      title: string,
+      messages: any[],
+      delayMs: number
+    ) => {
+      const cleanId = targetId.trim()
+      const currentGen = ++loadGeneration
+      isHydrating = true
+      activeThreadId = cleanId
+
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+
+      // Guard: ignore stale request if newer load was initiated
+      if (loadGeneration !== currentGen || activeThreadId !== cleanId) {
+        return
+      }
+
+      activeTitle = title
+      activeMessages = normalizePersistedMessages(messages)
+      isHydrating = false
+    }
+
+    // Thread A starts first but is slow (50ms)
+    const threadAPromise = simulateLoadThread(
+      "thread-a",
+      "Thread A Title",
+      [{ id: "msg-a", role: "assistant", content: "Message from Thread A" }],
+      50
+    )
+
+    // User quickly switches to Thread B (10ms)
+    const threadBPromise = simulateLoadThread(
+      "thread-b",
+      "Thread B Title",
+      [{ id: "msg-b", role: "assistant", content: "Message from Thread B" }],
+      10
+    )
+
+    await Promise.all([threadAPromise, threadBPromise])
+
+    // Thread B's state must win and not be overwritten by the slower Thread A
+    expect(activeThreadId).toBe("thread-b")
+    expect(activeTitle).toBe("Thread B Title")
+    expect(activeMessages).toHaveLength(1)
+    expect(activeMessages[0].content).toBe("Message from Thread B")
+    expect(isHydrating).toBe(false)
+  })
+
+  test("resetNewChat immediately invalidates in-flight thread hydration", async () => {
+    let loadGeneration = 0
+    let activeThreadId: string | undefined = undefined
+    let activeTitle: string | undefined = undefined
+    let activeMessages: ChatMessage[] = []
+    let isHydrating = false
+
+    const simulateLoadThread = async (
+      targetId: string,
+      title: string,
+      messages: any[],
+      delayMs: number
+    ) => {
+      const cleanId = targetId.trim()
+      const currentGen = ++loadGeneration
+      isHydrating = true
+      activeThreadId = cleanId
+
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+
+      if (loadGeneration !== currentGen || activeThreadId !== cleanId) {
+        return
+      }
+
+      activeTitle = title
+      activeMessages = normalizePersistedMessages(messages)
+      isHydrating = false
+    }
+
+    const resetNewChat = () => {
+      loadGeneration++
+      activeThreadId = undefined
+      activeTitle = undefined
+      activeMessages = []
+      isHydrating = false
+    }
+
+    // Start loading a thread
+    const loadPromise = simulateLoadThread(
+      "thread-slow",
+      "Slow Thread",
+      [{ id: "msg-slow", role: "assistant", content: "Slow content" }],
+      40
+    )
+
+    // User clicks new chat before load finishes
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    resetNewChat()
+
+    await loadPromise
+
+    // State must remain clear
+    expect(activeThreadId).toBeUndefined()
+    expect(activeTitle).toBeUndefined()
+    expect(activeMessages).toHaveLength(0)
+    expect(isHydrating).toBe(false)
   })
 })
-
-

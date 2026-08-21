@@ -81,9 +81,10 @@ const CommandChatActionsContext = createContext<CommandChatActions | null>(null)
 /**
  * Parses an incoming SSE stream buffer chunk into validated AgentEvents and remaining incomplete buffer.
  */
-export function parseSseChunk(
-  chunk: string
-): { events: AgentEvent[]; remainder: string } {
+export function parseSseChunk(chunk: string): {
+  events: AgentEvent[]
+  remainder: string
+} {
   const normalized = chunk.replace(/\r\n/g, "\n")
   const blocks = normalized.split("\n\n")
   const remainder = blocks.pop() ?? ""
@@ -169,9 +170,7 @@ export function reconcileTerminalTurn(
           if (tc.result !== undefined) {
             const resObj = tc.result as Record<string, unknown> | null
             const hasObjError =
-              resObj &&
-              typeof resObj === "object" &&
-              Boolean(resObj.error)
+              resObj && typeof resObj === "object" && Boolean(resObj.error)
             const isError = Boolean(
               tc.errorText || hasObjError || tc.status === "error"
             )
@@ -229,6 +228,298 @@ export function reconcileTerminalTurn(
   })
 }
 
+const VALID_TOOL_STATUSES = new Set([
+  "pending",
+  "running",
+  "pending_approval",
+  "completed",
+  "error",
+  "suspended",
+  "rejected",
+  "skipped",
+  "approved",
+  "expired",
+])
+
+/**
+ * Normalizes raw conversation messages loaded from server persistence.
+ * Handles production wire shapes (tool-call, tool-result, approval-requested, tool)
+ * and concatenates all text/thinking parts.
+ */
+export function normalizePersistedMessages(
+  rawMessages: unknown[]
+): ChatMessage[] {
+  if (!Array.isArray(rawMessages)) return []
+
+  return rawMessages.map((raw) => {
+    if (!raw || typeof raw !== "object") {
+      return {
+        id: crypto.randomUUID(),
+        role: "user" as const,
+        content: "",
+      }
+    }
+    const m = raw as Record<string, unknown>
+    const id = String(m.id || crypto.randomUUID())
+    const role = (
+      m.role === "assistant" || m.role === "system" ? m.role : "user"
+    ) as "user" | "assistant" | "system"
+
+    let text = typeof m.content === "string" ? m.content : ""
+    let thinking = ""
+    const tools: ToolCallItem[] = []
+
+    if (Array.isArray(m.parts)) {
+      if (role === "assistant") {
+        text = "" // Rebuild from structured parts
+      }
+      for (const p of m.parts) {
+        if (!p || typeof p !== "object") continue
+        const part = p as Record<string, unknown>
+
+        if (part.type === "text") {
+          const partText =
+            typeof part.text === "string"
+              ? part.text
+              : typeof part.content === "string"
+                ? part.content
+                : ""
+          text += partText
+        } else if (part.type === "thinking") {
+          const partThinking =
+            typeof part.text === "string"
+              ? part.text
+              : typeof part.thinking === "string"
+                ? part.thinking
+                : typeof part.content === "string"
+                  ? part.content
+                  : ""
+          thinking += partThinking
+        } else if (
+          part.type === "tool-call" ||
+          part.type === "tool-invocation"
+        ) {
+          const callId = String(
+            part.toolCallId ?? part.callId ?? part.id ?? crypto.randomUUID()
+          )
+          const name = String(part.toolName ?? part.name ?? "tool")
+          const args = (part.args ?? part.input ?? {}) as Record<
+            string,
+            unknown
+          >
+          const retryOf = part.retryOf ? String(part.retryOf) : undefined
+          const attempt =
+            typeof part.attempt === "number" ? part.attempt : undefined
+          const approvalId = part.approvalId
+            ? String(part.approvalId)
+            : undefined
+          const needsApproval = Boolean(part.needsApproval)
+
+          const existing = tools.find((t) => t.id === callId)
+          if (existing) {
+            existing.name = existing.name || name
+            existing.args =
+              Object.keys(existing.args || {}).length > 0 ? existing.args : args
+            if (retryOf && !existing.retryOf) existing.retryOf = retryOf
+            if (attempt && !existing.attempt) existing.attempt = attempt
+            if (approvalId && !existing.approvalId)
+              existing.approvalId = approvalId
+            if (needsApproval) existing.needsApproval = true
+          } else {
+            tools.push({
+              id: callId,
+              name,
+              args,
+              status: "pending",
+              retryOf,
+              attempt,
+              approvalId,
+              needsApproval,
+            })
+          }
+        } else if (part.type === "tool-result") {
+          const callId = String(
+            part.toolCallId ?? part.callId ?? part.id ?? crypto.randomUUID()
+          )
+          const name = String(part.toolName ?? part.name ?? "")
+          const result = part.result ?? part.output
+          const isError = Boolean(
+            part.isError ||
+              (part.output &&
+                typeof part.output === "object" &&
+                (part.output as Record<string, unknown>).type === "error-text")
+          )
+          const retryOf = part.retryOf ? String(part.retryOf) : undefined
+          const attempt =
+            typeof part.attempt === "number" ? part.attempt : undefined
+
+          const existing = tools.find((t) => t.id === callId)
+          if (existing) {
+            existing.result = result
+            if (name && !existing.name) existing.name = name
+            existing.status = isError ? "error" : "completed"
+            if (retryOf && !existing.retryOf) existing.retryOf = retryOf
+            if (attempt && !existing.attempt) existing.attempt = attempt
+          } else {
+            tools.push({
+              id: callId,
+              name: name || "tool",
+              result,
+              status: isError ? "error" : "completed",
+              retryOf,
+              attempt,
+            })
+          }
+        } else if (part.type === "tool") {
+          const rawStatus =
+            typeof part.status === "string" ? part.status : undefined
+          let status: string = "completed"
+          if (rawStatus && VALID_TOOL_STATUSES.has(rawStatus)) {
+            status = rawStatus
+          } else if (rawStatus) {
+            // Unknown or obsolete status: map conservatively
+            status =
+              part.result !== undefined && part.result !== null
+                ? "completed"
+                : "error"
+          }
+
+          tools.push({
+            id: String(part.callId || part.id || crypto.randomUUID()),
+            name: String(part.toolName || part.name || "tool"),
+            args: (part.args as Record<string, unknown>) || {},
+            result: part.result,
+            status,
+            approvalId: part.approvalId ? String(part.approvalId) : undefined,
+            needsApproval: Boolean(part.needsApproval),
+            retryOf: part.retryOf ? String(part.retryOf) : undefined,
+            attempt:
+              typeof part.attempt === "number" ? part.attempt : undefined,
+            errorText: part.errorText
+              ? String(part.errorText)
+              : status === "error" && !rawStatus
+                ? "Unknown tool state normalized to error."
+                : undefined,
+          })
+        } else if (part.type === "approval-requested") {
+          const resolvedApprovalId = String(
+            part.approvalId ?? part.resumeId ?? part.id ?? "approval"
+          )
+          const existing = tools.find(
+            (tc) =>
+              (part.callId !== undefined && tc.id === String(part.callId)) ||
+              (tc.name === String(part.toolName ?? "action") &&
+                tc.status === "pending")
+          )
+          if (existing) {
+            existing.status = "pending_approval"
+            existing.needsApproval = true
+            existing.approvalId = resolvedApprovalId
+            if (part.toolArgs ?? part.args) {
+              existing.args = (part.toolArgs ?? part.args) as Record<
+                string,
+                unknown
+              >
+            }
+          } else {
+            tools.push({
+              id: part.callId ? String(part.callId) : resolvedApprovalId,
+              name: String(part.toolName ?? "action"),
+              args: (part.toolArgs ?? part.args ?? {}) as Record<
+                string,
+                unknown
+              >,
+              status: "pending_approval",
+              needsApproval: true,
+              approvalId: resolvedApprovalId,
+            })
+          }
+        }
+      }
+    }
+
+    // Normalize persisted tool calls and collapse superseded retries
+    let normalizedTools = tools.map((tc) => {
+      if (
+        tc.needsApproval ||
+        tc.status === "pending_approval" ||
+        tc.status === "approved" ||
+        tc.status === "rejected" ||
+        tc.status === "expired"
+      ) {
+        return tc
+      }
+      if (tc.result !== undefined && tc.result !== null) {
+        const resObj = tc.result as Record<string, unknown> | null
+        const hasObjError =
+          resObj && typeof resObj === "object" && Boolean(resObj.error)
+        const isError = Boolean(
+          tc.errorText || hasObjError || tc.status === "error"
+        )
+        const isRejected =
+          resObj?.status === "rejected" || resObj?.status === "denied"
+        const isSkipped = resObj?.status === "skipped"
+        return {
+          ...tc,
+          status: isError
+            ? ("error" as const)
+            : isRejected
+              ? ("rejected" as const)
+              : isSkipped
+                ? ("skipped" as const)
+                : ("completed" as const),
+        }
+      }
+      if (tc.status === "pending" || tc.status === "running") {
+        const isInterrupted = m.status === "interrupted"
+        const isErrorStatus = m.status === "error"
+        const isCompleted = m.status === "complete" || m.status === "completed"
+        return {
+          ...tc,
+          status: isInterrupted
+            ? ("suspended" as const)
+            : isErrorStatus
+              ? ("error" as const)
+              : isCompleted
+                ? ("completed" as const)
+                : ("error" as const),
+          ...(isErrorStatus && !tc.errorText
+            ? { errorText: "Turn failed before tool resolution." }
+            : {}),
+        }
+      }
+      return tc
+    })
+
+    // Collapse superseded retry attempts for successful tools
+    const successfulRetries = normalizedTools.filter(
+      (tc) => tc.status === "completed" && Boolean(tc.retryOf)
+    )
+    if (successfulRetries.length > 0) {
+      const supersededIds = new Set<string>()
+      for (const sr of successfulRetries) {
+        let curr: string | undefined = sr.retryOf
+        while (curr) {
+          supersededIds.add(curr)
+          const parent = normalizedTools.find((t) => t.id === curr)
+          curr = parent?.retryOf
+        }
+      }
+      normalizedTools = normalizedTools.filter(
+        (tc) => !supersededIds.has(tc.id)
+      )
+    }
+
+    return {
+      id,
+      role,
+      content: text,
+      thinking: thinking || undefined,
+      toolCalls: normalizedTools.length > 0 ? normalizedTools : undefined,
+    }
+  })
+}
+
 /**
  * Applies a series of AgentEvent items to a target assistant message within the messages list
  * in a single atomic batch pass, preventing excessive React render schedules.
@@ -265,7 +556,9 @@ export function applyEventsToMessages(
 
         case "tool:called": {
           executedToolsOut?.add(event.name)
-          const existingIdx = toolCalls.findIndex((tc) => tc.id === event.callId)
+          const existingIdx = toolCalls.findIndex(
+            (tc) => tc.id === event.callId
+          )
           if (existingIdx >= 0) {
             const existing = toolCalls[existingIdx]
             toolCalls[existingIdx] = {
@@ -319,7 +612,9 @@ export function applyEventsToMessages(
             : undefined
 
           let targetRetryOf = event.retryOf
-          const existingIdx = toolCalls.findIndex((tc) => tc.id === event.callId)
+          const existingIdx = toolCalls.findIndex(
+            (tc) => tc.id === event.callId
+          )
 
           if (existingIdx >= 0) {
             const existing = toolCalls[existingIdx]
@@ -388,7 +683,9 @@ export function applyEventsToMessages(
           break
 
         case "tool:executing": {
-          const existingIdx = toolCalls.findIndex((tc) => tc.id === event.callId)
+          const existingIdx = toolCalls.findIndex(
+            (tc) => tc.id === event.callId
+          )
           if (existingIdx >= 0) {
             const existing = toolCalls[existingIdx]
             const isAlreadyTerminal =
@@ -443,7 +740,8 @@ export function applyEventsToMessages(
           if (event.code === "aborted") {
             // Client-initiated stop: cleanly transition running tools to suspended without error state
             toolCalls = toolCalls.map((tc) => {
-              if (tc.needsApproval || tc.status === "pending_approval") return tc
+              if (tc.needsApproval || tc.status === "pending_approval")
+                return tc
               if (tc.status === "running" || tc.status === "pending") {
                 return { ...tc, status: "suspended" as const }
               }
@@ -568,6 +866,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const abortControllerRef = useRef<AbortController | null>(null)
   const isSubmittingRef = useRef<boolean>(false)
   const streamGenerationRef = useRef<number>(0)
+  const loadGenerationRef = useRef<number>(0)
   const activeStreamRef = useRef<{
     abortController: AbortController
     reader: ReadableStreamDefaultReader<Uint8Array> | null
@@ -1063,6 +1362,7 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       // Abort any ongoing stream before switching threads
       stop()
 
+      const currentGen = ++loadGenerationRef.current
       setIsHydrating(true)
       setThreadId(cleanId)
       threadIdRef.current = cleanId
@@ -1073,178 +1373,51 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
           conversationDetailQueryOptions(cleanId)
         )
 
+        // Drop response if a newer load was initiated or thread changed
+        if (
+          loadGenerationRef.current !== currentGen ||
+          threadIdRef.current !== cleanId
+        ) {
+          return
+        }
+
         setActiveTitle(data.conversation.title)
 
         if (Array.isArray(data.messages)) {
-          const loaded: ChatMessage[] = data.messages.map((m) => {
-            let text = ""
-            let thinking = ""
-            const tools: ToolCallItem[] = []
-
-            if (Array.isArray(m.parts)) {
-              for (const p of m.parts) {
-                if (!p || typeof p !== "object") continue
-                const part = p as Record<string, unknown>
-                if (part.type === "text" && typeof part.text === "string") {
-                  if (!text) text = part.text
-                } else if (
-                  part.type === "thinking" &&
-                  typeof part.text === "string"
-                ) {
-                  thinking += part.text
-                } else if (part.type === "tool") {
-                  const status =
-                    typeof part.status === "string"
-                      ? (part.status as ToolCallItem["status"])
-                      : "completed"
-                  tools.push({
-                    id: String(part.callId || part.id || crypto.randomUUID()),
-                    name: String(part.toolName || part.name || "tool"),
-                    args: (part.args as Record<string, unknown>) || {},
-                    result: part.result,
-                    status,
-                    approvalId: part.approvalId
-                      ? String(part.approvalId)
-                      : undefined,
-                    needsApproval: Boolean(part.needsApproval),
-                    retryOf: part.retryOf ? String(part.retryOf) : undefined,
-                    attempt:
-                      typeof part.attempt === "number"
-                        ? part.attempt
-                        : undefined,
-                    errorText: part.errorText
-                      ? String(part.errorText)
-                      : undefined,
-                  })
-                } else if (part.type === "approval-requested") {
-                  const resolvedApprovalId = String(
-                    part.approvalId ?? part.resumeId ?? part.id ?? "approval"
-                  )
-                  const existing = tools.find(
-                    (tc) =>
-                      (part.callId !== undefined &&
-                        tc.id === String(part.callId)) ||
-                      (tc.name === String(part.toolName ?? "action") &&
-                        tc.status === "pending")
-                  )
-                  if (existing) {
-                    existing.status = "pending_approval"
-                    existing.needsApproval = true
-                    existing.approvalId = resolvedApprovalId
-                  } else {
-                    tools.push({
-                      id: resolvedApprovalId,
-                      name: String(part.toolName ?? "action"),
-                      args: (part.toolArgs ?? part.args ?? {}) as Record<
-                        string,
-                        unknown
-                      >,
-                      status: "pending_approval",
-                      needsApproval: true,
-                      approvalId: resolvedApprovalId,
-                    })
-                  }
-                }
-              }
-            }
-
-            // Normalize persisted tool calls and collapse superseded retries
-            let normalizedTools = tools.map((tc) => {
-              if (tc.needsApproval || tc.status === "pending_approval") return tc
-              if (tc.result !== undefined && tc.result !== null) {
-                const resObj = tc.result as Record<string, unknown> | null
-                const hasObjError =
-                  resObj &&
-                  typeof resObj === "object" &&
-                  Boolean(resObj.error)
-                const isError = Boolean(
-                  tc.errorText || hasObjError || tc.status === "error"
-                )
-                const isRejected =
-                  resObj?.status === "rejected" || resObj?.status === "denied"
-                const isSkipped = resObj?.status === "skipped"
-                return {
-                  ...tc,
-                  status: isError
-                    ? ("error" as const)
-                    : isRejected
-                      ? ("rejected" as const)
-                      : isSkipped
-                        ? ("skipped" as const)
-                        : ("completed" as const),
-                }
-              }
-              if (tc.status === "pending" || tc.status === "running") {
-                const isInterrupted = m.status === "interrupted"
-                const isErrorStatus = m.status === "error"
-                const isCompleted = m.status === "complete"
-                return {
-                  ...tc,
-                  status: isInterrupted
-                    ? ("suspended" as const)
-                    : isErrorStatus
-                      ? ("error" as const)
-                      : isCompleted
-                        ? ("completed" as const)
-                        : ("error" as const),
-                  ...(isErrorStatus && !tc.errorText
-                    ? { errorText: "Turn failed before tool resolution." }
-                    : {}),
-                }
-              }
-              return tc
-            })
-
-            // Collapse superseded retry attempts for successful tools
-            const successfulRetries = normalizedTools.filter(
-              (tc) => tc.status === "completed" && Boolean(tc.retryOf)
-            )
-            if (successfulRetries.length > 0) {
-              const supersededIds = new Set<string>()
-              for (const sr of successfulRetries) {
-                let curr: string | undefined = sr.retryOf
-                while (curr) {
-                  supersededIds.add(curr)
-                  const parent = normalizedTools.find((t) => t.id === curr)
-                  curr = parent?.retryOf
-                }
-              }
-              normalizedTools = normalizedTools.filter(
-                (tc) => !supersededIds.has(tc.id)
-              )
-            }
-
-            return {
-              id: m.id,
-              role: m.role,
-              content: text,
-              thinking: thinking || undefined,
-              toolCalls:
-                normalizedTools.length > 0 ? normalizedTools : undefined,
-            }
-          })
-
+          const loaded: ChatMessage[] = normalizePersistedMessages(
+            data.messages
+          )
           setMessages(loaded)
         }
       } catch (err: unknown) {
+        if (
+          loadGenerationRef.current !== currentGen ||
+          threadIdRef.current !== cleanId
+        ) {
+          return
+        }
         setChatError({
           code: "load_failed",
           message: err instanceof Error ? err.message : "Failed to load thread",
         })
       } finally {
-        setIsHydrating(false)
+        if (loadGenerationRef.current === currentGen) {
+          setIsHydrating(false)
+        }
       }
     },
-    [queryClient]
+    [queryClient, stop]
   )
 
   const resetNewChat = useCallback(() => {
     if (isLoadingRef.current) return
+    loadGenerationRef.current++
     setThreadId(undefined)
     threadIdRef.current = undefined
     setActiveTitle(undefined)
     setMessages([])
     setChatError(null)
+    setIsHydrating(false)
   }, [])
 
   const isCurrentThread = useCallback((id: string) => {
