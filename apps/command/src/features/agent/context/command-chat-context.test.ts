@@ -156,6 +156,94 @@ describe("command-chat-context event batch application", () => {
     })
   })
 
+  test("deduplicates duplicate tool:called events with the same callId without duplicating cards", () => {
+    const events: AgentEvent[] = [
+      {
+        type: "tool:called",
+        callId: "call-dup-1",
+        name: "search_contacts",
+        args: { query: "John" },
+      },
+      // Duplicate event for same callId
+      {
+        type: "tool:called",
+        callId: "call-dup-1",
+        name: "search_contacts",
+        args: { query: "John Doe" },
+      },
+    ]
+
+    const updated = applyEventsToMessages(
+      initialMessages,
+      baseAssistantMsgId,
+      events
+    )
+
+    const asst = updated.find((m) => m.id === baseAssistantMsgId)!
+    expect(asst.toolCalls).toHaveLength(1)
+    expect(asst.toolCalls![0].id).toBe("call-dup-1")
+    expect(asst.toolCalls![0].args).toEqual({ query: "John Doe" })
+  })
+
+  test("latches terminal state so late content, late tool errors, or duplicate turn:error cannot mutate a completed turn", () => {
+    const events: AgentEvent[] = [
+      {
+        type: "content:delta",
+        text: "Here is your proposal summary.",
+      },
+      {
+        type: "tool:called",
+        callId: "call-done",
+        name: "create_proposal",
+        args: {},
+      },
+      {
+        type: "turn:completed",
+        totalSteps: 1,
+      },
+      // Late events delivered after turn completion
+      {
+        type: "content:delta",
+        text: " Extra unwanted text.",
+      },
+      {
+        type: "turn:error",
+        code: "network_drop",
+        message: "Late network error",
+        recoverable: false,
+      },
+    ]
+
+    const updated = applyEventsToMessages(
+      initialMessages,
+      baseAssistantMsgId,
+      events
+    )
+
+    const asst = updated.find((m) => m.id === baseAssistantMsgId)!
+    // Content should NOT contain the late delta
+    expect(asst.content).toBe("Here is your proposal summary.")
+    // Turn error should NOT be populated from late turn:error
+    expect(asst.error).toBeUndefined()
+    // Message should be marked terminal
+    expect(asst.isTerminal).toBe(true)
+
+    // And subsequent batches targeting this assistant message are ignored
+    const lateBatch: AgentEvent[] = [
+      {
+        type: "content:delta",
+        text: "More late text",
+      },
+    ]
+    const afterLateBatch = applyEventsToMessages(
+      updated,
+      baseAssistantMsgId,
+      lateBatch
+    )
+    const asstLate = afterLateBatch.find((m) => m.id === baseAssistantMsgId)!
+    expect(asstLate.content).toBe("Here is your proposal summary.")
+  })
+
   test("collapses superseded failed tool attempts when a retry succeeds", () => {
     // Attempt 1: create_deal fails
     const step1Events: AgentEvent[] = [

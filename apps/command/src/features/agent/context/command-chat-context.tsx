@@ -47,6 +47,7 @@ export interface ChatMessage {
   openuiCode?: string
   toolCalls?: ToolCallItem[]
   error?: AgentChatError
+  isTerminal?: boolean
 }
 
 export interface CommandChatState {
@@ -221,6 +222,7 @@ export function reconcileTerminalTurn(
       ...msg,
       toolCalls,
       ...(nextError ? { error: nextError } : {}),
+      isTerminal: true,
     }
   })
 }
@@ -239,13 +241,17 @@ export function applyEventsToMessages(
 
   return messages.map((msg) => {
     if (msg.id !== assistantMsgId) return msg
+    if (msg.isTerminal) return msg
 
     let content = msg.content || ""
     let thinking = msg.thinking || ""
     let toolCalls = msg.toolCalls ? [...msg.toolCalls] : []
     let error = msg.error
+    let isTerminal = Boolean(msg.isTerminal)
 
     for (const event of events) {
+      if (isTerminal) break
+
       switch (event.type) {
         case "content:delta":
           content += event.text
@@ -255,17 +261,29 @@ export function applyEventsToMessages(
           thinking += event.text
           break
 
-        case "tool:called":
+        case "tool:called": {
           executedToolsOut?.add(event.name)
-          toolCalls.push({
-            id: event.callId,
-            name: event.name,
-            args: event.args,
-            status: "running",
-            retryOf: event.retryOf,
-            attempt: event.attempt,
-          })
+          const existingIdx = toolCalls.findIndex((tc) => tc.id === event.callId)
+          if (existingIdx >= 0) {
+            toolCalls[existingIdx] = {
+              ...toolCalls[existingIdx],
+              name: event.name,
+              args: event.args,
+              retryOf: event.retryOf ?? toolCalls[existingIdx].retryOf,
+              attempt: event.attempt ?? toolCalls[existingIdx].attempt,
+            }
+          } else {
+            toolCalls.push({
+              id: event.callId,
+              name: event.name,
+              args: event.args,
+              status: "running",
+              retryOf: event.retryOf,
+              attempt: event.attempt,
+            })
+          }
           break
+        }
 
         case "tool:result": {
           const resObj = event.result as Record<string, unknown> | null
@@ -360,6 +378,7 @@ export function applyEventsToMessages(
             }
             return tc
           })
+          isTerminal = true
           break
 
         case "turn:completed":
@@ -370,6 +389,7 @@ export function applyEventsToMessages(
             }
             return tc
           })
+          isTerminal = true
           break
 
         case "turn:error":
@@ -382,6 +402,7 @@ export function applyEventsToMessages(
               }
               return tc
             })
+            isTerminal = true
             break
           }
           toolCalls = toolCalls.map((tc) => {
@@ -396,6 +417,7 @@ export function applyEventsToMessages(
             return tc
           })
           error = { code: event.code, message: event.message }
+          isTerminal = true
           break
 
         default:
@@ -408,7 +430,8 @@ export function applyEventsToMessages(
       content,
       thinking,
       toolCalls,
-      error,
+      ...(error ? { error } : {}),
+      ...(isTerminal ? { isTerminal: true } : {}),
     }
   })
 }
