@@ -71,7 +71,12 @@ export const ReasoningCard: React.FC<ReasoningCardProps> = ({
     }
 
     const el = viewportRef.current
-    if (!el) return
+    if (!el) {
+      observerRef.current?.disconnect()
+      observerRef.current = null
+      observedViewportRef.current = null
+      return
+    }
     if (observedViewportRef.current === el && observerRef.current) return
 
     observerRef.current?.disconnect()

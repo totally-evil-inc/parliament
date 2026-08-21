@@ -37,8 +37,7 @@ export function useSmartScrollAnchor(
   const observedContainerRef = useRef<HTMLElement | null>(null)
   const observerRef = useRef<ResizeObserver | null>(null)
   const scrollRafIdRef = useRef<number | null>(null)
-  const resizeRafIdRef = useRef<number | null>(null)
-  const streamFollowRafIdRef = useRef<number | null>(null)
+  const scrollFollowRafIdRef = useRef<number | null>(null)
 
   const getScrollContainer = useCallback((): HTMLElement | null => {
     if (!viewportRef.current) return null
@@ -49,6 +48,24 @@ export function useSmartScrollAnchor(
     ) as HTMLElement | null
     return innerViewport || el
   }, [])
+
+  // Unified single follow-scroll scheduler: guarantees at most one scroll write per animation frame
+  const scheduleFollowScroll = useCallback(() => {
+    if (!isAtBottomRef.current) return
+    if (scrollFollowRafIdRef.current !== null) return
+
+    scrollFollowRafIdRef.current = requestAnimationFrame(() => {
+      scrollFollowRafIdRef.current = null
+      if (!isAtBottomRef.current) return
+
+      if (bottomRef.current) {
+        bottomRef.current.scrollIntoView({ behavior: "auto", block: "end" })
+      } else {
+        const container = getScrollContainer()
+        if (container) container.scrollTop = container.scrollHeight
+      }
+    })
+  }, [getScrollContainer])
 
   const scrollToBottom = useCallback((smooth = true) => {
     isAtBottomRef.current = true
@@ -107,19 +124,7 @@ export function useSmartScrollAnchor(
     observerRef.current?.disconnect()
 
     const observer = new ResizeObserver(() => {
-      if (!isAtBottomRef.current) return
-
-      if (resizeRafIdRef.current !== null) return
-      resizeRafIdRef.current = requestAnimationFrame(() => {
-        resizeRafIdRef.current = null
-        if (!isAtBottomRef.current) return
-
-        if (bottomRef.current) {
-          bottomRef.current.scrollIntoView({ behavior: "auto", block: "end" })
-        } else {
-          container.scrollTop = container.scrollHeight
-        }
-      })
+      scheduleFollowScroll()
     })
 
     observer.observe(container)
@@ -134,32 +139,18 @@ export function useSmartScrollAnchor(
 
     observerRef.current = observer
     observedContainerRef.current = container
-  }, [getScrollContainer])
+  }, [getScrollContainer, scheduleFollowScroll])
 
   // Attach observer on mount or container change
   useEffect(() => {
     ensureObserverAttached()
   }, [ensureObserverAttached])
 
-  // Follow trigger deps (e.g. streaming tokens) without tearing down the ResizeObserver
+  // Follow trigger deps (e.g. streaming tokens) using the shared follow scheduler
   useEffect(() => {
     ensureObserverAttached()
-
-    if (!isAtBottomRef.current) return
-
-    if (streamFollowRafIdRef.current !== null) return
-    streamFollowRafIdRef.current = requestAnimationFrame(() => {
-      streamFollowRafIdRef.current = null
-      if (!isAtBottomRef.current) return
-
-      if (bottomRef.current) {
-        bottomRef.current.scrollIntoView({ behavior: "auto", block: "end" })
-      } else {
-        const container = getScrollContainer()
-        if (container) container.scrollTop = container.scrollHeight
-      }
-    })
-  }, [ensureObserverAttached, getScrollContainer, ...triggerDeps])
+    scheduleFollowScroll()
+  }, [ensureObserverAttached, scheduleFollowScroll, ...triggerDeps])
 
   // Teardown observer and timers strictly on unmount
   useEffect(() => {
@@ -171,13 +162,9 @@ export function useSmartScrollAnchor(
         cancelAnimationFrame(scrollRafIdRef.current)
         scrollRafIdRef.current = null
       }
-      if (resizeRafIdRef.current !== null) {
-        cancelAnimationFrame(resizeRafIdRef.current)
-        resizeRafIdRef.current = null
-      }
-      if (streamFollowRafIdRef.current !== null) {
-        cancelAnimationFrame(streamFollowRafIdRef.current)
-        streamFollowRafIdRef.current = null
+      if (scrollFollowRafIdRef.current !== null) {
+        cancelAnimationFrame(scrollFollowRafIdRef.current)
+        scrollFollowRafIdRef.current = null
       }
     }
   }, [])

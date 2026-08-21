@@ -42,10 +42,6 @@ export class AgentEngine {
     const dispatcher = new ToolDispatcher(ctx)
     const activeMessages: ModelMessage[] = [...messages]
     let step = 0
-    const lastToolCallsByName = new Map<
-      string,
-      { callId: string; isError: boolean; attempt: number }
-    >()
 
     while (step < maxSteps) {
       if (abortSignal?.aborted) {
@@ -148,10 +144,14 @@ export class AgentEngine {
               unknown
             >
 
-            const prevCall = lastToolCallsByName.get(toolName)
-            const isRetry = Boolean(prevCall && prevCall.isError)
-            const attempt = isRetry ? (prevCall!.attempt || 1) + 1 : 1
-            const retryOf = isRetry ? prevCall!.callId : undefined
+            const retryOf =
+              typeof typedChunk.retryOf === "string"
+                ? typedChunk.retryOf
+                : undefined
+            const attempt =
+              typeof typedChunk.attempt === "number" && typedChunk.attempt > 1
+                ? typedChunk.attempt
+                : undefined
 
             toolCallsToProcess.push({
               id: callId,
@@ -166,7 +166,7 @@ export class AgentEngine {
               name: toolName,
               args,
               ...(retryOf ? { retryOf } : {}),
-              ...(attempt > 1 ? { attempt } : {}),
+              ...(attempt ? { attempt } : {}),
             }
             continue
           }
@@ -387,16 +387,6 @@ export class AgentEngine {
           ...(call.attempt && call.attempt > 1
             ? { attempt: call.attempt }
             : {}),
-        }
-
-        if (isError) {
-          lastToolCallsByName.set(call.name, {
-            callId: call.id,
-            isError,
-            attempt: call.attempt ?? 1,
-          })
-        } else {
-          lastToolCallsByName.delete(call.name)
         }
 
         toolResults.push({
