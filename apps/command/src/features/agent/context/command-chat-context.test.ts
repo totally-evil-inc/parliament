@@ -712,6 +712,119 @@ describe("command-chat-context event batch application", () => {
     expect(events[0]).toEqual({ type: "turn:completed", totalSteps: 2 })
   })
 
+  test("monotonic per-tool result handling preserves successful result against duplicate or late error results", () => {
+    const events: AgentEvent[] = [
+      {
+        type: "tool:called",
+        callId: "call-monotonic-1",
+        name: "calculate_quote",
+        args: { amount: 100 },
+      },
+      {
+        type: "tool:result",
+        callId: "call-monotonic-1",
+        name: "calculate_quote",
+        result: { total: 100 },
+        isError: false,
+        attempt: 1,
+      },
+      // Late duplicate error result with attempt <= 1
+      {
+        type: "tool:result",
+        callId: "call-monotonic-1",
+        name: "calculate_quote",
+        result: { error: "Delayed transport failure" },
+        isError: true,
+        attempt: 1,
+      },
+    ]
+
+    const updated = applyEventsToMessages(
+      initialMessages,
+      baseAssistantMsgId,
+      events
+    )
+
+    const asst = updated.find((m) => m.id === baseAssistantMsgId)!
+    expect(asst.toolCalls).toHaveLength(1)
+    expect(asst.toolCalls![0].status).toBe("completed")
+    expect(asst.toolCalls![0].result).toEqual({ total: 100 })
+    expect(asst.toolCalls![0].errorText).toBeUndefined()
+  })
+
+  test("handles out-of-order events: tool:result arrives before tool:called", () => {
+    const events: AgentEvent[] = [
+      // tool:result arrives first
+      {
+        type: "tool:result",
+        callId: "call-early-res",
+        name: "send_email",
+        result: { sent: true },
+        isError: false,
+      },
+      // tool:called arrives afterwards
+      {
+        type: "tool:called",
+        callId: "call-early-res",
+        name: "send_email",
+        args: { to: "user@example.com" },
+      },
+    ]
+
+    const updated = applyEventsToMessages(
+      initialMessages,
+      baseAssistantMsgId,
+      events
+    )
+
+    const asst = updated.find((m) => m.id === baseAssistantMsgId)!
+    expect(asst.toolCalls).toHaveLength(1)
+    expect(asst.toolCalls![0].id).toBe("call-early-res")
+    expect(asst.toolCalls![0].name).toBe("send_email")
+    expect(asst.toolCalls![0].status).toBe("completed")
+    expect(asst.toolCalls![0].args).toEqual({ to: "user@example.com" })
+    expect(asst.toolCalls![0].result).toEqual({ sent: true })
+  })
+
+  test("handles out-of-order events: tool:executing arrives before tool:called", () => {
+    const events: AgentEvent[] = [
+      // tool:executing arrives first
+      {
+        type: "tool:executing",
+        callId: "call-early-exec",
+        name: "query_database",
+      },
+      // tool:called arrives afterwards
+      {
+        type: "tool:called",
+        callId: "call-early-exec",
+        name: "query_database",
+        args: { query: "SELECT 1" },
+      },
+      // tool:result finishes
+      {
+        type: "tool:result",
+        callId: "call-early-exec",
+        name: "query_database",
+        result: [{ count: 1 }],
+        isError: false,
+      },
+    ]
+
+    const updated = applyEventsToMessages(
+      initialMessages,
+      baseAssistantMsgId,
+      events
+    )
+
+    const asst = updated.find((m) => m.id === baseAssistantMsgId)!
+    expect(asst.toolCalls).toHaveLength(1)
+    expect(asst.toolCalls![0].id).toBe("call-early-exec")
+    expect(asst.toolCalls![0].name).toBe("query_database")
+    expect(asst.toolCalls![0].status).toBe("completed")
+    expect(asst.toolCalls![0].args).toEqual({ query: "SELECT 1" })
+  })
+
   test("TextDecoder stream decode flushes split multi-byte UTF-8 character at EOF without corruption", () => {
     // 4-byte UTF-8 emoji 🚀 is [0xf0, 0x9f, 0x9a, 0x80]
     const fullJson = 'event: content:delta\ndata: {"type":"content:delta","text":"Launch 🚀"}'
@@ -732,6 +845,95 @@ describe("command-chat-context event batch application", () => {
     const events = parseSseTrailingBuffer(buffer)
     expect(events).toHaveLength(1)
     expect(events[0]).toEqual({ type: "content:delta", text: "Launch 🚀" })
+  })
+
+  test("persisted error turns normalize unresolved pending/running tool calls to error state on reload", () => {
+    // Simulated raw conversation history loaded from server where the turn errored
+    const rawMessages = [
+      {
+        id: "msg-err-turn",
+        role: "assistant",
+        status: "error",
+        content: "I started creating a deal but failed.",
+        parts: [
+          {
+            type: "text",
+            text: "I started creating a deal but failed.",
+          },
+          {
+            type: "tool",
+            callId: "call-unresolved",
+            toolName: "create_deal",
+            status: "running",
+            args: { title: "Deal A" },
+          },
+          {
+            type: "tool",
+            callId: "call-resolved-ok",
+            toolName: "get_status",
+            status: "completed",
+            result: { ok: true },
+          },
+        ],
+      },
+    ]
+
+    // Simulate selectThread normalization logic
+    const normalized = rawMessages.map((m) => {
+      const tools: any[] = []
+      for (const p of m.parts) {
+        if (p.type === "tool") {
+          tools.push({
+            id: p.callId,
+            name: p.toolName,
+            args: p.args,
+            status: p.status,
+            result: p.result,
+          })
+        }
+      }
+
+      const normalizedTools = tools.map((tc) => {
+        if (tc.result !== undefined && tc.result !== null) {
+          return { ...tc, status: "completed" as const }
+        }
+        if (tc.status === "pending" || tc.status === "running") {
+          const isInterrupted = m.status === "interrupted"
+          const isErrorStatus = m.status === "error"
+          const isCompleted =
+            m.status === "completed" || m.status === "complete"
+          return {
+            ...tc,
+            status: isInterrupted
+              ? ("suspended" as const)
+              : isErrorStatus
+                ? ("error" as const)
+                : isCompleted
+                  ? ("completed" as const)
+                  : ("error" as const),
+            ...(isErrorStatus && !tc.errorText
+              ? { errorText: "Turn failed before tool resolution." }
+              : {}),
+          }
+        }
+        return tc
+      })
+
+      return {
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        toolCalls: normalizedTools,
+      }
+    })
+
+    const asst = normalized[0]
+    expect(asst.toolCalls).toHaveLength(2)
+    // Unresolved tool must become error with errorText, NOT completed
+    expect(asst.toolCalls[0].status).toBe("error")
+    expect(asst.toolCalls[0].errorText).toBe("Turn failed before tool resolution.")
+    // Resolved tool remains completed
+    expect(asst.toolCalls[1].status).toBe("completed")
   })
 })
 

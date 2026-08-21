@@ -267,12 +267,20 @@ export function applyEventsToMessages(
           executedToolsOut?.add(event.name)
           const existingIdx = toolCalls.findIndex((tc) => tc.id === event.callId)
           if (existingIdx >= 0) {
+            const existing = toolCalls[existingIdx]
             toolCalls[existingIdx] = {
-              ...toolCalls[existingIdx],
-              name: event.name,
-              args: event.args,
-              retryOf: event.retryOf ?? toolCalls[existingIdx].retryOf,
-              attempt: event.attempt ?? toolCalls[existingIdx].attempt,
+              ...existing,
+              name: event.name || existing.name,
+              args: event.args ?? existing.args,
+              retryOf: event.retryOf ?? existing.retryOf,
+              attempt: event.attempt ?? existing.attempt,
+              status:
+                existing.status === "completed" ||
+                existing.status === "error" ||
+                existing.status === "rejected" ||
+                existing.status === "skipped"
+                  ? existing.status
+                  : "running",
             }
           } else {
             toolCalls.push({
@@ -311,24 +319,45 @@ export function applyEventsToMessages(
             : undefined
 
           let targetRetryOf = event.retryOf
+          const existingIdx = toolCalls.findIndex((tc) => tc.id === event.callId)
 
-          toolCalls = toolCalls.map((tc) => {
-            if (tc.id === event.callId) {
-              if (tc.name) executedToolsOut?.add(tc.name)
-              if (!targetRetryOf && tc.retryOf) {
-                targetRetryOf = tc.retryOf
-              }
-              return {
-                ...tc,
+          if (existingIdx >= 0) {
+            const existing = toolCalls[existingIdx]
+            if (existing.name) executedToolsOut?.add(existing.name)
+            if (!targetRetryOf && existing.retryOf) {
+              targetRetryOf = existing.retryOf
+            }
+
+            // Monotonic terminal latch: once an attempt is completed, ignore duplicate/stale error results
+            const isMonotonicCompleted =
+              existing.status === "completed" &&
+              isError &&
+              (event.attempt ?? 1) <= (existing.attempt ?? 1)
+
+            if (!isMonotonicCompleted) {
+              toolCalls[existingIdx] = {
+                ...existing,
                 result: event.result,
                 status: isError ? "error" : derivedStatus,
                 errorText,
                 retryOf: targetRetryOf,
-                attempt: event.attempt ?? tc.attempt,
+                attempt: event.attempt ?? existing.attempt,
               }
             }
-            return tc
-          })
+          } else {
+            // Result arrived before tool:called (out-of-order event resilience)
+            if (event.name) executedToolsOut?.add(event.name)
+            toolCalls.push({
+              id: event.callId,
+              name: event.name || "tool",
+              args: {},
+              result: event.result,
+              status: isError ? "error" : derivedStatus,
+              errorText,
+              retryOf: targetRetryOf,
+              attempt: event.attempt,
+            })
+          }
 
           // When a retry attempt succeeds, collapse / remove prior failed attempts in the retry chain
           if (!isError && targetRetryOf) {
@@ -358,19 +387,36 @@ export function applyEventsToMessages(
           })
           break
 
-        case "tool:executing":
-          toolCalls = toolCalls.map((tc) => {
-            if (tc.id === event.callId) {
-              return {
-                ...tc,
+        case "tool:executing": {
+          const existingIdx = toolCalls.findIndex((tc) => tc.id === event.callId)
+          if (existingIdx >= 0) {
+            const existing = toolCalls[existingIdx]
+            const isAlreadyTerminal =
+              existing.status === "completed" ||
+              existing.status === "error" ||
+              existing.status === "rejected" ||
+              existing.status === "skipped"
+            if (!isAlreadyTerminal) {
+              toolCalls[existingIdx] = {
+                ...existing,
                 status: "running",
-                retryOf: event.retryOf ?? tc.retryOf,
-                attempt: event.attempt ?? tc.attempt,
+                retryOf: event.retryOf ?? existing.retryOf,
+                attempt: event.attempt ?? existing.attempt,
               }
             }
-            return tc
-          })
+          } else {
+            // Executing event arrived before tool:called
+            toolCalls.push({
+              id: event.callId,
+              name: event.name || "tool",
+              args: {},
+              status: "running",
+              retryOf: event.retryOf,
+              attempt: event.attempt,
+            })
+          }
           break
+        }
 
         case "turn:suspended":
           toolCalls = toolCalls.map((tc) => {
@@ -522,6 +568,11 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const abortControllerRef = useRef<AbortController | null>(null)
   const isSubmittingRef = useRef<boolean>(false)
   const streamGenerationRef = useRef<number>(0)
+  const activeStreamRef = useRef<{
+    abortController: AbortController
+    reader: ReadableStreamDefaultReader<Uint8Array> | null
+    generation: number
+  } | null>(null)
 
   // Sync default model from server settings on first load
   const { data: modelsData } = useAIModels()
@@ -569,8 +620,16 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       const generation = ++streamGenerationRef.current
       isSubmittingRef.current = true
       setIsLoading(true)
+
+      // Explicitly abort and cancel previous stream reader on new generation
+      if (activeStreamRef.current) {
+        activeStreamRef.current.abortController.abort()
+        activeStreamRef.current.reader?.cancel().catch(() => {})
+      }
+
       const abortController = new AbortController()
       abortControllerRef.current = abortController
+      activeStreamRef.current = { abortController, reader: null, generation }
       const executedTools = new Set<string>()
 
       if (isResume) {
@@ -620,13 +679,21 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
         }
 
         const reader = res.body.getReader()
+        if (activeStreamRef.current?.generation === generation) {
+          activeStreamRef.current.reader = reader
+        }
         const decoder = new TextDecoder()
         let buffer = ""
         let receivedTerminalEvent = false
 
         while (true) {
           const { done, value } = await reader.read()
-          if (done || streamGenerationRef.current !== generation) break
+          if (done || streamGenerationRef.current !== generation) {
+            if (streamGenerationRef.current !== generation) {
+              reader.cancel().catch(() => {})
+            }
+            break
+          }
 
           buffer += decoder.decode(value, { stream: true })
           const { events: chunkEvents, remainder } = parseSseChunk(buffer)
@@ -898,7 +965,6 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
         id: assistantMsgId,
         role: "assistant",
         content: "",
-        toolCalls: [],
       }
 
       const nextMessages = [...messagesRef.current, userMsg]
@@ -918,39 +984,44 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const stop = useCallback(() => {
     streamGenerationRef.current++
+    if (activeStreamRef.current) {
+      activeStreamRef.current.abortController.abort()
+      activeStreamRef.current.reader?.cancel().catch(() => {})
+      activeStreamRef.current = null
+    }
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
       abortControllerRef.current = null
-      isSubmittingRef.current = false
-      setIsLoading(false)
-      setMessages((prev) =>
-        prev.map((msg) => {
-          if (!msg.toolCalls) return msg
-          const hasRunning = msg.toolCalls.some(
-            (tc) =>
-              (tc.status === "running" || tc.status === "pending") &&
-              !tc.needsApproval
-          )
-          if (!hasRunning) return msg
-          return {
-            ...msg,
-            toolCalls: msg.toolCalls.map((tc) => {
-              if (tc.needsApproval || tc.status === "pending_approval") return tc
-              if (tc.status === "running" || tc.status === "pending") {
-                return { ...tc, status: "suspended" as const }
-              }
-              return tc
-            }),
-          }
-        })
-      )
     }
+    isSubmittingRef.current = false
+    setIsLoading(false)
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (!msg.toolCalls) return msg
+        const hasRunning = msg.toolCalls.some(
+          (tc) =>
+            (tc.status === "running" || tc.status === "pending") &&
+            !tc.needsApproval
+        )
+        if (!hasRunning) return msg
+        return {
+          ...msg,
+          toolCalls: msg.toolCalls.map((tc) => {
+            if (tc.needsApproval || tc.status === "pending_approval") return tc
+            if (tc.status === "running" || tc.status === "pending") {
+              return { ...tc, status: "suspended" as const }
+            }
+            return tc
+          }),
+        }
+      })
+    )
   }, [])
 
   const retryLastPrompt = useCallback(async () => {
-    if (lastPromptRef.current) {
-      await sendPrompt(lastPromptRef.current)
-    }
+    const promptToRetry = lastPromptRef.current
+    if (!promptToRetry || isLoadingRef.current) return
+    await sendPrompt(promptToRetry)
   }, [sendPrompt])
 
   const resolveMutationRef = useRef(resolveActionMutation)
@@ -986,103 +1057,74 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const loadThread = useCallback(
     async (id: string) => {
-      const cleanId = typeof id === "string" ? id.trim() : ""
+      const cleanId = id.trim()
       if (!cleanId) return
-      if (threadIdRef.current === cleanId && messagesRef.current.length > 0)
-        return
+
+      // Abort any ongoing stream before switching threads
+      stop()
 
       setIsHydrating(true)
       setThreadId(cleanId)
       threadIdRef.current = cleanId
+      setChatError(null)
 
       try {
-        const data = await queryClient.ensureQueryData(
+        const data = await queryClient.fetchQuery(
           conversationDetailQueryOptions(cleanId)
         )
-        if (data.conversation?.title) {
-          setActiveTitle(data.conversation.title)
-        }
+
+        setActiveTitle(data.conversation.title)
 
         if (Array.isArray(data.messages)) {
-          const loaded: ChatMessage[] = data.messages.map((m: any) => {
+          const loaded: ChatMessage[] = data.messages.map((m) => {
             let text = ""
             let thinking = ""
-            const toolCalls: ToolCallItem[] = []
+            const tools: ToolCallItem[] = []
 
             if (Array.isArray(m.parts)) {
               for (const p of m.parts) {
-                if (p?.type === "text") {
-                  text += p.text ?? p.content ?? ""
-                } else if (p?.type === "thinking") {
-                  thinking += p.text ?? p.thinking ?? p.content ?? ""
+                if (!p || typeof p !== "object") continue
+                const part = p as Record<string, unknown>
+                if (part.type === "text" && typeof part.text === "string") {
+                  if (!text) text = part.text
                 } else if (
-                  p?.type === "tool-call" ||
-                  p?.type === "tool-invocation"
+                  part.type === "thinking" &&
+                  typeof part.text === "string"
                 ) {
-                  toolCalls.push({
-                    id: String(p.id ?? p.toolCallId ?? "tool"),
-                    name: String(p.name ?? p.toolName ?? "tool"),
-                    args: p.args ?? p.input ?? {},
-                    status: "pending",
-                    retryOf: typeof p.retryOf === "string" ? p.retryOf : undefined,
-                    attempt: typeof p.attempt === "number" ? p.attempt : undefined,
+                  thinking += part.text
+                } else if (part.type === "tool") {
+                  const status =
+                    typeof part.status === "string"
+                      ? (part.status as ToolCallItem["status"])
+                      : "completed"
+                  tools.push({
+                    id: String(part.callId || part.id || crypto.randomUUID()),
+                    name: String(part.toolName || part.name || "tool"),
+                    args: (part.args as Record<string, unknown>) || {},
+                    result: part.result,
+                    status,
+                    approvalId: part.approvalId
+                      ? String(part.approvalId)
+                      : undefined,
+                    needsApproval: Boolean(part.needsApproval),
+                    retryOf: part.retryOf ? String(part.retryOf) : undefined,
+                    attempt:
+                      typeof part.attempt === "number"
+                        ? part.attempt
+                        : undefined,
+                    errorText: part.errorText
+                      ? String(part.errorText)
+                      : undefined,
                   })
-                } else if (p?.type === "tool-result") {
-                  const existing = toolCalls.find(
-                    (tc) => tc.id === p.toolCallId
-                  )
-                  const resObj = (p.result ?? p.output) as any
-                  const isRejected =
-                    resObj?.status === "rejected" ||
-                    resObj?.status === "denied" ||
-                    p.status === "rejected" ||
-                    p.status === "denied"
-                  const isSkipped =
-                    resObj?.status === "skipped" || p.status === "skipped"
-                  const hasObjError =
-                    resObj &&
-                    typeof resObj === "object" &&
-                    Boolean(resObj.error)
-                  const isError = Boolean(p.isError || hasObjError)
-                  const derivedStatus = isError
-                    ? "error"
-                    : isRejected
-                      ? "rejected"
-                      : isSkipped
-                        ? "skipped"
-                        : "completed"
-
-                  const errorText = isError
-                    ? extractToolErrorText(p.result ?? p.output)
-                    : undefined
-
-                  if (existing) {
-                    existing.result = p.result ?? p.output
-                    existing.status = derivedStatus
-                    if (isError) {
-                      existing.errorText = errorText
-                    }
-                    if (p.retryOf) existing.retryOf = p.retryOf
-                    if (p.attempt) existing.attempt = p.attempt
-                  } else {
-                    toolCalls.push({
-                      id: String(p.toolCallId ?? "tool"),
-                      name: String(p.toolName ?? "tool"),
-                      result: p.result ?? p.output,
-                      status: derivedStatus,
-                      errorText,
-                      retryOf: typeof p.retryOf === "string" ? p.retryOf : undefined,
-                      attempt: typeof p.attempt === "number" ? p.attempt : undefined,
-                    })
-                  }
-                } else if (p?.type === "approval-requested") {
+                } else if (part.type === "approval-requested") {
                   const resolvedApprovalId = String(
-                    p.approvalId ?? p.resumeId ?? p.id ?? "approval"
+                    part.approvalId ?? part.resumeId ?? part.id ?? "approval"
                   )
-                  const existing = toolCalls.find(
+                  const existing = tools.find(
                     (tc) =>
-                      (p.callId !== undefined && tc.id === String(p.callId)) ||
-                      (tc.name === String(p.toolName ?? "action") &&
+                      (part.callId !== undefined &&
+                        tc.id === String(part.callId)) ||
+                      (tc.name === String(part.toolName ?? "action") &&
                         tc.status === "pending")
                   )
                   if (existing) {
@@ -1090,10 +1132,13 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                     existing.needsApproval = true
                     existing.approvalId = resolvedApprovalId
                   } else {
-                    toolCalls.push({
+                    tools.push({
                       id: resolvedApprovalId,
-                      name: String(p.toolName ?? "action"),
-                      args: p.toolArgs ?? p.args ?? {},
+                      name: String(part.toolName ?? "action"),
+                      args: (part.toolArgs ?? part.args ?? {}) as Record<
+                        string,
+                        unknown
+                      >,
                       status: "pending_approval",
                       needsApproval: true,
                       approvalId: resolvedApprovalId,
@@ -1103,34 +1148,48 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
               }
             }
 
-            // Normalize legacy tool calls and collapse superseded retries
-            let normalizedTools = toolCalls.map((tc) => {
+            // Normalize persisted tool calls and collapse superseded retries
+            let normalizedTools = tools.map((tc) => {
               if (tc.needsApproval || tc.status === "pending_approval") return tc
-              if (tc.result !== undefined) {
+              if (tc.result !== undefined && tc.result !== null) {
                 const resObj = tc.result as Record<string, unknown> | null
                 const hasObjError =
                   resObj &&
                   typeof resObj === "object" &&
                   Boolean(resObj.error)
-                const isError = Boolean(tc.errorText || hasObjError || tc.status === "error")
+                const isError = Boolean(
+                  tc.errorText || hasObjError || tc.status === "error"
+                )
                 const isRejected =
                   resObj?.status === "rejected" || resObj?.status === "denied"
                 const isSkipped = resObj?.status === "skipped"
                 return {
                   ...tc,
                   status: isError
-                    ? "error"
+                    ? ("error" as const)
                     : isRejected
-                      ? "rejected"
+                      ? ("rejected" as const)
                       : isSkipped
-                        ? "skipped"
-                        : "completed",
+                        ? ("skipped" as const)
+                        : ("completed" as const),
                 }
               }
               if (tc.status === "pending" || tc.status === "running") {
+                const isInterrupted = m.status === "interrupted"
+                const isErrorStatus = m.status === "error"
+                const isCompleted = m.status === "complete"
                 return {
                   ...tc,
-                  status: m.status === "interrupted" ? "suspended" : "completed",
+                  status: isInterrupted
+                    ? ("suspended" as const)
+                    : isErrorStatus
+                      ? ("error" as const)
+                      : isCompleted
+                        ? ("completed" as const)
+                        : ("error" as const),
+                  ...(isErrorStatus && !tc.errorText
+                    ? { errorText: "Turn failed before tool resolution." }
+                    : {}),
                 }
               }
               return tc
@@ -1150,7 +1209,9 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
                   curr = parent?.retryOf
                 }
               }
-              normalizedTools = normalizedTools.filter((tc) => !supersededIds.has(tc.id))
+              normalizedTools = normalizedTools.filter(
+                (tc) => !supersededIds.has(tc.id)
+              )
             }
 
             return {
@@ -1158,7 +1219,8 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
               role: m.role,
               content: text,
               thinking: thinking || undefined,
-              toolCalls: normalizedTools.length > 0 ? normalizedTools : undefined,
+              toolCalls:
+                normalizedTools.length > 0 ? normalizedTools : undefined,
             }
           })
 

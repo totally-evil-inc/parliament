@@ -230,7 +230,7 @@ export class ToolDispatcher {
     if (!catalogEntry) {
       const errorMessage = `Tool '${name}' is not recognized in the system catalog.`
       logger.warn(
-        { tool: name, rawArgs: args },
+        { tool: name },
         `[Agent Tool] Unrecognized tool called: '${name}'`
       )
       logWideEvent({
@@ -242,7 +242,7 @@ export class ToolDispatcher {
           code: "tool_not_found",
           message: errorMessage,
         },
-        metadata: { tool: name, rawArgs: args },
+        metadata: { tool: name },
       })
       return {
         result: `Tool error: ${errorMessage} Available tools: ${Object.keys(TOOL_CATALOG).join(", ")}`,
@@ -338,7 +338,7 @@ export class ToolDispatcher {
 
     const startTime = Date.now()
     logger.info(
-      { tool: name, args: parseResult.data },
+      { tool: name },
       `[Agent Tool] Executing tool '${name}'`
     )
 

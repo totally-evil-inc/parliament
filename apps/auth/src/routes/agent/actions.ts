@@ -226,10 +226,13 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
           durationMs: Date.now() - startTime,
           organizationId: ctx.organizationId,
           userId: ctx.userId,
+          error: {
+            code: "execution_failed",
+            message: "Tool execution failed during action resolution",
+          },
           metadata: {
             approvalId: targetApprovalId,
             toolName: updatedRow.toolName,
-            error: String(exec.result),
           },
         })
 
@@ -237,11 +240,15 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
           id: targetApprovalId,
           status: "error",
           toolName: updatedRow.toolName,
-          result: { error: String(exec.result) },
+          result: {
+            error:
+              "The approved action could not be completed due to an execution error.",
+          },
           isError: true,
           error: {
             code: "execution_failed",
-            message: String(exec.result),
+            message:
+              "The approved action could not be completed due to an execution error.",
           },
         })
       }
@@ -263,13 +270,17 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
       toolName: updatedRow.toolName,
       result: executionResult,
       isError,
-    }).catch((err) => {
+    }).catch(() => {
       logWideEvent({
         event: "agent.action.resolution_persist_failed",
         outcome: "failure",
         organizationId: ctx.organizationId,
         userId: ctx.userId,
-        metadata: { approvalId: targetApprovalId, error: String(err) },
+        error: {
+          code: "persist_failed",
+          message: "Failed to persist approval resolution to message history",
+        },
+        metadata: { approvalId: targetApprovalId },
       })
     })
 

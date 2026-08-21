@@ -60,26 +60,7 @@ export function useConversations() {
         const raw = await res.json()
         const parsed = conversationListResponseSchema.safeParse(raw)
         if (!parsed.success) {
-          console.error(
-            "Conversation list validation warning:",
-            parsed.error.flatten()
-          )
-          // Graceful fallback if shape is slightly variant
-          const rawList = Array.isArray(raw?.conversations)
-            ? raw.conversations
-            : []
-          return {
-            conversations: rawList.map((item: Record<string, unknown>) => ({
-              id: String(item?.id ?? ""),
-              title: String(item?.title ?? "Untitled Conversation"),
-              model: item?.model ? String(item.model) : null,
-              pinned: Boolean(item?.pinned),
-              updatedAt: item?.updatedAt
-                ? String(item.updatedAt)
-                : new Date().toISOString(),
-              messageCount: Number(item?.messageCount ?? 0),
-            })),
-          }
+          throw new Error("Failed to parse conversation list: invalid data shape")
         }
         return parsed.data
       } catch (err) {
@@ -124,11 +105,7 @@ export function conversationDetailQueryOptions(threadId: string) {
         const raw = await res.json()
         const parsed = conversationDetailResponseSchema.safeParse(raw)
         if (!parsed.success) {
-          console.error(
-            "Conversation detail validation warning:",
-            parsed.error.flatten()
-          )
-          return raw as ConversationDetailResponse
+          throw new Error("Failed to parse conversation details: invalid data shape")
         }
         return parsed.data
       } catch (err) {

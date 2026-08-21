@@ -42,6 +42,7 @@ export class AgentEngine {
     const dispatcher = new ToolDispatcher(ctx)
     const activeMessages: ModelMessage[] = [...messages]
     let step = 0
+    const emittedCallIdsInTurn = new Map<string, { attempt: number }>()
 
     while (step < maxSteps) {
       if (abortSignal?.aborted) {
@@ -141,15 +142,48 @@ export class AgentEngine {
               typedChunk.toolCallId ?? typedChunk.id ?? crypto.randomUUID()
             const toolName = typedChunk.toolName ?? ""
             const rawArgs = typedChunk.input ?? typedChunk.args ?? {}
-            let args: Record<string, unknown> = {}
+
+            let parsedArgs: Record<string, unknown> | null = null
             if (typeof rawArgs === "string") {
               try {
-                args = JSON.parse(rawArgs || "{}")
+                const parsed = JSON.parse(rawArgs.trim() || "{}")
+                if (
+                  parsed &&
+                  typeof parsed === "object" &&
+                  !Array.isArray(parsed)
+                ) {
+                  parsedArgs = parsed as Record<string, unknown>
+                }
               } catch {
-                args = {}
+                parsedArgs = null
               }
-            } else if (rawArgs && typeof rawArgs === "object") {
-              args = rawArgs as Record<string, unknown>
+            } else if (
+              rawArgs &&
+              typeof rawArgs === "object" &&
+              !Array.isArray(rawArgs)
+            ) {
+              parsedArgs = rawArgs as Record<string, unknown>
+            }
+
+            if (!parsedArgs) {
+              // Malformed tool input protocol error: emit tool:called and tool:result error immediately
+              yield {
+                type: "tool:called",
+                callId,
+                name: toolName,
+                args: {},
+              }
+              yield {
+                type: "tool:result",
+                callId,
+                name: toolName,
+                result: {
+                  error:
+                    "Protocol error: malformed tool input. Arguments must be a valid JSON object.",
+                },
+                isError: true,
+              }
+              continue
             }
 
             const rawRetryOf =
@@ -159,8 +193,7 @@ export class AgentEngine {
                     "string"
                   ? (typedChunk.providerMetadata as any).retryOf
                   : undefined
-            const retryOf =
-              rawRetryOf && rawRetryOf.trim() ? rawRetryOf.trim() : undefined
+            const trimmedRetryOf = rawRetryOf?.trim()
 
             const rawAttempt =
               typeof typedChunk.attempt === "number"
@@ -169,15 +202,32 @@ export class AgentEngine {
                     "number"
                   ? (typedChunk.providerMetadata as any).attempt
                   : undefined
-            const attempt =
-              rawAttempt && Number.isInteger(rawAttempt) && rawAttempt > 1
-                ? rawAttempt
-                : undefined
+
+            // Validate retry lineage against turn-scoped registry:
+            // 1. retryOf must exist in the current turn
+            // 2. retryOf cannot be self-referential
+            // 3. attempt must be monotonic (> parent attempt)
+            let retryOf: string | undefined
+            let attempt: number | undefined
+            if (trimmedRetryOf && emittedCallIdsInTurn.has(trimmedRetryOf)) {
+              const parent = emittedCallIdsInTurn.get(trimmedRetryOf)!
+              if (
+                trimmedRetryOf !== callId &&
+                rawAttempt &&
+                Number.isInteger(rawAttempt) &&
+                rawAttempt > parent.attempt
+              ) {
+                retryOf = trimmedRetryOf
+                attempt = rawAttempt
+              }
+            }
+
+            emittedCallIdsInTurn.set(callId, { attempt: attempt ?? 1 })
 
             toolCallsToProcess.push({
               id: callId,
               name: toolName,
-              args,
+              args: parsedArgs,
               retryOf,
               attempt,
             })
@@ -185,7 +235,7 @@ export class AgentEngine {
               type: "tool:called",
               callId,
               name: toolName,
-              args,
+              args: parsedArgs,
               ...(retryOf ? { retryOf } : {}),
               ...(attempt ? { attempt } : {}),
             }

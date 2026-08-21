@@ -1,3 +1,4 @@
+import { cn } from "@workspace/ui/lib/utils"
 import type { TaskStatus } from "@workspace/ui/components/task"
 import type React from "react"
 import { memo } from "react"
@@ -89,7 +90,7 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
 
   if (isUser) {
     return (
-      <div className="my-3 flex justify-end">
+      <div className="my-3 flex justify-end [content-visibility:auto] [contain-intrinsic-size:auto_60px]">
         <div className="max-w-[80%] rounded-2xl bg-primary px-4 py-2 font-medium text-primary-foreground text-sm shadow-xs">
           <ChatMarkdown
             content={extractedContent || "Message"}
@@ -109,7 +110,12 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
   )
 
   return (
-    <div className="my-4 flex max-w-full flex-col space-y-2.5">
+    <div
+      className={cn(
+        "my-4 flex max-w-full flex-col space-y-2.5",
+        !isStreaming && "[content-visibility:auto] [contain-intrinsic-size:auto_100px]"
+      )}
+    >
       {/* Agent Avatar & Name Header */}
       <div className="flex items-center gap-2">
         <div className="flex size-6 items-center justify-center rounded-full border border-primary/20 bg-primary/10 font-bold text-[10px] text-primary">

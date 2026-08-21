@@ -447,6 +447,15 @@ describe("AgentEngine FSM & ContextGovernor", () => {
           start(controller) {
             controller.enqueue({
               type: "tool-call",
+              toolCallId: "call-original-failed",
+              toolName: "create_deal",
+              input: JSON.stringify({
+                title: "Original Failed Deal",
+                valueMinorUnits: 50000,
+              }),
+            })
+            controller.enqueue({
+              type: "tool-call",
               toolCallId: "call-retry-explicit",
               toolName: "create_deal",
               input: JSON.stringify({
@@ -491,7 +500,9 @@ describe("AgentEngine FSM & ContextGovernor", () => {
       events.push(ev)
     }
 
-    const toolCalled = events.find((e) => e.type === "tool:called")!
+    const toolCalled = events.find(
+      (e) => e.type === "tool:called" && e.callId === "call-retry-explicit"
+    )!
     expect(toolCalled).toBeDefined()
     expect(toolCalled.callId).toBe("call-retry-explicit")
     expect(toolCalled.retryOf).toBe("call-original-failed")
@@ -563,5 +574,200 @@ describe("AgentEngine FSM & ContextGovernor", () => {
       title: "Deal with fake retry arg",
       valueMinorUnits: 10000,
     })
+  })
+
+  test("AgentEngine rejects malformed tool inputs (invalid JSON, array, primitive) and emits protocol error", async () => {
+    const engine = new AgentEngine({ maxSteps: 1 })
+
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        const stream = new ReadableStream({
+          start(controller) {
+            // Malformed JSON string
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-malformed-json",
+              toolName: "create_deal",
+              input: "{ this is not valid json",
+            })
+            // Array input instead of object
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-array-input",
+              toolName: "create_deal",
+              input: "[1, 2, 3]",
+            })
+            controller.enqueue({
+              type: "finish",
+              finishReason: "tool-calls",
+              usage: { promptTokens: 10, completionTokens: 10 },
+            })
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: [{ role: "user", content: "Test malformed inputs" } as any],
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const toolResults = events.filter((e) => e.type === "tool:result")
+    expect(toolResults).toHaveLength(2)
+
+    // First malformed call
+    expect(toolResults[0].callId).toBe("call-malformed-json")
+    expect(toolResults[0].isError).toBe(true)
+    expect(toolResults[0].result.error).toContain("Protocol error: malformed tool input")
+
+    // Second array call
+    expect(toolResults[1].callId).toBe("call-array-input")
+    expect(toolResults[1].isError).toBe(true)
+    expect(toolResults[1].result.error).toContain("Protocol error: malformed tool input")
+  })
+
+  test("AgentEngine rejects invalid provider retry metadata (unknown parent, self-reference, non-monotonic attempt)", async () => {
+    const engine = new AgentEngine({ maxSteps: 1 })
+
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        const stream = new ReadableStream({
+          start(controller) {
+            // Initial call 1 (attempt 1)
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-valid-1",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Deal 1" }),
+            })
+            // Call with unknown parent
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-invalid-parent",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Deal 2" }),
+              providerMetadata: {
+                retryOf: "nonexistent-call-id",
+                attempt: 2,
+              },
+            })
+            // Call with self-referential cycle
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-cyclic",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Deal 3" }),
+              providerMetadata: {
+                retryOf: "call-cyclic",
+                attempt: 2,
+              },
+            })
+            // Call with non-monotonic attempt (attempt 1 <= parent attempt 1)
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-non-monotonic",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Deal 4" }),
+              providerMetadata: {
+                retryOf: "call-valid-1",
+                attempt: 1,
+              },
+            })
+            // Valid retry (references call-valid-1 with attempt 2 > 1)
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-valid-retry",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Deal 5" }),
+              providerMetadata: {
+                retryOf: "call-valid-1",
+                attempt: 2,
+              },
+            })
+            controller.enqueue({
+              type: "finish",
+              finishReason: "tool-calls",
+              usage: { promptTokens: 10, completionTokens: 10 },
+            })
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: [{ role: "user", content: "Test metadata validation" } as any],
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const called = events.filter((e) => e.type === "tool:called")
+    expect(called).toHaveLength(5)
+
+    // Call 1: valid base call
+    expect(called[0].callId).toBe("call-valid-1")
+    expect(called[0].retryOf).toBeUndefined()
+
+    // Call 2: unknown parent rejected
+    expect(called[1].callId).toBe("call-invalid-parent")
+    expect(called[1].retryOf).toBeUndefined()
+    expect(called[1].attempt).toBeUndefined()
+
+    // Call 3: cyclic self-reference rejected
+    expect(called[2].callId).toBe("call-cyclic")
+    expect(called[2].retryOf).toBeUndefined()
+    expect(called[2].attempt).toBeUndefined()
+
+    // Call 4: non-monotonic attempt (1 <= 1) rejected
+    expect(called[3].callId).toBe("call-non-monotonic")
+    expect(called[3].retryOf).toBeUndefined()
+    expect(called[3].attempt).toBeUndefined()
+
+    // Call 5: valid retry accepted
+    expect(called[4].callId).toBe("call-valid-retry")
+    expect(called[4].retryOf).toBe("call-valid-1")
+    expect(called[4].attempt).toBe(2)
   })
 })

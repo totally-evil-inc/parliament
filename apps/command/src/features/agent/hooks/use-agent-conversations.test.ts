@@ -87,4 +87,26 @@ describe("use-agent-conversations schemas", () => {
     expect(parsed.messages).toHaveLength(1)
     expect(parsed.messages[0].role).toBe("user")
   })
+
+  it("fails validation safely for malformed conversation detail response missing required fields", () => {
+    const malformed = {
+      conversation: {
+        // missing id, title
+        updatedAt: "invalid",
+      },
+      messages: "not-an-array",
+    }
+
+    const parsed = conversationDetailResponseSchema.safeParse(malformed)
+    expect(parsed.success).toBe(false)
+  })
+
+  it("fails validation safely for malformed conversation list response", () => {
+    const malformed = {
+      conversations: "invalid-string",
+    }
+
+    const parsed = conversationListResponseSchema.safeParse(malformed)
+    expect(parsed.success).toBe(false)
+  })
 })
