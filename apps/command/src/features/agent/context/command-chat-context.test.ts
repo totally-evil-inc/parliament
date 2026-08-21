@@ -261,6 +261,10 @@ describe("command-chat-context event batch application", () => {
         type: "action:approval_required",
         approvalId: "appr-123",
         callId: "send-1",
+        toolName: "send_proposal",
+        args: { proposalId: "p-123" },
+        summary: "Send proposal to client",
+        expiresAt: "2026-08-22T00:00:00Z",
       },
       {
         type: "turn:suspended",
