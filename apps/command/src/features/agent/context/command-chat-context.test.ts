@@ -438,6 +438,57 @@ describe("command-chat-context event batch application", () => {
     )
   })
 
+  test("reconcileTerminalTurn reconciles unexpected EOF without terminal event as error", () => {
+    const messages: ChatMessage[] = [
+      {
+        id: "asst-eof",
+        role: "assistant",
+        content: "Working on it...",
+        toolCalls: [
+          {
+            id: "call-in-flight",
+            name: "send_email",
+            status: "running",
+          },
+          {
+            id: "call-needs-approval",
+            name: "delete_database",
+            status: "pending_approval",
+            needsApproval: true,
+            approvalId: "appr-xyz",
+          },
+          {
+            id: "call-already-done",
+            name: "fetch_user",
+            status: "completed",
+            result: { id: "u-1" },
+          },
+        ],
+      },
+    ]
+
+    const reconciled = reconcileTerminalTurn(messages, "asst-eof", "error", {
+      code: "stream_interrupted",
+      message: "Stream closed unexpectedly before turn completed",
+    })
+
+    const asst = reconciled.find((m) => m.id === "asst-eof")!
+    // In-flight tool must become error, NOT completed
+    expect(asst.toolCalls![0].status).toBe("error")
+    expect(asst.toolCalls![0].errorText).toBe(
+      "Stream closed unexpectedly before turn completed"
+    )
+    // Pending approval must remain pending_approval
+    expect(asst.toolCalls![1].status).toBe("pending_approval")
+    // Completed tool remains completed
+    expect(asst.toolCalls![2].status).toBe("completed")
+    // Message has turn error
+    expect(asst.error).toEqual({
+      code: "stream_interrupted",
+      message: "Stream closed unexpectedly before turn completed",
+    })
+  })
+
   test("parseSseTrailingBuffer flushes valid event lines at stream EOF", () => {
     const trailingBuffer =
       'event: turn:completed\ndata: {"type":"turn:completed","totalSteps":2}'

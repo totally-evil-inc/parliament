@@ -638,10 +638,15 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
         }
 
         // If the stream completed without an explicit terminal event (e.g. abrupt EOF),
-        // perform terminal reconciliation defensively so no tool is left stuck in running/pending.
+        // reconcile as error outcome so running tools do not falsely display as completed.
         if (!receivedTerminalEvent) {
+          const errPayload: AgentChatError = {
+            code: "stream_interrupted",
+            message: "Stream closed unexpectedly before turn completed",
+          }
+          setChatError(errPayload)
           setMessages((prev) =>
-            reconcileTerminalTurn(prev, assistantMsgId, "completed")
+            reconcileTerminalTurn(prev, assistantMsgId, "error", errPayload)
           )
         }
 
