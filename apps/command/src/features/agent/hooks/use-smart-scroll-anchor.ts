@@ -34,8 +34,11 @@ export function useSmartScrollAnchor(
   const isAtBottomRef = useRef(true)
   const [showScrollBottom, setShowScrollBottom] = useState(false)
 
+  const observedContainerRef = useRef<HTMLElement | null>(null)
+  const observerRef = useRef<ResizeObserver | null>(null)
   const scrollRafIdRef = useRef<number | null>(null)
   const resizeRafIdRef = useRef<number | null>(null)
+  const streamFollowRafIdRef = useRef<number | null>(null)
 
   const getScrollContainer = useCallback((): HTMLElement | null => {
     if (!viewportRef.current) return null
@@ -95,10 +98,13 @@ export function useSmartScrollAnchor(
     [bottomThreshold, getScrollContainer]
   )
 
-  // Follow content growth via ResizeObserver only when user is already pinned to bottom
-  useEffect(() => {
+  // Stable attachment function: connects ResizeObserver once per container instance
+  const ensureObserverAttached = useCallback(() => {
     const container = getScrollContainer()
     if (!container || typeof ResizeObserver === "undefined") return
+    if (observedContainerRef.current === container && observerRef.current) return
+
+    observerRef.current?.disconnect()
 
     const observer = new ResizeObserver(() => {
       if (!isAtBottomRef.current) return
@@ -117,7 +123,6 @@ export function useSmartScrollAnchor(
     })
 
     observer.observe(container)
-    // Also observe inner content wrappers
     const firstChild = container.firstElementChild
     if (firstChild) {
       observer.observe(firstChild)
@@ -127,39 +132,52 @@ export function useSmartScrollAnchor(
       }
     }
 
-    // Follow trigger deps if user is pinned to bottom
-    if (isAtBottomRef.current) {
-      if (resizeRafIdRef.current === null) {
-        resizeRafIdRef.current = requestAnimationFrame(() => {
-          resizeRafIdRef.current = null
-          if (!isAtBottomRef.current) return
+    observerRef.current = observer
+    observedContainerRef.current = container
+  }, [getScrollContainer])
 
-          if (bottomRef.current) {
-            bottomRef.current.scrollIntoView({ behavior: "auto", block: "end" })
-          } else {
-            container.scrollTop = container.scrollHeight
-          }
-        })
+  // Attach observer on mount or container change
+  useEffect(() => {
+    ensureObserverAttached()
+  }, [ensureObserverAttached])
+
+  // Follow trigger deps (e.g. streaming tokens) without tearing down the ResizeObserver
+  useEffect(() => {
+    ensureObserverAttached()
+
+    if (!isAtBottomRef.current) return
+
+    if (streamFollowRafIdRef.current !== null) return
+    streamFollowRafIdRef.current = requestAnimationFrame(() => {
+      streamFollowRafIdRef.current = null
+      if (!isAtBottomRef.current) return
+
+      if (bottomRef.current) {
+        bottomRef.current.scrollIntoView({ behavior: "auto", block: "end" })
+      } else {
+        const container = getScrollContainer()
+        if (container) container.scrollTop = container.scrollHeight
       }
-    }
+    })
+  }, [ensureObserverAttached, getScrollContainer, ...triggerDeps])
 
+  // Teardown observer and timers strictly on unmount
+  useEffect(() => {
     return () => {
-      observer.disconnect()
+      observerRef.current?.disconnect()
+      observerRef.current = null
+      observedContainerRef.current = null
+      if (scrollRafIdRef.current !== null) {
+        cancelAnimationFrame(scrollRafIdRef.current)
+        scrollRafIdRef.current = null
+      }
       if (resizeRafIdRef.current !== null) {
         cancelAnimationFrame(resizeRafIdRef.current)
         resizeRafIdRef.current = null
       }
-    }
-  }, [getScrollContainer, ...triggerDeps])
-
-  // Cleanup all RAF timers on unmount
-  useEffect(() => {
-    return () => {
-      if (scrollRafIdRef.current !== null) {
-        cancelAnimationFrame(scrollRafIdRef.current)
-      }
-      if (resizeRafIdRef.current !== null) {
-        cancelAnimationFrame(resizeRafIdRef.current)
+      if (streamFollowRafIdRef.current !== null) {
+        cancelAnimationFrame(streamFollowRafIdRef.current)
+        streamFollowRafIdRef.current = null
       }
     }
   }, [])

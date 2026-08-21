@@ -21,6 +21,30 @@ describe("ReasoningCard Component", () => {
     expect(html).toContain("reasoning-trigger")
   })
 
+  test("renders active streaming shell when isStreaming is true but thinking text is initially empty", () => {
+    const html = renderToString(
+      <ReasoningCard thinking="" isStreaming={true} />
+    )
+
+    expect(html).toContain("Thinking…")
+    expect(html).toContain("reasoning-trigger")
+    // Nested scroll area is not yet rendered when thinking is empty
+    expect(html).not.toContain("whitespace-pre-wrap")
+  })
+
+  test("renders thinking scroll area once thinking text arrives during streaming", () => {
+    const html = renderToString(
+      <ReasoningCard
+        thinking="Step 1: Reading document metadata"
+        isStreaming={true}
+      />
+    )
+
+    expect(html).toContain("Thinking…")
+    expect(html).toContain("Step 1: Reading document metadata")
+    expect(html).toContain("select-text")
+  })
+
   test("renders completed thought with duration label", () => {
     const html = renderToString(
       <ReasoningCard

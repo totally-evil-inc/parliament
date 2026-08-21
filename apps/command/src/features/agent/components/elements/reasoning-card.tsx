@@ -57,11 +57,24 @@ export const ReasoningCard: React.FC<ReasoningCardProps> = ({
     }
   }, [isStreaming, thinking])
 
+  const observedViewportRef = useRef<HTMLDivElement | null>(null)
+  const observerRef = useRef<ResizeObserver | null>(null)
+
   // ResizeObserver to follow geometry / container size changes while live streaming
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Boolean(thinking) triggers observer attachment when viewport mounts
   useEffect(() => {
-    if (!isStreaming || typeof ResizeObserver === "undefined") return
+    if (!isStreaming || typeof ResizeObserver === "undefined") {
+      observerRef.current?.disconnect()
+      observerRef.current = null
+      observedViewportRef.current = null
+      return
+    }
+
     const el = viewportRef.current
     if (!el) return
+    if (observedViewportRef.current === el && observerRef.current) return
+
+    observerRef.current?.disconnect()
 
     const observer = new ResizeObserver(() => {
       if (!isNearBottomRef.current || !viewportRef.current) return
@@ -80,17 +93,15 @@ export const ReasoningCard: React.FC<ReasoningCardProps> = ({
       observer.observe(el.firstElementChild)
     }
 
-    return () => {
-      observer.disconnect()
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current)
-        rafIdRef.current = null
-      }
-    }
-  }, [isStreaming])
+    observerRef.current = observer
+    observedViewportRef.current = el
+  }, [isStreaming, Boolean(thinking)])
 
   useEffect(() => {
     return () => {
+      observerRef.current?.disconnect()
+      observerRef.current = null
+      observedViewportRef.current = null
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current)
         rafIdRef.current = null
