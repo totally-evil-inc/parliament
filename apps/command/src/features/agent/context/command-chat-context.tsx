@@ -217,12 +217,14 @@ export function reconcileTerminalTurn(
       : msg.toolCalls
 
     const nextError = errorPayload ? errorPayload : msg.error
+    const shouldMarkTerminal =
+      terminalState === "completed" || terminalState === "error"
 
     return {
       ...msg,
       toolCalls,
       ...(nextError ? { error: nextError } : {}),
-      isTerminal: true,
+      isTerminal: shouldMarkTerminal,
     }
   })
 }
@@ -378,7 +380,6 @@ export function applyEventsToMessages(
             }
             return tc
           })
-          isTerminal = true
           break
 
         case "turn:completed":
@@ -571,6 +572,14 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
       const abortController = new AbortController()
       abortControllerRef.current = abortController
       const executedTools = new Set<string>()
+
+      if (isResume) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId ? { ...msg, isTerminal: false } : msg
+          )
+        )
+      }
 
       try {
         const res = await fetch(`${AUTH_SERVER_URL}/api/agent/chat`, {

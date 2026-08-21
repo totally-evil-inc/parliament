@@ -244,6 +244,84 @@ describe("command-chat-context event batch application", () => {
     expect(asstLate.content).toBe("Here is your proposal summary.")
   })
 
+  test("allows turn resumption after action approval suspension without being blocked by terminal latch", () => {
+    // 1. Initial turn: tool requires approval, then turn:suspended arrives
+    const turn1Events: AgentEvent[] = [
+      {
+        type: "content:delta",
+        text: "Please review the proposal send action.",
+      },
+      {
+        type: "tool:called",
+        callId: "send-1",
+        name: "send_proposal",
+        args: { proposalId: "p-123" },
+      },
+      {
+        type: "action:approval_required",
+        approvalId: "appr-123",
+        callId: "send-1",
+      },
+      {
+        type: "turn:suspended",
+        reason: "awaiting_approval",
+        approvalId: "appr-123",
+      },
+    ]
+
+    const suspendedMessages = applyEventsToMessages(
+      initialMessages,
+      baseAssistantMsgId,
+      turn1Events
+    )
+
+    const asstSuspended = suspendedMessages.find(
+      (m) => m.id === baseAssistantMsgId
+    )!
+    expect(asstSuspended.toolCalls![0].status).toBe("pending_approval")
+    expect(asstSuspended.isTerminal).toBeFalsy()
+
+    // 2. User approves action
+    const approvedMessages = suspendedMessages.map((msg) => {
+      if (msg.id !== baseAssistantMsgId) return msg
+      return {
+        ...msg,
+        toolCalls: msg.toolCalls?.map((tc) =>
+          tc.id === "send-1"
+            ? { ...tc, status: "approved" as const, needsApproval: false }
+            : tc
+        ),
+      }
+    })
+
+    // 3. Resume stream arrives with subsequent content and turn:completed
+    const resumeEvents: AgentEvent[] = [
+      {
+        type: "content:delta",
+        text: " Proposal successfully sent to client.",
+      },
+      {
+        type: "turn:completed",
+        totalSteps: 2,
+      },
+    ]
+
+    const resumedMessages = applyEventsToMessages(
+      approvedMessages,
+      baseAssistantMsgId,
+      resumeEvents
+    )
+
+    const asstCompleted = resumedMessages.find(
+      (m) => m.id === baseAssistantMsgId
+    )!
+    expect(asstCompleted.content).toBe(
+      "Please review the proposal send action. Proposal successfully sent to client."
+    )
+    expect(asstCompleted.toolCalls![0].status).toBe("approved")
+    expect(asstCompleted.isTerminal).toBe(true)
+  })
+
   test("collapses superseded failed tool attempts when a retry succeeds", () => {
     // Attempt 1: create_deal fails
     const step1Events: AgentEvent[] = [
