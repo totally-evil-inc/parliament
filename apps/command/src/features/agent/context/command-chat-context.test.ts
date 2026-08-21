@@ -438,6 +438,50 @@ describe("command-chat-context event batch application", () => {
     ])
   })
 
+  test("preserves multiple concurrent calls to the same tool without cross-conflating execution status", () => {
+    const events: AgentEvent[] = [
+      {
+        type: "tool:called",
+        callId: "email-1",
+        name: "send_email",
+        args: { to: "alice@example.com" },
+      },
+      {
+        type: "tool:called",
+        callId: "email-2",
+        name: "send_email",
+        args: { to: "bob@example.com" },
+      },
+      // Only email-2 receives executing event
+      {
+        type: "tool:executing",
+        callId: "email-2",
+        name: "send_email",
+      },
+      // email-1 receives result
+      {
+        type: "tool:result",
+        callId: "email-1",
+        name: "send_email",
+        result: { status: "sent" },
+      },
+    ]
+
+    const updated = applyEventsToMessages(
+      initialMessages,
+      baseAssistantMsgId,
+      events
+    )
+    const asst = updated.find((m) => m.id === baseAssistantMsgId)!
+    expect(asst.toolCalls).toHaveLength(2)
+
+    const call1 = asst.toolCalls!.find((t) => t.id === "email-1")!
+    const call2 = asst.toolCalls!.find((t) => t.id === "email-2")!
+
+    expect(call1.status).toBe("completed")
+    expect(call2.status).toBe("running")
+  })
+
   test("reconcileTerminalTurn reconciles unresolved tools cleanly", () => {
     const messages: ChatMessage[] = [
       {

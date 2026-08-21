@@ -358,7 +358,7 @@ export function applyEventsToMessages(
 
         case "tool:executing":
           toolCalls = toolCalls.map((tc) => {
-            if (tc.id === event.callId || tc.name === event.name) {
+            if (tc.id === event.callId) {
               return {
                 ...tc,
                 status: "running",

@@ -353,16 +353,13 @@ export class AgentEngine {
             entityId: conversationId,
             error: {
               code: "tool_execution_error",
-              message:
-                typeof rawResult === "string"
-                  ? rawResult
-                  : JSON.stringify(rawResult),
+              message: `Tool execution failed for '${call.name}'`,
             },
             metadata: {
               step,
               tool: call.name,
               callId: call.id,
-              args: call.args,
+              attempt: call.attempt ?? 1,
             },
           })
         }
@@ -392,11 +389,15 @@ export class AgentEngine {
             : {}),
         }
 
-        lastToolCallsByName.set(call.name, {
-          callId: call.id,
-          isError,
-          attempt: call.attempt ?? 1,
-        })
+        if (isError) {
+          lastToolCallsByName.set(call.name, {
+            callId: call.id,
+            isError,
+            attempt: call.attempt ?? 1,
+          })
+        } else {
+          lastToolCallsByName.delete(call.name)
+        }
 
         toolResults.push({
           callId: call.id,
