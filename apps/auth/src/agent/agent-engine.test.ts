@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test"
 import { db, eq, schema } from "@workspace/database"
 import { app } from "../index"
+import { AgentEngine } from "./agent-engine"
 import { ContextGovernor } from "./context-governor"
 import type { AgentContext } from "./tool-ctx"
 import { ToolDispatcher } from "./tool-dispatcher"
@@ -332,5 +333,168 @@ describe("AgentEngine FSM & ContextGovernor", () => {
     )
     expect(updated.isError).toBe(false)
     expect((updated.result as any).status).toBe("inactive")
+  })
+
+  test("AgentEngine strictly omits retryOf when explicit linkage is absent and preserves explicit retryOf", async () => {
+    const engine = new AgentEngine({ maxSteps: 2 })
+
+    let stepCount = 0
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        stepCount++
+        const currentStep = stepCount
+        const stream = new ReadableStream({
+          start(controller) {
+            if (currentStep === 1) {
+              controller.enqueue({
+                type: "tool-call",
+                toolCallId: "call-1",
+                toolName: "create_deal",
+                args: JSON.stringify({
+                  title: "Deal 1",
+                  valueMinorUnits: 10000,
+                }),
+              })
+              controller.enqueue({
+                type: "finish",
+                finishReason: "tool-calls",
+                usage: { promptTokens: 10, completionTokens: 10 },
+              })
+            } else if (currentStep === 2) {
+              controller.enqueue({
+                type: "tool-call",
+                toolCallId: "call-2",
+                toolName: "create_deal",
+                args: JSON.stringify({
+                  title: "Unrelated Deal 2",
+                  valueMinorUnits: 20000,
+                }),
+              })
+              controller.enqueue({
+                type: "finish",
+                finishReason: "tool-calls",
+                usage: { promptTokens: 10, completionTokens: 10 },
+              })
+            } else {
+              controller.enqueue({
+                type: "text-delta",
+                textDelta: "Done.",
+              })
+              controller.enqueue({
+                type: "finish",
+                finishReason: "stop",
+                usage: { promptTokens: 10, completionTokens: 10 },
+              })
+            }
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: [{ role: "user", content: "Create two deals" } as any],
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const toolCalledEvents = events.filter((e) => e.type === "tool:called")
+    expect(toolCalledEvents.length).toBeGreaterThanOrEqual(1)
+
+    // Call 1
+    expect(toolCalledEvents[0].callId).toBe("call-1")
+    expect(toolCalledEvents[0].retryOf).toBeUndefined()
+    expect(toolCalledEvents[0].attempt).toBeUndefined()
+
+    if (toolCalledEvents.length > 1) {
+      // Call 2 must NOT receive retryOf or attempt from call 1 (no implicit retry inference)
+      expect(toolCalledEvents[1].callId).toBe("call-2")
+      expect(toolCalledEvents[1].retryOf).toBeUndefined()
+      expect(toolCalledEvents[1].attempt).toBeUndefined()
+    }
+  })
+
+  test("AgentEngine preserves explicit retryOf and attempt when provided by provider/runtime", async () => {
+    const engine = new AgentEngine({ maxSteps: 1 })
+
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-retry-explicit",
+              toolName: "create_deal",
+              args: JSON.stringify({
+                title: "Retried Deal",
+                valueMinorUnits: 50000,
+              }),
+              providerMetadata: {
+                retryOf: "call-original-failed",
+                attempt: 2,
+              },
+            })
+            controller.enqueue({
+              type: "finish",
+              finishReason: "tool-calls",
+              usage: { promptTokens: 10, completionTokens: 10 },
+            })
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: [{ role: "user", content: "Retry create deal" } as any],
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const toolCalled = events.find((e) => e.type === "tool:called")!
+    expect(toolCalled).toBeDefined()
+    expect(toolCalled.callId).toBe("call-retry-explicit")
+    expect(toolCalled.retryOf).toBe("call-original-failed")
+    expect(toolCalled.attempt).toBe(2)
   })
 })

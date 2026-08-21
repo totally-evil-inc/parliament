@@ -42,10 +42,6 @@ export class AgentEngine {
     const dispatcher = new ToolDispatcher(ctx)
     const activeMessages: ModelMessage[] = [...messages]
     let step = 0
-    const unresolvedFailedCalls = new Map<
-      string,
-      { callId: string; attempt: number; failedAtStep: number }
-    >()
 
     while (step < maxSteps) {
       if (abortSignal?.aborted) {
@@ -59,13 +55,6 @@ export class AgentEngine {
       }
 
       step++
-
-      // Expire any unresolved failures that were not retried in the immediate subsequent step
-      for (const [name, entry] of unresolvedFailedCalls.entries()) {
-        if (entry.failedAtStep < step - 1) {
-          unresolvedFailedCalls.delete(name)
-        }
-      }
 
       const systemPrompt = buildPrompt(ctx)
       const tools = dispatcher.getToolsForModel()
@@ -156,23 +145,25 @@ export class AgentEngine {
               unknown
             >
 
-            const priorFailure = unresolvedFailedCalls.get(toolName)
-            const isImmediateRetry = Boolean(
-              priorFailure && priorFailure.failedAtStep === step - 1
-            )
-
             const retryOf =
               typeof typedChunk.retryOf === "string"
                 ? typedChunk.retryOf
-                : isImmediateRetry
-                  ? priorFailure!.callId
-                  : undefined
+                : typeof (typedChunk.providerMetadata as any)?.retryOf === "string"
+                  ? (typedChunk.providerMetadata as any).retryOf
+                  : typeof (args as any)?.retryOf === "string"
+                    ? (args as any).retryOf
+                    : undefined
             const attempt =
               typeof typedChunk.attempt === "number" && typedChunk.attempt > 1
                 ? typedChunk.attempt
-                : isImmediateRetry
-                  ? (priorFailure!.attempt || 1) + 1
-                  : undefined
+                : typeof (typedChunk.providerMetadata as any)?.attempt ===
+                      "number" &&
+                    (typedChunk.providerMetadata as any).attempt > 1
+                  ? (typedChunk.providerMetadata as any).attempt
+                  : typeof (args as any)?.attempt === "number" &&
+                      (args as any).attempt > 1
+                    ? (args as any).attempt
+                    : undefined
 
             toolCallsToProcess.push({
               id: callId,
@@ -408,16 +399,6 @@ export class AgentEngine {
           ...(call.attempt && call.attempt > 1
             ? { attempt: call.attempt }
             : {}),
-        }
-
-        if (isError) {
-          unresolvedFailedCalls.set(call.name, {
-            callId: call.id,
-            attempt: call.attempt ?? 1,
-            failedAtStep: step,
-          })
-        } else {
-          unresolvedFailedCalls.delete(call.name)
         }
 
         toolResults.push({
