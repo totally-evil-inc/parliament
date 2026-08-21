@@ -781,7 +781,7 @@ export function applyEventsToMessages(
   })
 }
 
-function buildPayloadMessages(messages: ChatMessage[]): Array<{
+export function buildPayloadMessages(messages: ChatMessage[]): Array<{
   role: string
   content?: string | null
   parts?: unknown[]
@@ -803,6 +803,8 @@ function buildPayloadMessages(messages: ChatMessage[]): Array<{
             toolCallId: tc.id,
             toolName: tc.name,
             args: tc.args,
+            ...(tc.retryOf ? { retryOf: tc.retryOf } : {}),
+            ...(tc.attempt !== undefined ? { attempt: tc.attempt } : {}),
           })
           parts.push({
             type: "tool-result",
@@ -810,6 +812,8 @@ function buildPayloadMessages(messages: ChatMessage[]): Array<{
             toolName: tc.name,
             result: tc.result ?? {},
             isError: isErr,
+            ...(tc.retryOf ? { retryOf: tc.retryOf } : {}),
+            ...(tc.attempt !== undefined ? { attempt: tc.attempt } : {}),
           })
         }
       }

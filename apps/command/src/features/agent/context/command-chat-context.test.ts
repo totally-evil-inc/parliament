@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import type { AgentEvent } from "@workspace/agent"
 import {
   applyEventsToMessages,
+  buildPayloadMessages,
   type ChatMessage,
   normalizePersistedMessages,
   parseSseChunk,
@@ -1106,6 +1107,58 @@ describe("command-chat-context event batch application", () => {
     expect(activeMessages).toHaveLength(1)
     expect(activeMessages[0].content).toBe("Message from Thread B")
     expect(isHydrating).toBe(false)
+  })
+
+  test("payload builder preserves retry lineage metadata for server-side extractRetryLineage seeding", () => {
+    // A persisted failed-then-retried turn is loaded from history, then the
+    // user resumes. The surviving tool call carries retryOf/attempt lineage.
+    const messagesWithRetryLineage: ChatMessage[] = [
+      {
+        id: "asst-lineage",
+        role: "assistant",
+        content: "Retried and succeeded.",
+        toolCalls: [
+          {
+            id: "call-retry-success",
+            name: "create_deal",
+            args: { name: "Alpha Corp" },
+            status: "completed",
+            result: { dealId: "deal-101" },
+            retryOf: "call-attempt-1",
+            attempt: 2,
+          },
+          {
+            id: "call-no-lineage",
+            name: "list_customers",
+            args: {},
+            status: "completed",
+            result: [],
+          },
+        ],
+      },
+    ]
+
+    const payload = buildPayloadMessages(messagesWithRetryLineage)
+    const parts = payload[0].parts as Array<Record<string, unknown>>
+
+    const retriedCall = parts.find(
+      (p) => p.type === "tool-call" && p.toolCallId === "call-retry-success"
+    )!
+    expect(retriedCall.retryOf).toBe("call-attempt-1")
+    expect(retriedCall.attempt).toBe(2)
+
+    const retriedResult = parts.find(
+      (p) => p.type === "tool-result" && p.toolCallId === "call-retry-success"
+    )!
+    expect(retriedResult.retryOf).toBe("call-attempt-1")
+    expect(retriedResult.attempt).toBe(2)
+
+    // Tools without lineage must not gain fabricated metadata (compatibility)
+    const plainCall = parts.find(
+      (p) => p.type === "tool-call" && p.toolCallId === "call-no-lineage"
+    )!
+    expect("retryOf" in plainCall).toBe(false)
+    expect("attempt" in plainCall).toBe(false)
   })
 
   test("resetNewChat immediately invalidates in-flight thread hydration", async () => {
