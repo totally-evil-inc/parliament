@@ -164,4 +164,3 @@ describe("MessageBubble Component", () => {
     expect(suspendedHtml).not.toContain("Running")
   })
 })
-

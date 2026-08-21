@@ -67,30 +67,33 @@ export function useSmartScrollAnchor(
     })
   }, [getScrollContainer])
 
-  const scrollToBottom = useCallback((smooth = true) => {
-    isAtBottomRef.current = true
-    setShowScrollBottom(false)
+  const scrollToBottom = useCallback(
+    (smooth = true) => {
+      isAtBottomRef.current = true
+      setShowScrollBottom(false)
 
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({
-        behavior: smooth ? "smooth" : "auto",
-        block: "end",
-      })
-      return
-    }
-
-    const container = getScrollContainer()
-    if (container) {
-      if (smooth) {
-        container.scrollTo({
-          top: container.scrollHeight,
-          behavior: "smooth",
+      if (bottomRef.current) {
+        bottomRef.current.scrollIntoView({
+          behavior: smooth ? "smooth" : "auto",
+          block: "end",
         })
-      } else {
-        container.scrollTop = container.scrollHeight
+        return
       }
-    }
-  }, [getScrollContainer])
+
+      const container = getScrollContainer()
+      if (container) {
+        if (smooth) {
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: "smooth",
+          })
+        } else {
+          container.scrollTop = container.scrollHeight
+        }
+      }
+    },
+    [getScrollContainer]
+  )
 
   const handleScroll = useCallback(
     (e?: React.UIEvent<HTMLElement>) => {
@@ -119,7 +122,8 @@ export function useSmartScrollAnchor(
   const ensureObserverAttached = useCallback(() => {
     const container = getScrollContainer()
     if (!container || typeof ResizeObserver === "undefined") return
-    if (observedContainerRef.current === container && observerRef.current) return
+    if (observedContainerRef.current === container && observerRef.current)
+      return
 
     observerRef.current?.disconnect()
 

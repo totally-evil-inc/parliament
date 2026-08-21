@@ -337,10 +337,7 @@ export class ToolDispatcher {
     }
 
     const startTime = Date.now()
-    logger.info(
-      { tool: name },
-      `[Agent Tool] Executing tool '${name}'`
-    )
+    logger.info({ tool: name }, `[Agent Tool] Executing tool '${name}'`)
 
     let timeoutHandle: ReturnType<typeof setTimeout> | undefined
     let timedOut = false

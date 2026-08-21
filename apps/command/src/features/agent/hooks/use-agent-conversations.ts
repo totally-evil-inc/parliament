@@ -60,7 +60,9 @@ export function useConversations() {
         const raw = await res.json()
         const parsed = conversationListResponseSchema.safeParse(raw)
         if (!parsed.success) {
-          throw new Error("Failed to parse conversation list: invalid data shape")
+          throw new Error(
+            "Failed to parse conversation list: invalid data shape"
+          )
         }
         return parsed.data
       } catch (err) {
@@ -105,7 +107,9 @@ export function conversationDetailQueryOptions(threadId: string) {
         const raw = await res.json()
         const parsed = conversationDetailResponseSchema.safeParse(raw)
         if (!parsed.success) {
-          throw new Error("Failed to parse conversation details: invalid data shape")
+          throw new Error(
+            "Failed to parse conversation details: invalid data shape"
+          )
         }
         return parsed.data
       } catch (err) {

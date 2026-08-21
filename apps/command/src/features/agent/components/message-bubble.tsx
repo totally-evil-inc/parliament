@@ -113,7 +113,8 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
     <div
       className={cn(
         "my-4 flex max-w-full flex-col space-y-2.5",
-        !isStreaming && "[content-visibility:auto] [contain-intrinsic-size:auto_100px]"
+        !isStreaming &&
+          "[content-visibility:auto] [contain-intrinsic-size:auto_100px]"
       )}
     >
       {/* Agent Avatar & Name Header */}

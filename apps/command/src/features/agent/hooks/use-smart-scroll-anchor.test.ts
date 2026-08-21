@@ -61,7 +61,10 @@ describe("useSmartScrollAnchor hook", () => {
       let currentObserver: any = null
 
       const attachObserver = (container: any) => {
-        if (!container || typeof (globalThis as any).ResizeObserver === "undefined")
+        if (
+          !container ||
+          typeof (globalThis as any).ResizeObserver === "undefined"
+        )
           return
         if (observedContainer === container && currentObserver) return
 
@@ -96,4 +99,3 @@ describe("useSmartScrollAnchor hook", () => {
     }
   })
 })
-

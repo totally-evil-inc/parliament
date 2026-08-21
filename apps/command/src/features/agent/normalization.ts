@@ -459,10 +459,8 @@ export function normalizeAssistantMessage(
             : p.state === "output-error"
               ? extractToolErrorText(p.errorText ?? p.output ?? p.result)
               : undefined,
-        retryOf:
-          typeof p.retryOf === "string" ? p.retryOf : existing?.retryOf,
-        attempt:
-          typeof p.attempt === "number" ? p.attempt : existing?.attempt,
+        retryOf: typeof p.retryOf === "string" ? p.retryOf : existing?.retryOf,
+        attempt: typeof p.attempt === "number" ? p.attempt : existing?.attempt,
       })
     }
 
@@ -502,10 +500,8 @@ export function normalizeAssistantMessage(
               p.errorText ?? p.error ?? p.content ?? p.output ?? p.result
             )
           : undefined,
-        retryOf:
-          typeof p.retryOf === "string" ? p.retryOf : current.retryOf,
-        attempt:
-          typeof p.attempt === "number" ? p.attempt : current.attempt,
+        retryOf: typeof p.retryOf === "string" ? p.retryOf : current.retryOf,
+        attempt: typeof p.attempt === "number" ? p.attempt : current.attempt,
       })
     }
   }
