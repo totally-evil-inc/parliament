@@ -140,30 +140,39 @@ export class AgentEngine {
             const callId =
               typedChunk.toolCallId ?? typedChunk.id ?? crypto.randomUUID()
             const toolName = typedChunk.toolName ?? ""
-            const args = (typedChunk.input ?? typedChunk.args ?? {}) as Record<
-              string,
-              unknown
-            >
+            const rawArgs = typedChunk.input ?? typedChunk.args ?? {}
+            let args: Record<string, unknown> = {}
+            if (typeof rawArgs === "string") {
+              try {
+                args = JSON.parse(rawArgs || "{}")
+              } catch {
+                args = {}
+              }
+            } else if (rawArgs && typeof rawArgs === "object") {
+              args = rawArgs as Record<string, unknown>
+            }
 
-            const retryOf =
+            const rawRetryOf =
               typeof typedChunk.retryOf === "string"
                 ? typedChunk.retryOf
-                : typeof (typedChunk.providerMetadata as any)?.retryOf === "string"
+                : typeof (typedChunk.providerMetadata as any)?.retryOf ===
+                    "string"
                   ? (typedChunk.providerMetadata as any).retryOf
-                  : typeof (args as any)?.retryOf === "string"
-                    ? (args as any).retryOf
-                    : undefined
-            const attempt =
-              typeof typedChunk.attempt === "number" && typedChunk.attempt > 1
+                  : undefined
+            const retryOf =
+              rawRetryOf && rawRetryOf.trim() ? rawRetryOf.trim() : undefined
+
+            const rawAttempt =
+              typeof typedChunk.attempt === "number"
                 ? typedChunk.attempt
                 : typeof (typedChunk.providerMetadata as any)?.attempt ===
-                      "number" &&
-                    (typedChunk.providerMetadata as any).attempt > 1
+                    "number"
                   ? (typedChunk.providerMetadata as any).attempt
-                  : typeof (args as any)?.attempt === "number" &&
-                      (args as any).attempt > 1
-                    ? (args as any).attempt
-                    : undefined
+                  : undefined
+            const attempt =
+              rawAttempt && Number.isInteger(rawAttempt) && rawAttempt > 1
+                ? rawAttempt
+                : undefined
 
             toolCallsToProcess.push({
               id: callId,

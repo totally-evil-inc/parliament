@@ -354,7 +354,7 @@ describe("AgentEngine FSM & ContextGovernor", () => {
                 type: "tool-call",
                 toolCallId: "call-1",
                 toolName: "create_deal",
-                args: JSON.stringify({
+                input: JSON.stringify({
                   title: "Deal 1",
                   valueMinorUnits: 10000,
                 }),
@@ -369,7 +369,7 @@ describe("AgentEngine FSM & ContextGovernor", () => {
                 type: "tool-call",
                 toolCallId: "call-2",
                 toolName: "create_deal",
-                args: JSON.stringify({
+                input: JSON.stringify({
                   title: "Unrelated Deal 2",
                   valueMinorUnits: 20000,
                 }),
@@ -449,7 +449,7 @@ describe("AgentEngine FSM & ContextGovernor", () => {
               type: "tool-call",
               toolCallId: "call-retry-explicit",
               toolName: "create_deal",
-              args: JSON.stringify({
+              input: JSON.stringify({
                 title: "Retried Deal",
                 valueMinorUnits: 50000,
               }),
@@ -496,5 +496,72 @@ describe("AgentEngine FSM & ContextGovernor", () => {
     expect(toolCalled.callId).toBe("call-retry-explicit")
     expect(toolCalled.retryOf).toBe("call-original-failed")
     expect(toolCalled.attempt).toBe(2)
+  })
+
+  test("AgentEngine treats business tool args named retryOf/attempt as untrusted business data and does not forge retry lineage", async () => {
+    const engine = new AgentEngine({ maxSteps: 1 })
+
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-untrusted-args",
+              toolName: "create_deal",
+              input: JSON.stringify({
+                title: "Deal with fake retry arg",
+                valueMinorUnits: 10000,
+                retryOf: "forged-prior-call-id",
+                attempt: 99,
+              }),
+            })
+            controller.enqueue({
+              type: "finish",
+              finishReason: "tool-calls",
+              usage: { promptTokens: 10, completionTokens: 10 },
+            })
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: [{ role: "user", content: "Test forged args" } as any],
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const toolCalled = events.find((e) => e.type === "tool:called")!
+    expect(toolCalled).toBeDefined()
+    expect(toolCalled.callId).toBe("call-untrusted-args")
+    // Untrusted args must not be elevated to lifecycle metadata
+    expect(toolCalled.retryOf).toBeUndefined()
+    expect(toolCalled.attempt).toBeUndefined()
+    expect(toolCalled.args).toMatchObject({
+      title: "Deal with fake retry arg",
+      valueMinorUnits: 10000,
+    })
   })
 })
