@@ -110,6 +110,45 @@ describe("convertToModelMessages for AI SDK 7 ModelMessage format", () => {
     })
   })
 
+  test("keeps internal retry lineage out of model-facing content (provider-safe)", () => {
+    const raw = [
+      {
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-call",
+            toolCallId: "call-parent",
+            toolName: "create_deal",
+            args: { title: "Deal" },
+            retryOf: "call-root",
+            attempt: 2,
+          },
+          {
+            type: "tool-result",
+            toolCallId: "call-parent",
+            toolName: "create_deal",
+            result: { error: "timeout" },
+            isError: true,
+            retryOf: "call-root",
+            attempt: 2,
+          },
+        ],
+      },
+    ]
+
+    const converted = convertToModelMessages(raw)
+
+    const allParts = converted.flatMap((m) =>
+      Array.isArray(m.content) ? (m.content as any[]) : []
+    )
+    expect(allParts.length).toBe(2)
+    for (const part of allParts) {
+      expect(part).not.toHaveProperty("retryOf")
+      expect(part).not.toHaveProperty("attempt")
+      expect(part).not.toHaveProperty("providerMetadata")
+    }
+  })
+
   test("preserves chronological interleaving of text, tool calls, and subsequent narration", () => {
     const raw = [
       {

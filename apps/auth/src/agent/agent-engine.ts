@@ -4,6 +4,8 @@ import { logWideEvent } from "@workspace/logger"
 import { type LanguageModel, type ModelMessage, streamText } from "ai"
 import { ContextGovernor } from "./context-governor"
 import { buildPrompt } from "./prompt"
+import type { RetryLineage } from "./retry-lineage"
+import { retryLineageEntrySchema } from "./retry-lineage"
 import { ThinkTagDemuxer } from "./think-demuxer"
 import type { AgentContext } from "./tool-ctx"
 import { ToolDispatcher } from "./tool-dispatcher"
@@ -26,10 +28,18 @@ export class AgentEngine {
     modelName: string
     conversationId: string
     messages: ModelMessage[]
+    retryLineage?: RetryLineage
     abortSignal?: AbortSignal
   }): AsyncGenerator<AgentEvent, void, void> {
-    const { ctx, model, modelName, conversationId, messages, abortSignal } =
-      options
+    const {
+      ctx,
+      model,
+      modelName,
+      conversationId,
+      messages,
+      retryLineage,
+      abortSignal,
+    } = options
     const maxSteps = this.config.maxSteps ?? 8
 
     yield {
@@ -42,7 +52,20 @@ export class AgentEngine {
     const dispatcher = new ToolDispatcher(ctx)
     const activeMessages: ModelMessage[] = [...messages]
     let step = 0
-    const emittedCallIdsInTurn = new Map<string, { attempt: number }>()
+    const callRegistry = new Map<string, { attempt: number }>()
+
+    // Seed retry registry from the runtime-only lineage registry (never from
+    // model-facing message content, which must stay provider-safe).
+    if (retryLineage) {
+      for (const [callId, entry] of retryLineage) {
+        const parsed = retryLineageEntrySchema.safeParse(entry)
+        if (!parsed.success) continue
+        const existing = callRegistry.get(callId)
+        if (!existing || parsed.data.attempt > existing.attempt) {
+          callRegistry.set(callId, { attempt: parsed.data.attempt })
+        }
+      }
+    }
 
     while (step < maxSteps) {
       if (abortSignal?.aborted) {
@@ -166,7 +189,8 @@ export class AgentEngine {
             }
 
             if (!parsedArgs) {
-              // Malformed tool input protocol error: emit tool:called and tool:result error immediately
+              // Malformed tool input protocol error: emit tool:called and tool:result error,
+              // log structured wide event, and terminate turn with turn:error.
               yield {
                 type: "tool:called",
                 callId,
@@ -183,7 +207,29 @@ export class AgentEngine {
                 },
                 isError: true,
               }
-              continue
+              logWideEvent({
+                event: "agent.turn.malformed_tool_input",
+                outcome: "failure",
+                organizationId: ctx.organizationId,
+                userId: ctx.userId,
+                entityId: conversationId,
+                error: {
+                  code: "malformed_tool_input",
+                  message: `Protocol error: malformed input for tool '${toolName}'`,
+                },
+                metadata: {
+                  step,
+                  tool: toolName,
+                  callId,
+                },
+              })
+              yield {
+                type: "turn:error",
+                code: "malformed_tool_input",
+                message: `Protocol error: malformed input for tool '${toolName}'. Arguments must be a valid JSON object.`,
+                recoverable: false,
+              }
+              return
             }
 
             const rawRetryOf =
@@ -203,26 +249,33 @@ export class AgentEngine {
                   ? (typedChunk.providerMetadata as any).attempt
                   : undefined
 
-            // Validate retry lineage against turn-scoped registry:
-            // 1. retryOf must exist in the current turn
+            // Validate retry lineage against call registry (seeded from prior turns + current turn):
+            // 1. retryOf must exist in the call registry
             // 2. retryOf cannot be self-referential
-            // 3. attempt must be monotonic (> parent attempt)
+            // 3. If rawAttempt is present, it must be monotonic (> parent attempt)
+            // 4. If rawAttempt is absent, derive next attempt as parent.attempt + 1
             let retryOf: string | undefined
             let attempt: number | undefined
-            if (trimmedRetryOf && emittedCallIdsInTurn.has(trimmedRetryOf)) {
-              const parent = emittedCallIdsInTurn.get(trimmedRetryOf)!
-              if (
-                trimmedRetryOf !== callId &&
-                rawAttempt &&
-                Number.isInteger(rawAttempt) &&
-                rawAttempt > parent.attempt
-              ) {
-                retryOf = trimmedRetryOf
-                attempt = rawAttempt
+            if (trimmedRetryOf && callRegistry.has(trimmedRetryOf)) {
+              const parent = callRegistry.get(trimmedRetryOf)!
+              if (trimmedRetryOf !== callId) {
+                if (rawAttempt !== undefined) {
+                  if (
+                    Number.isInteger(rawAttempt) &&
+                    rawAttempt > parent.attempt
+                  ) {
+                    retryOf = trimmedRetryOf
+                    attempt = rawAttempt
+                  }
+                } else {
+                  // Explicit retry metadata supplied without attempt (Finding M2)
+                  retryOf = trimmedRetryOf
+                  attempt = parent.attempt + 1
+                }
               }
             }
 
-            emittedCallIdsInTurn.set(callId, { attempt: attempt ?? 1 })
+            callRegistry.set(callId, { attempt: attempt ?? 1 })
 
             toolCallsToProcess.push({
               id: callId,

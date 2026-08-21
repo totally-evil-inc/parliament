@@ -10,6 +10,7 @@ import {
   resolveOrCreateConversation,
 } from "./persist"
 import { getLanguageModel } from "./provider"
+import { extractRetryLineage } from "./retry-lineage"
 import { ThinkTagDemuxer } from "./think-demuxer"
 import type { AgentContext } from "./tool-ctx"
 
@@ -183,6 +184,7 @@ export async function runAgentTurn(
   }
 
   const modelMessages = convertToModelMessages(input.messages)
+  const retryLineage = extractRetryLineage(input.messages)
   const engine = new AgentEngine({ maxSteps: 8 })
 
   const eventStream = engine.executeTurn({
@@ -191,6 +193,7 @@ export async function runAgentTurn(
     modelName,
     conversationId: conversation.id,
     messages: modelMessages,
+    retryLineage,
     abortSignal: input.abortSignal,
   })
 
