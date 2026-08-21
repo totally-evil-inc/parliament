@@ -42,6 +42,10 @@ export class AgentEngine {
     const dispatcher = new ToolDispatcher(ctx)
     const activeMessages: ModelMessage[] = [...messages]
     let step = 0
+    const unresolvedFailedCalls = new Map<
+      string,
+      { callId: string; attempt: number; failedAtStep: number }
+    >()
 
     while (step < maxSteps) {
       if (abortSignal?.aborted) {
@@ -55,6 +59,14 @@ export class AgentEngine {
       }
 
       step++
+
+      // Expire any unresolved failures that were not retried in the immediate subsequent step
+      for (const [name, entry] of unresolvedFailedCalls.entries()) {
+        if (entry.failedAtStep < step - 1) {
+          unresolvedFailedCalls.delete(name)
+        }
+      }
+
       const systemPrompt = buildPrompt(ctx)
       const tools = dispatcher.getToolsForModel()
       const compactedMessages = this.governor.compactMessages(activeMessages)
@@ -144,14 +156,23 @@ export class AgentEngine {
               unknown
             >
 
+            const priorFailure = unresolvedFailedCalls.get(toolName)
+            const isImmediateRetry = Boolean(
+              priorFailure && priorFailure.failedAtStep === step - 1
+            )
+
             const retryOf =
               typeof typedChunk.retryOf === "string"
                 ? typedChunk.retryOf
-                : undefined
+                : isImmediateRetry
+                  ? priorFailure!.callId
+                  : undefined
             const attempt =
               typeof typedChunk.attempt === "number" && typedChunk.attempt > 1
                 ? typedChunk.attempt
-                : undefined
+                : isImmediateRetry
+                  ? (priorFailure!.attempt || 1) + 1
+                  : undefined
 
             toolCallsToProcess.push({
               id: callId,
@@ -387,6 +408,16 @@ export class AgentEngine {
           ...(call.attempt && call.attempt > 1
             ? { attempt: call.attempt }
             : {}),
+        }
+
+        if (isError) {
+          unresolvedFailedCalls.set(call.name, {
+            callId: call.id,
+            attempt: call.attempt ?? 1,
+            failedAtStep: step,
+          })
+        } else {
+          unresolvedFailedCalls.delete(call.name)
         }
 
         toolResults.push({
