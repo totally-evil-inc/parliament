@@ -534,8 +534,8 @@ export const CommandChatProvider: React.FC<{ children: React.ReactNode }> = ({
    * Target query invalidation to avoid unnecessary broad network waterfall refetches (client-swr-dedup)
    */
   const invalidateAgentQueries = useCallback(
-    (executedTools: Set<string>) => {
-      if (executedTools.size === 0) return
+    (executedTools?: Set<string>) => {
+      if (executedTools && executedTools.size === 0) return
 
       invalidateQueriesHelper({
         executedToolNames: executedTools,

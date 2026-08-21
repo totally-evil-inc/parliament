@@ -464,6 +464,7 @@ describe("command-chat-context event batch application", () => {
         callId: "email-1",
         name: "send_email",
         result: { status: "sent" },
+        isError: false,
       },
     ]
 
