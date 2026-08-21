@@ -30,6 +30,10 @@ describe("ChatMarkdown Component", () => {
     const markdown = `
 Check out \`create_proposal\` tool at [Parliament](https://parliament.ai).
 
+\`\`\`typescript
+const x = 123
+\`\`\`
+
 | Step | Action |
 | --- | --- |
 | 1 | Discovery |
@@ -43,5 +47,7 @@ Check out \`create_proposal\` tool at [Parliament](https://parliament.ai).
     expect(html).toContain("<table")
     expect(html).toContain("<th")
     expect(html).toContain("Step")
+    expect(html).toContain('data-slot="scroll-area"')
+    expect(html).toContain('data-slot="scroll-area-viewport"')
   })
 })

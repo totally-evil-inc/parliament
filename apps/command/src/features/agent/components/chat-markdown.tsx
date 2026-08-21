@@ -1,3 +1,4 @@
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import type React from "react"
 import { memo } from "react"
 import ReactMarkdown from "react-markdown"
@@ -67,9 +68,12 @@ const MarkdownComponents: React.ComponentProps<
     )
   },
   pre: ({ children }) => (
-    <pre className="my-2 overflow-x-auto rounded-lg border border-border bg-muted/50 p-3 font-mono text-xs">
-      {children}
-    </pre>
+    <ScrollArea
+      orientation="horizontal"
+      className="my-2 w-full rounded-lg border border-border bg-muted/50 font-mono text-xs"
+    >
+      <pre className="p-3 font-mono text-xs">{children}</pre>
+    </ScrollArea>
   ),
   blockquote: ({ children }) => (
     <blockquote className="my-2 border-primary/50 border-l-2 pl-3 text-muted-foreground text-sm italic">
@@ -87,9 +91,12 @@ const MarkdownComponents: React.ComponentProps<
     </a>
   ),
   table: ({ children }) => (
-    <div className="my-2 overflow-x-auto rounded-lg border border-border">
+    <ScrollArea
+      orientation="horizontal"
+      className="my-2 w-full rounded-lg border border-border"
+    >
       <table className="w-full text-left text-xs">{children}</table>
-    </div>
+    </ScrollArea>
   ),
   thead: ({ children }) => (
     <thead className="border-border border-b bg-muted/40 text-muted-foreground">

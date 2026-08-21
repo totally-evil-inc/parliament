@@ -4,6 +4,7 @@ import {
   UsersIcon,
 } from "@heroicons/react/24/outline"
 import { createLibrary, defineComponent } from "@openuidev/react-lang"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import React from "react"
 import {
   Bar,
@@ -618,8 +619,11 @@ export const DataTableComponent = defComp({
     data: Array<Record<string, unknown>>
   }) => {
     return React.createElement(
-      "div",
-      { className: "overflow-x-auto border border-border rounded-lg my-2" },
+      ScrollArea,
+      {
+        orientation: "horizontal",
+        className: "w-full rounded-lg border border-border my-2",
+      },
       React.createElement(
         "table",
         { className: "w-full text-left text-xs" },
