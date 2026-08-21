@@ -294,7 +294,8 @@ agentActionsRouter.post("/actions/:id/resolve", async (c) => {
         approvalId: targetApprovalId,
         toolName: updatedRow.toolName,
         approved,
-        feedback,
+        feedbackProvided:
+          typeof feedback === "string" && feedback.trim().length > 0,
       },
     })
 
