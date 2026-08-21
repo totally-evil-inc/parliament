@@ -5,4 +5,8 @@ describe("useSmartScrollAnchor hook exports and interfaces", () => {
   test("exports useSmartScrollAnchor function", () => {
     expect(typeof useSmartScrollAnchor).toBe("function")
   })
+
+  test("accepts options and handles default parameters", () => {
+    expect(useSmartScrollAnchor.length).toBeLessThanOrEqual(1)
+  })
 })

@@ -117,10 +117,30 @@ export function useSmartScrollAnchor(
     })
 
     observer.observe(container)
-    // Also observe the inner content if present
+    // Also observe inner content wrappers
     const firstChild = container.firstElementChild
     if (firstChild) {
       observer.observe(firstChild)
+      const feedChild = firstChild.firstElementChild
+      if (feedChild) {
+        observer.observe(feedChild)
+      }
+    }
+
+    // Follow trigger deps if user is pinned to bottom
+    if (isAtBottomRef.current) {
+      if (resizeRafIdRef.current === null) {
+        resizeRafIdRef.current = requestAnimationFrame(() => {
+          resizeRafIdRef.current = null
+          if (!isAtBottomRef.current) return
+
+          if (bottomRef.current) {
+            bottomRef.current.scrollIntoView({ behavior: "auto", block: "end" })
+          } else {
+            container.scrollTop = container.scrollHeight
+          }
+        })
+      }
     }
 
     return () => {
@@ -130,26 +150,7 @@ export function useSmartScrollAnchor(
         resizeRafIdRef.current = null
       }
     }
-  }, [getScrollContainer])
-
-  // Follow triggerDeps (e.g. message updates or token chunks) if user is at bottom
-  useEffect(() => {
-    if (!isAtBottomRef.current) return
-
-    if (resizeRafIdRef.current !== null) return
-    resizeRafIdRef.current = requestAnimationFrame(() => {
-      resizeRafIdRef.current = null
-      if (!isAtBottomRef.current) return
-
-      if (bottomRef.current) {
-        bottomRef.current.scrollIntoView({ behavior: "auto", block: "end" })
-      } else {
-        const container = getScrollContainer()
-        if (container) container.scrollTop = container.scrollHeight
-      }
-    })
-    // biome-ignore lint/correctness/useExhaustiveDependencies: dynamic trigger array
-  }, triggerDeps)
+  }, [getScrollContainer, ...triggerDeps])
 
   // Cleanup all RAF timers on unmount
   useEffect(() => {

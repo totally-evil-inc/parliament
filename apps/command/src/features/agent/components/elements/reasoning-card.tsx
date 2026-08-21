@@ -32,7 +32,12 @@ export const ReasoningCard: React.FC<ReasoningCardProps> = ({
     if (target && "scrollHeight" in target) {
       const el = target as HTMLElement
       const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight
-      isNearBottomRef.current = distanceToBottom < 30
+      // Hysteresis: unpin if user scrolls up > 40px, re-pin if within 15px of bottom
+      if (distanceToBottom <= 15) {
+        isNearBottomRef.current = true
+      } else if (distanceToBottom > 40) {
+        isNearBottomRef.current = false
+      }
     }
   }, [])
 
@@ -51,6 +56,38 @@ export const ReasoningCard: React.FC<ReasoningCardProps> = ({
       })
     }
   }, [isStreaming, thinking])
+
+  // ResizeObserver to follow geometry / container size changes while live streaming
+  useEffect(() => {
+    if (!isStreaming || typeof ResizeObserver === "undefined") return
+    const el = viewportRef.current
+    if (!el) return
+
+    const observer = new ResizeObserver(() => {
+      if (!isNearBottomRef.current || !viewportRef.current) return
+      if (rafIdRef.current !== null) return
+
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null
+        if (viewportRef.current && isNearBottomRef.current) {
+          viewportRef.current.scrollTop = viewportRef.current.scrollHeight
+        }
+      })
+    })
+
+    observer.observe(el)
+    if (el.firstElementChild) {
+      observer.observe(el.firstElementChild)
+    }
+
+    return () => {
+      observer.disconnect()
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
+    }
+  }, [isStreaming])
 
   useEffect(() => {
     return () => {
