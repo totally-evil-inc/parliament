@@ -87,7 +87,7 @@ export interface TaskTriggerProps
 
 export function TaskTrigger({
   title,
-  status = "completed",
+  status = "pending",
   count,
   className,
   ...props
@@ -97,26 +97,31 @@ export function TaskTrigger({
   const renderStatusIcon = () => {
     switch (status) {
       case "completed":
-        return <CheckCircleIcon className="size-4 text-emerald-500" />
+        return <CheckCircleIcon className="size-4 shrink-0 text-emerald-500" />
       case "in_progress":
         return (
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+          <span className="relative flex h-2.5 w-2.5 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75 motion-reduce:hidden" />
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
           </span>
         )
       case "error":
-        return <ExclamationCircleIcon className="size-4 text-destructive" />
+        return (
+          <ExclamationCircleIcon className="size-4 shrink-0 text-destructive" />
+        )
       default:
-        return <ListBulletIcon className="size-4 text-muted-foreground/60" />
+        return (
+          <ListBulletIcon className="size-4 shrink-0 text-muted-foreground/60" />
+        )
     }
   }
 
   return (
     <CollapsibleTrigger
       data-slot="task-trigger"
+      aria-label={`Task group: ${title}, status: ${status}`}
       className={cn(
-        "group flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-border/80 bg-muted/40 px-3.5 py-2 text-left font-mono text-muted-foreground text-xs transition-all hover:bg-muted/70 hover:text-foreground",
+        "group flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-border/80 bg-muted/40 px-3.5 py-2 text-left font-mono text-muted-foreground text-xs transition-all hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         className
       )}
       {...props}
@@ -126,7 +131,7 @@ export function TaskTrigger({
         <span className="truncate font-semibold text-foreground text-xs">
           {title}
         </span>
-        {count && (
+        {count && count.total > 0 && (
           <Badge
             variant="outline"
             className="ml-1.5 h-4 px-1.5 font-mono text-[9px] text-muted-foreground"
@@ -137,7 +142,7 @@ export function TaskTrigger({
       </div>
       <ChevronDownIcon
         className={cn(
-          "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200",
+          "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none",
           isOpen && "rotate-180"
         )}
       />

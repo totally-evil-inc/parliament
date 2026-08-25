@@ -1,7 +1,8 @@
-import type { AnyTextAdapter } from "@tanstack/ai/adapters"
-import { createOpenaiChatCompletions } from "@tanstack/ai-openai"
+import { createAnthropic } from "@ai-sdk/anthropic"
+import { createOpenAI } from "@ai-sdk/openai"
 import { resolveModel } from "@workspace/agent"
 import { asc, db, eq, schema } from "@workspace/database"
+import type { LanguageModel } from "ai"
 
 export interface AIConfigSummary {
   apiKeySet: boolean
@@ -10,14 +11,19 @@ export interface AIConfigSummary {
   defaultModel: string
   source: "db" | "env" | "none"
 }
+
+export interface AISettingsSummary extends AIConfigSummary {}
+
 export interface ResolvedAIConfig extends AIConfigSummary {
   apiKey: string
 }
+
 export interface ProviderSummary extends AIConfigSummary {
   id: string
   name: string
   isActive: boolean
 }
+
 export interface AISettingsList {
   providers: ProviderSummary[]
   activeProvider: ProviderSummary | null
@@ -33,8 +39,6 @@ export function maskApiKey(key: string | null | undefined): string | null {
 }
 
 function envConfig(): ResolvedAIConfig {
-  // Provider settings are organization-scoped and database-owned. Do not use
-  // environment variables as credentials, endpoints, or model fallbacks.
   return {
     apiKey: "",
     apiKeySet: false,
@@ -106,88 +110,58 @@ export async function resolveAIConfig(
   }
 }
 
-export type AISettingsSummary = AIConfigSummary
-
 /**
- * Defensively harden adapter methods against missing or undefined content,
- * preventing `Cannot read properties of undefined (reading 'filter')` during
- * Chat Completions message serialization.
+ * Resolves a high-performance LanguageModel instance for the organization
+ * using Vercel AI SDK Core.
  */
-export function patchAdapterForSafety<T extends AnyTextAdapter>(adapter: T): T {
-  if (!adapter || typeof adapter !== "object") return adapter
-
-  const anyAdapter = adapter as any
-
-  const originalExtract = anyAdapter.extractTextContent
-  if (typeof originalExtract === "function") {
-    anyAdapter.extractTextContent = (content: unknown): string => {
-      if (content === null || content === undefined) return ""
-      if (typeof content === "string") return content
-      if (!Array.isArray(content)) return ""
-      return content
-        .filter((p: any) => p && typeof p === "object" && p.type === "text")
-        .map((p: any) => p.content ?? p.text ?? "")
-        .join("")
-    }
-  }
-
-  // Chat-completions adapters also call normalizeContent() for user
-  // messages. A UI message can briefly contain an omitted/undefined content
-  // field while an approval response is being assembled. The upstream
-  // implementation assumes this is always an array and calls `.filter()` on
-  // it, which aborts the whole turn before the approved tool can run.
-  const originalNormalizeContent = anyAdapter.normalizeContent
-  if (typeof originalNormalizeContent === "function") {
-    anyAdapter.normalizeContent = (content: unknown): any[] => {
-      if (content === null || content === undefined) return []
-      if (typeof content === "string") {
-        return [{ type: "text", content }]
-      }
-      if (!Array.isArray(content)) return []
-      return content.filter(
-        (part) =>
-          part && typeof part === "object" && typeof part.type === "string"
-      )
-    }
-  }
-
-  const originalConvert = anyAdapter.convertMessage
-  if (typeof originalConvert === "function") {
-    anyAdapter.convertMessage = function (message: any): any {
-      if (!message || typeof message !== "object") {
-        return { role: "user", content: "" }
-      }
-      const safeMessage = {
-        ...message,
-        content: message.content !== undefined ? message.content : null,
-      }
-      return originalConvert.call(this, safeMessage)
-    }
-  }
-
-  return adapter
-}
-
-export async function getAIAdapter(
+export async function getLanguageModel(
   organizationId: string,
   modelOverride?: string | null
-): Promise<{ adapter: AnyTextAdapter; model: string }> {
+): Promise<{ model: LanguageModel; modelName: string }> {
   const config = await resolveAIConfig(organizationId)
-  const model = resolveModel(modelOverride || config.defaultModel)
-  if (!config.apiKey || !config.baseUrl || !model) {
+  const modelName = resolveModel(modelOverride || config.defaultModel)
+
+  if (!config.apiKey || !config.baseUrl || !modelName) {
     throw new Error(
       "AI provider is not configured. Set an organization AI API key, endpoint, and default model in settings."
     )
   }
-  // OpenAI-compatible endpoints use Chat Completions
-  // (/v1/chat/completions), not OpenAI Responses (/v1/responses).
-  const adapter = createOpenaiChatCompletions(
-    model as Parameters<typeof createOpenaiChatCompletions>[0],
-    config.apiKey || "dummy-key-for-offline-dev",
-    { baseURL: config.baseUrl }
-  ) as unknown as AnyTextAdapter
 
-  patchAdapterForSafety(adapter)
+  // Detect Anthropic vs OpenAI / OpenRouter endpoints
+  if (
+    config.baseUrl.includes("anthropic.com") ||
+    modelName.startsWith("claude-") ||
+    modelName.startsWith("anthropic/")
+  ) {
+    if (config.baseUrl.includes("openrouter.ai")) {
+      const openRouter = createOpenAI({
+        baseURL: config.baseUrl,
+        apiKey: config.apiKey,
+      })
+      return { model: openRouter.chat(modelName), modelName }
+    }
+    const cleanAnthropicBaseUrl = config.baseUrl.includes("anthropic.com")
+      ? config.baseUrl.replace(/\/v1\/?$/, "")
+      : undefined
 
-  return { adapter, model }
+    const anthropic = createAnthropic({
+      baseURL: cleanAnthropicBaseUrl,
+      apiKey: config.apiKey,
+    })
+    const cleanAnthropicName = modelName.replace(/^anthropic\//, "")
+    return { model: anthropic(cleanAnthropicName), modelName }
+  }
+
+  const isStandardOpenAi =
+    config.baseUrl.includes("api.openai.com") || !config.baseUrl.trim()
+
+  const openai = createOpenAI({
+    baseURL: config.baseUrl,
+    apiKey: config.apiKey,
+  })
+
+  // Use chat completions model for third-party compatibility (vLLM, Groq, LM Studio, etc.)
+  const model = isStandardOpenAi ? openai(modelName) : openai.chat(modelName)
+
+  return { model, modelName }
 }

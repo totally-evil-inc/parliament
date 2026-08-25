@@ -3,6 +3,7 @@ import { QueryClientProvider } from "@tanstack/react-query"
 import {
   createRootRouteWithContext,
   HeadContent,
+  ScriptOnce,
   Scripts,
 } from "@tanstack/react-router"
 import { Toaster } from "@workspace/ui/components/sonner"
@@ -15,6 +16,7 @@ import {
   DefaultNotFound,
 } from "@/components/router-fallbacks"
 import { ThemeProvider } from "@/components/theme-provider"
+import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/themes/bootstrap"
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -52,8 +54,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const { queryClient } = Route.useRouteContext()
 
   return (
-    <html lang="en" className="h-full overflow-hidden">
+    <html lang="en" className="h-full overflow-hidden" suppressHydrationWarning>
       <head>
+        <ScriptOnce>{THEME_BOOTSTRAP_SCRIPT}</ScriptOnce>
         <HeadContent />
       </head>
       <body className="h-full overflow-hidden">

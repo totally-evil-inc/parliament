@@ -1,3 +1,5 @@
-import type { ThemePalette } from "@/lib/themes/types"
+import { DEFAULT_PALETTE } from "./constants"
+import type { ThemePalette } from "./types"
 
-export const DEFAULT_PALETTE: ThemePalette = "graphite"
+export type { ThemePalette }
+export { DEFAULT_PALETTE }

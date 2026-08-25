@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import {
+  extractToolErrorText,
   latestAssistantThinking,
   normalizeAssistantMessage,
   stripLeakedFunctionCalls,
@@ -52,6 +53,35 @@ describe("normalizeAssistantMessage", () => {
       "Web Development Proposal Requirements"
     )
     expect((normalized.tools[0].args as any).questions).toHaveLength(1)
+  })
+
+  test("normalizes tool call with stringified questions array inside arguments object", () => {
+    const rawMessage = {
+      id: "msg-nested-stringified",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-call",
+          id: "tc-clarify-2",
+          name: "ask_clarifying_questions",
+          arguments: {
+            questions: JSON.stringify([
+              {
+                id: "scope",
+                type: "multi_select",
+                label: "What scope?",
+                options: [{ label: "Portal", value: "portal" }],
+              },
+            ]),
+          },
+        },
+      ],
+    }
+
+    const normalized = normalizeAssistantMessage(rawMessage)
+    expect(normalized.tools).toHaveLength(1)
+    expect(Array.isArray(normalized.tools[0].args?.questions)).toBe(true)
+    expect((normalized.tools[0].args?.questions as any)[0].id).toBe("scope")
   })
 
   test("preserves approval metadata for the HITL action handlers", () => {
@@ -232,12 +262,203 @@ describe("latestAssistantThinking", () => {
     expect(latestAssistantThinking(messages)).toBe("")
   })
 
-  test("extracts unclosed  thinking reasoning while streaming", () => {
+  test("extracts unclosed thinking reasoning while streaming", () => {
     const messages = [
       { role: "user", content: "go" },
       { role: "assistant", content: "<think>checking the pipeline and" },
     ]
 
     expect(latestAssistantThinking(messages)).toBe("checking the pipeline and")
+  })
+
+  test("memoizes normalized result on unchanged message object identity (rerender-memo)", () => {
+    const rawMessage = {
+      id: "msg-memo-1",
+      role: "assistant",
+      content: "Hello world!",
+      parts: [{ type: "text", text: "Hello world!" }],
+    }
+
+    const firstRun = normalizeAssistantMessage(rawMessage)
+    const secondRun = normalizeAssistantMessage(rawMessage)
+
+    // Identity check: must return the exact same cached object reference
+    expect(secondRun).toBe(firstRun)
+  })
+
+  test("handles circular references and deeply nested JSON structures defensively", () => {
+    const circularObj: any = {
+      title: "Circular Structure",
+    }
+    circularObj.self = circularObj
+
+    const rawMessage = {
+      id: "msg-circular",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-call",
+          id: "tc-circ",
+          name: "custom_tool",
+          arguments: circularObj,
+        },
+      ],
+    }
+
+    // Should not throw stack overflow
+    const normalized = normalizeAssistantMessage(rawMessage)
+    expect(normalized.tools).toHaveLength(1)
+    expect(normalized.tools[0].name).toBe("custom_tool")
+  })
+
+  test("extracts multiple <think>...</think> blocks from text without discarding secondary blocks", () => {
+    const rawMessage = {
+      id: "msg-multi-think",
+      role: "assistant",
+      content:
+        "<think>Initial analysis: customer wants pricing update.</think>Here is the proposal.<think>Secondary check: validating margin.</think>",
+    }
+
+    const normalized = normalizeAssistantMessage(rawMessage)
+    expect(normalized.thinking).toBe(
+      "Initial analysis: customer wants pricing update.\n\nSecondary check: validating margin."
+    )
+    expect(normalized.text).toBe("Here is the proposal.")
+  })
+
+  test("invalidates cache when message parts or content are progressively updated during stream", () => {
+    const mutableMsg: any = {
+      id: "stream-1",
+      role: "assistant",
+      parts: [{ type: "text", text: "Hello" }],
+    }
+
+    const res1 = normalizeAssistantMessage(mutableMsg)
+    expect(res1.text).toBe("Hello")
+
+    // Simulate streaming token arrival into same object
+    mutableMsg.parts[0].text = "Hello world!"
+    const res2 = normalizeAssistantMessage(mutableMsg)
+    expect(res2.text).toBe("Hello world!")
+    expect(res2).not.toBe(res1)
+  })
+
+  test("handles null, undefined, and non-object inputs gracefully without crashing", () => {
+    expect(normalizeAssistantMessage(null)).toMatchObject({
+      role: "assistant",
+      text: "",
+      thinking: "",
+      tools: [],
+    })
+    expect(normalizeAssistantMessage(undefined)).toMatchObject({
+      role: "assistant",
+      text: "",
+      thinking: "",
+      tools: [],
+    })
+    expect(normalizeAssistantMessage("string only")).toMatchObject({
+      role: "assistant",
+      text: "string only",
+    })
+  })
+
+  test("normalizes structured tool error objects without [object Object]", () => {
+    const rawMessage = {
+      id: "msg-err-1",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-call",
+          id: "tc-gcal-1",
+          name: "gcal_create_event",
+          arguments: JSON.stringify({
+            title: "Client discovery",
+            start: "2026-08-20T09:00:00",
+          }),
+        },
+        {
+          type: "tool-result",
+          toolCallId: "tc-gcal-1",
+          error: {
+            code: "integration_not_connected",
+            message:
+              "Google Calendar is not connected. Please connect Google Calendar in /integrations.",
+            provider: "google-calendar",
+          },
+        },
+      ],
+    }
+
+    const normalized = normalizeAssistantMessage(rawMessage)
+    expect(normalized.tools).toHaveLength(1)
+    expect(normalized.tools[0].status).toBe("error")
+    expect(normalized.tools[0].errorText).toBe(
+      "Google Calendar is not connected. Please connect Google Calendar in /integrations."
+    )
+  })
+
+  test("normalizes tool-result with nested error object payload", () => {
+    const rawMessage = {
+      id: "msg-err-2",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-call",
+          id: "tc-gcal-2",
+          name: "gcal_create_event",
+          arguments: {},
+        },
+        {
+          type: "tool-result",
+          toolCallId: "tc-gcal-2",
+          result: {
+            error: {
+              code: "integration_not_connected",
+              message: "Google Calendar is not connected.",
+            },
+          },
+        },
+      ],
+    }
+
+    const normalized = normalizeAssistantMessage(rawMessage)
+    expect(normalized.tools).toHaveLength(1)
+    expect(normalized.tools[0].status).toBe("error")
+    expect(normalized.tools[0].errorText).toBe(
+      "Google Calendar is not connected."
+    )
+  })
+})
+
+describe("extractToolErrorText", () => {
+  test("extracts human-readable messages from various error formats", () => {
+    expect(
+      extractToolErrorText({
+        error: {
+          code: "integration_not_connected",
+          message: "Connect calendar first",
+        },
+      })
+    ).toBe("Connect calendar first")
+
+    expect(
+      extractToolErrorText({
+        message: "Google Calendar create API error (403): Forbidden",
+      })
+    ).toBe("Google Calendar create API error (403): Forbidden")
+
+    expect(extractToolErrorText(new Error("Custom error message"))).toBe(
+      "Custom error message"
+    )
+
+    expect(extractToolErrorText("Direct error text")).toBe("Direct error text")
+
+    expect(extractToolErrorText("[object Object]")).toBe(
+      "Tool execution failed"
+    )
+
+    expect(extractToolErrorText({ customKey: "abc" })).toBe(
+      JSON.stringify({ customKey: "abc" }, null, 2)
+    )
   })
 })

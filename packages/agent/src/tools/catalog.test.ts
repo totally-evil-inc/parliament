@@ -133,6 +133,108 @@ describe("Agent Tool Catalog & Schemas", () => {
     expect(parsed.success).toBe(true)
   })
 
+  it("validates create_proposal with stringified blocks, nested data wrappers, and aliases", () => {
+    const hogwartsPayload = {
+      customerName: "Hogwarts School of Wizardry",
+      blocks: JSON.stringify([
+        {
+          type: "section",
+          data: {
+            title: "Executive Summary",
+            content: "Hogwarts digital transformation...",
+          },
+        },
+        {
+          type: "metrics",
+          data: {
+            title: "Project Scope at a Glance",
+            metrics: [
+              { label: "Public Website Pages", value: "80+" },
+              { label: "Portal User Roles", value: "6" },
+            ],
+          },
+        },
+        {
+          type: "timeline",
+          data: {
+            title: "Phased Delivery Timeline",
+            milestones: [
+              {
+                title: "Phase 1: Discovery",
+                date: "2026-09-01",
+                description: "Workshops",
+              },
+            ],
+          },
+        },
+        {
+          type: "team",
+          data: {
+            title: "Your Dedicated Team",
+            members: [
+              {
+                name: "Sarah Chen",
+                role: "Technical Director",
+                bio: "15+ years",
+              },
+            ],
+          },
+        },
+        {
+          type: "testimonials",
+          data: {
+            title: "What Our Clients Say",
+            items: [
+              {
+                quote: "The team built us a digital campus.",
+                author: "Dr. Katherine Moore",
+                role: "VP Digital Strategy",
+              },
+            ],
+          },
+        },
+        {
+          type: "faq",
+          data: {
+            title: "Common Questions",
+            items: [
+              {
+                question: "How do you handle multi-language?",
+                answer: "We implement a headless translation layer.",
+              },
+            ],
+          },
+        },
+      ]),
+      customerEmail: "dumbledore@hogwarts.edu",
+      title: "Hogwarts School of Wizardry — Digital Transformation",
+      items: [
+        {
+          description: "Phase 1: Discovery & Strategy",
+          quantity: 1,
+          unitPriceMinor: 2500000,
+        },
+      ],
+    }
+
+    const parsed = createProposalInput.parse(hogwartsPayload)
+    expect(parsed.title).toBe(
+      "Hogwarts School of Wizardry — Digital Transformation"
+    )
+    expect(parsed.blocks).toHaveLength(6)
+    const blocks = parsed.blocks!
+    expect(blocks[0].type).toBe("section")
+    expect((blocks[0] as any).title).toBe("Executive Summary")
+    expect(blocks[1].type).toBe("metrics")
+    expect((blocks[1] as any).items).toHaveLength(2)
+    expect(blocks[2].type).toBe("timeline")
+    expect((blocks[2] as any).items).toHaveLength(1)
+    expect(blocks[3].type).toBe("team")
+    expect((blocks[3] as any).items).toHaveLength(1)
+    expect(parsed.items).toHaveLength(1)
+    expect(parsed.items[0].unitPriceMinor).toBe(2500000)
+  })
+
   it("validates create_invoice input with integer minor pricing", () => {
     const validInvoice = {
       title: "Invoice #1042",

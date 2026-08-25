@@ -1,15 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { z } from "zod"
 import { authClient } from "@/lib/auth-client"
 import type { Integration } from "./data"
 import { DEFAULT_INTEGRATIONS } from "./data"
+import {
+  getConnectedAccount,
+  isIntegrationConnected,
+  SUPPORTED_INTEGRATIONS,
+} from "./provider-mapping"
 
-export type ConnectedAccount = {
-  id: string
-  providerId: string
-  accountId: string
-  createdAt: string
-  updatedAt: string
-}
+export { isIntegrationConnected }
+
+export const connectedAccountSchema = z.object({
+  id: z.string(),
+  providerId: z.string(),
+  accountId: z.string(),
+  createdAt: z.string().optional().default(""),
+  updatedAt: z.string().optional().default(""),
+})
+
+export const connectedAccountsResponseSchema = z.object({
+  accounts: z.array(connectedAccountSchema).optional().default([]),
+})
+
+export type ConnectedAccount = z.infer<typeof connectedAccountSchema>
 
 function getAuthUrl(): string {
   return import.meta.env.VITE_BETTER_AUTH_URL ?? "http://localhost:4000"
@@ -30,7 +44,13 @@ async function fetchConnectedAccounts(): Promise<ConnectedAccount[]> {
     throw new Error("Failed to fetch connected accounts")
   }
   const json = await res.json()
-  return json.accounts ?? []
+  const parsed = connectedAccountsResponseSchema.safeParse(json)
+  if (!parsed.success) {
+    throw new Error(
+      "Received malformed connected accounts response from auth service"
+    )
+  }
+  return parsed.data.accounts
 }
 
 export function useIntegrations() {
@@ -46,28 +66,24 @@ export function useIntegrations() {
   })
 
   const mergedIntegrations: Integration[] = DEFAULT_INTEGRATIONS.map((item) => {
-    const isSupportedIntegration = [
-      "gmail",
-      "google-calendar",
-      "google-drive",
-      "google",
-      "cal",
-    ].includes(item.providerId)
+    const isSupported = (SUPPORTED_INTEGRATIONS as readonly string[]).includes(
+      item.providerId
+    )
 
-    if (!isSupportedIntegration) {
+    if (!isSupported) {
       return {
         ...item,
         status: "coming_soon",
       }
     }
 
-    const isConnected = accounts?.some(
-      (acc) => acc.providerId === item.providerId || acc.providerId === "google"
-    )
+    const connectedAccount = getConnectedAccount(accounts, item.providerId)
+    const isConnected = !!connectedAccount
 
     return {
       ...item,
       status: isConnected ? "connected" : "available",
+      betterAuthAccountId: connectedAccount?.id,
     }
   })
 
@@ -92,7 +108,10 @@ export function useConnectIntegration() {
         >[0]["provider"],
         callbackURL,
       })
-      return res
+      if (res?.error) {
+        throw new Error(res.error.message || "Failed to connect integration")
+      }
+      return res.data
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
@@ -102,21 +121,48 @@ export function useConnectIntegration() {
   })
 }
 
+export type DisconnectIntegrationInput = {
+  accountId: string
+  providerId: string
+}
+
 export function useDisconnectIntegration() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (providerId: string) => {
+    mutationFn: async (input: DisconnectIntegrationInput) => {
+      const accountId = input?.accountId?.trim()
+      const providerId = input?.providerId?.trim()
+
+      if (!accountId) {
+        throw new Error("Invalid or missing account identifier for unlinking")
+      }
+      if (!providerId) {
+        throw new Error("Invalid or missing provider identifier for unlinking")
+      }
+
       const authUrl = getAuthUrl()
       const res = await fetch(`${authUrl}/api/auth/integrations/disconnect`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ providerId }),
+        headers: {
+          "Content-Type": "application/json",
+        },
         credentials: "include",
+        body: JSON.stringify({
+          accountId,
+          providerId,
+        }),
       })
+
       if (!res.ok) {
-        throw new Error("Failed to disconnect integration")
+        const errJson = (await res.json().catch(() => null)) as {
+          error?: string
+        } | null
+        throw new Error(
+          errJson?.error || "Failed to disconnect integration account"
+        )
       }
+
       return res.json()
     },
     onSuccess: () => {

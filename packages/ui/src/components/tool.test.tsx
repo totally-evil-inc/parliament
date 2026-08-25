@@ -11,25 +11,23 @@ import {
 
 describe("Tool", () => {
   test("getStatusBadge returns appropriate badges for all states", () => {
-    const pendingHtml = renderToString(<>{getStatusBadge("input-streaming")}</>)
-    const runningHtml = renderToString(<>{getStatusBadge("input-available")}</>)
+    const runningHtml = renderToString(
+      getStatusBadge("input-available") as React.ReactElement
+    )
     const approvalHtml = renderToString(
-      <>{getStatusBadge("approval-requested")}</>
+      getStatusBadge("approval-requested") as React.ReactElement
     )
-    const respondedHtml = renderToString(
-      <>{getStatusBadge("approval-responded")}</>
+    const completed = getStatusBadge("output-available")
+    const errorHtml = renderToString(
+      getStatusBadge("output-error") as React.ReactElement
     )
-    const completedHtml = renderToString(
-      <>{getStatusBadge("output-available")}</>
+    const deniedHtml = renderToString(
+      getStatusBadge("output-denied") as React.ReactElement
     )
-    const errorHtml = renderToString(<>{getStatusBadge("output-error")}</>)
-    const deniedHtml = renderToString(<>{getStatusBadge("output-denied")}</>)
 
-    expect(pendingHtml).toContain("Pending")
     expect(runningHtml).toContain("Running")
     expect(approvalHtml).toContain("Awaiting Approval")
-    expect(respondedHtml).toContain("Approved")
-    expect(completedHtml).toContain("Completed")
+    expect(completed).toBeNull() // Completed state is unbadged for minimalism
     expect(errorHtml).toContain("Error")
     expect(deniedHtml).toContain("Denied")
   })
@@ -52,7 +50,7 @@ describe("Tool", () => {
     )
 
     expect(html).toContain("Reviewing deals")
-    expect(html).toContain("Completed")
+    expect(html).not.toContain("Completed")
     expect(html).toContain("Parameters")
     expect(html).toContain("negotiation")
     expect(html).toContain("Result")

@@ -1,5 +1,6 @@
 import { toolDefinition } from "@tanstack/ai"
 import {
+  type AskClarifyingQuestionsInput,
   type AskClarifyingQuestionsOutput,
   askClarifyingQuestionsInput,
   askClarifyingQuestionsOutput,
@@ -14,9 +15,10 @@ export function askClarifyingQuestionsTool(_ctx: AgentContext) {
     inputSchema: askClarifyingQuestionsInput,
     outputSchema: askClarifyingQuestionsOutput,
     needsApproval: false,
-  }).server(async (args): Promise<AskClarifyingQuestionsOutput> => {
-    const questionsCount = Array.isArray(args?.questions)
-      ? args.questions.length
+  }).server(async (args: unknown): Promise<AskClarifyingQuestionsOutput> => {
+    const typedArgs = args as AskClarifyingQuestionsInput
+    const questionsCount = Array.isArray(typedArgs?.questions)
+      ? typedArgs.questions.length
       : 0
     return {
       status: "awaiting_user_input",

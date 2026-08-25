@@ -79,6 +79,8 @@ export function Reasoning({
         )
         setElapsedSeconds(finalDuration)
       }
+      if (!isControlled) setUncontrolledOpen(false)
+      onOpenChange?.(false)
     }
     prevStreamingRef.current = isStreaming
   }, [isStreaming, isControlled, onOpenChange])
@@ -159,8 +161,13 @@ export function ReasoningTrigger({
   return (
     <CollapsibleTrigger
       data-slot="reasoning-trigger"
+      aria-label={
+        isStreaming
+          ? "Thinking in progress, toggle reasoning details"
+          : "Reasoning details"
+      }
       className={cn(
-        "group flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-border/80 bg-muted/40 px-3.5 py-2 text-left font-mono text-muted-foreground text-xs transition-all hover:bg-muted/70 hover:text-foreground",
+        "group flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-border/80 bg-muted/40 px-3.5 py-2 text-left font-mono text-muted-foreground text-xs transition-all hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         className
       )}
       {...props}
@@ -170,7 +177,7 @@ export function ReasoningTrigger({
           <SparklesIcon className="size-3.5 shrink-0 text-primary" />
           {isStreaming && (
             <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75 motion-reduce:hidden" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
           )}
@@ -179,7 +186,7 @@ export function ReasoningTrigger({
       </div>
       <ChevronDownIcon
         className={cn(
-          "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200",
+          "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none",
           isOpen && "rotate-180"
         )}
       />

@@ -1,3 +1,4 @@
+import { isUuid } from "@workspace/agent"
 import {
   type MessagePartJson,
   parseMessageParts,
@@ -18,6 +19,7 @@ export interface ConversationRow {
   organizationId: string
   title: string
   model: string | null
+  metadata?: Record<string, unknown> | null
   createdAt: Date
   updatedAt: Date
 }
@@ -101,12 +103,13 @@ export async function findConversation(
   threadId: string,
   organizationId: string
 ): Promise<ConversationRow | null> {
+  if (!isUuid(threadId)) return null
   const [row] = await db
     .select()
     .from(chatConversation)
     .where(
       and(
-        eq(chatConversation.id, threadId),
+        eq(chatConversation.id, threadId.trim()),
         eq(chatConversation.organizationId, organizationId)
       )
     )
@@ -117,10 +120,11 @@ export async function findConversation(
 export async function findConversationById(
   threadId: string
 ): Promise<ConversationRow | null> {
+  if (!isUuid(threadId)) return null
   const [row] = await db
     .select()
     .from(chatConversation)
-    .where(eq(chatConversation.id, threadId))
+    .where(eq(chatConversation.id, threadId.trim()))
     .limit(1)
   return row ?? null
 }
@@ -136,16 +140,16 @@ export async function resolveOrCreateConversation(options: {
   model?: string | null
 }): Promise<{ conversation: ConversationRow; isNew: boolean }> {
   const { threadId, organizationId, userId, model } = options
-  const isUuid = Boolean(threadId && /^[0-9a-f-]{36}$/i.test(threadId))
-  if (threadId && isUuid) {
-    const existing = await findConversation(threadId, organizationId)
+  const validThreadId = threadId && isUuid(threadId) ? threadId.trim() : null
+  if (validThreadId) {
+    const existing = await findConversation(validThreadId, organizationId)
     if (existing) return { conversation: existing, isNew: false }
   }
 
   const [row] = await db
     .insert(chatConversation)
     .values({
-      ...(threadId && isUuid ? { id: threadId } : {}),
+      ...(validThreadId ? { id: validThreadId } : {}),
       organizationId,
       createdById: userId,
       model: model ?? null,
@@ -286,4 +290,83 @@ export async function logPersistenceError(
   err: unknown
 ): Promise<void> {
   logger.error({ err, operation }, `chat persistence ${operation} failed`)
+}
+
+/**
+ * Persists the outcome of a resolved action approval back into the assistant
+ * message parts: replaces the `approval-requested` part with a paired
+ * `tool-result` part so reloads render the actual outcome and the next turn
+ * feeds the real result (never `{}`) into the model history.
+ * No-op when the message was already rewritten (e.g. retried execution).
+ */
+export async function persistApprovalResolution(options: {
+  approvalId: string
+  conversationId: string
+  organizationId: string
+  toolName: string
+  result: unknown
+  isError: boolean
+}): Promise<void> {
+  const {
+    approvalId,
+    conversationId,
+    organizationId,
+    toolName,
+    result,
+    isError,
+  } = options
+
+  const messages = await db
+    .select()
+    .from(chatMessage)
+    .where(
+      and(
+        eq(chatMessage.conversationId, conversationId),
+        eq(chatMessage.organizationId, organizationId),
+        eq(chatMessage.role, "assistant")
+      )
+    )
+    .orderBy(desc(chatMessage.createdAt))
+
+  for (const msg of messages) {
+    const parts = (msg.parts ?? []) as any[]
+    const approvalIdx = parts.findIndex(
+      (p) =>
+        p?.type === "approval-requested" &&
+        String(p.approvalId ?? p.resumeId ?? "") === approvalId
+    )
+    if (approvalIdx === -1) continue
+
+    const approvalPart = parts[approvalIdx] as any
+    const resolvedToolName = approvalPart.toolName ?? toolName
+    const callId =
+      approvalPart.callId ??
+      approvalPart.toolCallId ??
+      (
+        parts
+          .slice(0, approvalIdx)
+          .reverse()
+          .find(
+            (p) => p?.type === "tool-call" && p.toolName === resolvedToolName
+          ) as any
+      )?.toolCallId
+
+    const newToolResult = {
+      type: "tool-result",
+      toolCallId: callId ?? crypto.randomUUID(),
+      toolName: resolvedToolName,
+      result,
+      isError,
+    }
+
+    const updatedParts = parts.map((p, i) =>
+      i === approvalIdx ? newToolResult : p
+    )
+
+    await db
+      .update(chatMessage)
+      .set({ parts: parseMessageParts(updatedParts) })
+      .where(eq(chatMessage.id, msg.id))
+    return
+  }
 }

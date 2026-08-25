@@ -2,14 +2,16 @@ import { toolDefinition } from "@tanstack/ai"
 import {
   cancelScheduledDispatchInput,
   cancelScheduledDispatchOutput,
+  isUuid,
   listScheduledDispatchesInput,
   listScheduledDispatchesOutput,
   scheduleDocumentSendInput,
   scheduleDocumentSendOutput,
 } from "@workspace/agent"
-import { and, db, desc, eq, schema } from "@workspace/database"
+import { and, db, desc, eq, schema, sql } from "@workspace/database"
 import { logWideEvent } from "@workspace/logger"
 import type { AgentContext } from "../tool-ctx"
+import { escapeLikePattern } from "./sql-utils"
 
 export function scheduleDocumentSendTool(ctx: AgentContext) {
   return toolDefinition({
@@ -41,49 +43,99 @@ export function scheduleDocumentSendTool(ctx: AgentContext) {
       }
 
       let documentTitle = ""
+      let finalDocumentId = args.documentId
+      const validUuid = isUuid(args.documentId)
 
       if (args.documentType === "proposal") {
-        const [doc] = await db
-          .select({ title: schema.proposalDraft.title })
-          .from(schema.proposalDraft)
-          .where(
-            and(
-              eq(schema.proposalDraft.id, args.documentId),
-              eq(schema.proposalDraft.organizationId, ctx.organizationId)
+        let doc: { id: string; title: string } | undefined
+        if (validUuid) {
+          const [found] = await db
+            .select({
+              id: schema.proposalDraft.id,
+              title: schema.proposalDraft.title,
+            })
+            .from(schema.proposalDraft)
+            .where(
+              and(
+                eq(schema.proposalDraft.id, args.documentId.trim()),
+                eq(schema.proposalDraft.organizationId, ctx.organizationId)
+              )
             )
-          )
-          .limit(1)
+            .limit(1)
+          doc = found
+        } else if (args.documentId) {
+          const escaped = escapeLikePattern(args.documentId)
+          const [found] = await db
+            .select({
+              id: schema.proposalDraft.id,
+              title: schema.proposalDraft.title,
+            })
+            .from(schema.proposalDraft)
+            .where(
+              and(
+                eq(schema.proposalDraft.organizationId, ctx.organizationId),
+                sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${escaped}%`})`
+              )
+            )
+            .limit(1)
+          doc = found
+        }
 
         if (!doc) {
           return {
             error: {
               code: "not_found" as const,
-              message: `Proposal draft ${args.documentId} not found in this organization.`,
+              message: `Proposal draft "${args.documentId}" not found in this organization.`,
             },
           }
         }
         documentTitle = doc.title
+        finalDocumentId = doc.id
       } else if (args.documentType === "invoice") {
-        const [doc] = await db
-          .select({ title: schema.invoiceDraft.title })
-          .from(schema.invoiceDraft)
-          .where(
-            and(
-              eq(schema.invoiceDraft.id, args.documentId),
-              eq(schema.invoiceDraft.organizationId, ctx.organizationId)
+        let doc: { id: string; title: string } | undefined
+        if (validUuid) {
+          const [found] = await db
+            .select({
+              id: schema.invoiceDraft.id,
+              title: schema.invoiceDraft.title,
+            })
+            .from(schema.invoiceDraft)
+            .where(
+              and(
+                eq(schema.invoiceDraft.id, args.documentId.trim()),
+                eq(schema.invoiceDraft.organizationId, ctx.organizationId)
+              )
             )
-          )
-          .limit(1)
+            .limit(1)
+          doc = found
+        } else if (args.documentId) {
+          const escaped = escapeLikePattern(args.documentId)
+          const [found] = await db
+            .select({
+              id: schema.invoiceDraft.id,
+              title: schema.invoiceDraft.title,
+            })
+            .from(schema.invoiceDraft)
+            .where(
+              and(
+                eq(schema.invoiceDraft.organizationId, ctx.organizationId),
+                sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${escaped}%`})`
+              )
+            )
+            .limit(1)
+          doc = found
+        }
 
         if (!doc) {
           return {
             error: {
               code: "not_found" as const,
-              message: `Invoice draft ${args.documentId} not found in this organization.`,
+              message: `Invoice draft "${args.documentId}" not found in this organization.`,
             },
           }
         }
         documentTitle = doc.title
+        finalDocumentId = doc.id
       }
 
       const subject =
@@ -97,7 +149,7 @@ export function scheduleDocumentSendTool(ctx: AgentContext) {
         organizationId: ctx.organizationId,
         userId: ctx.userId,
         documentType: args.documentType,
-        documentId: args.documentId,
+        documentId: finalDocumentId,
         documentTitle,
         recipientEmail: args.recipientEmail,
         subject,
@@ -118,7 +170,7 @@ export function scheduleDocumentSendTool(ctx: AgentContext) {
         entityId: dispatchId,
         metadata: {
           documentType: args.documentType,
-          documentId: args.documentId,
+          documentId: finalDocumentId,
           recipientEmail: args.recipientEmail,
           scheduledFor: scheduledForDate.toISOString(),
         },
@@ -127,7 +179,7 @@ export function scheduleDocumentSendTool(ctx: AgentContext) {
       return {
         id: dispatchId,
         documentType: args.documentType,
-        documentId: args.documentId,
+        documentId: finalDocumentId,
         recipientEmail: args.recipientEmail,
         scheduledFor: scheduledForDate.toISOString(),
         status: "pending" as const,

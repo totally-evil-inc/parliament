@@ -1,178 +1,318 @@
-import { and, db, desc, eq, inArray } from "@workspace/database"
+import { and, db, desc, eq } from "@workspace/database"
 import { account } from "@workspace/database/schema"
-import { logger } from "@workspace/logger"
 import { Hono } from "hono"
+import { z } from "zod"
+import { auth } from "../lib/auth"
+import {
+  IntegrationNotConnectedError,
+  OAuthConfigMissingError,
+  TokenRefreshError,
+} from "../lib/oauth/errors"
+import {
+  type SupportedGoogleProvider,
+  googleTokenService,
+} from "../lib/oauth/google-token-service"
 import { bearerSecretMatch } from "../lib/utils"
 
-export const integrationsRouter = new Hono<{
-  Variables: {
-    user: { id: string; email: string } | null
-    session: { id: string } | null
-  }
-}>()
+function truncateDescription(
+  desc: unknown,
+  maxLength = 200
+): string | undefined {
+  if (typeof desc !== "string") return undefined
+  const cleaned = desc.replace(/[\r\n\t]+/g, " ").trim()
+  if (cleaned.length === 0) return undefined
+  return cleaned.length > maxLength
+    ? `${cleaned.slice(0, maxLength)}...`
+    : cleaned
+}
 
-/**
- * List connected integration accounts for the authenticated user
- */
-integrationsRouter.get("/list", async (c) => {
-  const user = c.get("user")
-  if (!user) {
-    return c.json({ error: "Unauthorized" }, 401)
-  }
+export function createIntegrationsRouter(
+  customDb: typeof db = db,
+  customTokenService: typeof googleTokenService = googleTokenService
+) {
+  const router = new Hono<{
+    Variables: {
+      user: { id: string; email: string } | null
+      session: { id: string } | null
+      requestId?: string
+      logContext?: Record<string, unknown>
+    }
+  }>()
 
-  try {
-    const userAccounts = await db
-      .select({
-        id: account.id,
-        providerId: account.providerId,
-        accountId: account.accountId,
-        createdAt: account.createdAt,
-        updatedAt: account.updatedAt,
-      })
-      .from(account)
-      .where(eq(account.userId, user.id))
-
-    return c.json({ accounts: userAccounts })
-  } catch (err: any) {
-    logger.error(
-      { err, userId: user.id },
-      "Failed to fetch user integration accounts"
-    )
-    return c.json({ error: "Failed to fetch integration accounts" }, 500)
-  }
-})
-
-/**
- * Disconnect/Unlink integration account for the authenticated user
- */
-integrationsRouter.post("/disconnect", async (c) => {
-  const user = c.get("user")
-  if (!user) {
-    return c.json({ error: "Unauthorized" }, 401)
-  }
-
-  try {
-    const { providerId } = await c.req.json()
-    if (!providerId || typeof providerId !== "string") {
-      return c.json({ error: "Bad Request: providerId is required" }, 400)
+  /**
+   * List connected integration accounts for the authenticated user
+   */
+  router.get("/list", async (c) => {
+    const user = c.get("user")
+    const logContext = c.get("logContext")
+    if (logContext) {
+      logContext.operation = "list_integration_accounts"
+      logContext.user_id = user?.id ?? null
     }
 
-    const targetProviders = [providerId]
-    if (
-      ["gmail", "google-calendar", "google-drive", "google"].includes(
-        providerId
-      )
-    ) {
-      targetProviders.push("gmail", "google-calendar", "google-drive", "google")
+    if (!user) {
+      return c.json({ error: "Unauthorized" }, 401)
     }
 
-    const deleted = await db
-      .delete(account)
-      .where(
-        and(
-          eq(account.userId, user.id),
-          inArray(account.providerId, targetProviders)
-        )
-      )
-      .returning({ id: account.id })
+    try {
+      const userAccounts = await customDb
+        .select({
+          id: account.id,
+          providerId: account.providerId,
+          accountId: account.accountId,
+          createdAt: account.createdAt,
+          updatedAt: account.updatedAt,
+        })
+        .from(account)
+        .where(eq(account.userId, user.id))
 
-    logger.info(
-      { userId: user.id, providerId, deletedCount: deleted.length },
-      "User disconnected integration account"
-    )
+      if (logContext) {
+        logContext.account_count = userAccounts.length
+      }
+      return c.json({ accounts: userAccounts })
+    } catch (err: unknown) {
+      return c.json({ error: "Failed to fetch integration accounts" }, 500)
+    }
+  })
 
-    return c.json({ success: true, count: deleted.length })
-  } catch (err: any) {
-    logger.error(
-      { err, userId: user.id },
-      "Failed to disconnect integration account"
-    )
-    return c.json({ error: "Failed to disconnect integration account" }, 500)
-  }
-})
+  const disconnectSchema = z.object({
+    accountId: z.string().trim().min(1, "accountId is required"),
+    providerId: z.string().trim().min(1).optional(),
+  })
 
-/**
- * Internal endpoint for Go Harness to retrieve a valid OAuth access token for an integration provider.
- * Secured via X-Harness-Secret header or BETTER_AUTH_SECRET matching.
- */
-integrationsRouter.get("/internal/token", async (c) => {
-  const rawAuthHeader = c.req.header("authorization") || ""
-  const secretHeader =
-    c.req.header("x-harness-secret") ||
-    (rawAuthHeader.toLowerCase().startsWith("bearer ")
-      ? rawAuthHeader.slice(7)
-      : rawAuthHeader)
+  /**
+   * Disconnect/Unlink integration account for the authenticated user via Better Auth API.
+   * Requires the internal Better Auth account record ID (account.id) to guarantee unambiguous unlinking.
+   */
+  router.post("/disconnect", async (c) => {
+    const user = c.get("user")
+    const logContext = c.get("logContext")
+    if (logContext) {
+      logContext.operation = "account_unlink"
+      logContext.user_id = user?.id ?? null
+    }
 
-  const expectedSecret =
-    process.env.BETTER_AUTH_SECRET || process.env.HARNESS_AUTH_SECRET
+    if (!user) {
+      return c.json({ error: "Unauthorized" }, 401)
+    }
 
-  if (expectedSecret) {
-    if (!bearerSecretMatch(secretHeader, expectedSecret)) {
-      logger.error(
-        { secretHeaderProvided: !!secretHeader, path: c.req.path },
-        "Forbidden: Invalid or missing harness authorization secret"
-      )
+    const rawBody = await c.req.json().catch(() => ({}))
+    const parseResult = disconnectSchema.safeParse(rawBody)
+
+    if (!parseResult.success) {
       return c.json(
-        { error: "Forbidden: Invalid harness authorization secret" },
+        {
+          error: "Bad Request: accountId is required",
+          code: "INVALID_REQUEST",
+        },
+        400
+      )
+    }
+
+    const { accountId, providerId } = parseResult.data
+    if (logContext) {
+      logContext.account_id = accountId
+      if (providerId) logContext.provider_id = providerId
+    }
+
+    // Strictly verify account exists and belongs to the authenticated user (tenant isolation)
+    const userAccounts = await customDb
+      .select()
+      .from(account)
+      .where(and(eq(account.id, accountId), eq(account.userId, user.id)))
+      .limit(1)
+
+    if (!userAccounts || userAccounts.length === 0) {
+      return c.json(
+        {
+          error: "Integration account not found or already disconnected",
+          code: "ACCOUNT_NOT_FOUND",
+        },
+        404
+      )
+    }
+
+    const targetAccount = userAccounts[0]
+    if (logContext) {
+      logContext.provider_id = targetAccount.providerId
+    }
+
+    try {
+      const result = await auth.api.unlinkAccount({
+        headers: c.req.raw.headers,
+        body: {
+          providerId: targetAccount.providerId,
+          accountId: targetAccount.id,
+        },
+      })
+
+      return c.json({ success: true, result })
+    } catch (unlinkErr: any) {
+      const rawCode = unlinkErr?.code || "UNLINK_FAILED"
+      const isApiError =
+        typeof unlinkErr?.status === "number" &&
+        unlinkErr.status >= 400 &&
+        unlinkErr.status < 600
+      const status = isApiError ? unlinkErr.status : 500
+
+      let safeMessage = "Failed to disconnect integration account"
+      let safeCode = rawCode
+
+      if (rawCode === "ACCOUNT_NOT_FOUND") {
+        safeMessage = "Integration account not found or already disconnected"
+        safeCode = "ACCOUNT_NOT_FOUND"
+      } else if (rawCode === "FAILED_TO_UNLINK_LAST_ACCOUNT") {
+        safeMessage = "Cannot unlink the primary authentication account"
+        safeCode = "FAILED_TO_UNLINK_LAST_ACCOUNT"
+      } else if (status >= 500) {
+        safeMessage = "Internal error processing account disconnection"
+        safeCode = "INTERNAL_ERROR"
+      }
+
+      if (logContext) {
+        logContext.error_code = safeCode
+      }
+
+      return c.json(
+        {
+          error: safeMessage,
+          code: safeCode,
+        },
+        status
+      )
+    }
+  })
+
+  /**
+   * Internal endpoint for the Parliament Agent runtime to retrieve a valid OAuth access token for an integration provider.
+   * Secured via X-Agent-Secret header, Authorization header, or BETTER_AUTH_SECRET / AGENT_AUTH_SECRET matching.
+   * Requires both provider and userId strictly to avoid any multi-tenant cross-account token leaks.
+   */
+  router.get("/internal/token", async (c) => {
+    const logContext = c.get("logContext")
+    if (logContext) {
+      logContext.operation = "internal_token"
+    }
+
+    const rawAuthHeader = c.req.header("authorization") || ""
+    const secretHeader =
+      c.req.header("x-agent-secret") ||
+      (rawAuthHeader.toLowerCase().startsWith("bearer ")
+        ? rawAuthHeader.slice(7)
+        : rawAuthHeader)
+
+    const agentSecret = process.env.AGENT_AUTH_SECRET
+    const betterAuthSecret = process.env.BETTER_AUTH_SECRET
+
+    if (!agentSecret && !betterAuthSecret) {
+      if (logContext) logContext.auth_result = "service_unavailable"
+      return c.json(
+        { error: "Service Unavailable: Agent auth secret is not configured" },
+        503
+      )
+    }
+
+    const isAuthorized =
+      (agentSecret ? bearerSecretMatch(secretHeader, agentSecret) : false) ||
+      (betterAuthSecret
+        ? bearerSecretMatch(secretHeader, betterAuthSecret)
+        : false)
+
+    if (!isAuthorized) {
+      if (logContext) logContext.auth_result = "forbidden"
+      return c.json(
+        { error: "Forbidden: Invalid agent authorization secret" },
         403
       )
     }
-  } else {
-    if (process.env.NODE_ENV === "production") {
-      logger.error(
-        { path: c.req.path },
-        "Harness secret not configured in production"
+
+    if (logContext) logContext.auth_result = "authorized"
+
+    const provider = c.req.query("provider")?.trim() ?? null
+    const userId = c.req.query("userId")?.trim() ?? null
+
+    if (logContext) {
+      logContext.provider_id = provider
+      logContext.user_id = userId
+    }
+
+    if (!provider) {
+      return c.json({ error: "Bad Request: Missing provider parameter" }, 400)
+    }
+
+    if (!userId) {
+      return c.json(
+        { error: "Bad Request: Missing or invalid userId parameter" },
+        400
       )
     }
-    return c.json(
-      { error: "Service Unavailable: Harness auth secret is not configured" },
-      503
-    )
-  }
 
-  const provider = c.req.query("provider")
-  const userId = c.req.query("userId")
+    const isGoogleProvider = [
+      "google",
+      "gmail",
+      "google-calendar",
+      "google-drive",
+    ].includes(provider)
 
-  if (!provider) {
-    return c.json({ error: "Bad Request: Missing provider parameter" }, 400)
-  }
-  if (userId !== undefined && typeof userId !== "string") {
-    return c.json({ error: "Bad Request: userId must be a string" }, 400)
-  }
+    if (isGoogleProvider) {
+      try {
+        const details = await customTokenService.getValidTokenDetails(
+          userId,
+          provider as SupportedGoogleProvider,
+          c.get("requestId")
+        )
 
-  try {
-    const whereConditions = [eq(account.providerId, provider)]
-    if (userId) {
-      whereConditions.push(eq(account.userId, userId))
+        if (logContext) logContext.account_id = details.accountId
+
+        return c.json({
+          success: true,
+          provider: details.providerId,
+          accessToken: details.accessToken,
+          expiresAt: details.expiresAt,
+          userId,
+        })
+      } catch (err: unknown) {
+        if (err instanceof IntegrationNotConnectedError) {
+          return c.json(
+            { error: `No account connected for provider: ${provider}` },
+            404
+          )
+        }
+        if (err instanceof TokenRefreshError) {
+          if (logContext) {
+            if (err.providerErrorCode)
+              logContext.provider_error_code = err.providerErrorCode
+            if (err.httpStatus !== undefined)
+              logContext.provider_http_status = err.httpStatus
+            if (err.providerDescription) {
+              logContext.provider_description_truncated = truncateDescription(
+                err.providerDescription
+              )
+            }
+          }
+          return c.json(
+            {
+              error: err.message,
+              providerErrorCode: err.providerErrorCode,
+            },
+            502
+          )
+        }
+        if (err instanceof OAuthConfigMissingError) {
+          return c.json({ error: err.message }, 500)
+        }
+        throw err
+      }
     }
 
-    let records = await db
+    // Generic / non-Google provider lookup (strictly scoped to specific userId and provider)
+    const records = await customDb
       .select()
       .from(account)
-      .where(and(...whereConditions))
+      .where(and(eq(account.providerId, provider), eq(account.userId, userId)))
       .orderBy(desc(account.updatedAt))
-      .limit(1)
 
-    // Fallback check for legacy 'google' provider account if specific app account isn't found
-    if (
-      records.length === 0 &&
-      (provider === "gmail" ||
-        provider === "google-calendar" ||
-        provider === "google-drive")
-    ) {
-      const fallbackConditions = [eq(account.providerId, "google")]
-      if (userId) {
-        fallbackConditions.push(eq(account.userId, userId))
-      }
-      records = await db
-        .select()
-        .from(account)
-        .where(and(...fallbackConditions))
-        .orderBy(desc(account.updatedAt))
-        .limit(1)
-    }
-
-    if (records.length === 0) {
+    if (!records || records.length === 0) {
       return c.json(
         { error: `No account connected for provider: ${provider}` },
         404
@@ -181,74 +321,14 @@ integrationsRouter.get("/internal/token", async (c) => {
 
     const targetAccount = records[0]
 
-    // Check token expiration and perform refresh if necessary
-    const now = new Date()
-    const isExpired =
-      !targetAccount.accessTokenExpiresAt ||
-      targetAccount.accessTokenExpiresAt.getTime() <= now.getTime() + 60000
-
-    const isGoogleProvider = [
-      "google",
-      "gmail",
-      "google-calendar",
-      "google-drive",
-    ].includes(targetAccount.providerId)
-
-    if (isExpired && targetAccount.refreshToken && isGoogleProvider) {
-      logger.info(
-        { provider, accountId: targetAccount.id },
-        "Google access token expired/nearing expiry. Refreshing..."
+    if (!targetAccount.accessToken) {
+      return c.json(
+        { error: `No active token found for provider: ${provider}` },
+        404
       )
-      try {
-        const refreshRes = await fetch("https://oauth2.googleapis.com/token", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            client_id: process.env.GOOGLE_CLIENT_ID || "",
-            client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
-            grant_type: "refresh_token",
-            refresh_token: targetAccount.refreshToken,
-          }),
-        })
-
-        if (refreshRes.ok) {
-          const tokenData: any = await refreshRes.json()
-          if (tokenData.access_token) {
-            const newExpiresAt = new Date(
-              Date.now() + (tokenData.expires_in || 3600) * 1000
-            )
-            await db
-              .update(account)
-              .set({
-                accessToken: tokenData.access_token,
-                accessTokenExpiresAt: newExpiresAt,
-                refreshToken:
-                  tokenData.refresh_token ?? targetAccount.refreshToken,
-                updatedAt: new Date(),
-              })
-              .where(eq(account.id, targetAccount.id))
-
-            targetAccount.accessToken = tokenData.access_token
-            targetAccount.accessTokenExpiresAt = newExpiresAt
-            logger.info(
-              { provider, accountId: targetAccount.id },
-              "Successfully refreshed Google access token"
-            )
-          }
-        } else {
-          const errText = await refreshRes.text()
-          logger.error(
-            { status: refreshRes.status, errText },
-            "Google token refresh failed"
-          )
-        }
-      } catch (refreshErr) {
-        logger.error(
-          { refreshErr, accountId: targetAccount.id },
-          "Exception during Google token refresh"
-        )
-      }
     }
+
+    if (logContext) logContext.account_id = targetAccount.id
 
     return c.json({
       success: true,
@@ -257,8 +337,9 @@ integrationsRouter.get("/internal/token", async (c) => {
       expiresAt: targetAccount.accessTokenExpiresAt,
       userId: targetAccount.userId,
     })
-  } catch (err: any) {
-    logger.error({ err, provider }, "Error fetching internal integration token")
-    return c.json({ error: "Internal Server Error" }, 500)
-  }
-})
+  })
+
+  return router
+}
+
+export const integrationsRouter = createIntegrationsRouter()

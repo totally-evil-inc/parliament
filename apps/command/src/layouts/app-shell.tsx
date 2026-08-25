@@ -1,5 +1,6 @@
 import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar"
 import type { ReactNode } from "react"
+import { HistorySidebarProvider } from "@/features/agent/hooks/use-history-sidebar"
 import { workspaceConfig } from "@/features/workspace/config"
 import { authClient } from "@/lib/auth-client"
 import { AppSidebar } from "./app-sidebar"
@@ -34,17 +35,19 @@ export function AppShell({ children }: AppShellProps) {
     <SidebarProvider defaultOpen={false}>
       <WorkspaceProvider>
         <HeaderProvider>
-          <AppSidebar
-            variant="floating"
-            primaryNav={workspaceConfig.primaryNav}
-            user={user}
-          />
-          <SidebarInset className="flex h-svh min-w-0 flex-col overflow-hidden">
-            <HeaderSlot />
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
-              {children}
-            </div>
-          </SidebarInset>
+          <HistorySidebarProvider defaultOpen={false}>
+            <AppSidebar
+              variant="floating"
+              primaryNav={workspaceConfig.primaryNav}
+              user={user}
+            />
+            <SidebarInset className="flex h-svh min-w-0 flex-col overflow-hidden">
+              <HeaderSlot />
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
+                {children}
+              </div>
+            </SidebarInset>
+          </HistorySidebarProvider>
         </HeaderProvider>
       </WorkspaceProvider>
     </SidebarProvider>

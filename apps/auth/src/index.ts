@@ -29,15 +29,15 @@ app.use("*", async (c, next) => {
 
   const url = new URL(c.req.url)
   const wideEvent: Record<string, unknown> = {
-    requestId,
+    request_id: requestId,
     method: c.req.method,
     path: url.pathname,
     query: Object.fromEntries(url.searchParams.entries()),
-    userAgent: c.req.header("user-agent"),
+    user_agent: c.req.header("user-agent"),
     timestamp: new Date().toISOString(),
     environment: {
-      nodeEnv: process.env.NODE_ENV || "development",
-      commitHash: process.env.COMMIT_HASH || "unknown",
+      node_env: process.env.NODE_ENV || "development",
+      commit_hash: process.env.COMMIT_HASH || "unknown",
       version: "0.0.1",
     },
   }
@@ -45,7 +45,7 @@ app.use("*", async (c, next) => {
   try {
     await next()
 
-    wideEvent.statusCode = c.res.status
+    wideEvent.status_code = c.res.status
     wideEvent.outcome = c.res.status >= 400 ? "failure" : "success"
 
     if (c.res.status >= 400) {
@@ -75,7 +75,7 @@ app.use("*", async (c, next) => {
     if (session) {
       wideEvent.session = {
         id: session.id,
-        activeOrganizationId: session.activeOrganizationId,
+        active_organization_id: session.activeOrganizationId,
       }
     }
   } catch (error: unknown) {
@@ -93,7 +93,7 @@ app.use("*", async (c, next) => {
         ? maybeStatus
         : 500
 
-    wideEvent.statusCode = statusCode
+    wideEvent.status_code = statusCode
     wideEvent.outcome = "error"
     wideEvent.error = {
       message,
@@ -102,14 +102,15 @@ app.use("*", async (c, next) => {
     }
     throw error
   } finally {
-    wideEvent.durationMs = Date.now() - startTime
+    wideEvent.duration_ms = Date.now() - startTime
 
     // Merge any custom log context set during request lifecycle
     Object.assign(wideEvent, c.get("logContext"))
 
     if (
       wideEvent.outcome === "error" ||
-      (typeof wideEvent.statusCode === "number" && wideEvent.statusCode >= 500)
+      (typeof wideEvent.status_code === "number" &&
+        wideEvent.status_code >= 500)
     ) {
       logger.error(wideEvent)
     } else {
@@ -204,6 +205,7 @@ app.use("*", async (c, next) => {
 
 import { processDueScheduledDispatches } from "./lib/scheduler/dispatch-worker"
 import { addonRouter } from "./routes/addon"
+import { agentActionsRouter } from "./routes/agent/actions"
 import { agentChatRouter } from "./routes/agent/chat"
 import { agentHistoryRouter } from "./routes/agent/history"
 import { agentSettingsRouter } from "./routes/agent/settings"
@@ -223,6 +225,7 @@ app.route("/api/auth/integrations", integrationsRouter)
 app.route("/api/auth/agent", agentAuthRouter)
 app.route("/api/agent", agentHistoryRouter)
 app.route("/api/agent", agentChatRouter)
+app.route("/api/agent", agentActionsRouter)
 app.route("/api/agent", agentSettingsRouter)
 app.route("/api/agent/tools", agentToolsRouter)
 app.route("/api/gmail/addon", addonRouter)

@@ -119,11 +119,31 @@ describe("Phase 3 business read tools (apps/auth)", () => {
   })
 
   test("customerDetailsTool returns customer profile or not_found error", async () => {
+    // Exact UUID lookup
     const res = await customerDetailsTool({ id: companyId }, ctx())
     if ("customer" in res && res.customer) {
       expect(res.customer.name).toBe("Acme Corp")
     } else {
       throw new Error("Expected customer profile")
+    }
+
+    // Name fallback lookup
+    const nameRes = await customerDetailsTool({ id: "Acme Corp" }, ctx())
+    if ("customer" in nameRes && nameRes.customer) {
+      expect(nameRes.customer.name).toBe("Acme Corp")
+    } else {
+      throw new Error("Expected customer profile from name lookup")
+    }
+
+    // Padded UUID lookup
+    const paddedRes = await customerDetailsTool(
+      { id: `  ${companyId}  ` },
+      ctx()
+    )
+    if ("customer" in paddedRes && paddedRes.customer) {
+      expect(paddedRes.customer.name).toBe("Acme Corp")
+    } else {
+      throw new Error("Expected customer profile from padded UUID lookup")
     }
 
     const notFoundRes = await customerDetailsTool(

@@ -222,7 +222,7 @@ function InvoicesRoute() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 flex-1 overflow-hidden">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       <AppHeader />
       <PageHeader
         title="Invoices"
@@ -234,7 +234,7 @@ function InvoicesRoute() {
                 render={
                   <Button
                     variant="outline"
-                    className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border-neutral-800 bg-neutral-900 text-neutral-300 text-xs"
+                    className="flex h-9 cursor-pointer items-center gap-2 rounded-lg text-xs"
                   />
                 }
               >
@@ -262,23 +262,19 @@ function InvoicesRoute() {
                   <span>Pick a date range</span>
                 )}
               </PopoverTrigger>
-              <PopoverContent
-                className="w-auto border-neutral-800 bg-neutral-900 p-0"
-                align="end"
-              >
+              <PopoverContent className="w-auto p-0" align="end">
                 <Calendar
                   mode="range"
                   selected={dateRange}
                   onSelect={setDateRange}
                   numberOfMonths={2}
-                  className="bg-neutral-900 text-neutral-300"
                 />
               </PopoverContent>
             </Popover>
 
             <Button
               type="button"
-              className="flex h-9 cursor-pointer items-center gap-2 rounded-full border-0 bg-white px-4 py-2 font-semibold text-black text-xs hover:bg-neutral-200"
+              className="flex h-9 cursor-pointer items-center gap-2 rounded-full px-4 py-2 font-semibold text-xs"
               onClick={() => createDraft.mutate()}
               disabled={createDraft.isPending}
             >
@@ -288,111 +284,111 @@ function InvoicesRoute() {
           </div>
         }
       />
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="grid gap-6 bg-neutral-950/40 p-6 text-neutral-200 md:p-8">
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="grid gap-6 bg-background p-6 text-foreground md:p-8">
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
+            <Card className="relative rounded-2xl border-border/80 bg-card p-5">
               <div className="flex items-start justify-between">
-                <span className="font-medium text-neutral-400 text-xs">
+                <span className="font-medium text-muted-foreground text-xs">
                   Total Invoiced
                 </span>
-                <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
+                <div className="rounded-lg border border-border bg-muted/60 p-1.5 text-muted-foreground">
                   <BanknotesIcon className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-3">
-                <span className="font-semibold text-3xl text-white tracking-tight">
+                <span className="font-semibold text-3xl text-foreground tracking-tight">
                   {formatValueNoDecimals(stats.totalSum, "KES")}
                 </span>
               </div>
-              <div className="mt-4 flex items-center justify-between text-neutral-500 text-xs">
+              <div className="mt-4 flex items-center justify-between text-muted-foreground text-xs">
                 <span>{stats.totalCount} invoices</span>
               </div>
             </Card>
 
-            <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
+            <Card className="relative rounded-2xl border-border/80 bg-card p-5">
               <div className="flex items-start justify-between">
-                <span className="font-medium text-neutral-400 text-xs">
+                <span className="font-medium text-muted-foreground text-xs">
                   Paid Invoices
                 </span>
-                <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
+                <div className="rounded-lg border border-border bg-muted/60 p-1.5 text-muted-foreground">
                   <CheckCircleIcon className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-3">
-                <span className="font-semibold text-3xl text-white tracking-tight">
+                <span className="font-semibold text-3xl text-foreground tracking-tight">
                   {formatValueNoDecimals(stats.paidSum, "KES")}
                 </span>
               </div>
-              <div className="mt-4 flex items-center justify-between text-neutral-500 text-xs">
+              <div className="mt-4 flex items-center justify-between text-muted-foreground text-xs">
                 <span>{stats.paidCount} paid</span>
               </div>
             </Card>
 
-            <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
+            <Card className="relative rounded-2xl border-border/80 bg-card p-5">
               <div className="flex items-start justify-between">
-                <span className="font-medium text-neutral-400 text-xs">
+                <span className="font-medium text-muted-foreground text-xs">
                   Outstanding
                 </span>
-                <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
+                <div className="rounded-lg border border-border bg-muted/60 p-1.5 text-muted-foreground">
                   <ClockIcon className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-3">
-                <span className="font-semibold text-3xl text-white tracking-tight">
+                <span className="font-semibold text-3xl text-foreground tracking-tight">
                   {formatValueNoDecimals(stats.outstandingSum, "KES")}
                 </span>
               </div>
-              <div className="mt-4 flex items-center justify-between text-neutral-500 text-xs">
+              <div className="mt-4 flex items-center justify-between text-muted-foreground text-xs">
                 <span>{stats.outstandingCount} outstanding</span>
               </div>
             </Card>
 
-            <Card className="relative rounded-2xl border-neutral-800/80 bg-neutral-900/60 p-5">
+            <Card className="relative rounded-2xl border-border/80 bg-card p-5">
               <div className="flex items-start justify-between">
-                <span className="font-medium text-neutral-400 text-xs">
+                <span className="font-medium text-muted-foreground text-xs">
                   Overdue
                 </span>
-                <div className="rounded-lg border border-neutral-800 bg-neutral-800/40 p-1.5 text-neutral-400">
+                <div className="rounded-lg border border-border bg-muted/60 p-1.5 text-muted-foreground">
                   <NoSymbolIcon className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-3">
-                <span className="font-semibold text-3xl text-red-400 tracking-tight">
+                <span className="font-semibold text-3xl text-destructive tracking-tight">
                   {formatValueNoDecimals(stats.overdueSum, "KES")}
                 </span>
               </div>
-              <div className="mt-4 flex items-center justify-between text-neutral-500 text-xs">
+              <div className="mt-4 flex items-center justify-between text-muted-foreground text-xs">
                 <span>{stats.overdueCount} overdue</span>
               </div>
             </Card>
           </div>
 
           {/* Invoices List Card Container */}
-          <Card className="mt-2 overflow-hidden rounded-2xl border-neutral-800/80 bg-neutral-900/30 p-6">
-            <div className="mb-6 flex flex-col gap-4 border-neutral-800/50 border-b pb-6 sm:flex-row sm:items-center sm:justify-between">
+          <Card className="mt-2 overflow-hidden rounded-2xl border-border/80 bg-card p-6">
+            <div className="mb-6 flex flex-col gap-4 border-border/50 border-b pb-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="font-semibold text-lg text-white">
+                <h2 className="font-semibold text-foreground text-lg">
                   All invoices
                 </h2>
-                <p className="mt-1 text-neutral-500 text-xs">
+                <p className="mt-1 text-muted-foreground text-xs">
                   {filteredList.length} of {invoices.length} shown
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center rounded-lg border border-neutral-800/80 bg-neutral-900/60 p-0.5">
+                <div className="flex items-center rounded-lg border border-border/80 bg-muted/50 p-0.5">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 rounded bg-neutral-800 text-white"
+                    className="h-7 w-7 rounded bg-background text-foreground shadow-2xs"
                   >
                     <ListBulletIcon className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-neutral-500 hover:text-neutral-300"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
                   >
                     <Squares2X2Icon className="h-3.5 w-3.5" />
                   </Button>
@@ -400,46 +396,46 @@ function InvoicesRoute() {
 
                 <Button
                   variant="outline"
-                  className="h-8 cursor-pointer gap-1.5 rounded-lg border-neutral-800/80 bg-neutral-900/60 text-xs hover:bg-neutral-800/50"
+                  className="h-8 cursor-pointer gap-1.5 rounded-lg text-xs"
                 >
                   <AdjustmentsHorizontalIcon className="h-3.5 w-3.5" />
                   Filters
                 </Button>
 
                 <div className="relative w-full sm:w-[220px]">
-                  <MagnifyingGlassIcon className="absolute top-2.5 left-2.5 h-3.5 w-3.5 text-neutral-500" />
+                  <MagnifyingGlassIcon className="absolute top-2.5 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
                     type="search"
                     placeholder="Search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-8 w-full rounded-lg border-neutral-800/80 bg-neutral-900/60 pl-8 text-neutral-200 text-xs placeholder-neutral-500 focus-visible:border-neutral-700 focus-visible:ring-neutral-700"
+                    className="h-8 w-full pl-8 text-xs"
                   />
                 </div>
               </div>
             </div>
 
             {groupedMonths.length === 0 ? (
-              <div className="py-12 text-center text-neutral-500 text-sm">
+              <div className="py-12 text-center text-muted-foreground text-sm">
                 No invoices found.
               </div>
             ) : (
               <div className="space-y-8">
                 {groupedMonths.map((group) => (
                   <div key={group.monthName} className="space-y-3">
-                    <div className="grid grid-cols-[48px_1fr_110px_110px_90px_100px_40px] items-center gap-4 border-neutral-900 border-b px-2 pb-2 font-semibold text-neutral-500 text-xs">
+                    <div className="grid grid-cols-[48px_1fr_110px_110px_90px_100px_40px] items-center gap-4 border-border/60 border-b px-2 pb-2 font-semibold text-muted-foreground text-xs">
                       <div className="col-span-2 flex items-center gap-1.5">
-                        <span className="font-bold text-neutral-300">
+                        <span className="font-bold text-foreground">
                           {group.monthName}
                         </span>
-                        <span className="rounded-full bg-neutral-800/60 px-1.5 py-0.2 font-normal text-[10px] text-neutral-400">
+                        <span className="rounded-full bg-muted px-1.5 py-0.5 font-normal text-[10px] text-muted-foreground">
                           {group.invoices.length}
                         </span>
                       </div>
                       <div className="text-right">Created</div>
                       <div className="text-right">Due Date</div>
                       <div className="text-right">Status</div>
-                      <div className="text-right font-bold text-neutral-400">
+                      <div className="text-right font-bold text-foreground">
                         {formatValueNoDecimals(
                           group.totalMinor,
                           group.currency
@@ -457,9 +453,9 @@ function InvoicesRoute() {
                         return (
                           <div
                             key={invoice.id}
-                            className="grid grid-cols-[48px_1fr_110px_110px_90px_100px_40px] items-center gap-4 rounded-xl border border-neutral-900/40 bg-neutral-900/20 px-2 py-3 transition duration-150 hover:bg-neutral-900/55"
+                            className="grid grid-cols-[48px_1fr_110px_110px_90px_100px_40px] items-center gap-4 rounded-xl border border-border/40 bg-background/50 px-2 py-3 transition duration-150 hover:bg-muted/40"
                           >
-                            <div className="flex h-9 w-9 select-none items-center justify-center rounded-full border border-neutral-700/30 bg-neutral-800/80 font-semibold text-neutral-400 text-xs">
+                            <div className="flex h-9 w-9 select-none items-center justify-center rounded-full border border-border bg-muted font-semibold text-muted-foreground text-xs">
                               {getInitials(invoice.title)}
                             </div>
 
@@ -467,35 +463,35 @@ function InvoicesRoute() {
                               <Link
                                 to="/invoices/$invoiceId"
                                 params={{ invoiceId: invoice.id }}
-                                className="truncate font-medium text-neutral-200 text-sm transition-colors hover:text-white"
+                                className="truncate font-medium text-foreground text-sm transition-colors hover:text-primary"
                               >
                                 {invoice.title || "Untitled invoice"}{" "}
-                                <span className="font-normal text-neutral-500 text-xs">
+                                <span className="font-normal text-muted-foreground text-xs">
                                   ({invoice.invoiceNumber})
                                 </span>
                               </Link>
                               <div className="mt-1 flex min-w-0 items-center gap-2">
-                                <span className="truncate text-neutral-500 text-xs">
+                                <span className="truncate text-muted-foreground text-xs">
                                   {invoice.customerName || "Untitled client"}
                                 </span>
                                 <Badge
                                   variant="outline"
-                                  className="rounded border-neutral-800 bg-neutral-800/40 px-1 py-0 text-[9px] text-neutral-500"
+                                  className="rounded border-border bg-muted/50 px-1 py-0 text-[9px] text-muted-foreground"
                                 >
                                   Invoice
                                 </Badge>
                               </div>
                             </div>
 
-                            <div className="text-right text-neutral-400 text-xs">
+                            <div className="text-right text-muted-foreground text-xs">
                               {formatDateOnly(invoice.issueDate, "en-US")}
                             </div>
 
                             <div
                               className={`text-right text-xs ${
                                 isOverdue
-                                  ? "font-medium text-red-400"
-                                  : "text-neutral-400"
+                                  ? "font-medium text-destructive"
+                                  : "text-muted-foreground"
                               }`}
                             >
                               {formatDateOnly(invoice.dueDate, "en-US")}
@@ -506,14 +502,14 @@ function InvoicesRoute() {
                                 variant="outline"
                                 className={`rounded px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider ${
                                   invoice.status === "paid"
-                                    ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
+                                    ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                                     : invoice.status === "scheduled"
-                                      ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                                      ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
                                       : invoice.status === "sent"
                                         ? isOverdue
-                                          ? "border-red-500/25 bg-red-500/10 text-red-400"
-                                          : "border-blue-500/25 bg-blue-500/10 text-blue-400"
-                                        : "border-neutral-800 bg-neutral-900 text-neutral-500"
+                                          ? "border-destructive/25 bg-destructive/10 text-destructive"
+                                          : "border-blue-500/25 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                        : "border-border bg-muted/40 text-muted-foreground"
                                 }`}
                               >
                                 {invoice.status === "sent" && isOverdue
@@ -522,7 +518,7 @@ function InvoicesRoute() {
                               </Badge>
                             </div>
 
-                            <div className="text-right font-semibold text-sm text-white">
+                            <div className="text-right font-semibold text-foreground text-sm">
                               {formatValueNoDecimals(
                                 invoice.valueMinor,
                                 invoice.currency
@@ -536,7 +532,7 @@ function InvoicesRoute() {
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-7 w-7 cursor-pointer rounded-lg text-neutral-500 hover:text-neutral-200"
+                                      className="h-7 w-7 cursor-pointer rounded-lg text-muted-foreground hover:text-foreground"
                                     />
                                   }
                                 >
@@ -544,7 +540,7 @@ function InvoicesRoute() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent
                                   align="end"
-                                  className="w-40 border-neutral-800 bg-neutral-900 text-neutral-300"
+                                  className="w-40"
                                 >
                                   <DropdownMenuItem
                                     render={
@@ -576,7 +572,7 @@ function InvoicesRoute() {
                                   )}
                                   <DropdownMenuItem
                                     variant="destructive"
-                                    className="cursor-pointer text-red-500 text-xs focus:bg-red-500/10 focus:text-red-500"
+                                    className="cursor-pointer text-xs"
                                     onClick={() =>
                                       handleDelete(invoice.id, invoice.title)
                                     }

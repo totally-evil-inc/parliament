@@ -118,8 +118,79 @@ describe("agent history API (apps/auth)", () => {
       body: JSON.stringify({ title: "Renamed thread" }),
     })
     expect(patchRes.status).toBe(200)
-    const patchBody = (await patchRes.json()) as { title: string }
+    const patchBody = (await patchRes.json()) as {
+      title: string
+      pinned: boolean
+    }
     expect(patchBody.title).toBe("Renamed thread")
+
+    // pin conversation
+    const pinRes = await app.request(`/api/agent/conversations/${id}`, {
+      method: "PATCH",
+      ...withSession(email),
+      body: JSON.stringify({ pinned: true }),
+    })
+    expect(pinRes.status).toBe(200)
+    const pinBody = (await pinRes.json()) as { pinned: boolean }
+    expect(pinBody.pinned).toBe(true)
+
+    // rename preserves pinned status
+    const renamePreserveRes = await app.request(
+      `/api/agent/conversations/${id}`,
+      {
+        method: "PATCH",
+        ...withSession(email),
+        body: JSON.stringify({ title: "Second Title" }),
+      }
+    )
+    expect(renamePreserveRes.status).toBe(200)
+    const renamePreserveBody = (await renamePreserveRes.json()) as {
+      title: string
+      pinned: boolean
+    }
+    expect(renamePreserveBody.title).toBe("Second Title")
+    expect(renamePreserveBody.pinned).toBe(true)
+
+    // unpin conversation
+    const unpinRes = await app.request(`/api/agent/conversations/${id}`, {
+      method: "PATCH",
+      ...withSession(email),
+      body: JSON.stringify({ pinned: false }),
+    })
+    expect(unpinRes.status).toBe(200)
+    const unpinBody = (await unpinRes.json()) as { pinned: boolean }
+    expect(unpinBody.pinned).toBe(false)
+
+    // non-uuid parameter returns 404 defensively
+    const nonUuidGet = await app.request(
+      "/api/agent/conversations/not-a-uuid-123",
+      withSession(email)
+    )
+    expect(nonUuidGet.status).toBe(404)
+
+    const nonUuidPatch = await app.request(
+      "/api/agent/conversations/not-a-uuid-123",
+      {
+        method: "PATCH",
+        ...withSession(email),
+        body: JSON.stringify({ title: "Nope" }),
+      }
+    )
+    expect(nonUuidPatch.status).toBe(404)
+
+    const nonUuidDel = await app.request(
+      "/api/agent/conversations/not-a-uuid-123",
+      { method: "DELETE", ...withSession(email) }
+    )
+    expect(nonUuidDel.status).toBe(404)
+
+    // empty patch payload returns 400
+    const emptyPatch = await app.request(`/api/agent/conversations/${id}`, {
+      method: "PATCH",
+      ...withSession(email),
+      body: JSON.stringify({}),
+    })
+    expect(emptyPatch.status).toBe(400)
 
     // delete
     const delRes = await app.request(`/api/agent/conversations/${id}`, {

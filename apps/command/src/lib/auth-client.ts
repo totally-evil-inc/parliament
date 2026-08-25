@@ -1,11 +1,15 @@
-import { magicLinkClient, organizationClient } from "better-auth/client/plugins"
+import {
+  genericOAuthClient,
+  magicLinkClient,
+  organizationClient,
+} from "better-auth/client/plugins"
 import { createAuthClient } from "better-auth/react"
 
 let lastAuthRequestId: string | null = null
 
 export const authClient = createAuthClient({
   baseURL: import.meta.env.VITE_BETTER_AUTH_URL,
-  plugins: [organizationClient(), magicLinkClient()],
+  plugins: [organizationClient(), magicLinkClient(), genericOAuthClient()],
   fetchOptions: {
     onRequest: (request) => {
       request.headers.set("x-request-id", crypto.randomUUID())

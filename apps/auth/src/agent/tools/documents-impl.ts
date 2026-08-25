@@ -1,3 +1,4 @@
+import { isUuid } from "@workspace/agent"
 import { and, count, db, desc, eq, schema, sql } from "@workspace/database"
 import {
   calculateInvoicePricing,
@@ -8,6 +9,7 @@ import {
   safeParseProposalDraft,
 } from "@workspace/document/schema"
 import type { AgentContext } from "../tool-ctx"
+import { escapeLikePattern } from "./sql-utils"
 
 export async function listProposalsTool(
   _args: Record<string, never>,
@@ -123,22 +125,41 @@ export async function getProposalSummaryTool(
   args: { id: string },
   ctx: AgentContext
 ) {
-  const [row] = await db
-    .select()
-    .from(schema.proposalDraft)
-    .where(
-      and(
-        eq(schema.proposalDraft.id, args.id),
-        eq(schema.proposalDraft.organizationId, ctx.organizationId)
+  let row: typeof schema.proposalDraft.$inferSelect | undefined
+  const validUuid = isUuid(args.id)
+
+  if (validUuid) {
+    const [found] = await db
+      .select()
+      .from(schema.proposalDraft)
+      .where(
+        and(
+          eq(schema.proposalDraft.id, args.id.trim()),
+          eq(schema.proposalDraft.organizationId, ctx.organizationId)
+        )
       )
-    )
-    .limit(1)
+      .limit(1)
+    row = found
+  } else if (args.id) {
+    const escaped = escapeLikePattern(args.id)
+    const [found] = await db
+      .select()
+      .from(schema.proposalDraft)
+      .where(
+        and(
+          eq(schema.proposalDraft.organizationId, ctx.organizationId),
+          sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${escaped}%`})`
+        )
+      )
+      .limit(1)
+    row = found
+  }
 
   if (!row) {
     return {
       error: {
         code: "not_found" as const,
-        message: `Proposal draft with id ${args.id} was not found.`,
+        message: `Proposal draft "${args.id}" was not found.`,
       },
     }
   }
@@ -286,22 +307,41 @@ export async function getInvoiceSummaryTool(
   args: { id: string },
   ctx: AgentContext
 ) {
-  const [row] = await db
-    .select()
-    .from(schema.invoiceDraft)
-    .where(
-      and(
-        eq(schema.invoiceDraft.id, args.id),
-        eq(schema.invoiceDraft.organizationId, ctx.organizationId)
+  let row: typeof schema.invoiceDraft.$inferSelect | undefined
+  const validUuid = isUuid(args.id)
+
+  if (validUuid) {
+    const [found] = await db
+      .select()
+      .from(schema.invoiceDraft)
+      .where(
+        and(
+          eq(schema.invoiceDraft.id, args.id.trim()),
+          eq(schema.invoiceDraft.organizationId, ctx.organizationId)
+        )
       )
-    )
-    .limit(1)
+      .limit(1)
+    row = found
+  } else if (args.id) {
+    const escaped = escapeLikePattern(args.id)
+    const [found] = await db
+      .select()
+      .from(schema.invoiceDraft)
+      .where(
+        and(
+          eq(schema.invoiceDraft.organizationId, ctx.organizationId),
+          sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${escaped}%`})`
+        )
+      )
+      .limit(1)
+    row = found
+  }
 
   if (!row) {
     return {
       error: {
         code: "not_found" as const,
-        message: `Invoice draft with id ${args.id} was not found.`,
+        message: `Invoice draft "${args.id}" was not found.`,
       },
     }
   }

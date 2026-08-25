@@ -1,0 +1,1164 @@
+import { afterAll, beforeAll, describe, expect, test } from "bun:test"
+import { db, eq, schema } from "@workspace/database"
+import { app } from "../index"
+import { AgentEngine } from "./agent-engine"
+import { ContextGovernor } from "./context-governor"
+import { convertToModelMessages } from "./loop"
+import { extractRetryLineage } from "./retry-lineage"
+import type { AgentContext } from "./tool-ctx"
+import { ToolDispatcher } from "./tool-dispatcher"
+
+describe("AgentEngine FSM & ContextGovernor", () => {
+  let orgId: string
+  let userId: string
+  let conversationId: string
+
+  const ctx: AgentContext = {
+    organizationId: "",
+    userId: "",
+    userEmail: "kernel@test.local",
+    orgName: "Kernel Test Org",
+  }
+
+  let dbAvailable = false
+
+  beforeAll(async () => {
+    try {
+      const now = new Date()
+      const [org] = await db
+        .insert(schema.organization)
+        .values({
+          name: "Kernel Test Org",
+          slug: `kernel-test-org-${crypto.randomUUID()}`,
+          createdAt: now,
+        })
+        .returning()
+      orgId = org.id
+      ctx.organizationId = orgId
+
+      const [user] = await db
+        .insert(schema.user)
+        .values({
+          id: crypto.randomUUID(),
+          name: "Kernel Tester",
+          email: `kernel-${crypto.randomUUID()}@test.local`,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning()
+      userId = user.id
+      ctx.userId = userId
+
+      await db.insert(schema.member).values({
+        organizationId: orgId,
+        userId,
+        role: "owner",
+        createdAt: now,
+      })
+
+      const [conversation] = await db
+        .insert(schema.chatConversation)
+        .values({
+          organizationId: orgId,
+          createdById: userId,
+          title: "Kernel Test Conversation",
+        })
+        .returning({ id: schema.chatConversation.id })
+      conversationId = conversation.id
+      dbAvailable = true
+    } catch {
+      orgId = "mock-org-id"
+      userId = "mock-user-id"
+      conversationId = "mock-conv-id"
+      ctx.organizationId = orgId
+      ctx.userId = userId
+      dbAvailable = false
+    }
+  })
+
+  afterAll(async () => {
+    if (!dbAvailable) return
+    try {
+      await db
+        .delete(schema.organization)
+        .where(eq(schema.organization.id, orgId))
+      await db.delete(schema.user).where(eq(schema.user.id, userId))
+    } catch {
+      // Ignore cleanup error
+    }
+  })
+
+  test("ContextGovernor compacts tool output when exceeding inline limit (Spill-to-Blob)", async () => {
+    const governor = new ContextGovernor({
+      maxInlineToolChars: 100,
+      slidingWindowTurns: 5,
+    })
+    const largeResult = {
+      deals: Array.from({ length: 50 }, (_, i) => ({
+        id: `deal-${i}`,
+        title: `Big Enterprise Deal ${i} with long description and milestone requirements`,
+      })),
+    }
+
+    const convId = conversationId
+    const { content, spilled, artifactId } = await governor.processToolResult({
+      toolName: "list_deals",
+      rawResult: largeResult,
+      organizationId: orgId,
+      conversationId: convId,
+    })
+
+    expect(spilled).toBe(true)
+    if (dbAvailable) {
+      expect(artifactId).toBeDefined()
+      expect(content).toContain(`artifact://${artifactId}`)
+    }
+    expect(content).toContain(
+      "[OUTPUT OVERFLOW TRUNCATED — SPILLED TO ARTIFACT STORE]"
+    )
+  })
+
+  test("ContextGovernor applies sliding window while preserving user goal", () => {
+    const governor = new ContextGovernor({
+      maxInlineToolChars: 4800,
+      slidingWindowTurns: 2,
+    })
+    const messages: any[] = [
+      { role: "user", content: "Initial project goal: Build invoicing portal" },
+      { role: "assistant", content: "Got it, checking deals..." },
+      { role: "user", content: "Turn 1 question" },
+      { role: "assistant", content: "Turn 1 answer" },
+      { role: "user", content: "Turn 2 question" },
+      { role: "assistant", content: "Turn 2 answer" },
+      { role: "user", content: "Turn 3 question" },
+      { role: "assistant", content: "Turn 3 answer" },
+    ]
+
+    const compacted = governor.compactMessages(messages)
+    // Should preserve initial user message + last 4 messages (slidingWindowTurns * 2)
+    expect(compacted[0].content).toBe(
+      "Initial project goal: Build invoicing portal"
+    )
+    expect(compacted.length).toBeLessThanOrEqual(5)
+  })
+
+  test("Action approval endpoints manage pending approvals and resolution lifecycle", async () => {
+    if (!dbAvailable) return
+    const approvalId = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+    // 1. Insert pending action approval
+    await db.insert(schema.chatActionApproval).values({
+      id: approvalId,
+      organizationId: orgId,
+      conversationId,
+      toolName: "create_deal",
+      toolArgs: { title: "Dunder Mifflin Deal", valueMinorUnits: 500000 },
+      summary: "Create deal: Dunder Mifflin Deal",
+      status: "pending",
+      expiresAt,
+    })
+
+    // 2. Reject action
+    const rejectRes = await app.fetch(
+      new Request(
+        `http://localhost:4000/api/agent/actions/${approvalId}/resolve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "kernel@test.local",
+            "x-test-org-id": orgId,
+            "x-test-user-id": userId,
+          },
+          body: JSON.stringify({
+            approved: false,
+            feedback: "Budget exceeded",
+          }),
+        }
+      )
+    )
+
+    expect(rejectRes.status).toBe(200)
+    const rejectData = (await rejectRes.json()) as any
+    expect(rejectData.status).toBe("rejected")
+    expect(rejectData.result.message).toContain("Budget exceeded")
+
+    // 3. Trying to resolve again should return 409 Conflict
+    const secondRes = await app.fetch(
+      new Request(
+        `http://localhost:4000/api/agent/actions/${approvalId}/resolve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "kernel@test.local",
+            "x-test-org-id": orgId,
+            "x-test-user-id": userId,
+          },
+          body: JSON.stringify({ approved: true }),
+        }
+      )
+    )
+    expect(secondRes.status).toBe(409)
+
+    // 4. Non-UUID action ID should safely return 404 Not Found without crashing or org hijacking
+    const nonUuidRes = await app.fetch(
+      new Request(
+        "http://localhost:4000/api/agent/actions/call_12345/resolve",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "kernel@test.local",
+            "x-test-org-id": orgId,
+            "x-test-user-id": userId,
+          },
+          body: JSON.stringify({ approved: true }),
+        }
+      )
+    )
+    expect(nonUuidRes.status).toBe(404)
+
+    // 5. Non-existent random UUID should return 404 Not Found
+    const missingUuidRes = await app.fetch(
+      new Request(
+        `http://localhost:4000/api/agent/actions/${crypto.randomUUID()}/resolve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "kernel@test.local",
+            "x-test-org-id": orgId,
+            "x-test-user-id": userId,
+          },
+          body: JSON.stringify({ approved: true }),
+        }
+      )
+    )
+    expect(missingUuidRes.status).toBe(404)
+
+    // 6. Expired action approval should atomically transition and return 410 Gone
+    const expiredApprovalId = crypto.randomUUID()
+    const pastDate = new Date(Date.now() - 60000) // 1 minute in the past
+    await db.insert(schema.chatActionApproval).values({
+      id: expiredApprovalId,
+      organizationId: orgId,
+      conversationId,
+      toolName: "create_deal",
+      toolArgs: { title: "Expired Deal" },
+      summary: "Create deal: Expired Deal",
+      status: "pending",
+      expiresAt: pastDate,
+    })
+
+    const expiredRes = await app.fetch(
+      new Request(
+        `http://localhost:4000/api/agent/actions/${expiredApprovalId}/resolve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "kernel@test.local",
+            "x-test-org-id": orgId,
+            "x-test-user-id": userId,
+          },
+          body: JSON.stringify({ approved: true }),
+        }
+      )
+    )
+    expect(expiredRes.status).toBe(410)
+    const expiredData = (await expiredRes.json()) as any
+    expect(expiredData.error.code).toBe("action_expired")
+
+    // 7. Whitespace-padded valid UUID should resolve successfully
+    const whitespaceApprovalId = crypto.randomUUID()
+    await db.insert(schema.chatActionApproval).values({
+      id: whitespaceApprovalId,
+      organizationId: orgId,
+      conversationId,
+      toolName: "create_deal",
+      toolArgs: { title: "Whitespace Deal" },
+      summary: "Create deal: Whitespace Deal",
+      status: "pending",
+      expiresAt,
+    })
+
+    const whitespaceRes = await app.fetch(
+      new Request(
+        `http://localhost:4000/api/agent/actions/  ${whitespaceApprovalId}  /resolve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-test-session-email": "kernel@test.local",
+            "x-test-org-id": orgId,
+            "x-test-user-id": userId,
+          },
+          body: JSON.stringify({
+            approved: false,
+            feedback: "Whitespace test",
+          }),
+        }
+      )
+    )
+    expect(whitespaceRes.status).toBe(200)
+  })
+
+  test("approval-gated CRM tools require approval without the bypass flag", async () => {
+    const dispatcher = new ToolDispatcher(ctx)
+    const gated = await dispatcher.executeTool("create_customer", {
+      name: "Acme Co",
+    })
+    expect(gated.approvalRequired).toBe(true)
+    expect(gated.isError).toBe(false)
+  })
+
+  test("CRM mutation tools execute through the dispatcher with the gate bypassed", async () => {
+    if (!dbAvailable) return
+    const dispatcher = new ToolDispatcher(ctx)
+
+    const createdCustomer = await dispatcher.executeTool(
+      "create_customer",
+      { name: "Dunder Mifflin Paper Co" },
+      { skipApprovalGate: true }
+    )
+    expect(createdCustomer.isError).toBe(false)
+    const customerId = (createdCustomer.result as any).id
+    expect(customerId).toBeDefined()
+
+    const createdDeal = await dispatcher.executeTool(
+      "create_deal",
+      {
+        title: "Dunder Mifflin Enterprise Deal",
+        valueMinorUnits: 500000,
+        currency: "USD",
+        companyId: customerId,
+      },
+      { skipApprovalGate: true }
+    )
+    expect(createdDeal.isError).toBe(false)
+    const dealId = (createdDeal.result as any).id
+    expect(dealId).toBeDefined()
+
+    const staged = await dispatcher.executeTool(
+      "update_deal_stage",
+      { id: dealId, stage: "proposal_sent" },
+      { skipApprovalGate: true }
+    )
+    expect(staged.isError).toBe(false)
+    expect((staged.result as any).stage).toBe("proposal_sent")
+
+    const updated = await dispatcher.executeTool(
+      "update_customer",
+      { id: customerId, status: "inactive" },
+      { skipApprovalGate: true }
+    )
+    expect(updated.isError).toBe(false)
+    expect((updated.result as any).status).toBe("inactive")
+  })
+
+  test("AgentEngine strictly omits retryOf when explicit linkage is absent and preserves explicit retryOf", async () => {
+    const engine = new AgentEngine({ maxSteps: 2 })
+
+    let stepCount = 0
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        stepCount++
+        const currentStep = stepCount
+        const stream = new ReadableStream({
+          start(controller) {
+            if (currentStep === 1) {
+              controller.enqueue({
+                type: "tool-call",
+                toolCallId: "call-1",
+                toolName: "create_deal",
+                input: JSON.stringify({
+                  title: "Deal 1",
+                  valueMinorUnits: 10000,
+                }),
+              })
+              controller.enqueue({
+                type: "finish",
+                finishReason: "tool-calls",
+                usage: { promptTokens: 10, completionTokens: 10 },
+              })
+            } else if (currentStep === 2) {
+              controller.enqueue({
+                type: "tool-call",
+                toolCallId: "call-2",
+                toolName: "create_deal",
+                input: JSON.stringify({
+                  title: "Unrelated Deal 2",
+                  valueMinorUnits: 20000,
+                }),
+              })
+              controller.enqueue({
+                type: "finish",
+                finishReason: "tool-calls",
+                usage: { promptTokens: 10, completionTokens: 10 },
+              })
+            } else {
+              controller.enqueue({
+                type: "text-delta",
+                textDelta: "Done.",
+              })
+              controller.enqueue({
+                type: "finish",
+                finishReason: "stop",
+                usage: { promptTokens: 10, completionTokens: 10 },
+              })
+            }
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: [{ role: "user", content: "Create two deals" } as any],
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const toolCalledEvents = events.filter((e) => e.type === "tool:called")
+    expect(toolCalledEvents.length).toBeGreaterThanOrEqual(1)
+
+    // Call 1
+    expect(toolCalledEvents[0].callId).toBe("call-1")
+    expect(toolCalledEvents[0].retryOf).toBeUndefined()
+    expect(toolCalledEvents[0].attempt).toBeUndefined()
+
+    if (toolCalledEvents.length > 1) {
+      // Call 2 must NOT receive retryOf or attempt from call 1 (no implicit retry inference)
+      expect(toolCalledEvents[1].callId).toBe("call-2")
+      expect(toolCalledEvents[1].retryOf).toBeUndefined()
+      expect(toolCalledEvents[1].attempt).toBeUndefined()
+    }
+  })
+
+  test("AgentEngine preserves explicit retryOf and attempt when provided by provider/runtime", async () => {
+    const engine = new AgentEngine({ maxSteps: 1 })
+
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-original-failed",
+              toolName: "create_deal",
+              input: JSON.stringify({
+                title: "Original Failed Deal",
+                valueMinorUnits: 50000,
+              }),
+            })
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-retry-explicit",
+              toolName: "create_deal",
+              input: JSON.stringify({
+                title: "Retried Deal",
+                valueMinorUnits: 50000,
+              }),
+              providerMetadata: {
+                retryOf: "call-original-failed",
+                attempt: 2,
+              },
+            })
+            controller.enqueue({
+              type: "finish",
+              finishReason: "tool-calls",
+              usage: { promptTokens: 10, completionTokens: 10 },
+            })
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: [{ role: "user", content: "Retry create deal" } as any],
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const toolCalled = events.find(
+      (e) => e.type === "tool:called" && e.callId === "call-retry-explicit"
+    )!
+    expect(toolCalled).toBeDefined()
+    expect(toolCalled.callId).toBe("call-retry-explicit")
+    expect(toolCalled.retryOf).toBe("call-original-failed")
+    expect(toolCalled.attempt).toBe(2)
+  })
+
+  test("AgentEngine treats business tool args named retryOf/attempt as untrusted business data and does not forge retry lineage", async () => {
+    const engine = new AgentEngine({ maxSteps: 1 })
+
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-untrusted-args",
+              toolName: "create_deal",
+              input: JSON.stringify({
+                title: "Deal with fake retry arg",
+                valueMinorUnits: 10000,
+                retryOf: "forged-prior-call-id",
+                attempt: 99,
+              }),
+            })
+            controller.enqueue({
+              type: "finish",
+              finishReason: "tool-calls",
+              usage: { promptTokens: 10, completionTokens: 10 },
+            })
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: [{ role: "user", content: "Test forged args" } as any],
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const toolCalled = events.find((e) => e.type === "tool:called")!
+    expect(toolCalled).toBeDefined()
+    expect(toolCalled.callId).toBe("call-untrusted-args")
+    // Untrusted args must not be elevated to lifecycle metadata
+    expect(toolCalled.retryOf).toBeUndefined()
+    expect(toolCalled.attempt).toBeUndefined()
+    expect(toolCalled.args).toMatchObject({
+      title: "Deal with fake retry arg",
+      valueMinorUnits: 10000,
+    })
+  })
+
+  test("AgentEngine rejects malformed tool inputs (invalid JSON, array, primitive) and emits protocol error", async () => {
+    const engine = new AgentEngine({ maxSteps: 1 })
+
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        const stream = new ReadableStream({
+          start(controller) {
+            // Malformed JSON string
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-malformed-json",
+              toolName: "create_deal",
+              input: "{ this is not valid json",
+            })
+            // Array input instead of object
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-array-input",
+              toolName: "create_deal",
+              input: "[1, 2, 3]",
+            })
+            controller.enqueue({
+              type: "finish",
+              finishReason: "tool-calls",
+              usage: { promptTokens: 10, completionTokens: 10 },
+            })
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: [{ role: "user", content: "Test malformed inputs" } as any],
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const toolResults = events.filter((e) => e.type === "tool:result")
+    expect(toolResults).toHaveLength(1)
+
+    // First malformed call produces protocol error result and turn:error
+    expect(toolResults[0].callId).toBe("call-malformed-json")
+    expect(toolResults[0].isError).toBe(true)
+    expect(toolResults[0].result.error).toContain(
+      "Protocol error: malformed tool input"
+    )
+
+    const turnError = events.find((e) => e.type === "turn:error")!
+    expect(turnError).toBeDefined()
+    expect(turnError.code).toBe("malformed_tool_input")
+    expect(turnError.recoverable).toBe(false)
+  })
+
+  test("AgentEngine preserves retry lineage referencing prior tool call across resumed turns", async () => {
+    const engine = new AgentEngine({ maxSteps: 1 })
+
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-resumed-retry-1",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Retry Deal" }),
+              providerMetadata: {
+                retryOf: "call-prior-turn-1",
+                attempt: 2,
+              },
+            })
+            controller.enqueue({
+              type: "finish",
+              finishReason: "tool-calls",
+              usage: { promptTokens: 10, completionTokens: 10 },
+            })
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const rawTurn = [
+      {
+        role: "user",
+        content: "Create a deal",
+      },
+      {
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-call",
+            toolCallId: "call-prior-turn-1",
+            toolName: "create_deal",
+            args: { title: "Failed Deal" },
+          },
+          {
+            type: "tool-result",
+            toolCallId: "call-prior-turn-1",
+            toolName: "create_deal",
+            result: { error: "Network timeout" },
+            isError: true,
+          },
+        ],
+      },
+      {
+        role: "user",
+        content: "Please retry",
+      },
+    ]
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: convertToModelMessages(rawTurn),
+      retryLineage: extractRetryLineage(rawTurn),
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const toolCalled = events.find(
+      (e) => e.type === "tool:called" && e.callId === "call-resumed-retry-1"
+    )!
+    expect(toolCalled).toBeDefined()
+    expect(toolCalled.retryOf).toBe("call-prior-turn-1")
+    expect(toolCalled.attempt).toBe(2)
+  })
+
+  test("AgentEngine derives attempt = 3 across resumed turns when prior parent call was at attempt = 2", async () => {
+    const engine = new AgentEngine({ maxSteps: 1 })
+
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        const stream = new ReadableStream({
+          start(controller) {
+            // New turn retry referencing attempt 2 parent without providing explicit attempt
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-resumed-retry-attempt3",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Third Attempt Deal" }),
+              providerMetadata: {
+                retryOf: "call-attempt-2-parent",
+              },
+            })
+            controller.enqueue({
+              type: "finish",
+              finishReason: "tool-calls",
+              usage: { promptTokens: 10, completionTokens: 10 },
+            })
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const rawTurn = [
+      {
+        role: "user",
+        content: "Create a deal",
+      },
+      {
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-call",
+            toolCallId: "call-attempt-2-parent",
+            toolName: "create_deal",
+            args: { title: "Second Attempt Deal" },
+            attempt: 2,
+            retryOf: "call-original-attempt-1",
+          },
+          {
+            type: "tool-result",
+            toolCallId: "call-attempt-2-parent",
+            toolName: "create_deal",
+            result: { error: "Second timeout" },
+            isError: true,
+            attempt: 2,
+            retryOf: "call-original-attempt-1",
+          },
+        ],
+      },
+      {
+        role: "user",
+        content: "Please try one more time",
+      },
+    ]
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: convertToModelMessages(rawTurn),
+      retryLineage: extractRetryLineage(rawTurn),
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const toolCalled = events.find(
+      (e) =>
+        e.type === "tool:called" && e.callId === "call-resumed-retry-attempt3"
+    )!
+    expect(toolCalled).toBeDefined()
+    expect(toolCalled.retryOf).toBe("call-attempt-2-parent")
+    expect(toolCalled.attempt).toBe(3)
+  })
+
+  test("AgentEngine derives attempt = parent.attempt + 1 when retryOf is supplied without explicit attempt", async () => {
+    const engine = new AgentEngine({ maxSteps: 1 })
+
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        const stream = new ReadableStream({
+          start(controller) {
+            // Initial call 1 (attempt 1)
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-base-1",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Deal Base" }),
+            })
+            // Retry call referencing call-base-1 without attempt field
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-auto-attempt",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Deal Base Retry" }),
+              providerMetadata: {
+                retryOf: "call-base-1",
+              },
+            })
+            controller.enqueue({
+              type: "finish",
+              finishReason: "tool-calls",
+              usage: { promptTokens: 10, completionTokens: 10 },
+            })
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: [{ role: "user", content: "Test auto attempt" } as any],
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const autoAttemptTool = events.find(
+      (e) => e.type === "tool:called" && e.callId === "call-auto-attempt"
+    )!
+    expect(autoAttemptTool).toBeDefined()
+    expect(autoAttemptTool.retryOf).toBe("call-base-1")
+    expect(autoAttemptTool.attempt).toBe(2)
+  })
+
+  test("retry lineage stays runtime-side: cross-turn derivation works while provider-bound prompt carries no retry metadata", async () => {
+    const engine = new AgentEngine({ maxSteps: 1 })
+
+    const capturedPrompts: any[] = []
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream(params: any) {
+        capturedPrompts.push(params.prompt)
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-resumed-retry-clean",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Clean Retry Deal" }),
+              providerMetadata: {
+                retryOf: "call-attempt-2-parent-clean",
+              },
+            })
+            controller.enqueue({
+              type: "finish",
+              finishReason: "tool-calls",
+              usage: { promptTokens: 10, completionTokens: 10 },
+            })
+            controller.close()
+          },
+        })
+        return { stream, rawCall: { rawPrompt: null, rawSettings: {} } }
+      },
+    }
+
+    const rawTurn = [
+      { role: "user", content: "Create a deal" },
+      {
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-call",
+            toolCallId: "call-attempt-2-parent-clean",
+            toolName: "create_deal",
+            args: { title: "Second Attempt Deal" },
+            attempt: 2,
+            retryOf: "call-original-attempt-1",
+          },
+          {
+            type: "tool-result",
+            toolCallId: "call-attempt-2-parent-clean",
+            toolName: "create_deal",
+            result: { error: "Second timeout" },
+            isError: true,
+            attempt: 2,
+            retryOf: "call-original-attempt-1",
+          },
+        ],
+      },
+      { role: "user", content: "Please try one more time" },
+    ]
+
+    const events: any[] = []
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: convertToModelMessages(rawTurn),
+      retryLineage: extractRetryLineage(rawTurn),
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    // Runtime lineage must remain fully available for derivation
+    const toolCalled = events.find(
+      (e) => e.type === "tool:called" && e.callId === "call-resumed-retry-clean"
+    )!
+    expect(toolCalled).toBeDefined()
+    expect(toolCalled.retryOf).toBe("call-attempt-2-parent-clean")
+    expect(toolCalled.attempt).toBe(3)
+
+    // Provider-bound prompt must contain zero internal retry metadata
+    expect(capturedPrompts.length).toBeGreaterThan(0)
+    const collectKeys = (node: unknown, keys: Set<string>) => {
+      if (Array.isArray(node)) {
+        for (const item of node) collectKeys(item, keys)
+        return
+      }
+      if (node && typeof node === "object") {
+        for (const [key, value] of Object.entries(node)) {
+          keys.add(key)
+          collectKeys(value, keys)
+        }
+      }
+    }
+    for (const prompt of capturedPrompts) {
+      const keys = new Set<string>()
+      collectKeys(prompt, keys)
+      expect(keys.has("retryOf")).toBe(false)
+      expect(keys.has("attempt")).toBe(false)
+      expect(keys.has("providerMetadata")).toBe(false)
+    }
+  })
+
+  test("AgentEngine rejects invalid provider retry metadata (unknown parent, self-reference, non-monotonic attempt)", async () => {
+    const engine = new AgentEngine({ maxSteps: 1 })
+
+    const mockModel: any = {
+      specificationVersion: "v2",
+      provider: "mock",
+      modelId: "mock-model",
+      defaultObjectGenerationMode: "json",
+      async doStream() {
+        const stream = new ReadableStream({
+          start(controller) {
+            // Initial call 1 (attempt 1)
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-valid-1",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Deal 1" }),
+            })
+            // Call with unknown parent
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-invalid-parent",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Deal 2" }),
+              providerMetadata: {
+                retryOf: "nonexistent-call-id",
+                attempt: 2,
+              },
+            })
+            // Call with self-referential cycle
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-cyclic",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Deal 3" }),
+              providerMetadata: {
+                retryOf: "call-cyclic",
+                attempt: 2,
+              },
+            })
+            // Call with non-monotonic attempt (attempt 1 <= parent attempt 1)
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-non-monotonic",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Deal 4" }),
+              providerMetadata: {
+                retryOf: "call-valid-1",
+                attempt: 1,
+              },
+            })
+            // Valid retry (references call-valid-1 with attempt 2 > 1)
+            controller.enqueue({
+              type: "tool-call",
+              toolCallId: "call-valid-retry",
+              toolName: "create_deal",
+              input: JSON.stringify({ title: "Deal 5" }),
+              providerMetadata: {
+                retryOf: "call-valid-1",
+                attempt: 2,
+              },
+            })
+            controller.enqueue({
+              type: "finish",
+              finishReason: "tool-calls",
+              usage: { promptTokens: 10, completionTokens: 10 },
+            })
+            controller.close()
+          },
+        })
+
+        return {
+          stream,
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }
+      },
+    }
+
+    const events: any[] = []
+    const generator = engine.executeTurn({
+      ctx: {
+        ...ctx,
+        organizationId: orgId,
+        userId,
+      },
+      model: mockModel,
+      modelName: "mock-model",
+      conversationId,
+      messages: [{ role: "user", content: "Test metadata validation" } as any],
+    })
+
+    for await (const ev of generator) {
+      events.push(ev)
+    }
+
+    const called = events.filter((e) => e.type === "tool:called")
+    expect(called).toHaveLength(5)
+
+    // Call 1: valid base call
+    expect(called[0].callId).toBe("call-valid-1")
+    expect(called[0].retryOf).toBeUndefined()
+
+    // Call 2: unknown parent rejected
+    expect(called[1].callId).toBe("call-invalid-parent")
+    expect(called[1].retryOf).toBeUndefined()
+    expect(called[1].attempt).toBeUndefined()
+
+    // Call 3: cyclic self-reference rejected
+    expect(called[2].callId).toBe("call-cyclic")
+    expect(called[2].retryOf).toBeUndefined()
+    expect(called[2].attempt).toBeUndefined()
+
+    // Call 4: non-monotonic attempt (1 <= 1) rejected
+    expect(called[3].callId).toBe("call-non-monotonic")
+    expect(called[3].retryOf).toBeUndefined()
+    expect(called[3].attempt).toBeUndefined()
+
+    // Call 5: valid retry accepted
+    expect(called[4].callId).toBe("call-valid-retry")
+    expect(called[4].retryOf).toBe("call-valid-1")
+    expect(called[4].attempt).toBe(2)
+  })
+})

@@ -14,11 +14,6 @@ import {
 } from "./customers"
 import { dealAnalyticsTool, listDealsTool } from "./deals"
 import {
-  cancelScheduledDispatchTool,
-  listScheduledDispatchesTool,
-  scheduleDocumentSendTool,
-} from "./document-schedule"
-import {
   createInvoiceTool,
   createProposalTool,
   getInvoiceTool,
@@ -26,6 +21,11 @@ import {
   updateInvoiceTool,
   updateProposalTool,
 } from "./document-drafts"
+import {
+  cancelScheduledDispatchTool,
+  listScheduledDispatchesTool,
+  scheduleDocumentSendTool,
+} from "./document-schedule"
 import { sendInvoiceTool, sendProposalTool } from "./document-send"
 import {
   getInvoiceSummaryTool,

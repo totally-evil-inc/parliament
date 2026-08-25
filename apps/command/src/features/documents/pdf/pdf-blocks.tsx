@@ -1453,11 +1453,15 @@ function PdfSignature({
   })
 
   const signerName =
-    (model.pricing && "signerName" in model.pricing && model.pricing.signerName) ||
+    (model.pricing &&
+      "signerName" in model.pricing &&
+      model.pricing.signerName) ||
     model.seller.name ||
     "Authorized Signer"
   const signerTitle =
-    (model.pricing && "signerTitle" in model.pricing && model.pricing.signerTitle) ||
+    (model.pricing &&
+      "signerTitle" in model.pricing &&
+      model.pricing.signerTitle) ||
     "Signature"
 
   return (

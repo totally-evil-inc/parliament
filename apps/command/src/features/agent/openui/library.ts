@@ -4,7 +4,21 @@ import {
   UsersIcon,
 } from "@heroicons/react/24/outline"
 import { createLibrary, defineComponent } from "@openuidev/react-lang"
+import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import React from "react"
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 import { z } from "zod"
 
 const defComp = (opts: any) =>
@@ -15,6 +29,29 @@ const defComp = (opts: any) =>
     component: ({ props, renderNode }: any) =>
       opts.component({ ...props, renderNode }),
   })
+
+const gapClasses: Record<number, string> = {
+  1: "gap-1",
+  2: "gap-2",
+  3: "gap-3",
+  4: "gap-4",
+  6: "gap-6",
+  8: "gap-8",
+}
+
+const alignClasses: Record<string, string> = {
+  start: "items-start",
+  center: "items-center",
+  end: "items-end",
+  stretch: "items-stretch",
+}
+
+const justifyClasses: Record<string, string> = {
+  start: "justify-start",
+  center: "justify-center",
+  end: "justify-end",
+  between: "justify-between",
+}
 
 export const StackComponent = defComp({
   name: "Stack",
@@ -42,9 +79,16 @@ export const StackComponent = defComp({
     renderNode?: (node: unknown) => React.ReactNode
   }) => {
     const dir = props.direction === "row" ? "flex-row" : "flex-col"
+    const gapClass = gapClasses[props.gap ?? 3] ?? "gap-3"
+    const alignClass = alignClasses[props.align ?? "stretch"] ?? "items-stretch"
+    const justifyClass =
+      justifyClasses[props.justify ?? "start"] ?? "justify-start"
+
     return React.createElement(
       "div",
-      { className: `flex ${dir} gap-${props.gap ?? 3} w-full` },
+      {
+        className: `flex ${dir} ${gapClass} ${alignClass} ${justifyClass} w-full`,
+      },
       props.children?.map((child) => props.renderNode?.(child))
     )
   },
@@ -371,6 +415,16 @@ export const MetricGroupComponent = defComp({
   },
 })
 
+const CHART_COLORS = [
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+  "#6366f1",
+]
+
 export const ChartComponent = defComp({
   name: "Chart",
   description: "Bar, line, or pie visualization chart.",
@@ -381,9 +435,56 @@ export const ChartComponent = defComp({
     dataKeys: z.array(z.string()).optional(),
   }),
   component: (props: {
+    type?: "bar" | "line" | "pie"
     title?: string
     data: Array<Record<string, unknown>>
+    dataKeys?: string[]
   }) => {
+    const data = Array.isArray(props.data) ? props.data : []
+    const chartType = props.type || "bar"
+
+    if (data.length === 0) {
+      return React.createElement(
+        "div",
+        {
+          className:
+            "p-3.5 rounded-xl border border-border bg-card shadow-xs space-y-2 w-full text-center text-xs text-muted-foreground py-6",
+        },
+        props.title &&
+          React.createElement(
+            "h5",
+            { className: "text-xs font-semibold text-foreground mb-2" },
+            props.title
+          ),
+        "No data available for visualization"
+      )
+    }
+
+    // Determine keys
+    const firstRow = data[0] || {}
+    const allKeys = Object.keys(firstRow)
+    const categoryKey =
+      allKeys.find(
+        (k) =>
+          typeof firstRow[k] === "string" ||
+          k === "name" ||
+          k === "label" ||
+          k === "month" ||
+          k === "date" ||
+          k === "stage"
+      ) ||
+      allKeys[0] ||
+      "name"
+
+    const numericKeys =
+      props.dataKeys && props.dataKeys.length > 0
+        ? props.dataKeys
+        : allKeys.filter(
+            (k) => k !== categoryKey && typeof firstRow[k] === "number"
+          )
+    const valueKey =
+      numericKeys[0] || allKeys.find((k) => k !== categoryKey) || allKeys[0]
+
     return React.createElement(
       "div",
       {
@@ -398,11 +499,109 @@ export const ChartComponent = defComp({
         ),
       React.createElement(
         "div",
-        {
-          className:
-            "text-xs text-muted-foreground italic py-4 text-center border border-dashed border-border rounded",
-        },
-        `[Visualization: ${props.data.length} items]`
+        { className: "h-48 w-full pt-2" },
+        React.createElement(
+          ResponsiveContainer as any,
+          { width: "100%", height: "100%" },
+          chartType === "line"
+            ? React.createElement(
+                LineChart,
+                { data, margin: { top: 5, right: 10, left: -20, bottom: 5 } },
+                React.createElement(XAxis, {
+                  dataKey: categoryKey,
+                  stroke: "currentColor",
+                  className: "text-[10px] text-muted-foreground",
+                  tickLine: false,
+                }),
+                React.createElement(YAxis, {
+                  stroke: "currentColor",
+                  className: "text-[10px] text-muted-foreground",
+                  tickLine: false,
+                }),
+                React.createElement(Tooltip, {
+                  contentStyle: {
+                    backgroundColor: "var(--color-card, #18181b)",
+                    borderColor: "var(--color-border, #27272a)",
+                    borderRadius: "0.5rem",
+                    fontSize: "0.75rem",
+                  },
+                }),
+                (numericKeys.length > 0 ? numericKeys : [valueKey]).map(
+                  (k, idx) =>
+                    React.createElement(Line, {
+                      key: k,
+                      type: "monotone",
+                      dataKey: k,
+                      stroke: CHART_COLORS[idx % CHART_COLORS.length],
+                      strokeWidth: 2,
+                      dot: { r: 3 },
+                    })
+                )
+              )
+            : chartType === "pie"
+              ? React.createElement(
+                  PieChart,
+                  null,
+                  React.createElement(Tooltip, {
+                    contentStyle: {
+                      backgroundColor: "var(--color-card, #18181b)",
+                      borderColor: "var(--color-border, #27272a)",
+                      borderRadius: "0.5rem",
+                      fontSize: "0.75rem",
+                    },
+                  }),
+                  React.createElement(
+                    Pie,
+                    {
+                      data,
+                      dataKey: valueKey,
+                      nameKey: categoryKey,
+                      cx: "50%",
+                      cy: "50%",
+                      outerRadius: 60,
+                      label: false,
+                    },
+                    data.map((_entry, index) =>
+                      React.createElement(Cell, {
+                        key: `cell-${index}`,
+                        fill: CHART_COLORS[index % CHART_COLORS.length],
+                      })
+                    )
+                  )
+                )
+              : React.createElement(
+                  BarChart,
+                  { data, margin: { top: 5, right: 10, left: -20, bottom: 5 } },
+                  React.createElement(XAxis, {
+                    dataKey: categoryKey,
+                    stroke: "currentColor",
+                    className: "text-[10px] text-muted-foreground",
+                    tickLine: false,
+                  }),
+                  React.createElement(YAxis, {
+                    stroke: "currentColor",
+                    className: "text-[10px] text-muted-foreground",
+                    tickLine: false,
+                  }),
+                  React.createElement(Tooltip, {
+                    contentStyle: {
+                      backgroundColor: "var(--color-card, #18181b)",
+                      borderColor: "var(--color-border, #27272a)",
+                      borderRadius: "0.5rem",
+                      fontSize: "0.75rem",
+                    },
+                  }),
+                  (numericKeys.length > 0 ? numericKeys : [valueKey]).map(
+                    (k, idx) =>
+                      React.createElement(Bar, {
+                        key: k,
+                        dataKey: k,
+                        fill: CHART_COLORS[idx % CHART_COLORS.length],
+                        radius: [4, 4, 0, 0],
+                      })
+                  )
+                )
+        )
       )
     )
   },
@@ -420,8 +619,11 @@ export const DataTableComponent = defComp({
     data: Array<Record<string, unknown>>
   }) => {
     return React.createElement(
-      "div",
-      { className: "overflow-x-auto border border-border rounded-lg my-2" },
+      ScrollArea,
+      {
+        orientation: "horizontal",
+        className: "w-full rounded-lg border border-border my-2",
+      },
       React.createElement(
         "table",
         { className: "w-full text-left text-xs" },

@@ -49,6 +49,9 @@ export const approvalRequestedPart = z.object({
   toolName: z.string(),
   args: z.record(z.string(), z.unknown()),
   resumeId: z.string(),
+  approvalId: z.string().optional(),
+  callId: z.string().optional(),
+  summary: z.string().optional(),
   messageId: z.string().optional(),
 })
 

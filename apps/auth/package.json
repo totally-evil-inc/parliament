@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.39",
+    "@ai-sdk/openai": "^4.0.42",
     "@openuidev/lang-core": "^0.2.11",
     "@tanstack/ai": "^0.44.0",
     "@tanstack/ai-openai": "^0.19.0",
@@ -20,9 +22,11 @@
     "@workspace/document": "workspace:*",
     "@workspace/document-pdf": "workspace:*",
     "@workspace/logger": "workspace:*",
+    "ai": "^7.0.66",
     "better-auth": "^1.6.9",
     "hono": "^4.12.18",
     "nodemailer": "^9.0.3",
+    "p-limit": "^7.3.1",
     "resend": "^6.17.2"
   },
   "devDependencies": {

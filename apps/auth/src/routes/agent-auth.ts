@@ -48,15 +48,15 @@ function sanitizeArgs(value: unknown, depth = 0): unknown {
 }
 
 /**
- * Requires either an authenticated user session or a matching harness secret.
+ * Requires either an authenticated user session or a matching agent secret.
  * Returns true when the request is authorized.
  */
 function isAuthorized(c: AgentContext): boolean {
   const user = c.get("user")
   const authSecret =
-    c.req.header("X-Harness-Secret") || c.req.header("Authorization")
+    c.req.header("X-Agent-Secret") || c.req.header("Authorization")
   const expectedSecret =
-    process.env.HARNESS_AUTH_SECRET || process.env.BETTER_AUTH_SECRET
+    process.env.AGENT_AUTH_SECRET || process.env.BETTER_AUTH_SECRET
 
   if (user) return true
   return Boolean(
@@ -65,12 +65,12 @@ function isAuthorized(c: AgentContext): boolean {
 }
 
 /**
- * Stage an action proposed by an agent (called by Go Harness daemon)
+ * Stage an action proposed by an agent (called by Parliament Agent runtime)
  */
 agentAuthRouter.post("/stage", async (c) => {
   if (!isAuthorized(c)) {
     return c.json(
-      { error: "Unauthorized: Missing or invalid harness authentication" },
+      { error: "Unauthorized: Missing or invalid agent authentication" },
       401
     )
   }
@@ -221,12 +221,12 @@ agentAuthRouter.get("/pending", async (c) => {
 })
 
 /**
- * Check status of a specific action by ID (polled by Go Harness)
+ * Check status of a specific action by ID (polled by Parliament Agent runtime)
  */
 agentAuthRouter.get("/actions/:id/status", async (c) => {
   if (!isAuthorized(c)) {
     return c.json(
-      { error: "Unauthorized: Missing or invalid harness authentication" },
+      { error: "Unauthorized: Missing or invalid agent authentication" },
       401
     )
   }

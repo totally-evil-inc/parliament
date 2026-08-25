@@ -26,6 +26,7 @@ export type IntegrationPreview = {
 export type Integration = {
   id: string
   providerId: string
+  betterAuthAccountId?: string
   title: string
   author: string
   description: string

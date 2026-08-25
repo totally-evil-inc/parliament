@@ -9,18 +9,19 @@ import { Button } from "@workspace/ui/components/button"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Separator } from "@workspace/ui/components/separator"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
-import type React from "react"
-import { useCallback, useEffect, useRef, useState } from "react"
-import { HeaderPortal } from "@/layouts/header-portal"
+import { memo, useCallback, useEffect, useMemo, useRef } from "react"
 import { authClient } from "@/lib/auth-client"
 import { useCommandChatContext } from "../context/command-chat-context"
+import { useHistorySidebar } from "../hooks/use-history-sidebar"
+import { useSmartScrollAnchor } from "../hooks/use-smart-scroll-anchor"
 import {
   latestAssistantThinking,
   normalizeAssistantMessage,
 } from "../normalization"
+import { extractOpenUI } from "../openui/parser"
 import { ChatInput } from "./chat-input"
 import { MessageErrorCard, type ToolCallItem } from "./elements"
-import { HistoryPanel } from "./history-panel"
+import { HistorySidebar } from "./history"
 import { MessageBubble } from "./message-bubble"
 
 export interface ExtractedMessage {
@@ -96,13 +97,17 @@ export function extractThinkingAndContent(m: any): ExtractedMessage {
 
   // Parse <think>...</think> tags inside rawContent (common in DeepSeek R1 & reasoning models)
   if (rawContent.includes("<think>")) {
-    const thinkMatch = rawContent.match(/<think>([\s\S]*?)<\/think>/)
-    if (thinkMatch) {
-      thinkingParts.push(thinkMatch[1].trim())
+    const closedMatches = [
+      ...rawContent.matchAll(/<think>([\s\S]*?)<\/think>/g),
+    ]
+    if (closedMatches.length > 0) {
+      for (const m of closedMatches) {
+        if (m[1]?.trim()) thinkingParts.push(m[1].trim())
+      }
       rawContent = rawContent.replace(/<think>[\s\S]*?<\/think>/g, "").trim()
     } else {
       const openThinkMatch = rawContent.match(/<think>([\s\S]*)$/)
-      if (openThinkMatch) {
+      if (openThinkMatch?.[1]) {
         thinkingParts.push(openThinkMatch[1].trim())
         rawContent = rawContent.replace(/<think>[\s\S]*$/, "").trim()
       }
@@ -120,34 +125,37 @@ export function extractThinkingAndContent(m: any): ExtractedMessage {
           name: String(part.name ?? part.toolName ?? "unknown tool"),
           args: parseToolArguments(part.arguments ?? part.args ?? part.input),
           result: part.output ?? part.result ?? part.resultData,
+          needsApproval: Boolean(
+            part.needsApproval || part.approval?.needsApproval
+          ),
+          approvalId: part.approvalId ?? part.approval?.id,
           status:
-            part.state === "output-available" ||
-            part.output !== undefined ||
-            part.result !== undefined
-              ? "completed"
-              : part.state === "output-error"
-                ? "error"
-                : "running",
+            part.approval?.approved === true
+              ? "approved"
+              : part.approval?.approved === false
+                ? "rejected"
+                : part.needsApproval || part.approval
+                  ? "pending_approval"
+                  : part.state === "output-available" ||
+                      part.output !== undefined ||
+                      part.result !== undefined
+                    ? "completed"
+                    : part.state === "output-error"
+                      ? "error"
+                      : "running",
         }))
     : []
 
-  const openuiParts: string[] = []
-  rawContent = rawContent.replace(
-    /```openui\s*([\s\S]*?)(?:```|$)/gi,
-    (_match, code: string) => {
-      if (code.trim()) openuiParts.push(code.trim())
-      return ""
-    }
-  )
+  const ui = extractOpenUI(rawContent)
 
   const thinking = thinkingParts
     .filter((t): t is string => typeof t === "string" && Boolean(t))
     .join("\n\n")
     .trim()
   return {
-    content: rawContent.trim(),
+    content: (ui.hasOpenUI ? ui.prose : rawContent).trim(),
     thinking: thinking.length > 0 ? thinking : undefined,
-    openuiCode: openuiParts.length > 0 ? openuiParts.join("\n") : undefined,
+    openuiCode: ui.hasOpenUI ? ui.program : undefined,
     toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
   }
 }
@@ -173,6 +181,97 @@ export function extractMessageText(m: any): string {
   return extractThinkingAndContent(m).content
 }
 
+export function extractUserText(m: any): string {
+  if (typeof m?.content === "string" && m.content) return m.content
+  if (typeof m?.text === "string" && m.text) return m.text
+  if (Array.isArray(m?.parts)) {
+    return m.parts
+      .map((p: any) => {
+        if (typeof p === "string") return p
+        if (p && typeof p === "object") {
+          return p.text || p.content || ""
+        }
+        return ""
+      })
+      .join("")
+      .trim()
+  }
+  if (Array.isArray(m?.content)) {
+    return m.content
+      .map((p: any) => {
+        if (typeof p === "string") return p
+        if (p && typeof p === "object") {
+          return p.text || p.content || ""
+        }
+        return ""
+      })
+      .join("")
+      .trim()
+  }
+  return ""
+}
+
+const CommandCenterHeader = memo(function CommandCenterHeader({
+  activeTitle,
+  threadId,
+  isHistoryOpen,
+  toggleHistory,
+  onNewChat,
+}: {
+  activeTitle?: string
+  threadId?: string
+  isHistoryOpen: boolean
+  toggleHistory: () => void
+  onNewChat: () => void
+}) {
+  return (
+    <header className="flex h-12 shrink-0 items-center justify-between border-border/60 border-b bg-card/50 px-4 backdrop-blur-md">
+      <div className="flex min-w-0 items-center gap-2.5 truncate pr-4">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-1 h-4" />
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/10 font-bold text-primary text-xs">
+          <BuildingLibraryIcon className="size-3.5 text-primary" />
+        </div>
+        <div className="min-w-0 truncate">
+          <h1 className="truncate font-semibold text-foreground text-sm">
+            {activeTitle || "Parliament Command Agent"}
+          </h1>
+        </div>
+        {threadId ? (
+          <span className="hidden rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground sm:inline-flex">
+            Active
+          </span>
+        ) : null}
+      </div>
+
+      <div className="flex shrink-0 items-center gap-2">
+        {threadId ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onNewChat}
+            className="flex h-8 items-center gap-1.5 px-2.5 text-xs"
+            title="Start a new conversation"
+          >
+            <SparklesIcon className="size-3.5" />
+            <span className="hidden sm:inline">New Chat</span>
+          </Button>
+        ) : null}
+        <Button
+          variant={isHistoryOpen ? "secondary" : "outline"}
+          size="sm"
+          onClick={toggleHistory}
+          className="flex h-8 items-center gap-1.5 px-3 text-xs"
+          title="Toggle conversation history (Cmd+Shift+H)"
+        >
+          <BookmarkIcon className="size-3.5" />
+          <span>History</span>
+        </Button>
+      </div>
+    </header>
+  )
+})
+
 export const CommandCenterPage: React.FC = () => {
   const navigate = useNavigate()
   const {
@@ -195,37 +294,50 @@ export const CommandCenterPage: React.FC = () => {
   const userName = session.data?.user?.name
   const displayName = userName?.trim().split(/\s+/)[0] || userName?.trim() || ""
 
-  const displayedMessages = messages
   const isEmpty = messages.length === 0
+
+  // Pre-normalize messages once into stable items to preserve React.memo and avoid redundant extraction
+  const normalizedMessages = useMemo(() => {
+    return messages.map((m, idx) => {
+      const isLastMessage = idx === messages.length - 1
+      const isAssistant = m.role === "assistant"
+      const normalized = isAssistant ? normalizeAssistantMessage(m) : null
+
+      return {
+        id: m.id || String(idx),
+        role: (m.role as "user" | "assistant" | "system") || "assistant",
+        content: normalized ? normalized.text : extractUserText(m),
+        thinking: normalized
+          ? normalized.thinking || undefined
+          : m.thinking || undefined,
+        toolCalls: normalized ? normalized.tools : m.toolCalls,
+        chainOfThought: normalized?.chainOfThought,
+        tasks: normalized?.tasks,
+        openuiCode: normalized?.openui?.source ?? (m as any).openuiCode,
+        error: isLastMessage && chatError ? chatError : m.error,
+        isStreaming: isLoading && isLastMessage && isAssistant,
+      }
+    })
+  }, [messages, chatError, isLoading])
 
   // Live reasoning text from the latest assistant turn — only meaningful
   // while a run is streaming; the reasoning strip collapses on completion.
   const activeThinking = isLoading ? latestAssistantThinking(messages) : ""
 
-  const [historyOpen, setHistoryOpen] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const isAtBottomRef = useRef(true)
-  const [showScrollBottom, setShowScrollBottom] = useState(false)
+  const { isOpen: isHistoryOpen, toggle: toggleHistory } = useHistorySidebar()
+
+  const {
+    viewportRef,
+    bottomRef,
+    showScrollBottom,
+    scrollToBottom,
+    handleScroll,
+  } = useSmartScrollAnchor({
+    bottomThreshold: 120,
+    triggerDeps: [messages, isLoading],
+  })
+
   const lastMessageCountRef = useRef(messages.length)
-
-  const scrollToBottom = useCallback((smooth = true) => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({
-        behavior: smooth ? "smooth" : "auto",
-        block: "end",
-      })
-    }
-  }, [])
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget
-    const distanceToBottom =
-      target.scrollHeight - target.scrollTop - target.clientHeight
-    const atBottom = distanceToBottom < 120
-    isAtBottomRef.current = atBottom
-    setShowScrollBottom(!atBottom)
-  }
-
   useEffect(() => {
     const isNewUserMessage =
       messages.length > lastMessageCountRef.current &&
@@ -233,157 +345,110 @@ export const CommandCenterPage: React.FC = () => {
     lastMessageCountRef.current = messages.length
 
     if (isNewUserMessage) {
-      isAtBottomRef.current = true
       scrollToBottom(true)
-    } else if (isAtBottomRef.current) {
-      scrollToBottom(false)
     }
   }, [messages, scrollToBottom])
 
+  const handleNewChat = useCallback(() => {
+    navigate({ to: "/" })
+  }, [navigate])
+
   return (
-    <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
-      {/* Contextual App Header via Portal */}
-      <HeaderPortal>
-        <header className="flex h-12 shrink-0 items-center justify-between border-border/60 border-b bg-card/50 px-4 backdrop-blur-md">
-          <div className="flex min-w-0 items-center gap-2.5 truncate pr-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-1 h-4" />
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/10 font-bold text-primary text-xs">
-              <BuildingLibraryIcon className="size-3.5 text-primary" />
-            </div>
-            <div className="min-w-0 truncate">
-              <h1 className="truncate font-semibold text-foreground text-sm">
-                {activeTitle || "Parliament Command Agent"}
-              </h1>
-            </div>
-            {threadId ? (
-              <span className="hidden rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground sm:inline-flex">
-                Active
-              </span>
-            ) : null}
-          </div>
+    <div className="relative flex h-full min-h-0 flex-1 overflow-hidden bg-background text-foreground">
+      {/* Floating Nested History Sidebar */}
+      <HistorySidebar />
 
-          <div className="flex shrink-0 items-center gap-2">
-            {threadId && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate({ to: "/" })}
-                className="flex h-8 items-center gap-1.5 px-2.5 text-xs"
-                title="Start a new conversation"
-              >
-                <SparklesIcon className="size-3.5" />
-                <span className="hidden sm:inline">New Chat</span>
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setHistoryOpen(true)}
-              className="flex h-8 items-center gap-1.5 px-3 text-xs"
-            >
-              <BookmarkIcon className="size-3.5" />
-              <span>History</span>
-            </Button>
-          </div>
-        </header>
-      </HeaderPortal>
+      {/* Main Chat Canvas Area */}
+      <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+        {/* Contextual App Header on top of Chat Canvas */}
+        <CommandCenterHeader
+          activeTitle={activeTitle}
+          threadId={threadId}
+          isHistoryOpen={isHistoryOpen}
+          toggleHistory={toggleHistory}
+          onNewChat={handleNewChat}
+        />
 
-      {/* Main Content Area: Centered Initial State vs Active Message Feed */}
-      {isEmpty ? (
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-8">
-          {isHydrating ? (
-            <div className="flex flex-col items-center justify-center space-y-2 text-center">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="text-muted-foreground text-xs">
-                Loading conversation history...
-              </p>
-            </div>
-          ) : (
-            <div className="flex w-full max-w-3xl flex-col items-center space-y-6">
-              {/* Welcome Header */}
-              <div className="flex flex-col items-center space-y-3 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-3xl shadow-xs">
-                  <BuildingLibraryIcon className="size-7 text-primary" />
-                </div>
-                <div className="max-w-md space-y-1.5">
-                  <h2 className="font-semibold text-2xl text-foreground tracking-tight sm:text-3xl">
-                    {displayName
-                      ? `Welcome, ${displayName}`
-                      : "Welcome to Parliament Command"}
-                  </h2>
-                  <p className="text-muted-foreground text-xs leading-relaxed sm:text-sm">
-                    Ask about deals, proposals, invoices, customer analytics, or
-                    instruct the agent to dispatch proposals via Gmail and
-                    schedule calendar syncs.
-                  </p>
-                </div>
+        {isEmpty ? (
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-8">
+            {isHydrating ? (
+              <div className="flex flex-col items-center justify-center space-y-2 text-center">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <p className="text-muted-foreground text-xs">
+                  Loading conversation history...
+                </p>
               </div>
+            ) : (
+              <div className="flex w-full max-w-3xl flex-col items-center space-y-6">
+                {/* Welcome Header */}
+                <div className="flex flex-col items-center space-y-3 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-3xl shadow-xs">
+                    <BuildingLibraryIcon className="size-7 text-primary" />
+                  </div>
+                  <div className="max-w-md space-y-1.5">
+                    <h2 className="font-semibold text-2xl text-foreground tracking-tight sm:text-3xl">
+                      {displayName
+                        ? `Welcome, ${displayName}`
+                        : "Welcome to Parliament Command"}
+                    </h2>
+                    <p className="text-muted-foreground text-xs leading-relaxed sm:text-sm">
+                      Ask about deals, proposals, invoices, customer analytics,
+                      or instruct the agent to dispatch proposals via Gmail and
+                      schedule calendar syncs.
+                    </p>
+                  </div>
+                </div>
 
-              {/* Empty Feed Error Banner if error occurred */}
-              {chatError && (
-                <div className="w-full max-w-2xl">
-                  <MessageErrorCard
-                    error={chatError}
-                    onRetry={retryLastPrompt}
+                {/* Empty Feed Error Banner if error occurred */}
+                {chatError ? (
+                  <div className="w-full max-w-2xl">
+                    <MessageErrorCard
+                      error={chatError}
+                      onRetry={retryLastPrompt}
+                    />
+                  </div>
+                ) : null}
+
+                {/* Centered Chat Input directly below welcome header */}
+                <div className="w-full">
+                  <ChatInput
+                    onSend={sendPrompt}
+                    onStop={stop}
+                    isLoading={isLoading}
+                    thinking={activeThinking}
+                    selectedModel={selectedModel}
+                    onSelectModel={setSelectedModel}
+                    showPrompts={true}
+                    autoFocus={true}
                   />
                 </div>
-              )}
-
-              {/* Centered Chat Input directly below welcome header */}
-              <div className="w-full">
-                <ChatInput
-                  onSend={sendPrompt}
-                  onStop={stop}
-                  isLoading={isLoading}
-                  thinking={activeThinking}
-                  selectedModel={selectedModel}
-                  onSelectModel={setSelectedModel}
-                  showPrompts={true}
-                  autoFocus={true}
-                />
               </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <>
-          {/* Message Feed with ScrollArea */}
-          <ScrollArea className="min-h-0 w-full flex-1" onScroll={handleScroll}>
-            <main className="mx-auto w-full max-w-4xl space-y-4 px-6 py-4">
-              {displayedMessages.map((m: any, idx: number) => {
-                const normalized = normalizeAssistantMessage(m)
-                const isLastMessage = idx === displayedMessages.length - 1
-                return (
+            )}
+          </div>
+        ) : (
+          <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+            {/* Message Feed with ScrollArea */}
+            <ScrollArea
+              className="min-h-0 w-full flex-1"
+              viewportRef={viewportRef}
+              onScroll={handleScroll}
+            >
+              <main className="mx-auto w-full max-w-4xl space-y-4 px-4 pt-4 pb-48 sm:px-6">
+                {normalizedMessages.map((msgItem) => (
                   <MessageBubble
-                    key={m.id || idx}
-                    message={{
-                      id: m.id,
-                      role:
-                        (m.role as "user" | "assistant" | "system") ||
-                        "assistant",
-                      content: normalized.text,
-                      thinking: normalized.thinking || undefined,
-                      toolCalls: normalized.tools,
-                      chainOfThought: normalized.chainOfThought,
-                      tasks: normalized.tasks,
-                      openuiCode: normalized.openui?.source,
-                      error: isLastMessage && chatError ? chatError : undefined,
-                    }}
+                    key={msgItem.id}
+                    message={msgItem}
                     onApproveTool={approveTool}
                     onRejectTool={rejectTool}
-                    isStreaming={
-                      isLoading && isLastMessage && m.role === "assistant"
-                    }
+                    isStreaming={msgItem.isStreaming}
                     onRetry={retryLastPrompt}
                   />
-                )
-              })}
+                ))}
 
-              {/* Immediate active streaming placeholder while waiting for assistant token/turn */}
-              {isLoading &&
+                {/* Immediate active streaming placeholder while waiting for assistant token/turn */}
+                {isLoading &&
                 messages.length > 0 &&
-                messages[messages.length - 1]?.role === "user" && (
+                messages[messages.length - 1]?.role === "user" ? (
                   <MessageBubble
                     key="streaming-pending-assistant-turn"
                     message={{
@@ -393,64 +458,58 @@ export const CommandCenterPage: React.FC = () => {
                     }}
                     isStreaming={true}
                   />
-                )}
+                ) : null}
 
-              {/* Feed-level Error Banner when no assistant message was generated */}
-              {chatError &&
+                {/* Feed-level Error Banner when no assistant message was generated */}
+                {chatError &&
                 messages.length > 0 &&
-                messages[messages.length - 1]?.role === "user" && (
+                messages[messages.length - 1]?.role === "user" ? (
                   <div className="my-3">
                     <MessageErrorCard
                       error={chatError}
                       onRetry={retryLastPrompt}
                     />
                   </div>
-                )}
-              <div ref={bottomRef} />
-            </main>
-          </ScrollArea>
+                ) : null}
+                <div ref={bottomRef} className="h-4 shrink-0" />
+              </main>
+            </ScrollArea>
 
-          {/* Floating Scroll to Bottom Button */}
-          {showScrollBottom && (
-            <div className="absolute right-8 bottom-24 z-20">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => {
-                  isAtBottomRef.current = true
-                  scrollToBottom(true)
-                }}
-                className="flex items-center gap-1.5 rounded-full border border-border bg-card/90 px-3 py-1 text-foreground text-xs shadow-lg backdrop-blur-xs hover:bg-card"
-              >
-                <ArrowDownIcon className="size-3.5" />
-                <span>Jump to latest</span>
-              </Button>
+            {/* Floating Scroll to Bottom Button */}
+            {showScrollBottom ? (
+              <div className="absolute right-6 bottom-36 z-20 sm:right-8">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => scrollToBottom(true)}
+                  className="flex items-center gap-1.5 rounded-full border border-border bg-card/90 px-3 py-1 text-foreground text-xs shadow-lg backdrop-blur-xs hover:bg-card"
+                >
+                  <ArrowDownIcon className="size-3.5" />
+                  <span>Jump to latest</span>
+                </Button>
+              </div>
+            ) : null}
+
+            {/* Floating Canvas Chat Input with Gradient Under-Scroll Mask */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col justify-end bg-gradient-to-t from-background via-background/85 to-transparent pt-12 pb-4 sm:pb-6">
+              <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
+                <div className="pointer-events-auto rounded-2xl shadow-2xl">
+                  <ChatInput
+                    onSend={sendPrompt}
+                    onStop={stop}
+                    isLoading={isLoading}
+                    thinking={activeThinking}
+                    selectedModel={selectedModel}
+                    onSelectModel={setSelectedModel}
+                    showPrompts={false}
+                    autoFocus={true}
+                  />
+                </div>
+              </div>
             </div>
-          )}
-
-          {/* Docked Bottom Input */}
-          <footer className="shrink-0 border-border border-t bg-background p-4">
-            <ChatInput
-              onSend={sendPrompt}
-              onStop={stop}
-              isLoading={isLoading}
-              thinking={activeThinking}
-              selectedModel={selectedModel}
-              onSelectModel={setSelectedModel}
-              showPrompts={false}
-              autoFocus={true}
-            />
-          </footer>
-        </>
-      )}
-
-      {/* History Slide-over */}
-      {historyOpen && (
-        <HistoryPanel
-          currentThreadId={threadId}
-          onClose={() => setHistoryOpen(false)}
-        />
-      )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

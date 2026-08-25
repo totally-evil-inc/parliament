@@ -5,11 +5,24 @@ import {
   gmailSendInput,
   gmailSendOutput,
 } from "@workspace/agent"
+import { formatMarkdownToEmailHtml } from "../../lib/email"
 import {
   createGmailDraft,
   sendGmailMessage,
 } from "../../lib/gmail/send-service"
+import { IntegrationNotConnectedError } from "../../lib/oauth/errors"
 import type { AgentContext } from "../tool-ctx"
+
+function ensureCleanEmailHtml(htmlOrMarkdown?: string): string {
+  if (!htmlOrMarkdown) return ""
+  // If string contains basic HTML tags, keep it; otherwise parse markdown/newlines to HTML
+  if (
+    /<(p|div|br|strong|b|em|i|ul|ol|li|table|h[1-6]|a)\b/i.test(htmlOrMarkdown)
+  ) {
+    return htmlOrMarkdown
+  }
+  return formatMarkdownToEmailHtml(htmlOrMarkdown)
+}
 
 export function gmailSendEmailTool(ctx: AgentContext) {
   return toolDefinition({
@@ -21,11 +34,12 @@ export function gmailSendEmailTool(ctx: AgentContext) {
     needsApproval: true,
   }).server(async (args) => {
     try {
+      const htmlBody = ensureCleanEmailHtml(args.htmlText)
       const result = await sendGmailMessage({
         userId: ctx.userId,
         to: args.to,
         subject: args.subject,
-        htmlText: args.htmlText,
+        htmlText: htmlBody,
         plainText: args.plainText,
         replyTo: args.replyTo,
       })
@@ -36,9 +50,11 @@ export function gmailSendEmailTool(ctx: AgentContext) {
       }
     } catch (err: unknown) {
       if (
-        err instanceof Error &&
-        (err.message.includes("No connected Google account") ||
-          err.message.includes("integration_not_connected"))
+        err instanceof IntegrationNotConnectedError ||
+        (err instanceof Error &&
+          (err.message === "integration_not_connected" ||
+            err.message.includes("No connected Google account") ||
+            (err as { code?: string }).code === "integration_not_connected"))
       ) {
         return {
           error: {
@@ -63,11 +79,12 @@ export function gmailCreateDraftTool(ctx: AgentContext) {
     needsApproval: false,
   }).server(async (args) => {
     try {
+      const htmlBody = ensureCleanEmailHtml(args.htmlText)
       const result = await createGmailDraft({
         userId: ctx.userId,
         to: args.to,
         subject: args.subject,
-        htmlText: args.htmlText,
+        htmlText: htmlBody,
         plainText: args.plainText,
       })
 
@@ -76,9 +93,11 @@ export function gmailCreateDraftTool(ctx: AgentContext) {
       }
     } catch (err: unknown) {
       if (
-        err instanceof Error &&
-        (err.message.includes("No connected Google account") ||
-          err.message.includes("integration_not_connected"))
+        err instanceof IntegrationNotConnectedError ||
+        (err instanceof Error &&
+          (err.message === "integration_not_connected" ||
+            err.message.includes("No connected Google account") ||
+            (err as { code?: string }).code === "integration_not_connected"))
       ) {
         return {
           error: {

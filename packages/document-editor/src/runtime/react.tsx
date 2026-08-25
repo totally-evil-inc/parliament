@@ -50,6 +50,10 @@ export function useDocumentEditorHost() {
   return adapter
 }
 
+export function useOptionalDocumentEditorHost(): DocumentEditorHostAdapter | null {
+  return React.use(HostContext)
+}
+
 // Generalized Document Draft Context & Hooks
 export function DocumentDraftProvider({
   children,

@@ -21,7 +21,7 @@ export interface NormalizedAssistantTurn {
   openui?: { source: string; complete: boolean }
 }
 
-const toolNames: Record<string, string> = {
+const TOOL_NAMES: Readonly<Record<string, string>> = Object.freeze({
   list_deals: "Reviewing deals",
   get_deal: "Opening deal details",
   list_customers: "Reviewing customers",
@@ -36,30 +36,209 @@ const toolNames: Record<string, string> = {
   schedule_event: "Checking the calendar",
   ask_clarifying_questions: "Requesting clarification",
   askClarifyingQuestions: "Requesting clarification",
+})
+
+// Hoisted regular expressions to avoid per-render / per-function-call regex recompilation (js-hoist-regexp)
+const THINK_CLOSED_CAPTURE_REGEX = /<think>([\s\S]*?)<\/think>/g
+const THINK_CLOSED_GLOBAL_REGEX = /<think>[\s\S]*?<\/think>/g
+const THINK_OPEN_REGEX = /<think>([\s\S]*)$/
+const THINK_OPEN_GLOBAL_REGEX = /<think>[\s\S]*$/
+
+const JSON_TITLE_REGEX = /"title"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/
+const JSON_SUBTITLE_REGEX = /"subtitle"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/
+
+const LEAKED_FN_REGEX_1 =
+  /Here is a JSON for a function call with its proper arguments[^\n]*:\s*```(?:json)?\s*\{[\s\S]*?\}\s*```\s*(?:This function call will[^\n.]*\.?)?/gi
+const LEAKED_FN_REGEX_2 =
+  /```(?:json)?\s*\{\s*"name"\s*:\s*"[a-zA-Z0-9_-]+"\s*,\s*"(?:parameters|arguments|args)"\s*:[\s\S]*?\}\s*```/gi
+
+// Tool name formatting regexes hoisted to module scope (js-hoist-regexp)
+const TOOL_REPLACE_REGEX = /[_-]/g
+const UPPERCASE_FIRST_REGEX = /^./
+
+// Memoization cache for normalized messages to avoid O(N * M) parsing during streaming (js-cache-function-results)
+interface CachedTurnEntry {
+  signature: string
+  result: NormalizedAssistantTurn
 }
 
-function objectValue(value: unknown): Record<string, unknown> {
-  if (value && typeof value === "object" && !Array.isArray(value))
-    return value as Record<string, unknown>
+const normalizationCache = new WeakMap<object, CachedTurnEntry>()
+
+/**
+ * Computes a lightweight fingerprint signature of message content, parts, and tool states
+ * to guarantee that streaming tokens and in-place state transitions always trigger fresh normalization.
+ */
+function computeMessageSignature(msgObj: Record<string, unknown>): string {
+  let content = ""
+  if (typeof msgObj.content === "string") {
+    content = msgObj.content
+  } else if (typeof msgObj.text === "string") {
+    content = msgObj.text
+  } else if (Array.isArray(msgObj.content)) {
+    content = (msgObj.content as unknown[])
+      .map((c) => {
+        if (typeof c === "string") return c
+        const rec = c as Record<string, unknown> | null
+        return String(rec?.text ?? rec?.content ?? rec?.value ?? "")
+      })
+      .join("")
+  }
+
+  const parts = Array.isArray(msgObj.parts) ? msgObj.parts : []
+  if (parts.length === 0 && !msgObj.toolCalls) {
+    return `c:${content}`
+  }
+
+  let partsSig = ""
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i]
+    if (!p || typeof p !== "object") continue
+    const rec = p as Record<string, unknown>
+    const textSnippet = String(
+      rec.text ??
+        rec.content ??
+        rec.value ??
+        rec.arguments ??
+        rec.input ??
+        rec.args ??
+        ""
+    )
+    const resultSnippet = rec.result !== undefined ? String(rec.result) : ""
+    partsSig += `|${rec.type}:${textSnippet}:${rec.status ?? rec.state ?? ""}:${rec.approvalId ?? ""}:${resultSnippet}`
+  }
+
+  if (Array.isArray(msgObj.toolCalls)) {
+    for (const tc of msgObj.toolCalls as unknown[]) {
+      if (!tc || typeof tc !== "object") continue
+      const r = tc as Record<string, unknown>
+      partsSig += `|tc:${r.id}:${r.status}:${r.errorText ?? ""}`
+    }
+  }
+
+  return `c:${content}${partsSig}`
+}
+
+/**
+ * Defensively unpacks nested JSON properties up to a maximum depth to prevent stack overflows
+ * or hangs from circular references or excessively deep payloads.
+ */
+function deepUnpackJsonProperties(
+  obj: unknown,
+  depth = 0,
+  seen: WeakSet<object> = new WeakSet()
+): unknown {
+  if (depth > 6) return obj
+  if (typeof obj === "string") {
+    const trimmed = obj.trim()
+    if (
+      (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+      (trimmed.startsWith("[") && trimmed.endsWith("]"))
+    ) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        return deepUnpackJsonProperties(parsed, depth + 1, seen)
+      } catch {
+        return obj
+      }
+    }
+    return obj
+  }
+  if (Array.isArray(obj)) {
+    if (seen.has(obj)) return obj
+    seen.add(obj)
+    if (obj.length === 0) return obj
+    return obj.map((item) => deepUnpackJsonProperties(item, depth + 1, seen))
+  }
+  if (obj && typeof obj === "object") {
+    if (seen.has(obj)) return obj
+    seen.add(obj)
+    const res: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      res[k] = deepUnpackJsonProperties(v, depth + 1, seen)
+    }
+    return res
+  }
+  return obj
+}
+
+export function extractToolErrorText(
+  value: unknown,
+  fallback = "Tool execution failed"
+): string {
+  if (value === undefined || value === null) return fallback
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    if (!trimmed || trimmed === "[object Object]") return fallback
+    return trimmed
+  }
+  if (value instanceof Error) {
+    return value.message || fallback
+  }
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>
+    // 1. Check nested obj.error
+    if (obj.error && typeof obj.error === "object") {
+      const nestedErr = obj.error as Record<string, unknown>
+      if (typeof nestedErr.message === "string" && nestedErr.message.trim()) {
+        return nestedErr.message.trim()
+      }
+      if (typeof nestedErr.error === "string" && nestedErr.error.trim()) {
+        return nestedErr.error.trim()
+      }
+    }
+    // 2. Check direct fields
+    if (typeof obj.message === "string" && obj.message.trim()) {
+      return obj.message.trim()
+    }
+    if (typeof obj.error === "string" && obj.error.trim()) {
+      return obj.error.trim()
+    }
+    if (typeof obj.errorText === "string" && obj.errorText.trim()) {
+      return obj.errorText.trim()
+    }
+    if (typeof obj.detail === "string" && obj.detail.trim()) {
+      return obj.detail.trim()
+    }
+    if (typeof obj.details === "string" && obj.details.trim()) {
+      return obj.details.trim()
+    }
+
+    try {
+      const stringified = JSON.stringify(value, null, 2)
+      if (stringified && stringified !== "{}") {
+        return stringified
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return fallback
+}
+
+export function objectValue(value: unknown): Record<string, unknown> {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const unpacked = deepUnpackJsonProperties(value)
+    if (unpacked && typeof unpacked === "object" && !Array.isArray(unpacked)) {
+      return unpacked as Record<string, unknown>
+    }
+    return {}
+  }
   if (typeof value === "string") {
     const trimmed = value.trim()
     if (!trimmed) return {}
     try {
-      return objectValue(JSON.parse(trimmed))
+      const parsed = JSON.parse(trimmed)
+      return objectValue(parsed)
     } catch {
       // Attempt partial / tolerant JSON recovery for streaming args
       try {
-        const titleMatch = trimmed.match(
-          /"title"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/
-        )
-        const subtitleMatch = trimmed.match(
-          /"subtitle"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/
-        )
+        const titleMatch = trimmed.match(JSON_TITLE_REGEX)
+        const subtitleMatch = trimmed.match(JSON_SUBTITLE_REGEX)
         const recovered: Record<string, unknown> = {}
         if (titleMatch?.[1]) recovered.title = titleMatch[1]
         if (subtitleMatch?.[1]) recovered.subtitle = subtitleMatch[1]
 
-        // If questions array is partially available
         const questionsIdx = trimmed.indexOf('"questions"')
         if (questionsIdx >= 0) {
           const arrayStart = trimmed.indexOf("[", questionsIdx)
@@ -89,141 +268,204 @@ function objectValue(value: unknown): Record<string, unknown> {
 }
 
 export function normalizeAssistantMessage(
-  message: any
+  message: unknown
 ): NormalizedAssistantTurn {
-  let parts = Array.isArray(message?.parts) ? message.parts : []
-  if (parts.length === 1 && parts[0]?.role && Array.isArray(parts[0]?.parts)) {
-    parts = parts[0].parts
+  if (!message || typeof message !== "object") {
+    return {
+      role: "assistant",
+      text: typeof message === "string" ? message : "",
+      thinking: "",
+      tools: [],
+    }
+  }
+
+  const msgObj = message as Record<string, unknown>
+
+  // Quick cache lookup using full message signature (avoids stale cache during streaming)
+  const currentSignature = computeMessageSignature(msgObj)
+  const cached = normalizationCache.get(msgObj)
+  if (cached && cached.signature === currentSignature) {
+    return cached.result
+  }
+
+  let parts = Array.isArray(msgObj.parts) ? msgObj.parts : []
+  if (
+    parts.length === 1 &&
+    parts[0] &&
+    typeof parts[0] === "object" &&
+    (parts[0] as Record<string, unknown>).role &&
+    Array.isArray((parts[0] as Record<string, unknown>).parts)
+  ) {
+    parts = (parts[0] as Record<string, unknown>).parts as unknown[]
   }
 
   let text = parts
-    .filter((p: any) => p?.type === "text")
-    .map((p: any) => p.text ?? p.content ?? p.value ?? "")
+    .filter((p: unknown) => (p as Record<string, unknown>)?.type === "text")
+    .map((p: unknown) => {
+      const rec = p as Record<string, unknown>
+      return String(rec.text ?? rec.content ?? rec.value ?? "")
+    })
     .join("")
 
   if (!text) {
-    if (typeof message?.content === "string") {
-      text = message.content
-    } else if (typeof message?.text === "string") {
-      text = message.text
-    } else if (Array.isArray(message?.content)) {
-      text = message.content
-        .map((c: any) =>
-          typeof c === "string" ? c : (c?.text ?? c?.content ?? "")
-        )
+    if (typeof msgObj.content === "string") {
+      text = msgObj.content
+    } else if (typeof msgObj.text === "string") {
+      text = msgObj.text
+    } else if (Array.isArray(msgObj.content)) {
+      text = (msgObj.content as unknown[])
+        .map((c: unknown) => {
+          if (typeof c === "string") return c
+          const r = c as Record<string, unknown> | null
+          return String(r?.text ?? r?.content ?? "")
+        })
         .join("")
     }
   }
 
   let thinking = parts
-    .filter((p: any) => p?.type === "thinking" || p?.type === "reasoning")
-    .map((p: any) => p.content ?? p.thinking ?? p.reasoning ?? p.text ?? "")
+    .filter((p: unknown) => {
+      const t = (p as Record<string, unknown>)?.type
+      return t === "thinking" || t === "reasoning"
+    })
+    .map((p: unknown) => {
+      const rec = p as Record<string, unknown>
+      return String(
+        rec.content ?? rec.thinking ?? rec.reasoning ?? rec.text ?? ""
+      )
+    })
     .join("")
 
-  // Extract <think>...</think> tags if present in text (common in reasoning models)
+  // Extract all <think>...</think> tags if present in text (common in DeepSeek / reasoning models)
   if (text.includes("<think>")) {
-    const thinkMatch = text.match(/<think>([\s\S]*?)<\/think>/)
-    if (thinkMatch) {
-      const extractedThink = thinkMatch[1].trim()
-      thinking = thinking ? `${thinking}\n\n${extractedThink}` : extractedThink
-      text = text.replace(/<think>[\s\S]*?<\/think>/g, "").trim()
+    const closedMatches = [...text.matchAll(THINK_CLOSED_CAPTURE_REGEX)]
+    if (closedMatches.length > 0) {
+      const extractedBlocks = closedMatches
+        .map((m) => m[1]?.trim())
+        .filter(Boolean)
+        .join("\n\n")
+      thinking = thinking
+        ? `${thinking}\n\n${extractedBlocks}`
+        : extractedBlocks
+      text = text.replace(THINK_CLOSED_GLOBAL_REGEX, "").trim()
     } else {
-      const openThinkMatch = text.match(/<think>([\s\S]*)$/)
-      if (openThinkMatch) {
+      const openThinkMatch = text.match(THINK_OPEN_REGEX)
+      if (openThinkMatch?.[1]) {
         const extractedThink = openThinkMatch[1].trim()
         thinking = thinking
           ? `${thinking}\n\n${extractedThink}`
           : extractedThink
-        text = text.replace(/<think>[\s\S]*$/, "").trim()
+        text = text.replace(THINK_OPEN_GLOBAL_REGEX, "").trim()
       }
     }
   }
+
   const calls = new Map<string, ToolCallItem>()
 
   // Direct toolCalls on message object
-  if (Array.isArray(message?.toolCalls)) {
-    for (const tc of message.toolCalls) {
+  if (Array.isArray(msgObj.toolCalls)) {
+    for (const tc of msgObj.toolCalls as unknown[]) {
       if (tc && typeof tc === "object") {
-        const id = String(tc.id ?? `tool-${calls.size}`)
+        const r = tc as Record<string, unknown>
+        const id = String(r.id ?? `tool-${calls.size}`)
+        const approvalObj = r.approval as Record<string, unknown> | undefined
         calls.set(id, {
           id,
-          name: String(tc.name ?? "unknown_tool"),
-          args: objectValue(
-            tc.args ?? tc.arguments ?? tc.parameters ?? tc.input
-          ),
-          status: tc.status ?? "completed",
-          result: tc.result ?? tc.output,
-          needsApproval: Boolean(
-            tc.needsApproval || tc.approval?.needsApproval
-          ),
-          approvalId: tc.approval?.id,
+          name: String(r.name ?? "unknown_tool"),
+          args: objectValue(r.args ?? r.arguments ?? r.parameters ?? r.input),
+          status: String(r.status ?? "completed"),
+          result: r.result ?? r.output,
+          needsApproval: Boolean(r.needsApproval || approvalObj?.needsApproval),
+          approvalId:
+            typeof r.approvalId === "string"
+              ? r.approvalId
+              : typeof approvalObj?.id === "string"
+                ? approvalObj.id
+                : undefined,
           errorText:
-            tc.errorText ??
-            (tc.status === "error"
-              ? String(tc.result ?? "Tool execution failed")
-              : undefined),
+            typeof r.errorText === "string" &&
+            r.errorText.trim() !== "" &&
+            r.errorText.trim() !== "[object Object]"
+              ? r.errorText
+              : r.status === "error" ||
+                  (r.result &&
+                    typeof r.result === "object" &&
+                    Boolean((r.result as Record<string, unknown>).error))
+                ? extractToolErrorText(r.errorText ?? r.result)
+                : undefined,
+          retryOf: typeof r.retryOf === "string" ? r.retryOf : undefined,
+          attempt: typeof r.attempt === "number" ? r.attempt : undefined,
         })
       }
     }
   }
 
   for (const part of parts) {
+    if (!part || typeof part !== "object") continue
+    const p = part as Record<string, unknown>
+    const pType = p.type
+
     if (
-      part?.type === "tool-call" ||
-      part?.type === "tool-invocation" ||
-      part?.type === "tool"
+      pType === "tool-call" ||
+      pType === "tool-invocation" ||
+      pType === "tool"
     ) {
       const id = String(
-        part.id ??
-          part.toolCallId ??
-          `${part.name ?? part.toolName ?? "tool"}-${calls.size}`
+        p.id ??
+          p.toolCallId ??
+          `${p.name ?? p.toolName ?? "tool"}-${calls.size}`
       )
       const existing = calls.get(id)
       const name = String(
-        part.name ??
-          part.toolName ??
-          part.tool ??
-          existing?.name ??
-          "unknown_tool"
+        p.name ?? p.toolName ?? p.tool ?? existing?.name ?? "unknown_tool"
       )
-      const rawArgs =
-        part.arguments ??
-        part.input ??
-        part.args ??
-        part.parameters ??
-        part.data
+      const rawArgs = p.arguments ?? p.input ?? p.args ?? p.parameters ?? p.data
       const args = objectValue(rawArgs)
+      const approvalObj = p.approval as Record<string, unknown> | undefined
 
       calls.set(id, {
         id,
         name,
         args: Object.keys(args).length > 0 ? args : existing?.args || {},
         status:
-          part.approval?.approved === true
+          approvalObj?.approved === true
             ? "approved"
-            : part.approval?.approved === false
+            : approvalObj?.approved === false
               ? "rejected"
-              : part.approval
+              : approvalObj
                 ? "awaiting-approval"
-                : part.state === "output-error"
+                : p.state === "output-error"
                   ? "error"
-                  : part.output !== undefined || part.result !== undefined
+                  : p.output !== undefined || p.result !== undefined
                     ? "completed"
                     : (existing?.status ?? "running"),
-        result: part.output ?? part.result ?? existing?.result,
+        result: p.output ?? p.result ?? existing?.result,
         needsApproval: Boolean(
-          part.approval?.needsApproval ?? existing?.needsApproval
+          p.needsApproval ??
+            approvalObj?.needsApproval ??
+            existing?.needsApproval
         ),
-        approvalId: part.approval?.id ?? existing?.approvalId,
+        approvalId:
+          typeof p.approvalId === "string"
+            ? p.approvalId
+            : typeof approvalObj?.id === "string"
+              ? approvalObj.id
+              : existing?.approvalId,
         errorText:
-          part.errorText ??
-          (part.state === "output-error"
-            ? String(part.output ?? "Tool execution failed")
-            : undefined),
+          typeof p.errorText === "string" &&
+          p.errorText.trim() !== "" &&
+          p.errorText.trim() !== "[object Object]"
+            ? p.errorText
+            : p.state === "output-error"
+              ? extractToolErrorText(p.errorText ?? p.output ?? p.result)
+              : undefined,
+        retryOf: typeof p.retryOf === "string" ? p.retryOf : existing?.retryOf,
+        attempt: typeof p.attempt === "number" ? p.attempt : existing?.attempt,
       })
     }
-    if (part?.type === "tool-result") {
-      const id = String(part.toolCallId ?? part.id ?? "")
+
+    if (pType === "tool-result") {
+      const id = String(p.toolCallId ?? p.id ?? "")
       let current = calls.get(id)
       if (!current && calls.size === 1) {
         const firstKey = calls.keys().next().value
@@ -232,39 +474,53 @@ export function normalizeAssistantMessage(
       if (!current) {
         current = {
           id: id || `tool-res-${calls.size}`,
-          name: String(part.toolName ?? part.name ?? "unknown_tool"),
+          name: String(p.toolName ?? p.name ?? "unknown_tool"),
           args: {},
         }
       }
       const targetId = current.id || id
+      const resVal = p.content ?? p.output ?? p.result
+      const hasObjError =
+        resVal &&
+        typeof resVal === "object" &&
+        Boolean((resVal as Record<string, unknown>).error)
+      const isError = Boolean(
+        p.error || p.isError || p.state === "output-error" || hasObjError
+      )
       calls.set(targetId, {
         ...current,
         name:
           current.name !== "unknown_tool"
             ? current.name
-            : String(part.toolName ?? part.name ?? current.name),
-        result: part.content ?? part.output ?? part.result,
-        status:
-          part.error || part.state === "output-error" ? "error" : "completed",
-        errorText:
-          part.error || part.state === "output-error"
-            ? String(part.content ?? part.output ?? "Tool execution failed")
-            : undefined,
+            : String(p.toolName ?? p.name ?? current.name),
+        result: resVal,
+        status: isError ? "error" : "completed",
+        errorText: isError
+          ? extractToolErrorText(
+              p.errorText ?? p.error ?? p.content ?? p.output ?? p.result
+            )
+          : undefined,
+        retryOf: typeof p.retryOf === "string" ? p.retryOf : current.retryOf,
+        attempt: typeof p.attempt === "number" ? p.attempt : current.attempt,
       })
     }
   }
 
-  // Parse chain-of-thought steps if present
   const chainOfThought: ChainOfThoughtStepItem[] | undefined = Array.isArray(
-    message?.chainOfThought
+    msgObj.chainOfThought
   )
-    ? message.chainOfThought
+    ? (msgObj.chainOfThought as ChainOfThoughtStepItem[])
     : undefined
 
-  // Parse tasks if present or synthesize structured progress steps from tool executions
   let tasks:
     | Array<{ title: string; status?: TaskStatus; items?: TaskItemData[] }>
-    | undefined = Array.isArray(message?.tasks) ? message.tasks : undefined
+    | undefined = Array.isArray(msgObj.tasks)
+    ? (msgObj.tasks as Array<{
+        title: string
+        status?: TaskStatus
+        items?: TaskItemData[]
+      }>)
+    : undefined
 
   if (!tasks && calls.size > 0) {
     const toolList = [...calls.values()]
@@ -274,9 +530,7 @@ export function normalizeAssistantMessage(
     const invTool = toolList.find(
       (c) => c.name === "create_invoice" || c.name === "update_invoice"
     )
-    const schedTool = toolList.find(
-      (c) => c.name === "schedule_document_send"
-    )
+    const schedTool = toolList.find((c) => c.name === "schedule_document_send")
 
     if (propTool) {
       const isCompleted = propTool.status === "completed"
@@ -284,23 +538,6 @@ export function normalizeAssistantMessage(
         {
           title: "Proposal Synthesis & Composition",
           status: isCompleted ? "completed" : "in_progress",
-          items: [
-            {
-              id: "step-1",
-              text: "Analyze scope, timeline, and customer requirements",
-              status: "completed",
-            },
-            {
-              id: "step-2",
-              text: "Calculate integer minor pricing, line items & milestones",
-              status: isCompleted ? "completed" : "in_progress",
-            },
-            {
-              id: "step-3",
-              text: "Compose multi-block document canvas & persist draft",
-              status: isCompleted ? "completed" : "in_progress",
-            },
-          ],
         },
       ]
     } else if (invTool) {
@@ -309,23 +546,6 @@ export function normalizeAssistantMessage(
         {
           title: "Invoice Generation & Billing Calculation",
           status: isCompleted ? "completed" : "in_progress",
-          items: [
-            {
-              id: "step-1",
-              text: "Snapshot customer billing & payment terms",
-              status: "completed",
-            },
-            {
-              id: "step-2",
-              text: "Compute line items, tax, and total minor balance",
-              status: isCompleted ? "completed" : "in_progress",
-            },
-            {
-              id: "step-3",
-              text: "Generate invoice draft and visual editor link",
-              status: isCompleted ? "completed" : "in_progress",
-            },
-          ],
         },
       ]
     } else if (schedTool) {
@@ -334,18 +554,6 @@ export function normalizeAssistantMessage(
         {
           title: "Document Dispatch Scheduling",
           status: isCompleted ? "completed" : "in_progress",
-          items: [
-            {
-              id: "step-1",
-              text: "Verify document status & recipient address",
-              status: "completed",
-            },
-            {
-              id: "step-2",
-              text: "Queue automated email dispatch worker",
-              status: isCompleted ? "completed" : "in_progress",
-            },
-          ],
         },
       ]
     }
@@ -358,12 +566,9 @@ export function normalizeAssistantMessage(
   const rawProse = hasQuestionnaire ? "" : ui.prose
   const sanitizedProse = stripLeakedFunctionCalls(rawProse)
 
-  return {
-    id: message?.id,
-    role: message?.role ?? "assistant",
-    // The questionnaire widget is the canonical rendering. Suppress the
-    // model's repeated plaintext list so users do not see the same questions
-    // twice (and so the form remains the only interactive surface).
+  const normalized: NormalizedAssistantTurn = {
+    id: typeof msgObj.id === "string" ? msgObj.id : undefined,
+    role: (msgObj.role as "assistant" | "user" | "system") || "assistant",
     text: sanitizedProse,
     thinking,
     tools: [...calls.values()],
@@ -373,17 +578,22 @@ export function normalizeAssistantMessage(
       ? { source: ui.program, complete: ui.isComplete }
       : undefined,
   }
+
+  // Cache normalized result against message object identity and signature
+  normalizationCache.set(msgObj, {
+    signature: currentSignature,
+    result: normalized,
+  })
+
+  return normalized
 }
 
-/**
- * Live reasoning text from the most recent assistant turn in the message
- * stream. Returns "" before that turn has emitted any thinking content —
- * earlier turns are ignored so a new run never flashes stale reasoning.
- */
-export function latestAssistantThinking(messages: any[]): string {
+export function latestAssistantThinking(messages: unknown[]): string {
+  if (!Array.isArray(messages) || messages.length === 0) return ""
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i]
-    if (message?.role !== "assistant") continue
+    if (!message || typeof message !== "object") continue
+    if ((message as Record<string, unknown>).role !== "assistant") continue
     return normalizeAssistantMessage(message).thinking
   }
   return ""
@@ -392,20 +602,16 @@ export function latestAssistantThinking(messages: any[]): string {
 export function stripLeakedFunctionCalls(rawText: string): string {
   if (!rawText) return ""
   return rawText
-    .replace(
-      /Here is a JSON for a function call with its proper arguments[^\n]*:\s*```(?:json)?\s*\{[\s\S]*?\}\s*```\s*(?:This function call will[^\n.]*\.?)?/gi,
-      ""
-    )
-    .replace(
-      /```(?:json)?\s*\{\s*"name"\s*:\s*"[a-zA-Z0-9_-]+"\s*,\s*"(?:parameters|arguments|args)"\s*:[\s\S]*?\}\s*```/gi,
-      ""
-    )
+    .replace(LEAKED_FN_REGEX_1, "")
+    .replace(LEAKED_FN_REGEX_2, "")
     .trim()
 }
 
 export function toolLabel(name: string): string {
   return (
-    toolNames[name] ??
-    name.replace(/[_-]/g, " ").replace(/^./, (c) => c.toUpperCase())
+    TOOL_NAMES[name] ??
+    name
+      .replace(TOOL_REPLACE_REGEX, " ")
+      .replace(UPPERCASE_FIRST_REGEX, (c) => c.toUpperCase())
   )
 }

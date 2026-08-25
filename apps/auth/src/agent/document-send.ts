@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto"
-import { and, db, eq, schema } from "@workspace/database"
+import { isUuid } from "@workspace/agent"
+import { and, db, eq, schema, sql } from "@workspace/database"
 import {
   calculateInvoicePricing,
   calculateProposalPricing,
@@ -14,6 +15,7 @@ import {
   safeParseInvoiceDraft,
   safeParseProposalDraft,
 } from "@workspace/document/schema"
+import { escapeLikePattern } from "./tools/sql-utils"
 
 export interface FinalizeSendResult {
   snapshotId: string
@@ -41,19 +43,38 @@ export async function finalizeProposalSend(
   userId: string,
   overrideRecipientEmail?: string
 ): Promise<FinalizeSendResult> {
-  const [current] = await db
-    .select()
-    .from(schema.proposalDraft)
-    .where(
-      and(
-        eq(schema.proposalDraft.id, draftId),
-        eq(schema.proposalDraft.organizationId, organizationId)
+  let current: typeof schema.proposalDraft.$inferSelect | undefined
+  const validUuid = isUuid(draftId)
+
+  if (validUuid) {
+    const [found] = await db
+      .select()
+      .from(schema.proposalDraft)
+      .where(
+        and(
+          eq(schema.proposalDraft.id, draftId.trim()),
+          eq(schema.proposalDraft.organizationId, organizationId)
+        )
       )
-    )
-    .limit(1)
+      .limit(1)
+    current = found
+  } else if (draftId) {
+    const escaped = escapeLikePattern(draftId)
+    const [found] = await db
+      .select()
+      .from(schema.proposalDraft)
+      .where(
+        and(
+          eq(schema.proposalDraft.organizationId, organizationId),
+          sql`lower(${schema.proposalDraft.title}) LIKE lower(${`%${escaped}%`})`
+        )
+      )
+      .limit(1)
+    current = found
+  }
 
   if (!current) {
-    throw new Error(`Proposal draft with id ${draftId} was not found.`)
+    throw new Error(`Proposal draft "${draftId}" was not found.`)
   }
 
   const parsedDoc = safeParseProposalDraft(current.document)
@@ -132,19 +153,38 @@ export async function finalizeInvoiceSend(
   userId: string,
   overrideRecipientEmail?: string
 ): Promise<FinalizeSendResult> {
-  const [current] = await db
-    .select()
-    .from(schema.invoiceDraft)
-    .where(
-      and(
-        eq(schema.invoiceDraft.id, draftId),
-        eq(schema.invoiceDraft.organizationId, organizationId)
+  let current: typeof schema.invoiceDraft.$inferSelect | undefined
+  const validUuid = isUuid(draftId)
+
+  if (validUuid) {
+    const [found] = await db
+      .select()
+      .from(schema.invoiceDraft)
+      .where(
+        and(
+          eq(schema.invoiceDraft.id, draftId.trim()),
+          eq(schema.invoiceDraft.organizationId, organizationId)
+        )
       )
-    )
-    .limit(1)
+      .limit(1)
+    current = found
+  } else if (draftId) {
+    const escaped = escapeLikePattern(draftId)
+    const [found] = await db
+      .select()
+      .from(schema.invoiceDraft)
+      .where(
+        and(
+          eq(schema.invoiceDraft.organizationId, organizationId),
+          sql`lower(${schema.invoiceDraft.title}) LIKE lower(${`%${escaped}%`})`
+        )
+      )
+      .limit(1)
+    current = found
+  }
 
   if (!current) {
-    throw new Error(`Invoice draft with id ${draftId} was not found.`)
+    throw new Error(`Invoice draft "${draftId}" was not found.`)
   }
 
   const parsedDoc = safeParseInvoiceDraft(current.document)
